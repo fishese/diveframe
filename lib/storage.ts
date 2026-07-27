@@ -51,6 +51,22 @@ export type GeocodeRow = {
   fetchedAt: string;
 };
 
+export type CatalogSite = {
+  id: string;
+  name: string;
+  aliases: string[];
+  latitude: number;
+  longitude: number;
+  countryCode: string | null;
+  country: string | null;
+  region: string | null;
+  locality: string | null;
+  source: string;
+  sourceRef: string | null;
+  notes: string | null;
+  distanceKm: number;
+};
+
 let initialized = false;
 
 export async function ensureStorage() {
@@ -110,6 +126,72 @@ export async function ensureStorage() {
         latitude REAL NOT NULL,
         longitude REAL NOT NULL,
         fetched_at TEXT NOT NULL
+      )
+    `),
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS dive_site_catalog (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        aliases_json TEXT NOT NULL DEFAULT '[]',
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        country_code TEXT,
+        country TEXT,
+        region TEXT,
+        locality TEXT,
+        source TEXT NOT NULL,
+        source_ref TEXT,
+        notes TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        updated_at TEXT NOT NULL
+      )
+    `),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS dive_site_catalog_coordinates_idx ON dive_site_catalog(latitude, longitude)",
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS dive_site_catalog_status_idx ON dive_site_catalog(status)",
+    ),
+    db.prepare(`
+      INSERT OR IGNORE INTO dive_site_catalog (
+        id, name, aliases_json, latitude, longitude, country_code,
+        country, region, locality, source, source_ref, notes, status, updated_at
+      ) VALUES (
+        'hk-sharp-island',
+        'Sharp Island',
+        '["Kiu Tsui Chau"]',
+        22.3636,
+        114.2928,
+        'HK',
+        'Hong Kong',
+        'New Territories',
+        'Sai Kung',
+        'manual_seed',
+        NULL,
+        'Initial catalog example supplied by the owner.',
+        'active',
+        '2026-07-28T00:00:00.000Z'
+      )
+    `),
+    db.prepare(`
+      INSERT OR IGNORE INTO dive_site_catalog (
+        id, name, aliases_json, latitude, longitude, country_code,
+        country, region, locality, source, source_ref, notes, status, updated_at
+      ) VALUES (
+        'hk-basalt-island',
+        'Basalt Island',
+        '["Fo Siu Pai","Shek Chau"]',
+        22.3158,
+        114.3656,
+        'HK',
+        'Hong Kong',
+        'New Territories',
+        'Sai Kung',
+        'manual_seed',
+        NULL,
+        'Initial catalog example supplied by the owner.',
+        'active',
+        '2026-07-28T00:00:00.000Z'
       )
     `),
   ]);
@@ -334,6 +416,55 @@ export async function saveGeocode(geocode: GeocodeRow) {
     .run();
 }
 
+export async function listCatalogSitesNear(
+  latitude: number,
+  longitude: number,
+  radiusKm = 30,
+): Promise<CatalogSite[]> {
+  await ensureStorage();
+  const latitudeDelta = radiusKm / 111;
+  const longitudeScale = Math.max(Math.cos((latitude * Math.PI) / 180), 0.1);
+  const longitudeDelta = radiusKm / (111 * longitudeScale);
+  const result = await env.DB.prepare(`
+    SELECT id, name, aliases_json, latitude, longitude, country_code,
+           country, region, locality, source, source_ref, notes
+    FROM dive_site_catalog
+    WHERE status = 'active'
+      AND latitude BETWEEN ? AND ?
+      AND longitude BETWEEN ? AND ?
+  `)
+    .bind(
+      latitude - latitudeDelta,
+      latitude + latitudeDelta,
+      longitude - longitudeDelta,
+      longitude + longitudeDelta,
+    )
+    .all<Record<string, unknown>>();
+
+  return result.results
+    .map((row) => {
+      const siteLatitude = Number(row.latitude);
+      const siteLongitude = Number(row.longitude);
+      return {
+        id: String(row.id),
+        name: String(row.name),
+        aliases: stringArray(row.aliases_json),
+        latitude: siteLatitude,
+        longitude: siteLongitude,
+        countryCode: nullableString(row.country_code),
+        country: nullableString(row.country),
+        region: nullableString(row.region),
+        locality: nullableString(row.locality),
+        source: String(row.source),
+        sourceRef: nullableString(row.source_ref),
+        notes: nullableString(row.notes),
+        distanceKm: distanceKm(latitude, longitude, siteLatitude, siteLongitude),
+      };
+    })
+    .filter((site) => site.distanceKm <= radiusKm)
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+}
+
 function mapDive(row: Record<string, unknown>): DiveRow {
   return {
     id: String(row.id),
@@ -387,4 +518,27 @@ function nullableNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function stringArray(value: unknown) {
+  try {
+    const parsed = JSON.parse(String(value ?? "[]"));
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const radians = (degrees: number) => (degrees * Math.PI) / 180;
+  const deltaLat = radians(lat2 - lat1);
+  const deltaLng = radians(lng2 - lng1);
+  const a =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(radians(lat1)) *
+      Math.cos(radians(lat2)) *
+      Math.sin(deltaLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

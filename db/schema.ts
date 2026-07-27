@@ -59,3 +59,27 @@ export const geocodes = sqliteTable("geocodes", {
   longitude: real("longitude").notNull(),
   fetchedAt: text("fetched_at").notNull(),
 });
+
+export const diveSiteCatalog = sqliteTable(
+  "dive_site_catalog",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    aliasesJson: text("aliases_json").notNull().default("[]"),
+    latitude: real("latitude").notNull(),
+    longitude: real("longitude").notNull(),
+    countryCode: text("country_code"),
+    country: text("country"),
+    region: text("region"),
+    locality: text("locality"),
+    source: text("source").notNull(),
+    sourceRef: text("source_ref"),
+    notes: text("notes"),
+    status: text("status").notNull().default("active"),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    index("dive_site_catalog_coordinates_idx").on(table.latitude, table.longitude),
+    index("dive_site_catalog_status_idx").on(table.status),
+  ],
+);

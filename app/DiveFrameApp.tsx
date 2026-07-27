@@ -89,9 +89,11 @@ type ImportedDive = Omit<
 type NearbySite = {
   id: string;
   name: string;
+  aliases?: string[];
   latitude: number;
   longitude: number;
   distanceKm: number;
+  source: "catalog" | "openstreetmap";
 };
 
 export function DiveFrameApp() {
@@ -800,7 +802,14 @@ function DiveDetail({
                   disabled={busy}
                 >
                   <span>{site.name}</span>
-                  <small>{formatDistance(site.distanceKm)}</small>
+                  {site.aliases?.length ? (
+                    <em>{site.aliases.join(" / ")}</em>
+                  ) : null}
+                  <small>
+                    {formatDistance(site.distanceKm)}
+                    {" · "}
+                    {site.source === "catalog" ? "DiveFrame catalog" : "Map fallback"}
+                  </small>
                 </button>
               ))}
             </div>

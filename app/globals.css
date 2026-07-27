@@ -693,6 +693,13 @@ button {
   font-size: 10px;
 }
 
+.site-suggestions em {
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1.35;
+}
+
 .manual-site {
   border-top: 1px solid var(--line);
   padding: 18px 20px 20px;

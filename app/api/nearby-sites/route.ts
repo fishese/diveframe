@@ -1,3 +1,5 @@
+import { listCatalogSitesNear } from "@/lib/storage";
+
 type OverpassElement = {
   id: number;
   lat?: number;
@@ -27,7 +29,24 @@ export async function GET(request: Request) {
     return Response.json({ error: "Supply valid GPS coordinates." }, { status: 400 });
   }
 
-  const radius = 30_000;
+  const radiusKm = 30;
+  const catalogSites = await listCatalogSitesNear(latitude, longitude, radiusKm);
+  if (catalogSites.length) {
+    return Response.json({
+      source: "catalog",
+      sites: catalogSites.slice(0, 12).map((site) => ({
+        id: `catalog-${site.id}`,
+        name: site.name,
+        aliases: site.aliases,
+        latitude: site.latitude,
+        longitude: site.longitude,
+        distanceKm: site.distanceKm,
+        source: "catalog",
+      })),
+    });
+  }
+
+  const radius = radiusKm * 1000;
   const query = `
     [out:json][timeout:6];
     (
@@ -62,6 +81,7 @@ export async function GET(request: Request) {
   }
   if (!response) {
     return Response.json({
+      source: "openstreetmap",
       sites: await searchDivePlaces(latitude, longitude),
     });
   }
@@ -84,13 +104,14 @@ export async function GET(request: Request) {
           latitude: lat,
           longitude: lng,
           distanceKm: distanceKm(latitude, longitude, lat, lng),
+          source: "openstreetmap",
         },
       ];
     })
     .sort((a, b) => a.distanceKm - b.distanceKm)
     .slice(0, 12);
 
-  return Response.json({ sites });
+  return Response.json({ source: "openstreetmap", sites });
 }
 
 async function searchDivePlaces(latitude: number, longitude: number) {
@@ -127,6 +148,7 @@ async function searchDivePlaces(latitude: number, longitude: number) {
         latitude: lat,
         longitude: lng,
         distanceKm: distanceKm(latitude, longitude, lat, lng),
+        source: "openstreetmap",
       }];
     }).sort((a, b) => a.distanceKm - b.distanceKm);
   } catch {

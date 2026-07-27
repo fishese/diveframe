@@ -20,7 +20,15 @@ test("ships the DiveFrame import, map, photo, and share-card workflow", async ()
   assert.match(app, /Named location/);
   assert.match(app, /GPS recorded/);
   assert.match(app, /Save site/);
+  assert.match(app, /DiveFrame catalog/);
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
+
+  const nearbyRoute = await readFile(
+    new URL("../app/api/nearby-sites/route.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(nearbyRoute, /listCatalogSitesNear/);
+  assert.match(nearbyRoute, /source: "openstreetmap"/);
 
   const bindings = JSON.parse(hosting);
   assert.equal(bindings.d1, "DB");
