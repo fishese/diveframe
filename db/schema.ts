@@ -1,4 +1,11 @@
-import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  index,
+  integer,
+  primaryKey,
+  real,
+  sqliteTable,
+  text,
+} from "drizzle-orm/sqlite-core";
 
 export const dives = sqliteTable(
   "dives",
@@ -50,6 +57,22 @@ export const attachments = sqliteTable(
     createdAt: text("created_at").notNull(),
   },
   (table) => [index("attachments_dive_idx").on(table.diveId)],
+);
+
+export const diveSources = sqliteTable(
+  "dive_sources",
+  {
+    source: text("source").notNull(),
+    sourceRecordId: text("source_record_id").notNull(),
+    diveId: text("dive_id")
+      .notNull()
+      .references(() => dives.id, { onDelete: "cascade" }),
+    importedAt: text("imported_at").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.source, table.sourceRecordId] }),
+    index("dive_sources_dive_idx").on(table.diveId),
+  ],
 );
 
 export const geocodes = sqliteTable("geocodes", {

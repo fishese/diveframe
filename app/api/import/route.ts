@@ -13,7 +13,12 @@ export async function POST(request: Request) {
       );
     }
     const dives = body.dives.filter(
-      (dive) => typeof dive?.id === "string" && dive.id.length > 0,
+      (dive) =>
+        typeof dive?.id === "string" &&
+        dive.id.length > 0 &&
+        (dive.source === "shearwater" || dive.source === "subsurface") &&
+        typeof dive.sourceId === "string" &&
+        dive.sourceId.length > 0,
     );
     if (dives.length !== body.dives.length) {
       return Response.json(

@@ -3,15 +3,24 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and share-card workflow", async () => {
-  const [app, hosting, manifest, migration] = await Promise.all([
+  const [app, storage, hosting, manifest, migration, sourceMigration] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
+    readFile("lib/storage.ts", "utf8"),
     readFile(".openai/hosting.json", "utf8"),
     readFile("public/manifest.webmanifest", "utf8"),
     readFile("drizzle/0000_keen_hex.sql", "utf8"),
+    readFile("drizzle/0004_sudden_ego.sql", "utf8"),
   ]);
 
   assert.match(app, /GnssEntryLocation/);
   assert.match(app, /readShearwaterDatabase/);
+  assert.match(app, /readSubsurfaceLog/);
+  assert.match(app, /\.ssrf/);
+  assert.match(app, /sourceId/);
+  assert.match(storage, /sourceMappings/);
+  assert.match(storage, /normalizeSerial/);
+  assert.match(storage, /secondsApart > 300/);
+  assert.match(storage, /env\.DB\.batch/);
   assert.match(app, /createShareCard/);
   assert.match(app, /Add photos/);
   assert.match(app, /openstreetmap\.org/);
@@ -43,4 +52,6 @@ test("ships the DiveFrame import, map, photo, and share-card workflow", async ()
 
   assert.match(migration, /CREATE TABLE `dives`/);
   assert.match(migration, /CREATE TABLE `attachments`/);
+  assert.match(sourceMigration, /CREATE TABLE `dive_sources`/);
+  assert.match(sourceMigration, /PRIMARY KEY\(`source`, `source_record_id`\)/);
 });

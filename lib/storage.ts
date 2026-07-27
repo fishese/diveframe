@@ -2,6 +2,8 @@ import { env } from "cloudflare:workers";
 
 export type ImportedDive = {
   id: string;
+  source: "shearwater" | "subsurface";
+  sourceId: string;
   diveNumber: number | null;
   diveDate: string | null;
   lastModified: string | null;
@@ -22,13 +24,14 @@ export type ImportedDive = {
   calculatedJson: string | null;
 };
 
-export type DiveRow = ImportedDive & {
+export type DiveRow = Omit<ImportedDive, "source" | "sourceId"> & {
   importedAt: string;
   photoCount: number;
   userSite: string | null;
   resolvedLocation: string | null;
   resolvedCity: string | null;
   resolvedCountry: string | null;
+  sources: string[];
 };
 
 export type AttachmentRow = {
@@ -115,9 +118,22 @@ export async function ensureStorage() {
         FOREIGN KEY (dive_id) REFERENCES dives(id) ON DELETE CASCADE
       )
     `),
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS dive_sources (
+        source TEXT NOT NULL,
+        source_record_id TEXT NOT NULL,
+        dive_id TEXT NOT NULL,
+        imported_at TEXT NOT NULL,
+        PRIMARY KEY (source, source_record_id),
+        FOREIGN KEY (dive_id) REFERENCES dives(id) ON DELETE CASCADE
+      )
+    `),
     db.prepare("CREATE INDEX IF NOT EXISTS dives_date_idx ON dives(dive_date)"),
     db.prepare(
       "CREATE INDEX IF NOT EXISTS attachments_dive_idx ON attachments(dive_id)",
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS dive_sources_dive_idx ON dive_sources(dive_id)",
     ),
     db.prepare(`
       CREATE TABLE IF NOT EXISTS geocodes (
@@ -217,7 +233,115 @@ export async function ensureStorage() {
 export async function upsertDives(dives: ImportedDive[]) {
   await ensureStorage();
   const now = new Date().toISOString();
-  const statement = env.DB.prepare(`
+  const [existingDives, existingSources] = await Promise.all([
+    env.DB.prepare(`
+      SELECT id, dive_date, depth, serial_number
+      FROM dives
+    `).all<Record<string, unknown>>(),
+    env.DB.prepare(`
+      SELECT source, source_record_id, dive_id
+      FROM dive_sources
+    `).all<Record<string, unknown>>(),
+  ]);
+  const candidates = [...existingDives.results];
+  const candidateIds = new Set(candidates.map((candidate) => String(candidate.id)));
+  const sourceMappings = new Map(
+    existingSources.results.map((mapping) => [
+      sourceKey(String(mapping.source), String(mapping.source_record_id)),
+      String(mapping.dive_id),
+    ]),
+  );
+  const statements: ReturnType<typeof env.DB.prepare>[] = [];
+
+  for (const dive of dives) {
+    const canonicalId = resolveCanonicalDiveId(
+      dive,
+      candidates,
+      candidateIds,
+      sourceMappings,
+    );
+    statements.push(mergeDive(canonicalId, dive, now));
+    statements.push(env.DB.prepare(`
+      INSERT INTO dive_sources (source, source_record_id, dive_id, imported_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(source, source_record_id) DO UPDATE SET
+        dive_id = excluded.dive_id,
+        imported_at = excluded.imported_at
+    `)
+      .bind(dive.source, dive.sourceId, canonicalId, now));
+    sourceMappings.set(sourceKey(dive.source, dive.sourceId), canonicalId);
+    if (!candidateIds.has(canonicalId)) {
+      candidates.push({
+        id: canonicalId,
+        dive_date: dive.diveDate,
+        depth: dive.depth,
+        serial_number: dive.serialNumber,
+      });
+      candidateIds.add(canonicalId);
+    }
+  }
+
+  for (let index = 0; index < statements.length; index += 80) {
+    await env.DB.batch(statements.slice(index, index + 80));
+  }
+}
+
+function resolveCanonicalDiveId(
+  dive: ImportedDive,
+  candidates: Record<string, unknown>[],
+  candidateIds: Set<string>,
+  sourceMappings: Map<string, string>,
+) {
+  const mapped = sourceMappings.get(sourceKey(dive.source, dive.sourceId));
+  if (mapped) return mapped;
+
+  if (dive.source === "shearwater" && candidateIds.has(dive.id)) return dive.id;
+
+  const matched = findMatchingDive(dive, candidates);
+  if (matched) return matched;
+  return dive.source === "shearwater"
+    ? dive.id
+    : `subsurface:${dive.sourceId}`;
+}
+
+function findMatchingDive(
+  dive: ImportedDive,
+  candidates: Record<string, unknown>[],
+) {
+  if (!dive.diveDate) return null;
+  const incomingTime = parseSqlDate(dive.diveDate);
+  const incomingSerial = normalizeSerial(dive.serialNumber);
+  const incomingDepth = nullableNumber(dive.depth);
+  let best: { id: string; score: number } | null = null;
+
+  for (const candidate of candidates) {
+    const candidateTime = parseSqlDate(nullableString(candidate.dive_date));
+    if (incomingTime === null || candidateTime === null) continue;
+    const secondsApart = Math.abs(incomingTime - candidateTime) / 1000;
+    if (secondsApart > 300) continue;
+    const candidateSerial = normalizeSerial(nullableString(candidate.serial_number));
+    const sameSerial =
+      Boolean(incomingSerial) &&
+      Boolean(candidateSerial) &&
+      incomingSerial === candidateSerial;
+    const candidateDepth = nullableNumber(candidate.depth);
+    const depthApart =
+      incomingDepth === null || candidateDepth === null
+        ? 0
+        : Math.abs(incomingDepth - candidateDepth);
+
+    if (!sameSerial && (secondsApart > 90 || depthApart > 1)) continue;
+    if (sameSerial && depthApart > 3) continue;
+    const score = (sameSerial ? 10_000 : 0) - secondsApart - depthApart * 20;
+    if (!best || score > best.score) best = { id: String(candidate.id), score };
+  }
+
+  return best?.id ?? null;
+}
+
+function mergeDive(canonicalId: string, dive: ImportedDive, now: string) {
+  const preferIncoming = dive.source === "shearwater" ? 1 : 0;
+  return env.DB.prepare(`
     INSERT INTO dives (
       id, dive_number, dive_date, last_modified, depth, average_depth,
       min_temp, max_temp, length_text, location, site, buddy, notes,
@@ -225,63 +349,70 @@ export async function upsertDives(dives: ImportedDive[]) {
       calculated_json, imported_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
-      dive_number = excluded.dive_number,
-      dive_date = excluded.dive_date,
-      last_modified = excluded.last_modified,
-      depth = excluded.depth,
-      average_depth = excluded.average_depth,
-      min_temp = excluded.min_temp,
-      max_temp = excluded.max_temp,
-      length_text = excluded.length_text,
-      location = excluded.location,
-      site = excluded.site,
-      buddy = excluded.buddy,
-      notes = excluded.notes,
-      serial_number = excluded.serial_number,
-      gps_entry_lat = excluded.gps_entry_lat,
-      gps_entry_lng = excluded.gps_entry_lng,
-      gps_exit_lat = excluded.gps_exit_lat,
-      gps_exit_lng = excluded.gps_exit_lng,
-      calculated_json = excluded.calculated_json,
+      dive_number = CASE WHEN ? = 1 AND excluded.dive_number IS NOT NULL
+        THEN excluded.dive_number ELSE COALESCE(dives.dive_number, excluded.dive_number) END,
+      dive_date = CASE WHEN ? = 1 AND excluded.dive_date IS NOT NULL
+        THEN excluded.dive_date ELSE COALESCE(dives.dive_date, excluded.dive_date) END,
+      last_modified = CASE WHEN ? = 1 AND excluded.last_modified IS NOT NULL
+        THEN excluded.last_modified ELSE COALESCE(dives.last_modified, excluded.last_modified) END,
+      depth = CASE WHEN ? = 1 AND excluded.depth IS NOT NULL
+        THEN excluded.depth ELSE COALESCE(dives.depth, excluded.depth) END,
+      average_depth = CASE WHEN ? = 1 AND excluded.average_depth IS NOT NULL
+        THEN excluded.average_depth ELSE COALESCE(dives.average_depth, excluded.average_depth) END,
+      min_temp = CASE WHEN ? = 1 AND excluded.min_temp IS NOT NULL
+        THEN excluded.min_temp ELSE COALESCE(dives.min_temp, excluded.min_temp) END,
+      max_temp = CASE WHEN ? = 1 AND excluded.max_temp IS NOT NULL
+        THEN excluded.max_temp ELSE COALESCE(dives.max_temp, excluded.max_temp) END,
+      length_text = CASE WHEN ? = 1 AND excluded.length_text IS NOT NULL
+        THEN excluded.length_text ELSE COALESCE(dives.length_text, excluded.length_text) END,
+      location = COALESCE(dives.location, excluded.location),
+      site = COALESCE(dives.site, excluded.site),
+      buddy = COALESCE(dives.buddy, excluded.buddy),
+      notes = COALESCE(dives.notes, excluded.notes),
+      serial_number = CASE WHEN ? = 1 AND excluded.serial_number IS NOT NULL
+        THEN excluded.serial_number ELSE COALESCE(dives.serial_number, excluded.serial_number) END,
+      gps_entry_lat = COALESCE(dives.gps_entry_lat, excluded.gps_entry_lat),
+      gps_entry_lng = COALESCE(dives.gps_entry_lng, excluded.gps_entry_lng),
+      gps_exit_lat = COALESCE(dives.gps_exit_lat, excluded.gps_exit_lat),
+      gps_exit_lng = COALESCE(dives.gps_exit_lng, excluded.gps_exit_lng),
+      calculated_json = CASE WHEN ? = 1 AND excluded.calculated_json IS NOT NULL
+        THEN excluded.calculated_json ELSE COALESCE(dives.calculated_json, excluded.calculated_json) END,
       imported_at = excluded.imported_at
-  `);
-
-  for (let index = 0; index < dives.length; index += 50) {
-    const batch = dives.slice(index, index + 50).map((dive) =>
-      statement.bind(
-        dive.id,
-        dive.diveNumber,
-        dive.diveDate,
-        dive.lastModified,
-        dive.depth,
-        dive.averageDepth,
-        dive.minTemp,
-        dive.maxTemp,
-        dive.lengthText,
-        dive.location,
-        dive.site,
-        dive.buddy,
-        dive.notes,
-        dive.serialNumber,
-        dive.gpsEntryLat,
-        dive.gpsEntryLng,
-        dive.gpsExitLat,
-        dive.gpsExitLng,
-        dive.calculatedJson,
-        now,
-      ),
+  `)
+    .bind(
+      canonicalId,
+      dive.diveNumber,
+      dive.diveDate,
+      dive.lastModified,
+      dive.depth,
+      dive.averageDepth,
+      dive.minTemp,
+      dive.maxTemp,
+      dive.lengthText,
+      dive.location,
+      dive.site,
+      dive.buddy,
+      dive.notes,
+      dive.serialNumber,
+      dive.gpsEntryLat,
+      dive.gpsEntryLng,
+      dive.gpsExitLat,
+      dive.gpsExitLng,
+      dive.calculatedJson,
+      now,
+      ...Array(10).fill(preferIncoming),
     );
-    await env.DB.batch(batch);
-  }
 }
 
 export async function listDives(): Promise<DiveRow[]> {
   await ensureStorage();
   const result = await env.DB.prepare(`
     SELECT d.*,
-           COUNT(a.id) AS photo_count
+           COUNT(DISTINCT a.id) AS photo_count,
+           GROUP_CONCAT(DISTINCT s.source) AS sources
     FROM dives d
     LEFT JOIN attachments a ON a.dive_id = d.id
+    LEFT JOIN dive_sources s ON s.dive_id = d.id
     GROUP BY d.id
     ORDER BY COALESCE(d.dive_date, '') DESC, COALESCE(d.dive_number, 0) DESC
   `).all<Record<string, unknown>>();
@@ -291,9 +422,11 @@ export async function listDives(): Promise<DiveRow[]> {
 export async function getDive(id: string) {
   await ensureStorage();
   const diveResult = await env.DB.prepare(`
-    SELECT d.*, COUNT(a.id) AS photo_count
+    SELECT d.*, COUNT(DISTINCT a.id) AS photo_count,
+           GROUP_CONCAT(DISTINCT s.source) AS sources
     FROM dives d
     LEFT JOIN attachments a ON a.dive_id = d.id
+    LEFT JOIN dive_sources s ON s.dive_id = d.id
     WHERE d.id = ?
     GROUP BY d.id
   `)
@@ -490,6 +623,7 @@ function mapDive(row: Record<string, unknown>): DiveRow {
     resolvedLocation: nullableString(row.resolved_location),
     resolvedCity: nullableString(row.resolved_city),
     resolvedCountry: nullableString(row.resolved_country),
+    sources: nullableString(row.sources)?.split(",").filter(Boolean) ?? [],
     importedAt: String(row.imported_at),
     photoCount: Number(row.photo_count ?? 0),
   };
@@ -518,6 +652,20 @@ function nullableNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function normalizeSerial(value: string | null) {
+  return value?.replace(/[^a-z0-9]/gi, "").toUpperCase() || null;
+}
+
+function sourceKey(source: string, sourceRecordId: string) {
+  return `${source}\u0000${sourceRecordId}`;
+}
+
+function parseSqlDate(value: string | null) {
+  if (!value) return null;
+  const timestamp = new Date(value.replace(" ", "T")).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
 }
 
 function stringArray(value: unknown) {

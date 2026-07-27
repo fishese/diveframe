@@ -29,6 +29,13 @@
       "when": 1785172322345,
       "tag": "0003_fair_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1785174540296,
+      "tag": "0004_sudden_ego",
+      "breakpoints": true
     }
   ]
 }

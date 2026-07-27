@@ -57,6 +57,7 @@ type Dive = {
   resolvedCountry: string | null;
   importedAt: string;
   photoCount: number;
+  sources: string[];
 };
 
 type Attachment = {
@@ -84,7 +85,11 @@ type ImportedDive = Omit<
   | "resolvedLocation"
   | "resolvedCity"
   | "resolvedCountry"
->;
+  | "sources"
+> & {
+  source: "shearwater" | "subsurface";
+  sourceId: string;
+};
 
 type NearbySite = {
   id: string;
@@ -117,7 +122,7 @@ export function DiveFrameApp() {
     const next = payload.dives ?? [];
     setDives(next);
     setSelectedId((current) => preferredId ?? current ?? next[0]?.id ?? null);
-    setStatus(next.length ? `${next.length} dives ready` : "Import a Shearwater extract");
+    setStatus(next.length ? `${next.length} dives ready` : "Import a dive log");
   }, []);
 
   useEffect(() => {
@@ -131,7 +136,7 @@ export function DiveFrameApp() {
       .then((next) => {
         setDives(next);
         setSelectedId(next[0]?.id ?? null);
-        setStatus(next.length ? `${next.length} dives ready` : "Import a Shearwater extract");
+        setStatus(next.length ? `${next.length} dives ready` : "Import a dive log");
       })
       .catch((error) => {
         if ((error as DOMException)?.name !== "AbortError") {
@@ -261,7 +266,7 @@ export function DiveFrameApp() {
     setBusy(true);
     setStatus("Reading the extract on this device…");
     try {
-      const imported = await readShearwaterDatabase(file);
+      const imported = await readDiveImport(file);
       setStatus(`Found ${imported.length} dives. Updating your view…`);
       const response = await fetch("/api/import", {
         method: "POST",
@@ -389,12 +394,12 @@ export function DiveFrameApp() {
             disabled={busy}
           >
             <Upload size={17} />
-            Import extract
+            Import log
           </button>
           <input
             ref={importInput}
             type="file"
-            accept=".db,.sqlite,.sqlite3,application/x-sqlite3"
+            accept=".db,.sqlite,.sqlite3,.ssrf,.xml,application/x-sqlite3,application/xml,text/xml"
             className="visually-hidden"
             onChange={importDatabase}
           />
@@ -414,8 +419,8 @@ export function DiveFrameApp() {
               <p className="eyebrow">Private dive archive</p>
               <h1>Your dives, finally given room to breathe.</h1>
               <p>
-                Shearwater stays your source of truth. DiveFrame turns each extract
-                into a visual logbook for maps, memories, and share-ready stories.
+                Shearwater stays your source of truth. DiveFrame can merge its export
+                with Subsurface GPS data for maps, memories, and share-ready stories.
               </p>
             </div>
             <div className="stat-grid">
@@ -549,11 +554,11 @@ function EmptyState({
         <span className="empty-icon">
           <DatabaseIcon size={34} />
         </span>
-        <p className="eyebrow">Start with your Shearwater export</p>
+        <p className="eyebrow">Start with a dive log export</p>
         <h1>A more visual home for every dive.</h1>
         <p>
-          Choose your Shearwater Cloud database. It is read locally in this
-          browser; the original file is never changed.
+          Choose a Shearwater Cloud database or Subsurface SSRF file. It is read
+          locally in this browser; the original file is never changed.
         </p>
         <button
           type="button"
@@ -562,7 +567,7 @@ function EmptyState({
           disabled={busy}
         >
           {busy ? <LoaderCircle className="spin" /> : <ArrowDownToLine />}
-          Choose database extract
+          Choose dive log
         </button>
         <span className="empty-status">{status}</span>
       </div>
@@ -789,6 +794,14 @@ function DiveDetail({
               <dt><DatabaseIcon size={16} /> Computer</dt>
               <dd>{dive.serialNumber ? `Serial ${dive.serialNumber}` : "Unknown"}</dd>
             </div>
+            <div>
+              <dt><ArrowDownToLine size={16} /> Imported from</dt>
+              <dd>
+                {dive.sources.length
+                  ? dive.sources.map(formatSourceName).join(" + ")
+                  : "Legacy import"}
+              </dd>
+            </div>
             <div className="notes-row">
               <dt><Sparkles size={16} /> Notes</dt>
               <dd>{dive.notes || "No notes for this dive yet."}</dd>
@@ -938,6 +951,14 @@ function Metric({ label, value, icon }: { label: string; value: string; icon: Re
   );
 }
 
+async function readDiveImport(file: File): Promise<ImportedDive[]> {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  if (extension === "ssrf" || extension === "xml") {
+    return readSubsurfaceLog(await file.text());
+  }
+  return readShearwaterDatabase(file);
+}
+
 async function readShearwaterDatabase(file: File): Promise<ImportedDive[]> {
   const SQL = await initSqlJs({ locateFile: () => "/sql-wasm.wasm" });
   const database = new SQL.Database(new Uint8Array(await file.arrayBuffer()));
@@ -965,6 +986,8 @@ async function readShearwaterDatabase(file: File): Promise<ImportedDive[]> {
       const calculated = safeJson(asString(row.calculated_values_from_samples));
       return {
         id: String(row.DiveId),
+        source: "shearwater",
+        sourceId: String(row.DiveId),
         diveNumber: asNumber(row.DiveNumber),
         diveDate: asString(row.DiveDate),
         lastModified: asString(row.LastModified),
@@ -991,10 +1014,127 @@ async function readShearwaterDatabase(file: File): Promise<ImportedDive[]> {
   }
 }
 
+function readSubsurfaceLog(xmlText: string): ImportedDive[] {
+  const document = new DOMParser().parseFromString(xmlText, "application/xml");
+  if (document.querySelector("parsererror") || document.documentElement.tagName !== "divelog") {
+    throw new Error("This does not look like a valid Subsurface log.");
+  }
+
+  const sites = new Map(
+    Array.from(document.querySelectorAll("divesites > site")).map((site) => [
+      site.getAttribute("uuid") ?? "",
+      {
+        name: site.getAttribute("name"),
+        gps: parseGpsPair(site.getAttribute("gps")),
+      },
+    ]),
+  );
+
+  return Array.from(document.querySelectorAll("dives > dive")).map((dive) => {
+    const computer = dive.querySelector("divecomputer");
+    const depth = computer?.querySelector("depth");
+    const temperature = computer?.querySelector("temperature");
+    const extras = new Map(
+      Array.from(computer?.querySelectorAll("extradata") ?? []).map((extra) => [
+        extra.getAttribute("key")?.toLowerCase() ?? "",
+        extra.getAttribute("value"),
+      ]),
+    );
+    const site = sites.get(dive.getAttribute("divesiteid") ?? "");
+    const entryGps =
+      site?.gps ?? parseGpsPair(extras.get("start location") ?? null);
+    const serial = extras.get("serial")?.trim() || null;
+    const deviceId = computer?.getAttribute("deviceid") ?? "unknown-device";
+    const computerDiveId =
+      computer?.getAttribute("diveid") ??
+      `${dive.getAttribute("date") ?? "unknown"}-${dive.getAttribute("time") ?? "unknown"}`;
+    const sourceId = `${deviceId}:${computerDiveId}`;
+    const date = dive.getAttribute("date");
+    const time = dive.getAttribute("time");
+    const maximumDepth = parseUnitNumber(depth?.getAttribute("max"));
+    const averageDepth = parseUnitNumber(depth?.getAttribute("mean"));
+    const waterTemperature = parseUnitNumber(temperature?.getAttribute("water"));
+    const siteName =
+      site?.name && !looksLikeCoordinates(site.name) ? site.name.trim() : null;
+
+    return {
+      id: `subsurface:${sourceId}`,
+      source: "subsurface",
+      sourceId,
+      diveNumber: asNumber(dive.getAttribute("number")),
+      diveDate: date ? `${date} ${time || "00:00:00"}` : null,
+      lastModified: null,
+      depth: maximumDepth === null ? null : String(maximumDepth),
+      averageDepth,
+      minTemp: waterTemperature,
+      maxTemp: waterTemperature,
+      lengthText: parseSubsurfaceDuration(dive.getAttribute("duration")),
+      location: null,
+      site: siteName,
+      buddy: null,
+      notes: directChildText(dive, "notes"),
+      serialNumber: serial,
+      gpsEntryLat: entryGps?.latitude ?? null,
+      gpsEntryLng: entryGps?.longitude ?? null,
+      gpsExitLat: null,
+      gpsExitLng: null,
+      calculatedJson:
+        averageDepth === null && waterTemperature === null
+          ? null
+          : JSON.stringify({
+              AverageDepth: averageDepth,
+              MinTemp: waterTemperature,
+              MaxTemp: waterTemperature,
+            }),
+    };
+  });
+}
+
 function rowsFrom(result: QueryExecResult) {
   return result.values.map((values) =>
     Object.fromEntries(result.columns.map((column, index) => [column, values[index]])),
   );
+}
+
+function parseGpsPair(value: string | null | undefined) {
+  if (!value) return null;
+  const numbers = value
+    .replace(",", " ")
+    .trim()
+    .split(/\s+/)
+    .map(Number);
+  if (
+    numbers.length < 2 ||
+    !Number.isFinite(numbers[0]) ||
+    !Number.isFinite(numbers[1])
+  ) {
+    return null;
+  }
+  return { latitude: numbers[0], longitude: numbers[1] };
+}
+
+function parseUnitNumber(value: string | null | undefined) {
+  if (!value) return null;
+  const number = Number.parseFloat(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function parseSubsurfaceDuration(value: string | null) {
+  if (!value) return null;
+  const match = value.match(/^(\d+):(\d+)\s*min$/i);
+  if (!match) return null;
+  return String(Number(match[1]) * 60 + Number(match[2]));
+}
+
+function looksLikeCoordinates(value: string) {
+  return /^-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?$/.test(value.trim());
+}
+
+function directChildText(parent: Element, tagName: string) {
+  const child = Array.from(parent.children).find(
+    (element) => element.tagName.toLowerCase() === tagName,
+  );
+  return child?.textContent?.trim() || null;
 }
 
 function locationFrom(value: unknown) {
@@ -1123,6 +1263,12 @@ function displayLocation(
   dive: Pick<Dive, "location" | "resolvedLocation">,
 ) {
   return dive.location || dive.resolvedLocation || null;
+}
+
+function formatSourceName(source: string) {
+  if (source === "shearwater") return "Shearwater";
+  if (source === "subsurface") return "Subsurface";
+  return source;
 }
 
 function compareDivesByDate(
