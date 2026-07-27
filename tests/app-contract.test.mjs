@@ -21,6 +21,9 @@ test("ships the DiveFrame import, map, photo, and share-card workflow", async ()
   assert.match(app, /GPS recorded/);
   assert.match(app, /Save site/);
   assert.match(app, /DiveFrame catalog/);
+  assert.match(app, /Newest first/);
+  assert.match(app, /Oldest first/);
+  assert.match(app, /compareDivesByDate/);
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
 
   const nearbyRoute = await readFile(

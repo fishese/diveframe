@@ -257,13 +257,17 @@ button {
   grid-template-columns: minmax(310px, 390px) minmax(0, 1fr);
   margin: 0 auto;
   max-width: 1540px;
-  min-height: calc(100vh - 300px);
+  height: calc(100dvh - 96px);
+  min-height: 680px;
   overflow: hidden;
 }
 
 .dive-browser {
   background: #0a222b;
   border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   min-width: 0;
 }
 
@@ -276,6 +280,43 @@ button {
   font-size: 24px;
   letter-spacing: -0.04em;
   margin: 0;
+}
+
+.browser-title-row {
+  align-items: end;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.sort-control {
+  display: grid;
+  gap: 5px;
+  min-width: 116px;
+}
+
+.sort-control span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.sort-control select {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--mist);
+  cursor: pointer;
+  font-size: 11px;
+  outline: none;
+  padding: 8px 25px 8px 9px;
+}
+
+.sort-control select:focus {
+  border-color: rgba(141, 235, 215, 0.42);
 }
 
 .search-box {
@@ -320,7 +361,8 @@ button {
 }
 
 .dive-list {
-  max-height: calc(100vh - 248px);
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
 }
@@ -374,7 +416,7 @@ button {
   display: grid;
   gap: 13px;
   grid-template-columns: 46px minmax(0, 1fr) auto;
-  padding: 17px 20px;
+  padding: 14px 18px;
   text-align: left;
   transition: background 160ms ease;
   width: 100%;
@@ -438,6 +480,7 @@ button {
 }
 
 .detail-panel {
+  overflow-y: auto;
   background:
     radial-gradient(circle at 90% 0, rgba(77, 208, 184, 0.08), transparent 28rem),
     var(--ink-soft);
@@ -1000,11 +1043,13 @@ button {
     border-radius: 22px 22px 0 0;
     border-right: 0;
     display: block;
+    height: auto;
     min-height: calc(100vh - 300px);
   }
 
   .detail-panel {
     display: none;
+    overflow: visible;
   }
 
   .workspace.show-detail .dive-browser {
@@ -1017,6 +1062,10 @@ button {
 
   .browser-heading {
     padding: 20px 18px;
+  }
+
+  .browser-title-row {
+    align-items: center;
   }
 
   .dive-list {

@@ -103,6 +103,7 @@ export function DiveFrameApp() {
   const [query, setQuery] = useState("");
   const [namedOnly, setNamedOnly] = useState(false);
   const [gpsOnly, setGpsOnly] = useState(false);
+  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
   const [status, setStatus] = useState("Loading your private logbook…");
   const [busy, setBusy] = useState(false);
   const [mobileDetail, setMobileDetail] = useState(false);
@@ -212,25 +213,27 @@ export function DiveFrameApp() {
 
   const visibleDives = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return dives.filter((dive) => {
-      if (namedOnly && !displayLocation(dive)) return false;
-      if (gpsOnly && (dive.gpsEntryLat === null || dive.gpsEntryLng === null)) {
-        return false;
-      }
-      if (!needle) return true;
-      return [
-        dive.diveNumber,
-        dive.userSite,
-        dive.site,
-        displayLocation(dive),
-        dive.buddy,
-        dive.notes,
-        dive.diveDate,
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(needle));
-    });
-  }, [dives, gpsOnly, namedOnly, query]);
+    return dives
+      .filter((dive) => {
+        if (namedOnly && !displayLocation(dive)) return false;
+        if (gpsOnly && (dive.gpsEntryLat === null || dive.gpsEntryLng === null)) {
+          return false;
+        }
+        if (!needle) return true;
+        return [
+          dive.diveNumber,
+          dive.userSite,
+          dive.site,
+          displayLocation(dive),
+          dive.buddy,
+          dive.notes,
+          dive.diveDate,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(needle));
+      })
+      .sort((a, b) => compareDivesByDate(a, b, sortDirection));
+  }, [dives, gpsOnly, namedOnly, query, sortDirection]);
 
   const stats = useMemo(
     () => ({
@@ -426,9 +429,24 @@ export function DiveFrameApp() {
           <section className={`workspace ${mobileDetail ? "show-detail" : ""}`}>
             <aside className="dive-browser">
               <div className="browser-heading">
-                <div>
-                  <p className="eyebrow">Logbook</p>
-                  <h2>{visibleDives.length} dives</h2>
+                <div className="browser-title-row">
+                  <div>
+                    <p className="eyebrow">Logbook</p>
+                    <h2>{visibleDives.length} dives</h2>
+                  </div>
+                  <label className="sort-control">
+                    <span>Order by date</span>
+                    <select
+                      value={sortDirection}
+                      onChange={(event) =>
+                        setSortDirection(event.target.value as "desc" | "asc")
+                      }
+                      aria-label="Order dives by date"
+                    >
+                      <option value="desc">Newest first</option>
+                      <option value="asc">Oldest first</option>
+                    </select>
+                  </label>
                 </div>
                 <div className="search-box">
                   <Search size={17} />
@@ -1105,6 +1123,30 @@ function displayLocation(
   dive: Pick<Dive, "location" | "resolvedLocation">,
 ) {
   return dive.location || dive.resolvedLocation || null;
+}
+
+function compareDivesByDate(
+  a: Pick<Dive, "diveDate" | "diveNumber">,
+  b: Pick<Dive, "diveDate" | "diveNumber">,
+  direction: "desc" | "asc",
+) {
+  const aTime = diveTimestamp(a.diveDate);
+  const bTime = diveTimestamp(b.diveDate);
+  if (aTime === null && bTime !== null) return 1;
+  if (aTime !== null && bTime === null) return -1;
+  const multiplier = direction === "desc" ? -1 : 1;
+  if (aTime !== null && bTime !== null && aTime !== bTime) {
+    return (aTime - bTime) * multiplier;
+  }
+  if (a.diveNumber === null && b.diveNumber !== null) return 1;
+  if (a.diveNumber !== null && b.diveNumber === null) return -1;
+  return ((a.diveNumber ?? 0) - (b.diveNumber ?? 0)) * multiplier;
+}
+
+function diveTimestamp(value: string | null) {
+  if (!value) return null;
+  const timestamp = new Date(value.replace(" ", "T")).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
 }
 
 function formatDistance(distanceKm: number) {
