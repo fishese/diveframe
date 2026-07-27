@@ -16,6 +16,10 @@ test("ships the DiveFrame import, map, photo, and share-card workflow", async ()
   assert.match(app, /Add photos/);
   assert.match(app, /openstreetmap\.org/);
   assert.match(app, /api\/geocode/);
+  assert.match(app, /api\/nearby-sites/);
+  assert.match(app, /Named location/);
+  assert.match(app, /GPS recorded/);
+  assert.match(app, /Save site/);
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
 
   const bindings = JSON.parse(hosting);

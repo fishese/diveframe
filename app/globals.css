@@ -325,6 +325,37 @@ button {
   overscroll-behavior: contain;
 }
 
+.filter-row {
+  background: rgba(4, 18, 24, 0.88);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.filter-row button {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 5px;
+  padding: 8px 10px;
+}
+
+.filter-row button.active {
+  background: rgba(141, 235, 215, 0.14);
+  border-color: rgba(141, 235, 215, 0.42);
+  color: var(--teal);
+}
+
 .dive-list::-webkit-scrollbar {
   width: 8px;
 }
@@ -597,6 +628,104 @@ button {
   color: var(--mist);
   max-height: 150px;
   overflow: auto;
+}
+
+.site-picker-card {
+  margin-top: 14px;
+}
+
+.site-picker-card .card-heading > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.site-loading,
+.site-empty {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 13px;
+  gap: 9px;
+  margin: 0;
+  padding: 4px 20px 20px;
+}
+
+.site-suggestions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0 20px 20px;
+}
+
+.site-suggestions button {
+  align-items: flex-start;
+  background: rgba(141, 235, 215, 0.06);
+  border: 1px solid rgba(141, 235, 215, 0.14);
+  border-radius: 13px;
+  color: var(--mist);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 72px;
+  padding: 12px;
+  text-align: left;
+}
+
+.site-suggestions button:hover {
+  background: rgba(141, 235, 215, 0.12);
+  border-color: rgba(141, 235, 215, 0.32);
+}
+
+.site-suggestions button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.site-suggestions span {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.site-suggestions small {
+  color: var(--teal);
+  font-size: 10px;
+}
+
+.manual-site {
+  border-top: 1px solid var(--line);
+  padding: 18px 20px 20px;
+}
+
+.manual-site label {
+  color: var(--muted);
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.manual-site > div {
+  display: flex;
+  gap: 8px;
+}
+
+.manual-site input {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: #fff;
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  padding: 11px 12px;
+}
+
+.manual-site input:focus {
+  border-color: rgba(141, 235, 215, 0.42);
 }
 
 .photos-card {
@@ -925,6 +1054,10 @@ button {
 
   .photo-grid {
     grid-template-columns: 1fr;
+  }
+
+  .site-suggestions {
+    grid-template-columns: 1fr 1fr;
   }
 
   .photo-tile {

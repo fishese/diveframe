@@ -51,6 +51,10 @@ type Dive = {
   gpsExitLat: number | null;
   gpsExitLng: number | null;
   calculatedJson: string | null;
+  userSite: string | null;
+  resolvedLocation: string | null;
+  resolvedCity: string | null;
+  resolvedCountry: string | null;
   importedAt: string;
   photoCount: number;
 };
@@ -72,17 +76,36 @@ type MapLocation = {
   displayName: string;
 };
 
-type ImportedDive = Omit<Dive, "importedAt" | "photoCount">;
+type ImportedDive = Omit<
+  Dive,
+  | "importedAt"
+  | "photoCount"
+  | "userSite"
+  | "resolvedLocation"
+  | "resolvedCity"
+  | "resolvedCountry"
+>;
+
+type NearbySite = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+};
 
 export function DiveFrameApp() {
   const [dives, setDives] = useState<Dive[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [query, setQuery] = useState("");
+  const [namedOnly, setNamedOnly] = useState(false);
+  const [gpsOnly, setGpsOnly] = useState(false);
   const [status, setStatus] = useState("Loading your private logbook…");
   const [busy, setBusy] = useState(false);
   const [mobileDetail, setMobileDetail] = useState(false);
   const importInput = useRef<HTMLInputElement>(null);
+  const enrichingLocations = useRef(false);
 
   const refreshDives = useCallback(async (preferredId?: string) => {
     const response = await fetch("/api/dives", { cache: "no-store" });
@@ -124,6 +147,47 @@ export function DiveFrameApp() {
   );
 
   useEffect(() => {
+    const pending = dives.filter(
+      (dive) =>
+        dive.gpsEntryLat !== null &&
+        dive.gpsEntryLng !== null &&
+        !dive.location &&
+        !dive.resolvedLocation,
+    );
+    if (!pending.length || enrichingLocations.current) return;
+    enrichingLocations.current = true;
+
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const updates = new Map<string, Dive>();
+        for (const [index, dive] of pending.entries()) {
+          const response = await fetch(
+            `/api/dives/${encodeURIComponent(dive.id)}/location`,
+            { method: "POST", signal: controller.signal },
+          );
+          const payload = (await response.json()) as { dive?: Dive };
+          if (response.ok && payload.dive) {
+            updates.set(payload.dive.id, payload.dive);
+          }
+          if (index < pending.length - 1) await delay(1100);
+        }
+        if (updates.size) {
+          setDives((current) => current.map((item) => updates.get(item.id) ?? item));
+        }
+      } catch (error) {
+        if ((error as DOMException)?.name !== "AbortError") {
+          setStatus("Some GPS place names could not be resolved yet.");
+        }
+      } finally {
+        enrichingLocations.current = false;
+      }
+    })();
+
+    return () => controller.abort();
+  }, [dives]);
+
+  useEffect(() => {
     if (!selectedId) return;
     const controller = new AbortController();
     fetch(`/api/dives/${encodeURIComponent(selectedId)}`, {
@@ -146,20 +210,25 @@ export function DiveFrameApp() {
 
   const visibleDives = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return dives;
-    return dives.filter((dive) =>
-      [
+    return dives.filter((dive) => {
+      if (namedOnly && !displayLocation(dive)) return false;
+      if (gpsOnly && (dive.gpsEntryLat === null || dive.gpsEntryLng === null)) {
+        return false;
+      }
+      if (!needle) return true;
+      return [
         dive.diveNumber,
+        dive.userSite,
         dive.site,
-        dive.location,
+        displayLocation(dive),
         dive.buddy,
         dive.notes,
         dive.diveDate,
       ]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(needle)),
-    );
-  }, [dives, query]);
+        .some((value) => String(value).toLowerCase().includes(needle));
+    });
+  }, [dives, gpsOnly, namedOnly, query]);
 
   const stats = useMemo(
     () => ({
@@ -260,6 +329,27 @@ export function DiveFrameApp() {
     }
   }
 
+  async function saveDiveSite(site: string) {
+    if (!selected) return;
+    setBusy(true);
+    setStatus("Saving dive site…");
+    try {
+      const response = await fetch(`/api/dives/${encodeURIComponent(selected.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ site }),
+      });
+      const payload = (await response.json()) as { dive?: Dive; error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Could not save dive site.");
+      await refreshDives(selected.id);
+      setStatus(`Dive site saved as ${site}`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not save dive site.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function chooseDive(id: string) {
     setSelectedId(id);
     setMobileDetail(true);
@@ -354,6 +444,24 @@ export function DiveFrameApp() {
                 </div>
               </div>
               <div className="dive-list">
+                <div className="filter-row" aria-label="Dive filters">
+                  <button
+                    type="button"
+                    className={namedOnly ? "active" : ""}
+                    onClick={() => setNamedOnly((value) => !value)}
+                    aria-pressed={namedOnly}
+                  >
+                    <MapPin size={14} /> Named location
+                  </button>
+                  <button
+                    type="button"
+                    className={gpsOnly ? "active" : ""}
+                    onClick={() => setGpsOnly((value) => !value)}
+                    aria-pressed={gpsOnly}
+                  >
+                    <Compass size={14} /> GPS recorded
+                  </button>
+                </div>
                 {visibleDives.map((dive) => (
                   <button
                     type="button"
@@ -384,12 +492,14 @@ export function DiveFrameApp() {
             <section className="detail-panel">
               {selected ? (
                 <DiveDetail
+                  key={selected.id}
                   dive={selected}
                   attachments={attachments}
                   busy={busy}
                   onBack={() => setMobileDetail(false)}
                   onUpload={uploadPhotos}
                   onShare={sharePhoto}
+                  onSaveSite={saveDiveSite}
                 />
               ) : (
                 <div className="no-selection">Choose a dive to explore it.</div>
@@ -462,6 +572,7 @@ function DiveDetail({
   onBack,
   onUpload,
   onShare,
+  onSaveSite,
 }: {
   dive: Dive;
   attachments: Attachment[];
@@ -469,12 +580,15 @@ function DiveDetail({
   onBack: () => void;
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onShare: (attachment: Attachment) => void;
+  onSaveSite: (site: string) => Promise<void>;
 }) {
   const calculated = safeJson(dive.calculatedJson);
   const averageDepth =
     numberFrom(calculated?.AverageDepth) ?? positiveNumber(dive.averageDepth);
   const minTemp = numberFrom(calculated?.MinTemp) ?? positiveNumber(dive.minTemp);
   const hasGps = dive.gpsEntryLat !== null && dive.gpsEntryLng !== null;
+  const [manualSite, setManualSite] = useState(dive.userSite ?? dive.site ?? "");
+  const [nearbySites, setNearbySites] = useState<NearbySite[] | null>(null);
   const locationQuery = [dive.site, dive.location]
     .filter((value, index, values): value is string =>
       Boolean(value && values.indexOf(value) === index),
@@ -526,6 +640,28 @@ function DiveDetail({
   const mapLongitude = hasGps ? dive.gpsEntryLng : resolvedLocation?.longitude ?? null;
   const hasMap = mapLatitude !== null && mapLongitude !== null;
 
+  useEffect(() => {
+    if (!hasGps) return;
+    const controller = new AbortController();
+    fetch(
+      `/api/nearby-sites?lat=${encodeURIComponent(String(dive.gpsEntryLat))}&lng=${encodeURIComponent(String(dive.gpsEntryLng))}`,
+      { signal: controller.signal },
+    )
+      .then(async (response) => {
+        const payload = (await response.json()) as {
+          sites?: NearbySite[];
+          error?: string;
+        };
+        if (!response.ok) throw new Error(payload.error ?? "Nearby sites unavailable.");
+        return payload.sites ?? [];
+      })
+      .then(setNearbySites)
+      .catch((error) => {
+        if ((error as DOMException)?.name !== "AbortError") setNearbySites([]);
+      });
+    return () => controller.abort();
+  }, [dive.gpsEntryLat, dive.gpsEntryLng, hasGps]);
+
   return (
     <div className="detail-content">
       <button type="button" className="mobile-back" onClick={onBack}>
@@ -540,7 +676,7 @@ function DiveDetail({
         <h2>{displaySite(dive)}</h2>
         <p>
           <MapPin size={16} />
-          {dive.location || (hasGps ? "GNSS entry recorded" : "Location not entered")}
+          {displayLocation(dive) || (hasGps ? "Resolving GPS location…" : "Location not entered")}
         </p>
       </div>
 
@@ -640,6 +776,66 @@ function DiveDetail({
           </dl>
         </section>
       </div>
+
+      {hasGps && (
+        <section className="card site-picker-card">
+          <div className="card-heading">
+            <div>
+              <p className="eyebrow">Name this dive</p>
+              <h3>Nearby dive sites</h3>
+            </div>
+            <span>Within 30 km</span>
+          </div>
+          {nearbySites === null ? (
+            <div className="site-loading">
+              <LoaderCircle size={18} className="spin" /> Looking for mapped dive sites…
+            </div>
+          ) : nearbySites.length ? (
+            <div className="site-suggestions">
+              {nearbySites.map((site) => (
+                <button
+                  type="button"
+                  key={site.id}
+                  onClick={() => void onSaveSite(site.name)}
+                  disabled={busy}
+                >
+                  <span>{site.name}</span>
+                  <small>{formatDistance(site.distanceKm)}</small>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="site-empty">
+              No named OpenStreetMap dive sites were found nearby. Enter the name below.
+            </p>
+          )}
+          <form
+            className="manual-site"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (manualSite.trim()) void onSaveSite(manualSite.trim());
+            }}
+          >
+            <label htmlFor={`site-${dive.id}`}>Dive-site name</label>
+            <div>
+              <input
+                id={`site-${dive.id}`}
+                value={manualSite}
+                onChange={(event) => setManualSite(event.target.value)}
+                placeholder="Type a site name"
+                maxLength={120}
+              />
+              <button
+                type="submit"
+                className="button button-secondary"
+                disabled={busy || !manualSite.trim()}
+              >
+                Save site
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
 
       <section className="card photos-card">
         <div className="card-heading">
@@ -890,8 +1086,26 @@ function downloadBlob(blob: Blob, fileName: string) {
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
-function displaySite(dive: Pick<Dive, "site" | "location">) {
-  return dive.site || dive.location || "Unnamed dive site";
+function displaySite(
+  dive: Pick<Dive, "userSite" | "site" | "location" | "resolvedLocation">,
+) {
+  return dive.userSite || dive.site || dive.location || dive.resolvedLocation || "Unnamed dive site";
+}
+
+function displayLocation(
+  dive: Pick<Dive, "location" | "resolvedLocation">,
+) {
+  return dive.location || dive.resolvedLocation || null;
+}
+
+function formatDistance(distanceKm: number) {
+  return distanceKm < 1
+    ? `${Math.round(distanceKm * 1000)} m`
+    : `${distanceKm.toFixed(distanceKm < 10 ? 1 : 0)} km`;
+}
+
+function delay(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function formatDate(value: string | null) {

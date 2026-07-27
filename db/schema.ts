@@ -22,6 +22,10 @@ export const dives = sqliteTable(
     gpsExitLat: real("gps_exit_lat"),
     gpsExitLng: real("gps_exit_lng"),
     calculatedJson: text("calculated_json"),
+    userSite: text("user_site"),
+    resolvedLocation: text("resolved_location"),
+    resolvedCity: text("resolved_city"),
+    resolvedCountry: text("resolved_country"),
     importedAt: text("imported_at").notNull(),
   },
   (table) => [

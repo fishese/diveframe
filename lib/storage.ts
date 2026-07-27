@@ -25,6 +25,10 @@ export type ImportedDive = {
 export type DiveRow = ImportedDive & {
   importedAt: string;
   photoCount: number;
+  userSite: string | null;
+  resolvedLocation: string | null;
+  resolvedCity: string | null;
+  resolvedCountry: string | null;
 };
 
 export type AttachmentRow = {
@@ -74,6 +78,10 @@ export async function ensureStorage() {
         gps_exit_lat REAL,
         gps_exit_lng REAL,
         calculated_json TEXT,
+        user_site TEXT,
+        resolved_location TEXT,
+        resolved_city TEXT,
+        resolved_country TEXT,
         imported_at TEXT NOT NULL
       )
     `),
@@ -105,6 +113,22 @@ export async function ensureStorage() {
       )
     `),
   ]);
+
+  const diveColumns = await db
+    .prepare("PRAGMA table_info(dives)")
+    .all<{ name: string }>();
+  const existingColumns = new Set(diveColumns.results.map((column) => column.name));
+  const additiveColumns = [
+    ["user_site", "ALTER TABLE dives ADD COLUMN user_site TEXT"],
+    ["resolved_location", "ALTER TABLE dives ADD COLUMN resolved_location TEXT"],
+    ["resolved_city", "ALTER TABLE dives ADD COLUMN resolved_city TEXT"],
+    ["resolved_country", "ALTER TABLE dives ADD COLUMN resolved_country TEXT"],
+  ] as const;
+  const missingColumns = additiveColumns
+    .filter(([name]) => !existingColumns.has(name))
+    .map(([, sql]) => db.prepare(sql));
+  if (missingColumns.length) await db.batch(missingColumns);
+
   initialized = true;
 }
 
@@ -211,6 +235,29 @@ export async function getDive(id: string) {
   };
 }
 
+export async function updateDiveSite(id: string, site: string | null) {
+  await ensureStorage();
+  await env.DB.prepare("UPDATE dives SET user_site = ? WHERE id = ?")
+    .bind(site, id)
+    .run();
+  return getDive(id);
+}
+
+export async function saveResolvedLocation(
+  id: string,
+  location: { label: string; city: string | null; country: string | null },
+) {
+  await ensureStorage();
+  await env.DB.prepare(`
+    UPDATE dives
+    SET resolved_location = ?, resolved_city = ?, resolved_country = ?
+    WHERE id = ?
+  `)
+    .bind(location.label, location.city, location.country, id)
+    .run();
+  return getDive(id);
+}
+
 export async function addAttachment(attachment: AttachmentRow) {
   await ensureStorage();
   await env.DB.prepare(`
@@ -308,6 +355,10 @@ function mapDive(row: Record<string, unknown>): DiveRow {
     gpsExitLat: nullableNumber(row.gps_exit_lat),
     gpsExitLng: nullableNumber(row.gps_exit_lng),
     calculatedJson: nullableString(row.calculated_json),
+    userSite: nullableString(row.user_site),
+    resolvedLocation: nullableString(row.resolved_location),
+    resolvedCity: nullableString(row.resolved_city),
+    resolvedCountry: nullableString(row.resolved_country),
     importedAt: String(row.imported_at),
     photoCount: Number(row.photo_count ?? 0),
   };
