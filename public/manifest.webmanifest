@@ -1,0 +1,10 @@
+{
+  "name": "DiveFrame — Shearwater companion",
+  "short_name": "DiveFrame",
+  "description": "A private visual logbook for Shearwater dives, photos, maps, and share cards.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#071820",
+  "theme_color": "#071820",
+  "orientation": "any"
+}
