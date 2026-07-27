@@ -15,6 +15,8 @@ test("ships the DiveFrame import, map, photo, and share-card workflow", async ()
   assert.match(app, /createShareCard/);
   assert.match(app, /Add photos/);
   assert.match(app, /openstreetmap\.org/);
+  assert.match(app, /api\/geocode/);
+  assert.match(app, /const files = Array\.from\(event\.target\.files/);
 
   const bindings = JSON.parse(hosting);
   assert.equal(bindings.d1, "DB");

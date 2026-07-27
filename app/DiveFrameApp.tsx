@@ -66,6 +66,12 @@ type Attachment = {
   createdAt: string;
 };
 
+type MapLocation = {
+  latitude: number;
+  longitude: number;
+  displayName: string;
+};
+
 type ImportedDive = Omit<Dive, "importedAt" | "photoCount">;
 
 export function DiveFrameApp() {
@@ -199,22 +205,23 @@ export function DiveFrameApp() {
   }
 
   async function uploadPhotos(event: ChangeEvent<HTMLInputElement>) {
-    const files = event.target.files;
+    const files = Array.from(event.target.files ?? []);
     event.target.value = "";
-    if (!files?.length || !selected) return;
+    if (!files.length || !selected) return;
     setBusy(true);
     setStatus(`Uploading ${files.length} photo${files.length === 1 ? "" : "s"}…`);
     try {
       const formData = new FormData();
-      Array.from(files).forEach((file) => formData.append("photos", file));
+      files.forEach((file) => formData.append("photos", file));
       const response = await fetch(
         `/api/dives/${encodeURIComponent(selected.id)}/photos`,
         { method: "POST", body: formData },
       );
-      const payload = (await response.json()) as {
+      const responseText = await response.text();
+      const payload = parseJsonResponse<{
         attachments?: Attachment[];
         error?: string;
-      };
+      }>(responseText);
       if (!response.ok) throw new Error(payload.error ?? "Upload failed.");
       setAttachments((current) => [...current, ...(payload.attachments ?? [])]);
       await refreshDives(selected.id);
@@ -468,6 +475,56 @@ function DiveDetail({
     numberFrom(calculated?.AverageDepth) ?? positiveNumber(dive.averageDepth);
   const minTemp = numberFrom(calculated?.MinTemp) ?? positiveNumber(dive.minTemp);
   const hasGps = dive.gpsEntryLat !== null && dive.gpsEntryLng !== null;
+  const locationQuery = [dive.site, dive.location]
+    .filter((value, index, values): value is string =>
+      Boolean(value && values.indexOf(value) === index),
+    )
+    .join(", ");
+  const [geocodeResult, setGeocodeResult] = useState<{
+    query: string;
+    location: MapLocation | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (hasGps || !locationQuery) return;
+
+    const controller = new AbortController();
+    fetch(`/api/geocode?q=${encodeURIComponent(locationQuery)}`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const payload = (await response.json()) as {
+          location?: MapLocation | null;
+          error?: string;
+        };
+        if (!response.ok) throw new Error(payload.error ?? "Location lookup failed.");
+        return payload.location ?? null;
+      })
+      .then((location) => {
+        setGeocodeResult({ query: locationQuery, location });
+      })
+      .catch((error) => {
+        if ((error as DOMException)?.name !== "AbortError") {
+          setGeocodeResult({ query: locationQuery, location: null });
+        }
+      });
+
+    return () => controller.abort();
+  }, [dive.id, hasGps, locationQuery]);
+
+  const resolvedLocation =
+    geocodeResult?.query === locationQuery ? geocodeResult.location : null;
+  const mapLookup =
+    hasGps || !locationQuery
+      ? "idle"
+      : geocodeResult?.query !== locationQuery
+        ? "loading"
+        : resolvedLocation
+          ? "found"
+          : "missing";
+  const mapLatitude = hasGps ? dive.gpsEntryLat : resolvedLocation?.latitude ?? null;
+  const mapLongitude = hasGps ? dive.gpsEntryLng : resolvedLocation?.longitude ?? null;
+  const hasMap = mapLatitude !== null && mapLongitude !== null;
 
   return (
     <div className="detail-content">
@@ -511,11 +568,19 @@ function DiveDetail({
           <div className="card-heading">
             <div>
               <p className="eyebrow">Dive position</p>
-              <h3>{hasGps ? "Entry location" : "No GPS in this dive"}</h3>
+              <h3>
+                {hasGps
+                  ? "Entry location"
+                  : hasMap
+                    ? "Approximate location"
+                    : mapLookup === "loading"
+                      ? "Finding this location…"
+                      : "No map location found"}
+              </h3>
             </div>
-            {hasGps && (
+            {hasMap && (
               <a
-                href={`https://www.openstreetmap.org/?mlat=${dive.gpsEntryLat}&mlon=${dive.gpsEntryLng}#map=14/${dive.gpsEntryLat}/${dive.gpsEntryLng}`}
+                href={`https://www.openstreetmap.org/?mlat=${mapLatitude}&mlon=${mapLongitude}#map=14/${mapLatitude}/${mapLongitude}`}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -523,17 +588,32 @@ function DiveDetail({
               </a>
             )}
           </div>
-          {hasGps ? (
+          {hasMap ? (
             <iframe
               title={`Map for ${displaySite(dive)}`}
-              src={mapEmbedUrl(dive.gpsEntryLat!, dive.gpsEntryLng!)}
+              src={mapEmbedUrl(mapLatitude, mapLongitude)}
               loading="lazy"
             />
           ) : (
             <div className="map-placeholder">
-              <MapPin size={28} />
-              <p>This extract has no GNSS coordinate for the selected dive.</p>
+              {mapLookup === "loading" ? (
+                <LoaderCircle size={28} className="spin" />
+              ) : (
+                <MapPin size={28} />
+              )}
+              <p>
+                {mapLookup === "loading"
+                  ? `Looking up ${locationQuery}…`
+                  : locationQuery
+                    ? `No map match was found for ${locationQuery}.`
+                    : "This dive has no GNSS coordinate or location name."}
+              </p>
             </div>
+          )}
+          {!hasGps && resolvedLocation && (
+            <p className="map-source">
+              Approximate match: {resolvedLocation.displayName}
+            </p>
           )}
         </section>
 
@@ -873,6 +953,14 @@ function asNumber(value: unknown) {
   return value === null || value === undefined || value === "" || !Number.isFinite(number)
     ? null
     : number;
+}
+
+function parseJsonResponse<T extends { error?: string }>(value: string): T {
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return { error: value || "The server returned an unexpected response." } as T;
+  }
 }
 
 function numberFrom(value: unknown) {

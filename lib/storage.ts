@@ -39,6 +39,14 @@ export type AttachmentRow = {
   createdAt: string;
 };
 
+export type GeocodeRow = {
+  query: string;
+  displayName: string;
+  latitude: number;
+  longitude: number;
+  fetchedAt: string;
+};
+
 let initialized = false;
 
 export async function ensureStorage() {
@@ -87,6 +95,15 @@ export async function ensureStorage() {
     db.prepare(
       "CREATE INDEX IF NOT EXISTS attachments_dive_idx ON attachments(dive_id)",
     ),
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS geocodes (
+        query TEXT PRIMARY KEY,
+        display_name TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        fetched_at TEXT NOT NULL
+      )
+    `),
   ]);
   initialized = true;
 }
@@ -227,6 +244,47 @@ export async function getAttachment(id: string) {
     .bind(id)
     .first<Record<string, unknown>>();
   return row ? mapAttachment(row) : null;
+}
+
+export async function getGeocode(query: string): Promise<GeocodeRow | null> {
+  await ensureStorage();
+  const row = await env.DB.prepare(`
+    SELECT query, display_name, latitude, longitude, fetched_at
+    FROM geocodes
+    WHERE query = ?
+  `)
+    .bind(query)
+    .first<Record<string, unknown>>();
+  if (!row) return null;
+  return {
+    query: String(row.query),
+    displayName: String(row.display_name),
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    fetchedAt: String(row.fetched_at),
+  };
+}
+
+export async function saveGeocode(geocode: GeocodeRow) {
+  await ensureStorage();
+  await env.DB.prepare(`
+    INSERT INTO geocodes (
+      query, display_name, latitude, longitude, fetched_at
+    ) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(query) DO UPDATE SET
+      display_name = excluded.display_name,
+      latitude = excluded.latitude,
+      longitude = excluded.longitude,
+      fetched_at = excluded.fetched_at
+  `)
+    .bind(
+      geocode.query,
+      geocode.displayName,
+      geocode.latitude,
+      geocode.longitude,
+      geocode.fetchedAt,
+    )
+    .run();
 }
 
 function mapDive(row: Record<string, unknown>): DiveRow {

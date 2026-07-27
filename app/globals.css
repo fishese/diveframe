@@ -542,6 +542,14 @@ button {
   width: 100%;
 }
 
+.map-source {
+  margin: 0;
+  padding: 10px 16px 14px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
 .map-placeholder {
   align-items: center;
   color: #668890;

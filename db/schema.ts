@@ -47,3 +47,11 @@ export const attachments = sqliteTable(
   },
   (table) => [index("attachments_dive_idx").on(table.diveId)],
 );
+
+export const geocodes = sqliteTable("geocodes", {
+  query: text("query").primaryKey(),
+  displayName: text("display_name").notNull(),
+  latitude: real("latitude").notNull(),
+  longitude: real("longitude").notNull(),
+  fetchedAt: text("fetched_at").notNull(),
+});
