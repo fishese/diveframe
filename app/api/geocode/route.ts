@@ -1,26 +1,27 @@
-import { getGeocode, saveGeocode } from "@/lib/storage";
-
-type NominatimResult = {
+type NominatimSearchResult = {
   display_name?: string;
   lat?: string;
   lon?: string;
 };
 
+type NominatimReverseResult = {
+  display_name?: string;
+  address?: Record<string, string | undefined>;
+};
+
 export async function GET(request: Request) {
-  const query = new URL(request.url).searchParams.get("q")?.trim();
-  if (!query || query.length < 2 || query.length > 200) {
-    return Response.json({ error: "Supply a valid location name." }, { status: 400 });
+  const params = new URL(request.url).searchParams;
+  const latitude = nullableCoordinate(params.get("lat"));
+  const longitude = nullableCoordinate(params.get("lng"));
+
+  if (latitude !== null && longitude !== null) {
+    return reverseGeocode(latitude, longitude);
   }
 
-  const cacheKey = query.toLocaleLowerCase("en");
-  const cached = await getGeocode(cacheKey);
-  if (cached) {
-    return Response.json({
-      location: {
-        latitude: cached.latitude,
-        longitude: cached.longitude,
-        displayName: cached.displayName,
-      },
+  const query = params.get("q")?.trim();
+  if (!query || query.length < 2 || query.length > 200) {
+    return Response.json({ error: "Supply a valid location or GPS coordinate." }, {
+      status: 400,
     });
   }
 
@@ -29,13 +30,7 @@ export async function GET(request: Request) {
   url.searchParams.set("format", "jsonv2");
   url.searchParams.set("limit", "1");
 
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "Accept-Language": "en",
-      "User-Agent": "DiveFrame/1.0 (private dive logbook)",
-    },
-  });
+  const response = await fetch(url, { headers: nominatimHeaders() });
   if (!response.ok) {
     return Response.json(
       { error: "Map lookup is temporarily unavailable." },
@@ -43,28 +38,74 @@ export async function GET(request: Request) {
     );
   }
 
-  const matches = (await response.json()) as NominatimResult[];
-  const match = matches[0];
-  const latitude = Number(match?.lat);
-  const longitude = Number(match?.lon);
-  if (!match || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+  const match = ((await response.json()) as NominatimSearchResult[])[0];
+  const matchLatitude = Number(match?.lat);
+  const matchLongitude = Number(match?.lon);
+  if (
+    !match ||
+    !Number.isFinite(matchLatitude) ||
+    !Number.isFinite(matchLongitude)
+  ) {
     return Response.json({ location: null });
   }
 
-  const location = {
-    query: cacheKey,
-    displayName: match.display_name || query,
-    latitude,
-    longitude,
-    fetchedAt: new Date().toISOString(),
-  };
-  await saveGeocode(location);
-
   return Response.json({
     location: {
-      latitude,
-      longitude,
-      displayName: location.displayName,
+      latitude: matchLatitude,
+      longitude: matchLongitude,
+      displayName: match.display_name || query,
     },
   });
+}
+
+async function reverseGeocode(latitude: number, longitude: number) {
+  if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+    return Response.json({ error: "Supply valid GPS coordinates." }, { status: 400 });
+  }
+
+  const url = new URL("https://nominatim.openstreetmap.org/reverse");
+  url.searchParams.set("lat", String(latitude));
+  url.searchParams.set("lon", String(longitude));
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("addressdetails", "1");
+  url.searchParams.set("zoom", "10");
+
+  const response = await fetch(url, { headers: nominatimHeaders() });
+  if (!response.ok) {
+    return Response.json(
+      { error: "GPS location lookup is temporarily unavailable." },
+      { status: 502 },
+    );
+  }
+
+  const match = (await response.json()) as NominatimReverseResult;
+  const address = match.address ?? {};
+  const city =
+    address.city ??
+    address.town ??
+    address.village ??
+    address.municipality ??
+    address.county ??
+    null;
+  const country = address.country ?? null;
+  const label =
+    [city, country].filter(Boolean).join(", ") ||
+    match.display_name ||
+    `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+
+  return Response.json({ location: { label, city, country } });
+}
+
+function nullableCoordinate(value: string | null) {
+  if (value === null || value.trim() === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function nominatimHeaders() {
+  return {
+    Accept: "application/json",
+    "Accept-Language": "en",
+    "User-Agent": "DiveFrame/1.0 (device-local dive logbook)",
+  };
 }

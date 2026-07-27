@@ -30,46 +30,21 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  addLocalPhotos,
+  listLocalAttachments,
+  listLocalDives,
+  requestPersistentLocalStorage,
+  type LocalAttachment,
+  type LocalDive,
+  type LocalImportedDive,
+  updateLocalDiveLocation,
+  updateLocalDiveSite,
+  upsertLocalDives,
+} from "@/lib/indexed-db";
 
-type Dive = {
-  id: string;
-  diveNumber: number | null;
-  diveDate: string | null;
-  lastModified: string | null;
-  depth: string | null;
-  averageDepth: number | null;
-  minTemp: number | null;
-  maxTemp: number | null;
-  lengthText: string | null;
-  location: string | null;
-  site: string | null;
-  buddy: string | null;
-  notes: string | null;
-  serialNumber: string | null;
-  gpsEntryLat: number | null;
-  gpsEntryLng: number | null;
-  gpsExitLat: number | null;
-  gpsExitLng: number | null;
-  calculatedJson: string | null;
-  userSite: string | null;
-  resolvedLocation: string | null;
-  resolvedCity: string | null;
-  resolvedCountry: string | null;
-  importedAt: string;
-  photoCount: number;
-  sources: string[];
-};
-
-type Attachment = {
-  id: string;
-  diveId: string;
-  fileName: string;
-  contentType: string;
-  size: number;
-  caption: string | null;
-  sortOrder: number;
-  createdAt: string;
-};
+type Dive = LocalDive;
+type Attachment = LocalAttachment;
 
 type MapLocation = {
   latitude: number;
@@ -77,19 +52,7 @@ type MapLocation = {
   displayName: string;
 };
 
-type ImportedDive = Omit<
-  Dive,
-  | "importedAt"
-  | "photoCount"
-  | "userSite"
-  | "resolvedLocation"
-  | "resolvedCity"
-  | "resolvedCountry"
-  | "sources"
-> & {
-  source: "shearwater" | "subsurface";
-  sourceId: string;
-};
+type ImportedDive = LocalImportedDive;
 
 type NearbySite = {
   id: string;
@@ -116,37 +79,33 @@ export function DiveFrameApp() {
   const enrichingLocations = useRef(false);
 
   const refreshDives = useCallback(async (preferredId?: string) => {
-    const response = await fetch("/api/dives", { cache: "no-store" });
-    const payload = (await response.json()) as { dives?: Dive[]; error?: string };
-    if (!response.ok) throw new Error(payload.error ?? "Unable to load dives.");
-    const next = payload.dives ?? [];
+    const next = await listLocalDives();
     setDives(next);
     setSelectedId((current) => preferredId ?? current ?? next[0]?.id ?? null);
     setStatus(next.length ? `${next.length} dives ready` : "Import a dive log");
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/dives", { cache: "no-store", signal: controller.signal })
-      .then(async (response) => {
-        const payload = (await response.json()) as { dives?: Dive[]; error?: string };
-        if (!response.ok) throw new Error(payload.error ?? "Unable to load dives.");
-        return payload.dives ?? [];
-      })
+    let active = true;
+    listLocalDives()
       .then((next) => {
+        if (!active) return;
         setDives(next);
         setSelectedId(next[0]?.id ?? null);
         setStatus(next.length ? `${next.length} dives ready` : "Import a dive log");
+        void requestPersistentLocalStorage();
       })
       .catch((error) => {
-        if ((error as DOMException)?.name !== "AbortError") {
+        if (active) {
           setStatus(error instanceof Error ? error.message : "Unable to load dives.");
         }
       });
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     }
-    return () => controller.abort();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const selected = useMemo(
@@ -171,12 +130,19 @@ export function DiveFrameApp() {
         const updates = new Map<string, Dive>();
         for (const [index, dive] of pending.entries()) {
           const response = await fetch(
-            `/api/dives/${encodeURIComponent(dive.id)}/location`,
-            { method: "POST", signal: controller.signal },
+            `/api/geocode?lat=${encodeURIComponent(String(dive.gpsEntryLat))}&lng=${encodeURIComponent(String(dive.gpsEntryLng))}`,
+            { signal: controller.signal },
           );
-          const payload = (await response.json()) as { dive?: Dive };
-          if (response.ok && payload.dive) {
-            updates.set(payload.dive.id, payload.dive);
+          const payload = (await response.json()) as {
+            location?: {
+              label: string;
+              city: string | null;
+              country: string | null;
+            } | null;
+          };
+          if (response.ok && payload.location) {
+            const updated = await updateLocalDiveLocation(dive.id, payload.location);
+            updates.set(updated.id, updated);
           }
           if (index < pending.length - 1) await delay(1100);
         }
@@ -196,24 +162,20 @@ export function DiveFrameApp() {
   }, [dives]);
 
   useEffect(() => {
-    if (!selectedId) return;
-    const controller = new AbortController();
-    fetch(`/api/dives/${encodeURIComponent(selectedId)}`, {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        const payload = (await response.json()) as {
-          attachments?: Attachment[];
-          error?: string;
-        };
-        if (!response.ok) throw new Error(payload.error);
-        setAttachments(payload.attachments ?? []);
+    let active = true;
+    if (!selectedId) {
+      return;
+    }
+    listLocalAttachments(selectedId)
+      .then((next) => {
+        if (active) setAttachments(next);
       })
-      .catch((error) => {
-        if ((error as DOMException)?.name !== "AbortError") setAttachments([]);
+      .catch(() => {
+        if (active) setAttachments([]);
       });
-    return () => controller.abort();
+    return () => {
+      active = false;
+    };
   }, [selectedId]);
 
   const visibleDives = useMemo(() => {
@@ -268,14 +230,8 @@ export function DiveFrameApp() {
     try {
       const imported = await readDiveImport(file);
       setStatus(`Found ${imported.length} dives. Updating your view…`);
-      const response = await fetch("/api/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dives: imported }),
-      });
-      const payload = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(payload.error ?? "Import failed.");
-      await refreshDives(imported[0]?.id);
+      await upsertLocalDives(imported);
+      await refreshDives();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Import failed.");
     } finally {
@@ -288,25 +244,14 @@ export function DiveFrameApp() {
     event.target.value = "";
     if (!files.length || !selected) return;
     setBusy(true);
-    setStatus(`Uploading ${files.length} photo${files.length === 1 ? "" : "s"}…`);
+    setStatus(`Saving ${files.length} photo${files.length === 1 ? "" : "s"} locally…`);
     try {
-      const formData = new FormData();
-      files.forEach((file) => formData.append("photos", file));
-      const response = await fetch(
-        `/api/dives/${encodeURIComponent(selected.id)}/photos`,
-        { method: "POST", body: formData },
-      );
-      const responseText = await response.text();
-      const payload = parseJsonResponse<{
-        attachments?: Attachment[];
-        error?: string;
-      }>(responseText);
-      if (!response.ok) throw new Error(payload.error ?? "Upload failed.");
-      setAttachments((current) => [...current, ...(payload.attachments ?? [])]);
+      const additions = await addLocalPhotos(selected.id, files);
+      setAttachments((current) => [...current, ...additions]);
       await refreshDives(selected.id);
-      setStatus("Photos added");
+      setStatus("Photos saved on this device");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Upload failed.");
+      setStatus(error instanceof Error ? error.message : "Local save failed.");
     } finally {
       setBusy(false);
     }
@@ -344,14 +289,10 @@ export function DiveFrameApp() {
     setBusy(true);
     setStatus("Saving dive site…");
     try {
-      const response = await fetch(`/api/dives/${encodeURIComponent(selected.id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ site }),
-      });
-      const payload = (await response.json()) as { dive?: Dive; error?: string };
-      if (!response.ok) throw new Error(payload.error ?? "Could not save dive site.");
-      await refreshDives(selected.id);
+      const updated = await updateLocalDiveSite(selected.id, site);
+      setDives((current) =>
+        current.map((dive) => (dive.id === updated.id ? updated : dive)),
+      );
       setStatus(`Dive site saved as ${site}`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not save dive site.");
@@ -419,8 +360,8 @@ export function DiveFrameApp() {
               <p className="eyebrow">Private dive archive</p>
               <h1>Your dives, finally given room to breathe.</h1>
               <p>
-                Shearwater stays your source of truth. DiveFrame can merge its export
-                with Subsurface GPS data for maps, memories, and share-ready stories.
+                Shearwater stays your backup. DiveFrame merges its export with
+                Subsurface GPS data and keeps the resulting logbook on this device.
               </p>
             </div>
             <div className="stat-grid">
@@ -558,7 +499,7 @@ function EmptyState({
         <h1>A more visual home for every dive.</h1>
         <p>
           Choose a Shearwater Cloud database or Subsurface SSRF file. It is read
-          locally in this browser; the original file is never changed.
+          and saved only in this browser; the original file is never changed.
         </p>
         <button
           type="button"
@@ -573,7 +514,7 @@ function EmptyState({
       </div>
       <div className="empty-proof">
         <span><Sparkles size={16} /> Maps from hidden GNSS fields</span>
-        <span><Camera size={16} /> Photos stay linked across imports</span>
+        <span><Camera size={16} /> Photos stay on this device</span>
         <span><Share2 size={16} /> Share cards made on demand</span>
       </div>
     </section>
@@ -901,12 +842,9 @@ function DiveDetail({
           <div className="photo-grid">
             {attachments.map((attachment) => (
               <article className="photo-tile" key={attachment.id}>
-                {/* The API returns private same-origin image data. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`/api/photos/${encodeURIComponent(attachment.id)}`}
+                <LocalPhotoImage
+                  attachment={attachment}
                   alt={attachment.caption || `Dive ${dive.diveNumber ?? ""} photo`}
-                  loading="lazy"
                 />
                 <div className="photo-overlay">
                   <span>{attachment.fileName}</span>
@@ -939,6 +877,23 @@ function DiveDetail({
       </section>
     </div>
   );
+}
+
+function LocalPhotoImage({
+  attachment,
+  alt,
+}: {
+  attachment: Attachment;
+  alt: string;
+}) {
+  const objectUrl = useMemo(
+    () => URL.createObjectURL(attachment.blob),
+    [attachment.blob],
+  );
+  useEffect(() => () => URL.revokeObjectURL(objectUrl), [objectUrl]);
+
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={objectUrl} alt={alt} loading="lazy" />;
 }
 
 function Metric({ label, value, icon }: { label: string; value: string; icon: ReactNode }) {
@@ -1145,10 +1100,7 @@ function locationFrom(value: unknown) {
 }
 
 async function createShareCard(dive: Dive, attachment: Attachment) {
-  const response = await fetch(`/api/photos/${encodeURIComponent(attachment.id)}`);
-  if (!response.ok) throw new Error("The selected photo could not be loaded.");
-  const sourceBlob = await response.blob();
-  const image = await loadImage(sourceBlob);
+  const image = await loadImage(attachment.blob);
   const canvas = document.createElement("canvas");
   const width = 1440;
   const height = 1800;
@@ -1366,13 +1318,6 @@ function asNumber(value: unknown) {
     : number;
 }
 
-function parseJsonResponse<T extends { error?: string }>(value: string): T {
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return { error: value || "The server returned an unexpected response." } as T;
-  }
-}
 
 function numberFrom(value: unknown) {
   return asNumber(value);

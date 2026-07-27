@@ -1,5 +1,3 @@
-import { listCatalogSitesNear } from "@/lib/storage";
-
 type OverpassElement = {
   id: number;
   lat?: number;
@@ -16,6 +14,23 @@ type NominatimPlace = {
   name?: string;
 };
 
+const LOCAL_DIVE_SITES = [
+  {
+    id: "sharp-island",
+    name: "Sharp Island",
+    aliases: ["Kiu Tsui Chau"],
+    latitude: 22.3636,
+    longitude: 114.2928,
+  },
+  {
+    id: "basalt-island",
+    name: "Basalt Island",
+    aliases: ["Fo Siu Pai", "Shek Chau"],
+    latitude: 22.3158,
+    longitude: 114.3656,
+  },
+];
+
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const latitude = Number(params.get("lat"));
@@ -30,7 +45,17 @@ export async function GET(request: Request) {
   }
 
   const radiusKm = 30;
-  const catalogSites = await listCatalogSitesNear(latitude, longitude, radiusKm);
+  const catalogSites = LOCAL_DIVE_SITES.map((site) => ({
+    ...site,
+    distanceKm: distanceKm(
+      latitude,
+      longitude,
+      site.latitude,
+      site.longitude,
+    ),
+  }))
+    .filter((site) => site.distanceKm <= radiusKm)
+    .sort((a, b) => a.distanceKm - b.distanceKm);
   if (catalogSites.length) {
     return Response.json({
       source: "catalog",

@@ -3,13 +3,11 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and share-card workflow", async () => {
-  const [app, storage, hosting, manifest, migration, sourceMigration] = await Promise.all([
+  const [app, storage, hosting, manifest] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
-    readFile("lib/storage.ts", "utf8"),
+    readFile("lib/indexed-db.ts", "utf8"),
     readFile(".openai/hosting.json", "utf8"),
     readFile("public/manifest.webmanifest", "utf8"),
-    readFile("drizzle/0000_keen_hex.sql", "utf8"),
-    readFile("drizzle/0004_sudden_ego.sql", "utf8"),
   ]);
 
   assert.match(app, /GnssEntryLocation/);
@@ -20,7 +18,9 @@ test("ships the DiveFrame import, map, photo, and share-card workflow", async ()
   assert.match(storage, /sourceMappings/);
   assert.match(storage, /normalizeSerial/);
   assert.match(storage, /secondsApart > 300/);
-  assert.match(storage, /env\.DB\.batch/);
+  assert.match(storage, /indexedDB\.open/);
+  assert.match(storage, /attachmentStore\.createIndex\("diveId"/);
+  assert.match(storage, /blob: file\.slice/);
   assert.match(app, /createShareCard/);
   assert.match(app, /Add photos/);
   assert.match(app, /openstreetmap\.org/);
@@ -39,19 +39,15 @@ test("ships the DiveFrame import, map, photo, and share-card workflow", async ()
     new URL("../app/api/nearby-sites/route.ts", import.meta.url),
     "utf8",
   );
-  assert.match(nearbyRoute, /listCatalogSitesNear/);
+  assert.match(nearbyRoute, /LOCAL_DIVE_SITES/);
   assert.match(nearbyRoute, /source: "openstreetmap"/);
 
   const bindings = JSON.parse(hosting);
-  assert.equal(bindings.d1, "DB");
-  assert.equal(bindings.r2, "PHOTOS");
+  assert.equal(bindings.d1, null);
+  assert.equal(bindings.r2, null);
 
   const pwa = JSON.parse(manifest);
   assert.equal(pwa.name, "DiveFrame — Shearwater companion");
   assert.equal(pwa.display, "standalone");
 
-  assert.match(migration, /CREATE TABLE `dives`/);
-  assert.match(migration, /CREATE TABLE `attachments`/);
-  assert.match(sourceMigration, /CREATE TABLE `dive_sources`/);
-  assert.match(sourceMigration, /PRIMARY KEY\(`source`, `source_record_id`\)/);
 });
