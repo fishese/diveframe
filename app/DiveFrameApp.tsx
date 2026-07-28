@@ -783,7 +783,7 @@ function DiveDetail({
             </div>
             <div>
               <dt><DatabaseIcon size={16} /> Computer</dt>
-              <dd>{dive.serialNumber ? `Serial ${dive.serialNumber}` : "Unknown"}</dd>
+              <dd>{dive.computerModel || "Unknown"}</dd>
             </div>
             <div>
               <dt><ArrowDownToLine size={16} /> Imported from</dt>

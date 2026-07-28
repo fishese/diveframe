@@ -123,6 +123,9 @@ stricter 90-second and one-metre threshold.
 Merge rules:
 
 - Non-empty Shearwater computer fields take precedence.
+- Shearwater `StoredDiveComputer.JsonData` supplies `DeviceName`; its decimal
+  stored serial is normalized to the eight-character hexadecimal serial used
+  by `dive_details`. The original serial remains on the canonical dive record.
 - Existing location, site, buddy, notes, and GPS values are never erased by an
   empty re-import.
 - Subsurface can fill GPS and other fields missing from Shearwater.

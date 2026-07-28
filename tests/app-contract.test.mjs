@@ -19,6 +19,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   ]);
 
   assert.match(shearwater, /GnssEntryLocation/);
+  assert.match(shearwater, /StoredDiveComputer/);
+  assert.match(shearwater, /DeviceName/);
+  assert.match(shearwater, /serialLookupKeys/);
   assert.match(app, /readShearwaterDatabase/);
   assert.match(app, /readSubsurfaceLog/);
   assert.match(subsurface, /querySelectorAll\("sample"\)/);
@@ -44,6 +47,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /sitePickerOpen/);
   assert.match(app, /saveSiteAndCollapse/);
   assert.match(app, /sourceDiveNumber/);
+  assert.match(app, /dive\.computerModel \|\| "Unknown"/);
   assert.match(settings, /diveframe-added-sites\.json/);
   assert.match(settings, /Download merged dive-sites\.json/);
   assert.match(settings, /mergeContributions/);

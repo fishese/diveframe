@@ -23,6 +23,7 @@ export async function readShearwaterDatabase(
     if (!tables[0]?.values.length) {
       throw new Error("This does not look like a Shearwater Cloud database.");
     }
+    const computerNames = readStoredComputerNames(database);
     const result = database.exec(`
       SELECT d.DiveId, d.DiveNumber, d.DiveDate, d.LastModified,
              d.Depth, d.AverageDepth, d.MinTemp, d.MaxTemp,
@@ -91,7 +92,7 @@ export async function readShearwaterDatabase(
                   label: gasMixLabel(oxygenPercent, null),
                 },
               ],
-        computerModel: null,
+        computerModel: findComputerName(computerNames, row.SerialNumber),
         samples: [],
         tankPressuresStartBar: [1, 2, 3, 4].map((index) =>
           parsePressureBar(asString(row[`Tank${index}PressureStart`])),
@@ -104,6 +105,56 @@ export async function readShearwaterDatabase(
   } finally {
     database.close();
   }
+}
+
+function readStoredComputerNames(database: {
+  exec: (sql: string) => QueryExecResult[];
+}) {
+  const exists = database.exec(`
+    SELECT name
+    FROM sqlite_master
+    WHERE type='table' AND name='StoredDiveComputer'
+  `);
+  if (!exists[0]?.values.length) return new Map<string, string>();
+
+  const result = database.exec(
+    "SELECT SerialNumber, JsonData FROM StoredDiveComputer",
+  );
+  const names = new Map<string, string>();
+  for (const [serialNumber, jsonData] of result[0]?.values ?? []) {
+    const device = safeJson(asString(jsonData));
+    const name =
+      asString(device?.DeviceName) ?? asString(device?.BroadcastName);
+    if (!name) continue;
+    for (const key of serialLookupKeys(serialNumber)) names.set(key, name);
+  }
+  return names;
+}
+
+function findComputerName(
+  computerNames: Map<string, string>,
+  serialNumber: unknown,
+) {
+  for (const key of serialLookupKeys(serialNumber)) {
+    const name = computerNames.get(key);
+    if (name) return name;
+  }
+  return null;
+}
+
+function serialLookupKeys(value: unknown) {
+  if (value === null || value === undefined || value === "") return [];
+  const raw = String(value).trim();
+  const normalized = raw.replace(/[^a-z0-9]/gi, "").toUpperCase();
+  const keys = new Set<string>([normalized]);
+  if (/^\d+$/.test(raw)) {
+    try {
+      keys.add(BigInt(raw).toString(16).padStart(8, "0").toUpperCase());
+    } catch {
+      // Retain the normalized source value when it is not a valid integer.
+    }
+  }
+  return [...keys];
 }
 
 function rowsFrom(result: QueryExecResult) {

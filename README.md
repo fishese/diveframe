@@ -21,6 +21,8 @@ photo blobs in IndexedDB on the current device.
 ## Features
 
 - Reads `dive_details`, calculated summaries, manual sites, buddies, and notes.
+- Resolves Shearwater device names such as Peregrine and Perdix 2 from
+  `StoredDiveComputer` while retaining the original serial number.
 - Reads newer `GnssEntryLocation` and `GnssExitLocation` values that older
   Shearwater export views can omit.
 - Responsive dive list and detail views.
