@@ -38,6 +38,8 @@ export type LocalDive = {
   samples: DiveSample[];
   tankPressuresStartBar: Array<number | null>;
   tankPressuresEndBar: Array<number | null>;
+  cylinderPresetId?: string | null;
+  cylinderVolumeL?: number | null;
   userSite: string | null;
   userSiteSource: "catalog" | "suggestion" | "manual" | null;
   userSiteCatalogId: string | null;
@@ -104,6 +106,7 @@ export type LocalBrandingAsset = {
 export type LocalAppPreferences = {
   id: "app";
   uiLanguage: "en" | "zh-Hant";
+  defaultCylinderPresetId?: string;
   updatedAt: string;
 };
 
@@ -355,11 +358,19 @@ export async function getLocalAppPreferences() {
 }
 
 export async function saveLocalAppPreferences(
-  preferences: Pick<LocalAppPreferences, "uiLanguage">,
+  preferences: Partial<
+    Pick<LocalAppPreferences, "uiLanguage" | "defaultCylinderPresetId">
+  >,
 ) {
+  const existing = await getLocalAppPreferences();
   const saved: LocalAppPreferences = {
+    ...existing,
     id: "app",
-    uiLanguage: preferences.uiLanguage,
+    uiLanguage: preferences.uiLanguage ?? existing?.uiLanguage ?? "en",
+    defaultCylinderPresetId:
+      preferences.defaultCylinderPresetId ??
+      existing?.defaultCylinderPresetId ??
+      "al80",
     updatedAt: new Date().toISOString(),
   };
   const database = await openDatabase();
@@ -428,13 +439,39 @@ export async function updateLocalDiveSite(
 
 export async function updateLocalDiveDetails(
   id: string,
-  details: { buddy: string | null; notes: string | null },
+  details: {
+    buddy: string | null;
+    notes: string | null;
+    cylinderPresetId?: string | null;
+    cylinderVolumeL?: number | null;
+    startPressureBar?: number | null;
+    endPressureBar?: number | null;
+  },
 ) {
   return updateDive(id, (dive) => ({
     ...dive,
     buddy: details.buddy?.trim() || null,
     notes: details.notes?.trim() || null,
+    cylinderPresetId: details.cylinderPresetId ?? dive.cylinderPresetId ?? null,
+    cylinderVolumeL: details.cylinderVolumeL ?? dive.cylinderVolumeL ?? null,
+    tankPressuresStartBar:
+      details.startPressureBar === undefined
+        ? dive.tankPressuresStartBar
+        : replaceFirstPressure(dive.tankPressuresStartBar, details.startPressureBar),
+    tankPressuresEndBar:
+      details.endPressureBar === undefined
+        ? dive.tankPressuresEndBar
+        : replaceFirstPressure(dive.tankPressuresEndBar, details.endPressureBar),
   }));
+}
+
+function replaceFirstPressure(
+  pressures: Array<number | null>,
+  value: number | null,
+) {
+  const next = pressures.length ? [...pressures] : [null];
+  next[0] = value;
+  return next;
 }
 
 export async function listLocalSiteContributions() {
@@ -680,6 +717,10 @@ function mergeDive(
       existing?.tankPressuresEndBar,
       incoming.tankPressuresEndBar,
     ),
+    cylinderPresetId:
+      existing?.cylinderPresetId ?? incoming.cylinderPresetId ?? null,
+    cylinderVolumeL:
+      existing?.cylinderVolumeL ?? incoming.cylinderVolumeL ?? null,
     userSite: sourceSuppliesSite ? null : (existing?.userSite ?? null),
     userSiteSource: sourceSuppliesSite ? null : (existing?.userSiteSource ?? null),
     userSiteCatalogId: sourceSuppliesSite

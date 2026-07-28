@@ -565,9 +565,9 @@ button {
 
 .metric-grid {
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(4, 1fr);
-  margin: 24px 0;
+  gap: 8px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: 18px 0;
 }
 
 .metric {
@@ -575,8 +575,8 @@ button {
   border: 1px solid var(--line);
   border-radius: 17px;
   display: grid;
-  min-height: 112px;
-  padding: 16px;
+  min-height: 88px;
+  padding: 12px;
 }
 
 .metric > span {
@@ -592,11 +592,11 @@ button {
   align-self: end;
   color: var(--muted);
   font-size: 10px;
-  margin-top: 18px;
+  margin-top: 10px;
 }
 
 .metric strong {
-  font-size: 19px;
+  font-size: 17px;
   letter-spacing: -0.03em;
   margin-top: 4px;
 }
@@ -605,6 +605,59 @@ button {
   display: grid;
   gap: 14px;
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+}
+
+.profile-card {
+  margin-bottom: 14px;
+}
+
+.profile-card canvas {
+  display: block;
+  width: 100%;
+}
+
+.pressure-toggle {
+  align-items: center;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  font-size: 11px;
+  gap: 8px;
+}
+
+.pressure-toggle input {
+  accent-color: var(--teal);
+}
+
+.profile-legend {
+  display: flex;
+  font-size: 10px;
+  gap: 18px;
+  padding: 0 20px 16px;
+}
+
+.profile-legend span::before {
+  border-radius: 999px;
+  content: "";
+  display: inline-block;
+  height: 3px;
+  margin-right: 7px;
+  vertical-align: middle;
+  width: 18px;
+}
+
+.profile-legend-depth::before {
+  background: #8debd7;
+}
+
+.profile-legend-pressure::before {
+  background: #ffb36b;
+}
+
+.profile-empty {
+  color: var(--muted);
+  margin: 0;
+  padding: 4px 20px 22px;
 }
 
 .card {
@@ -737,6 +790,7 @@ button {
 }
 
 .details-editor input,
+.details-editor select,
 .details-editor textarea {
   background: rgba(255, 255, 255, 0.045);
   border: 1px solid var(--line);
@@ -749,9 +803,16 @@ button {
 }
 
 .details-editor input:focus,
+.details-editor select:focus,
 .details-editor textarea:focus {
   border-color: rgba(141, 235, 215, 0.48);
   box-shadow: 0 0 0 3px rgba(141, 235, 215, 0.08);
+}
+
+.details-editor-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1.35fr 1fr 1fr;
 }
 
 .details-editor > p {
@@ -1646,6 +1707,7 @@ button {
 .background-settings,
 .branding-settings,
 .backup-settings,
+.dive-defaults-settings,
 .subsurface-export-settings,
 .language-settings {
   margin-top: 14px;
@@ -1655,6 +1717,7 @@ button {
 .background-settings > .settings-note,
 .branding-settings > .settings-note,
 .backup-settings > .settings-note,
+.dive-defaults-settings > .settings-note,
 .subsurface-export-settings > .settings-note,
 .language-settings > .settings-note {
   margin-top: 20px;
@@ -1672,6 +1735,10 @@ button {
 }
 
 .subsurface-export-settings {
+  order: 2;
+}
+
+.dive-defaults-settings {
   order: 2;
 }
 
@@ -2016,7 +2083,7 @@ button {
   }
 
   .metric-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -2171,13 +2238,18 @@ button {
 
   .metric-grid {
     gap: 6px;
+    grid-template-columns: repeat(2, 1fr);
     margin: 15px 0;
   }
 
   .metric {
     border-radius: 14px;
-    min-height: 100px;
-    padding: 13px;
+    min-height: 84px;
+    padding: 11px;
+  }
+
+  .details-editor-row {
+    grid-template-columns: 1fr;
   }
 
   .card {
@@ -2244,6 +2316,7 @@ button {
   .background-settings,
   .branding-settings,
   .backup-settings,
+  .dive-defaults-settings,
   .subsurface-export-settings,
   .language-settings,
   .catalog-settings {

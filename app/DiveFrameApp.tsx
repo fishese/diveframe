@@ -9,6 +9,7 @@ import {
   Compass,
   Database as DatabaseIcon,
   Droplets,
+  Gauge,
   ImagePlus,
   Images,
   Info,
@@ -35,6 +36,7 @@ import {
 } from "react";
 import {
   addLocalPhotos,
+  getLocalAppPreferences,
   listLocalAttachments,
   listLocalDives,
   requestPersistentLocalStorage,
@@ -47,6 +49,18 @@ import {
   updateLocalDiveSite,
   upsertLocalDives,
 } from "@/lib/indexed-db";
+import { chartAvailability, renderDiveChart } from "@/lib/chart-renderer";
+import { defaultComposerSettings } from "@/lib/composer-settings";
+import {
+  averageSampleDepthM,
+  averageSampleTemperatureC,
+  calculateSacLitresPerMinute,
+  cylinderPreset,
+  CYLINDER_PRESETS,
+  DEFAULT_CYLINDER_PRESET_ID,
+  firstCompletePressurePair,
+} from "@/lib/gas-calculations";
+import { toNormalizedDive } from "@/lib/normalize-dive";
 import { readShearwaterDatabase } from "@/lib/parsers/shearwater";
 import { readSubsurfaceLog } from "@/lib/parsers/subsurface";
 import { readUddfLog } from "@/lib/parsers/uddf";
@@ -341,6 +355,10 @@ export function DiveFrameApp() {
   async function saveDiveDetails(details: {
     buddy: string | null;
     notes: string | null;
+    cylinderPresetId?: string | null;
+    cylinderVolumeL?: number | null;
+    startPressureBar?: number | null;
+    endPressureBar?: number | null;
   }) {
     if (!selected) return false;
     setBusy(true);
@@ -625,13 +643,24 @@ function DiveDetail({
   onSaveDetails: (details: {
     buddy: string | null;
     notes: string | null;
+    cylinderPresetId?: string | null;
+    cylinderVolumeL?: number | null;
+    startPressureBar?: number | null;
+    endPressureBar?: number | null;
   }) => Promise<boolean>;
 }) {
   const { language, t } = useAppI18n();
   const calculated = safeJson(dive.calculatedJson);
   const averageDepth =
-    numberFrom(calculated?.AverageDepth) ?? positiveNumber(dive.averageDepth);
+    numberFrom(calculated?.AverageDepth) ??
+    positiveNumber(dive.averageDepth) ??
+    averageSampleDepthM(dive.samples);
   const minTemp = numberFrom(calculated?.MinTemp) ?? positiveNumber(dive.minTemp);
+  const averageTemperature = averageSampleTemperatureC(dive.samples);
+  const pressurePair = firstCompletePressurePair(
+    dive.tankPressuresStartBar,
+    dive.tankPressuresEndBar,
+  );
   const hasGps = dive.gpsEntryLat !== null && dive.gpsEntryLng !== null;
   const [manualSite, setManualSite] = useState(dive.userSite ?? dive.site ?? "");
   const [nearbySites, setNearbySites] = useState<NearbySite[] | null>(null);
@@ -639,6 +668,18 @@ function DiveDetail({
   const [editingDetails, setEditingDetails] = useState(false);
   const [buddyDraft, setBuddyDraft] = useState(dive.buddy ?? "");
   const [notesDraft, setNotesDraft] = useState(dive.notes ?? "");
+  const [defaultCylinderPresetId, setDefaultCylinderPresetId] = useState(
+    DEFAULT_CYLINDER_PRESET_ID,
+  );
+  const [cylinderPresetDraft, setCylinderPresetDraft] = useState(
+    dive.cylinderPresetId ?? DEFAULT_CYLINDER_PRESET_ID,
+  );
+  const [startPressureDraft, setStartPressureDraft] = useState(
+    pressurePair?.start?.toString() ?? "",
+  );
+  const [endPressureDraft, setEndPressureDraft] = useState(
+    pressurePair?.end?.toString() ?? "",
+  );
   const locationQuery = [dive.site, dive.location]
     .filter((value, index, values): value is string =>
       Boolean(value && values.indexOf(value) === index),
@@ -690,6 +731,28 @@ function DiveDetail({
   const mapLongitude = hasGps ? dive.gpsEntryLng : resolvedLocation?.longitude ?? null;
   const hasMap = mapLatitude !== null && mapLongitude !== null;
   const siteNotes = catalogNotesForDive(dive);
+  const selectedCylinder = cylinderPreset(
+    dive.cylinderPresetId ?? defaultCylinderPresetId,
+  );
+  const cylinderVolumeL = dive.cylinderVolumeL ?? selectedCylinder.volumeL;
+  const sacRate = calculateSacLitresPerMinute({
+    startPressureBar: pressurePair?.start ?? null,
+    endPressureBar: pressurePair?.end ?? null,
+    cylinderVolumeL,
+    durationSeconds: dive.durationSeconds,
+    averageDepthM: averageDepth ?? null,
+  });
+
+  useEffect(() => {
+    getLocalAppPreferences()
+      .then((preferences) => {
+        const presetId =
+          preferences?.defaultCylinderPresetId ?? DEFAULT_CYLINDER_PRESET_ID;
+        setDefaultCylinderPresetId(presetId);
+        if (!dive.cylinderPresetId) setCylinderPresetDraft(presetId);
+      })
+      .catch(() => undefined);
+  }, [dive.cylinderPresetId]);
 
   async function saveSiteAndCollapse(selection: SiteSelection) {
     await onSaveSite(selection);
@@ -765,7 +828,23 @@ function DiveDetail({
           value={minTemp ? `${minTemp.toFixed(1)} °C` : "—"}
           icon={<Thermometer />}
         />
+        <Metric
+          label={t("averageTemperature")}
+          value={
+            averageTemperature === null
+              ? "—"
+              : `${averageTemperature.toFixed(1)} °C`
+          }
+          icon={<Thermometer />}
+        />
+        <Metric
+          label={t("sacRate")}
+          value={sacRate === null ? "—" : `${sacRate.toFixed(1)} L/min`}
+          icon={<Gauge />}
+        />
       </div>
+
+      <DiveProfilePanel dive={dive} />
 
       <div className="detail-grid">
         <section className="card map-card">
@@ -844,6 +923,10 @@ function DiveDetail({
                 void onSaveDetails({
                   buddy: buddyDraft.trim() || null,
                   notes: notesDraft.trim() || null,
+                  cylinderPresetId: cylinderPresetDraft,
+                  cylinderVolumeL: cylinderPreset(cylinderPresetDraft).volumeL,
+                  startPressureBar: optionalPositiveNumber(startPressureDraft),
+                  endPressureBar: optionalPositiveNumber(endPressureDraft),
                 }).then((saved) => {
                   if (saved) setEditingDetails(false);
                 });
@@ -866,6 +949,45 @@ function DiveDetail({
                   maxLength={5000}
                 />
               </label>
+              <div className="details-editor-row">
+                <label>
+                  <span>{t("tankSize")}</span>
+                  <select
+                    value={cylinderPresetDraft}
+                    onChange={(event) =>
+                      setCylinderPresetDraft(event.target.value)
+                    }
+                  >
+                    {CYLINDER_PRESETS.map((preset) => (
+                      <option key={preset.id} value={preset.id}>
+                        {preset.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>{t("startingTankPressure")} (bar)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    inputMode="decimal"
+                    value={startPressureDraft}
+                    onChange={(event) => setStartPressureDraft(event.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>{t("endingTankPressure")} (bar)</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    inputMode="decimal"
+                    value={endPressureDraft}
+                    onChange={(event) => setEndPressureDraft(event.target.value)}
+                  />
+                </label>
+              </div>
               <p>{t("localDetailsHint")}</p>
               <button
                 type="submit"
@@ -884,6 +1006,18 @@ function DiveDetail({
             <div>
               <dt><DatabaseIcon size={16} /> {t("computer")}</dt>
               <dd>{dive.computerModel || t("unknown")}</dd>
+            </div>
+            <div>
+              <dt><Gauge size={16} /> {t("tankSize")}</dt>
+              <dd>{selectedCylinder.label}</dd>
+            </div>
+            <div>
+              <dt><Gauge size={16} /> {t("tankPressure")}</dt>
+              <dd>
+                {pressurePair
+                  ? `${pressurePair.start.toFixed(1)} → ${pressurePair.end.toFixed(1)} bar`
+                  : t("notEntered")}
+              </dd>
             </div>
             <div>
               <dt><ArrowDownToLine size={16} /> {t("importedFrom")}</dt>
@@ -1108,6 +1242,82 @@ function Metric({ label, value, icon }: { label: string; value: string; icon: Re
       <small>{label}</small>
       <strong>{value}</strong>
     </div>
+  );
+}
+
+function DiveProfilePanel({ dive }: { dive: Dive }) {
+  const { language, t } = useAppI18n();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [showPressure, setShowPressure] = useState(false);
+  const normalized = useMemo(() => toNormalizedDive(dive), [dive]);
+  const availability = chartAvailability(normalized);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !availability.depth) return;
+    const draw = () => {
+      const width = Math.max(320, canvas.clientWidth);
+      const height = Math.max(190, Math.min(280, width * 0.34));
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(width * pixelRatio);
+      canvas.height = Math.round(height * pixelRatio);
+      canvas.style.height = `${height}px`;
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      context.clearRect(0, 0, width, height);
+      const settings = defaultComposerSettings(dive.id);
+      settings.language = language;
+      settings.chartMode =
+        showPressure && availability.pressure ? "depth-pressure" : "depth";
+      settings.lineThickness = 2;
+      settings.fillOpacity = 0.18;
+      settings.showAxisLabels = true;
+      renderDiveChart(
+        context,
+        { x: 14, y: 12, width: width - 28, height: height - 18 },
+        normalized,
+        settings,
+      );
+    };
+    draw();
+    const observer = new ResizeObserver(draw);
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [availability.depth, availability.pressure, dive.id, language, normalized, showPressure]);
+
+  return (
+    <section className="card profile-card">
+      <div className="card-heading">
+        <div>
+          <p className="eyebrow">{t("diveProfile")}</p>
+          <h3>{t("depthChart")}</h3>
+        </div>
+        {availability.pressure ? (
+          <label className="pressure-toggle">
+            <input
+              type="checkbox"
+              checked={showPressure}
+              onChange={(event) => setShowPressure(event.target.checked)}
+            />
+            <span>{t("showTankPressure")}</span>
+          </label>
+        ) : null}
+      </div>
+      {availability.depth ? (
+        <>
+          <canvas ref={canvasRef} aria-label={t("depthChart")} />
+          <div className="profile-legend">
+            <span className="profile-legend-depth">{t("depthLegend")}</span>
+            {showPressure && availability.pressure ? (
+              <span className="profile-legend-pressure">{t("tankPressure")}</span>
+            ) : null}
+          </div>
+        </>
+      ) : (
+        <p className="profile-empty">{t("profileUnavailable")}</p>
+      )}
+    </section>
   );
 }
 
@@ -1390,4 +1600,9 @@ function numberFrom(value: unknown) {
 
 function positiveNumber(value: number | null) {
   return value && value > 0 ? value : null;
+}
+
+function optionalPositiveNumber(value: string) {
+  const number = Number(value);
+  return value.trim() && Number.isFinite(number) && number > 0 ? number : null;
 }

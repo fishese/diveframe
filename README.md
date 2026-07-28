@@ -64,6 +64,13 @@ site corrections back to a source log.
   that are enabled by default. The depth-area fill can be solid or fade to
   transparent above the profile. Missing fields are omitted rather than
   replaced with fabricated values.
+- Compact depth charts on dive detail pages, with an optional tank-pressure
+  line when pressure telemetry is available.
+- Time-weighted average water temperature and conservative SAC estimates.
+  SAC is shown only when duration, average depth, one valid pressure pair, and
+  a cylinder volume are available. Standard aluminium and steel cylinder
+  presets are available per dive; the device default starts at Aluminium 80
+  (11.1 L).
 - One device-local transparent PNG or SVG overlay logo configured in Settings,
   with per-dive visibility and placement controls in the composer.
 - Installable web-app metadata for mobile and desktop browsers.

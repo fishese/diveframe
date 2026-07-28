@@ -249,6 +249,16 @@ reserve separate title, date, chart, statistics, and branding zones; the
 composer migrates the earlier overlapping Minimal, Poster, and Full-width Graph
 defaults when it loads them.
 
+The dive detail page reuses `renderDiveChart` on a responsive canvas and only
+draws the currently selected record. Its pressure line is opt-in and appears
+only when sample telemetry exists. `lib/gas-calculations.ts` owns cylinder
+presets, time-weighted sample temperature, pressure-pair validation, and the
+surface-equivalent SAC calculation. SAC is withheld unless duration, average
+depth, exactly one usable pressure pair, and cylinder volume are available.
+The default cylinder preference is stored on the existing `appPreferences`
+record; per-dive cylinder and manual pressure values use optional properties on
+the existing dive record, so no IndexedDB migration is required.
+
 ## Current hosting
 
 The project uses the bundled Vinext/Cloudflare-compatible build. It is deployed

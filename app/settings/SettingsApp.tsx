@@ -8,6 +8,7 @@ import {
   Database,
   Download,
   FileJson,
+  Gauge,
   Image as ImageIcon,
   Languages,
   LoaderCircle,
@@ -39,11 +40,16 @@ import {
   listLocalDives,
   listLocalSourceRecords,
   listLocalSiteContributions,
+  saveLocalAppPreferences,
   saveLocalOverlayLogo,
   type LocalBackground,
   type LocalBrandingAsset,
   type LocalSiteContribution,
 } from "@/lib/indexed-db";
+import {
+  CYLINDER_PRESETS,
+  DEFAULT_CYLINDER_PRESET_ID,
+} from "@/lib/gas-calculations";
 import { addDiveFrameSitesToSubsurface } from "@/lib/subsurface-site-export";
 import { useAppI18n } from "../AppI18nProvider";
 
@@ -83,6 +89,9 @@ export function SettingsApp() {
   const [catalogLabel, setCatalogLabel] = useState<string | null>(null);
   const [backgrounds, setBackgrounds] = useState<LocalBackground[]>([]);
   const [logo, setLogo] = useState<LocalBrandingAsset | null>(null);
+  const [defaultCylinderPresetId, setDefaultCylinderPresetId] = useState(
+    DEFAULT_CYLINDER_PRESET_ID,
+  );
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(true);
 
@@ -91,12 +100,16 @@ export function SettingsApp() {
       listLocalSiteContributions(),
       listLocalBackgrounds(),
       getLocalOverlayLogo(),
+      getLocalAppPreferences(),
     ])
-      .then(([items, savedBackgrounds, savedLogo]) => {
+      .then(([items, savedBackgrounds, savedLogo, preferences]) => {
         setContributions(items);
         setReviewedSites(items.map(toSiteDraft));
         setBackgrounds(savedBackgrounds);
         setLogo(savedLogo ?? null);
+        setDefaultCylinderPresetId(
+          preferences?.defaultCylinderPresetId ?? DEFAULT_CYLINDER_PRESET_ID,
+        );
         setStatus(
           items.length
             ? t("manualSitesReady", { count: items.length, suffix: items.length === 1 ? "" : "s" })
@@ -108,6 +121,16 @@ export function SettingsApp() {
       })
       .finally(() => setBusy(false));
   }, [t]);
+
+  async function chooseDefaultCylinder(presetId: string) {
+    setDefaultCylinderPresetId(presetId);
+    try {
+      await saveLocalAppPreferences({ defaultCylinderPresetId: presetId });
+      setStatus(t("defaultTankSaved"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("settingsSaveFailed"));
+    }
+  }
 
   async function chooseBackgrounds(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -540,6 +563,32 @@ export function SettingsApp() {
             >
               <option value="en">{t("english")}</option>
               <option value="zh-Hant">{t("traditionalChineseHK")}</option>
+            </select>
+          </label>
+        </section>
+
+        <section className="settings-card dive-defaults-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><Gauge size={21} /></span>
+            <div>
+              <p className="eyebrow">{t("diveDefaults")}</p>
+              <h2>{t("defaultTankSize")}</h2>
+            </div>
+          </div>
+          <p className="settings-note">{t("defaultTankDescription")}</p>
+          <label className="language-select">
+            <span>{t("tankSize")}</span>
+            <select
+              value={defaultCylinderPresetId}
+              onChange={(event) =>
+                void chooseDefaultCylinder(event.target.value)
+              }
+            >
+              {CYLINDER_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.label}
+                </option>
+              ))}
             </select>
           </label>
         </section>

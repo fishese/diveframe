@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and composer workflow", async () => {
-  const [app, settings, about, composer, chart, composerSettings, backup, fonts, i18n, shearwater, subsurface, subsurfaceExport, uddf, fit, matching, storage, hosting, manifest, catalog, userGuide, license] = await Promise.all([
+  const [app, settings, about, composer, chart, composerSettings, backup, fonts, i18n, gasCalculations, shearwater, subsurface, subsurfaceExport, uddf, fit, matching, storage, hosting, manifest, catalog, userGuide, license] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("app/settings/SettingsApp.tsx", "utf8"),
     readFile("app/about/AboutApp.tsx", "utf8"),
@@ -13,6 +13,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     readFile("lib/app-backup.ts", "utf8"),
     readFile("lib/composer-fonts.ts", "utf8"),
     readFile("lib/i18n.ts", "utf8"),
+    readFile("lib/gas-calculations.ts", "utf8"),
     readFile("lib/parsers/shearwater.ts", "utf8"),
     readFile("lib/parsers/subsurface.ts", "utf8"),
     readFile("lib/subsurface-site-export.ts", "utf8"),
@@ -82,6 +83,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /dive\.computerModel \|\| t\("unknown"\)/);
   assert.match(app, /updateLocalDiveDetails/);
   assert.match(app, /details-editor/);
+  assert.match(app, /DiveProfilePanel/);
+  assert.match(app, /showPressure/);
+  assert.match(app, /averageSampleTemperatureC/);
+  assert.match(app, /calculateSacLitresPerMinute/);
   assert.match(settings, /diveframe-added-sites\.json/);
   assert.match(settings, /t\("downloadMergedCatalog"\)/);
   assert.match(settings, /mergeContributions/);
@@ -108,6 +113,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(fonts, /LXGW WenKai TC/);
   assert.match(i18n, /Manage reusable backgrounds/);
   assert.match(settings, /distanceKm/);
+  assert.match(settings, /defaultCylinderPresetId/);
+  assert.match(gasCalculations, /DEFAULT_CYLINDER_PRESET_ID = "al80"/);
+  assert.match(gasCalculations, /averageAmbientPressureBar/);
   assert.match(settings, /addDiveFrameSitesToSubsurface/);
   assert.match(settings, /-diveframe-updated\.ssrf/);
   assert.match(subsurfaceExport, /XMLSerializer/);

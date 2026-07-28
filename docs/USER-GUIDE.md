@@ -23,6 +23,23 @@ fields without allowing an empty field from a later import to erase useful
 existing data. Ambiguous records remain separate rather than being merged
 silently.
 
+## Dive profiles and gas use
+
+When a source log contains samples, each dive page shows a compact depth
+profile with axis labels. Tank-pressure telemetry can be switched on for dives
+that contain it. Rendering happens only for the open dive and does not require
+a server request.
+
+Average water temperature is calculated from available temperature samples.
+DiveFrame shows a SAC estimate only when it has dive duration, average depth,
+one valid starting/ending pressure pair, and a cylinder volume. Missing inputs
+remain unavailable rather than being replaced with invented values.
+
+Use **Settings → Default tank size** to choose the device default. A new
+installation uses Aluminium 80 (11.1 L). Open a dive's **People & memory**
+editor to choose a different standard cylinder or enter starting and ending
+pressure for that dive.
+
 ## Local data and privacy
 
 Imported records, edits, photos, reusable backgrounds, the overlay logo, and
