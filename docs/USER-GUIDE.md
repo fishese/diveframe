@@ -30,7 +30,9 @@ case and whitespace normalization; DiveFrame does not attempt to decide whether
 they represent countries, regions, or towns.
 
 Use the logbook sort menu to order dives by date, dive duration, or maximum
-depth in either direction. Dives missing the selected value appear last.
+depth in either direction. Each compact summary shows maximum depth and dive
+duration so the current order can be checked without opening a dive. Dives
+missing the selected value appear last.
 
 The normal search box also accepts two advanced source-matching operators:
 
@@ -59,9 +61,9 @@ SAC. The logbook overview excludes dives shorter than 20 minutes from its
 average SAC figure; the individual dive page can still show their estimates.
 
 Use **Settings → Default tank size** to choose the device default. A new
-installation uses Aluminium 80 (11.1 L). Open a dive's **People & memory**
-editor to choose a different standard cylinder or enter starting and ending
-pressure for that dive.
+installation uses Aluminium 80 (11.1 L). Open **Edit dive details** to choose a
+different standard cylinder or enter starting and ending pressure for that
+dive.
 
 ## Local data and privacy
 
@@ -115,7 +117,7 @@ has no GPS.
 - High-resolution PNG or JPEG share images, with selectable photo, profile,
   statistics, units, language, styling, and optional logo
 - A complete DiveFrame app-data backup for transfer or recovery
-- A JSON log of manually added dive sites
+- A JSON log of manually added dive sites that have coordinates
 - A merged `dive-sites.json` catalog for review and updating the app repository
 - An updated copy of a freshly supplied Subsurface `.ssrf`/XML export, with
   matched site names, buddy, and notes added
@@ -136,7 +138,7 @@ distinct regardless of the selected photograph.
 When a logo is enabled, choose its preset anchor and then use the horizontal
 and vertical position sliders for fine adjustment. The offsets are saved with
 that dive's composer settings and are applied identically to preview and
-high-resolution export.
+high-resolution export. The renderer keeps the logo inside the image canvas.
 
 ### Updating a Subsurface copy
 

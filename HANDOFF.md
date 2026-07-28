@@ -46,8 +46,9 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `tests/` — product contract and optional real Shearwater fixture test.
 - `docs/USER-GUIDE.md` — supported-format and device-local workflow guide.
 - `LICENSE` — project notice for `GPL-3.0-or-later`.
-- `.openai/hosting.json` — current private Sites project reference; D1 and R2
-  are intentionally disabled.
+- `.openai/hosting.json` — retained project metadata; D1 and R2 are
+  intentionally disabled. Production is deployed by Cloudflare Workers Builds
+  from GitHub.
 
 The old D1/R2 persistence routes and migrations were removed in commit
 `67ecfec`. Earlier commits retain that implementation if it is ever needed.
@@ -110,7 +111,7 @@ The app requests persistent browser storage when available. This reduces
 eviction risk but does not replace a backup.
 
 Settings can export a versioned `diveframe-local-backup` JSON document covering
-all seven stores, including base64-encoded photo, reusable-background, and logo
+all eight stores, including base64-encoded photo, reusable-background, and logo
 blobs. Import is additive by primary key: backup records replace matching local
 records while destination-only records remain. The file is not encrypted and
 the UI warns the user to keep it private.
@@ -156,7 +157,7 @@ Merge rules:
   to bar, and elapsed time to seconds.
 - User-selected site names and photos survive empty re-import fields.
 - A non-empty site from a later source import clears the app-level site
-  override, so the “Set in DiveFrame” filter tracks records still needing
+  override, so the “Set in App” filter tracks records still needing
   correction in the source log.
 - Each canonical dive stores separate source-specific dive numbers captured
   during import. Existing browser data needs one re-import to
@@ -195,8 +196,10 @@ Catalog entries deliberately do not contain or display curator/reliability
 notes.
 
 Selecting a catalog or map suggestion stores the assignment on the local dive.
-Typing a new name additionally creates or updates a `siteContributions` record
-using the dive's GPS position. The settings page can export these records as
+Typing a new name for a GPS-backed dive additionally creates or updates a
+`siteContributions` record using the dive's GPS position. A manual site without
+coordinates remains a valid local site override but is not offered for catalog
+merge. The settings page can export coordinate-backed records as
 `diveframe-added-sites.json`, or merge them into the built-in (or a user-chosen
 newer) catalog and download a replacement `dive-sites.json`. Same-name sites
 within 250 metres are treated as duplicates. The deployed browser cannot
@@ -299,10 +302,10 @@ before schema version 4.
 Chart depth and elapsed-time axis labels are enabled by default and can be
 hidden per dive. The depth fill supports solid and upward transparent-fade
 modes. One reusable transparent PNG or SVG logo is managed in Settings; the
-composer only controls its visibility and preset position. Template defaults
-reserve separate title, date, chart, statistics, and branding zones; the
-composer migrates the earlier overlapping Minimal, Poster, and Full-width Graph
-defaults when it loads them.
+composer controls its visibility, preset anchor, and horizontal/vertical
+offsets. Template defaults reserve separate title, date, chart, statistics,
+and branding zones; the composer migrates the earlier overlapping Minimal,
+Poster, and Full-width Graph defaults when it loads them.
 
 The dive detail page reuses `renderDiveChart` on a responsive canvas and only
 draws the currently selected record. Its pressure line is opt-in and appears
@@ -316,9 +319,8 @@ the existing dive record, so no IndexedDB migration is required.
 
 ## Current hosting
 
-The project uses the bundled Vinext/Cloudflare-compatible build. It is deployed
-to both the private Sites project referenced in `.openai/hosting.json` and a
-user-managed Cloudflare Worker connected to GitHub.
+The project uses the bundled Vinext/Cloudflare-compatible build. Production is
+the user-managed Cloudflare Worker connected to the GitHub `main` branch.
 
 The data layer no longer needs D1 or R2. Two stateless server routes remain for
 OpenStreetMap lookups. If the project moves to Cloudflare Workers, those routes
@@ -364,7 +366,8 @@ Google Drive, iCloud Drive, or a small private API.
 
 - Add streaming, encrypted backup export before photo libraries become very large.
 - Add dive-photo deletion, captions, and storage-usage reporting.
-- Add draggable custom block positions (preset positions are implemented).
+- Add draggable custom positions for non-logo overlay blocks. Logo fine
+  positioning already uses horizontal and vertical sliders.
 - Add named composer presets that can be reused across dives.
 - Translate template descriptions and transient status/error messages; overlay
   labels and composer controls are already available in Traditional Chinese.

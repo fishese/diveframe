@@ -18,8 +18,8 @@ data, then adds maps, photos, site details, and shareable image overlays.
    notes, and source-specific dive numbers.
 
 The original files are parsed in the browser and are never modified. DiveFrame
-stores normalized display fields, source mappings, site choices, and selected
-photo blobs in IndexedDB on the current device.
+stores normalized display fields, source mappings, site choices, and photo
+blobs in IndexedDB on the current device.
 
 See the [user guide](docs/USER-GUIDE.md) for supported files, local-storage
 boundaries, available exports, and the workflow for manually copying DiveFrame
@@ -36,6 +36,7 @@ site corrections back to a source log.
   Shearwater export views can omit.
 - Responsive dive list and detail views.
 - Dive-list sorting by date, duration, or maximum depth in either direction.
+- Compact dive summaries that show both maximum depth and dive duration.
 - A compact six-stat logbook overview covering total dives, dives at named
   sites, unique imported locations, accumulated underwater time, average
   calculable SAC, and unique buddies.
@@ -90,7 +91,8 @@ site corrections back to a source log.
   to bar before the calculation.
   The overview average excludes dives shorter than 20 minutes.
 - One device-local transparent PNG or SVG overlay logo configured in Settings,
-  with per-dive visibility and placement controls in the composer.
+  with per-dive visibility, anchor, and horizontal/vertical fine-positioning
+  controls in the composer.
 - Installable web-app metadata for mobile and desktop browsers.
 
 ## Development
@@ -103,7 +105,7 @@ npm run dev
 ```
 
 The deployed Worker is stateless. Dive and photo data stay in the browser;
-server routes only proxy map lookups. Use **Settings â†’ Export app data** to
+server routes only proxy map lookups. Use **Settings → Export app data** to
 back up or transfer that local data.
 
 The normalized browser import is intentionally not a lossless representation

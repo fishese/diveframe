@@ -5,7 +5,8 @@ DiveFrame uses a catalog-first lookup:
 1. Search active catalog entries within 30 km of the dive's GPS entry point.
 2. If one or more catalog sites are found, return only those trusted entries.
 3. If none are found, query the existing OpenStreetMap suggestion providers.
-4. Manual site entry is always available.
+4. Manual site entry is always available. A manual site needs coordinates
+   before it can be exported as a catalog contribution.
 
 The application bundles the catalog as `data/dive-sites.json`. It is loaded by
 the stateless nearby-site route and can be replaced through the review workflow
