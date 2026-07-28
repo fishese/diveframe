@@ -30,6 +30,8 @@ photo blobs in IndexedDB on the current device.
 - Separate Shearwater and Subsurface dive numbers on merged records.
 - A filter for site names assigned in DiveFrame and a JSON export of manually
   typed site candidates.
+- A settings page that can merge device-added sites into the bundled catalog
+  and download a replacement `dive-sites.json` for repository updates.
 - Multiple photos per dive.
 - Canvas-rendered portrait share cards with site, date, depth, duration, and
   buddy.

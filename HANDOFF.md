@@ -21,6 +21,8 @@ https://diveframe-logbook.fishese.chatgpt.site
 ## Repository map
 
 - `app/DiveFrameApp.tsx` — main UI, file parsers, maps, gallery, and share cards.
+- `app/settings/SettingsApp.tsx` — device-local settings and catalog maintenance
+  tools, with reserved product areas for overlay and language settings.
 - `lib/indexed-db.ts` — device-local persistence and import merge logic.
 - `app/api/geocode/route.ts` — stateless OpenStreetMap/Nominatim lookup proxy.
 - `app/api/nearby-sites/route.ts` — local catalog and OpenStreetMap fallback.
@@ -127,9 +129,11 @@ catalog has no nearby match.
 
 Selecting a catalog or map suggestion stores the assignment on the local dive.
 Typing a new name additionally creates or updates a `siteContributions` record
-using the dive's GPS position. **Export added sites** downloads these records as
-`diveframe-added-sites.json` for review and later curation into the catalog.
-The deployed browser cannot directly commit changes to the repository.
+using the dive's GPS position. The settings page can export these records as
+`diveframe-added-sites.json`, or merge them into the built-in (or a user-chosen
+newer) catalog and download a replacement `dive-sites.json`. Same-name sites
+within 250 metres are treated as duplicates. The deployed browser cannot
+directly commit changes to the repository.
 
 The supplied full test data produced 168 cross-source matches and 19
 Subsurface-only records. Perdix dives 17, 18, and 19 received their Subsurface

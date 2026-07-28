@@ -3,8 +3,9 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and share-card workflow", async () => {
-  const [app, storage, hosting, manifest, catalog] = await Promise.all([
+  const [app, settings, storage, hosting, manifest, catalog] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
+    readFile("app/settings/SettingsApp.tsx", "utf8"),
     readFile("lib/indexed-db.ts", "utf8"),
     readFile(".openai/hosting.json", "utf8"),
     readFile("public/manifest.webmanifest", "utf8"),
@@ -27,12 +28,16 @@ test("ships the DiveFrame import, map, photo, and share-card workflow", async ()
   assert.match(app, /openstreetmap\.org/);
   assert.match(app, /api\/geocode/);
   assert.match(app, /api\/nearby-sites/);
-  assert.match(app, /Named location/);
-  assert.match(app, /GPS recorded/);
-  assert.match(app, /Set in DiveFrame/);
-  assert.match(app, /Export added sites/);
+  assert.match(app, /Site Named/);
+  assert.match(app, /GPS Data/);
+  assert.match(app, /Set in App/);
+  assert.match(app, /sitePickerOpen/);
+  assert.match(app, /saveSiteAndCollapse/);
   assert.match(app, /sourceDiveNumber/);
-  assert.match(app, /diveframe-added-sites\.json/);
+  assert.match(settings, /diveframe-added-sites\.json/);
+  assert.match(settings, /Download merged dive-sites\.json/);
+  assert.match(settings, /mergeContributions/);
+  assert.match(settings, /distanceKm/);
   assert.match(app, /Save site/);
   assert.match(app, /DiveFrame catalog/);
   assert.match(app, /Newest first/);

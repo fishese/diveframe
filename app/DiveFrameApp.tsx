@@ -1,9 +1,11 @@
 "use client";
 
 import initSqlJs, { type QueryExecResult } from "sql.js";
+import Link from "next/link";
 import {
   ArrowDownToLine,
   Camera,
+  ChevronDown,
   ChevronLeft,
   Compass,
   Database as DatabaseIcon,
@@ -13,6 +15,7 @@ import {
   LoaderCircle,
   MapPin,
   Search,
+  Settings,
   Share2,
   Sparkles,
   Thermometer,
@@ -34,7 +37,6 @@ import {
   addLocalPhotos,
   listLocalAttachments,
   listLocalDives,
-  listLocalSiteContributions,
   requestPersistentLocalStorage,
   type LocalAttachment,
   type LocalDive,
@@ -318,55 +320,6 @@ export function DiveFrameApp() {
     }
   }
 
-  async function exportManualSites() {
-    setBusy(true);
-    setStatus("Preparing your added-site log…");
-    try {
-      const contributions = await listLocalSiteContributions();
-      const payload = {
-        schemaVersion: 1,
-        generatedAt: new Date().toISOString(),
-        description:
-          "Dive sites typed into DiveFrame. Review before adding them to data/dive-sites.json.",
-        sites: contributions.map((site) => ({
-          name: site.name,
-          coordinates: {
-            latitude: site.latitude,
-            longitude: site.longitude,
-          },
-          linkedDive: {
-            diveId: site.diveId,
-            diveDate: site.diveDate,
-            shearwaterDiveNumber: site.shearwaterDiveNumber,
-            subsurfaceDiveNumber: site.subsurfaceDiveNumber,
-          },
-          source: {
-            kind: "diveframe_manual",
-            reference: `diveframe-dive:${site.diveId}`,
-          },
-          status: "candidate",
-          createdAt: site.createdAt,
-          updatedAt: site.updatedAt,
-        })),
-      };
-      downloadBlob(
-        new Blob([JSON.stringify(payload, null, 2)], {
-          type: "application/json",
-        }),
-        "diveframe-added-sites.json",
-      );
-      setStatus(
-        contributions.length
-          ? `Exported ${contributions.length} added site${contributions.length === 1 ? "" : "s"}`
-          : "No manually typed sites to export",
-      );
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not export site log.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   function chooseDive(id: string) {
     setSelectedId(id);
     setMobileDetail(true);
@@ -394,6 +347,10 @@ export function DiveFrameApp() {
             {busy ? <LoaderCircle size={14} className="spin" /> : <Droplets size={14} />}
             {status}
           </span>
+          <Link href="/settings" className="button button-quiet">
+            <Settings size={16} />
+            Settings
+          </Link>
           <button
             type="button"
             className="button button-primary"
@@ -483,7 +440,7 @@ export function DiveFrameApp() {
                     onClick={() => setNamedOnly((value) => !value)}
                     aria-pressed={namedOnly}
                   >
-                    <MapPin size={14} /> Named location
+                    <MapPin size={14} /> Site Named
                   </button>
                   <button
                     type="button"
@@ -491,7 +448,7 @@ export function DiveFrameApp() {
                     onClick={() => setGpsOnly((value) => !value)}
                     aria-pressed={gpsOnly}
                   >
-                    <Compass size={14} /> GPS recorded
+                    <Compass size={14} /> GPS Data
                   </button>
                   <button
                     type="button"
@@ -499,15 +456,7 @@ export function DiveFrameApp() {
                     onClick={() => setAppSiteOnly((value) => !value)}
                     aria-pressed={appSiteOnly}
                   >
-                    <Sparkles size={14} /> Set in DiveFrame
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void exportManualSites()}
-                    disabled={busy}
-                    title="Export sites typed into DiveFrame"
-                  >
-                    <ArrowDownToLine size={14} /> Export added sites
+                    <Sparkles size={14} /> Set in App
                   </button>
                 </div>
                 {visibleDives.map((dive) => (
@@ -637,6 +586,7 @@ function DiveDetail({
   const hasGps = dive.gpsEntryLat !== null && dive.gpsEntryLng !== null;
   const [manualSite, setManualSite] = useState(dive.userSite ?? dive.site ?? "");
   const [nearbySites, setNearbySites] = useState<NearbySite[] | null>(null);
+  const [sitePickerOpen, setSitePickerOpen] = useState(!dive.userSite);
   const locationQuery = [dive.site, dive.location]
     .filter((value, index, values): value is string =>
       Boolean(value && values.indexOf(value) === index),
@@ -687,6 +637,12 @@ function DiveDetail({
   const mapLatitude = hasGps ? dive.gpsEntryLat : resolvedLocation?.latitude ?? null;
   const mapLongitude = hasGps ? dive.gpsEntryLng : resolvedLocation?.longitude ?? null;
   const hasMap = mapLatitude !== null && mapLongitude !== null;
+
+  async function saveSiteAndCollapse(selection: SiteSelection) {
+    await onSaveSite(selection);
+    setManualSite(selection.name);
+    setSitePickerOpen(false);
+  }
 
   useEffect(() => {
     if (!hasGps) return;
@@ -847,93 +803,102 @@ function DiveDetail({
       </div>
 
       {hasGps && !dive.site && (
-        <section className="card site-picker-card">
-          <div className="card-heading">
+        <details
+          className="card site-picker-card"
+          open={sitePickerOpen}
+          onToggle={(event) => setSitePickerOpen(event.currentTarget.open)}
+        >
+          <summary className="card-heading site-picker-summary">
             <div>
               <p className="eyebrow">Name this dive</p>
-              <h3>{dive.userSite ? "Change DiveFrame site" : "Nearby dive sites"}</h3>
+              <h3>{dive.userSite || "Nearby dive sites"}</h3>
+              {dive.userSite && <small>Selected in DiveFrame · expand to change</small>}
             </div>
-            <span>Within 30 km</span>
-          </div>
-          {nearbySites === null ? (
-            <div className="site-loading">
-              <LoaderCircle size={18} className="spin" /> Looking for mapped dive sites…
-            </div>
-          ) : nearbySites.length ? (
-            <div className="site-suggestions">
-              {nearbySites.map((site) => (
+            <span className="site-picker-toggle">
+              Within 30 km <ChevronDown size={17} />
+            </span>
+          </summary>
+          <div className="site-picker-body">
+            {nearbySites === null ? (
+              <div className="site-loading">
+                <LoaderCircle size={18} className="spin" /> Looking for mapped dive sites…
+              </div>
+            ) : nearbySites.length ? (
+              <div className="site-suggestions">
+                {nearbySites.map((site) => (
+                  <button
+                    type="button"
+                    key={site.id}
+                    onClick={() =>
+                      void saveSiteAndCollapse({
+                        name: site.name,
+                        source: site.source === "catalog" ? "catalog" : "suggestion",
+                        catalogId:
+                          site.source === "catalog"
+                            ? site.id.replace(/^catalog-/, "")
+                            : undefined,
+                        latitude: site.latitude,
+                        longitude: site.longitude,
+                      })
+                    }
+                    disabled={busy}
+                    aria-pressed={dive.userSiteCatalogId === site.id.replace(/^catalog-/, "")}
+                  >
+                    <span>{site.name}</span>
+                    {site.aliases?.length ? (
+                      <em>{site.aliases.join(" / ")}</em>
+                    ) : null}
+                    <small>
+                      {formatDistance(site.distanceKm)}
+                      {" · "}
+                      {site.source === "catalog" ? "DiveFrame catalog" : "Map fallback"}
+                    </small>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="site-empty">
+                No named OpenStreetMap dive sites were found nearby. Enter the name below.
+              </p>
+            )}
+            <form
+              className="manual-site"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (
+                  manualSite.trim() &&
+                  dive.gpsEntryLat !== null &&
+                  dive.gpsEntryLng !== null
+                ) {
+                  void saveSiteAndCollapse({
+                    name: manualSite.trim(),
+                    source: "manual",
+                    latitude: dive.gpsEntryLat,
+                    longitude: dive.gpsEntryLng,
+                  });
+                }
+              }}
+            >
+              <label htmlFor={`site-${dive.id}`}>Dive-site name</label>
+              <div>
+                <input
+                  id={`site-${dive.id}`}
+                  value={manualSite}
+                  onChange={(event) => setManualSite(event.target.value)}
+                  placeholder="Type a site name"
+                  maxLength={120}
+                />
                 <button
-                  type="button"
-                  key={site.id}
-                  onClick={() =>
-                    void onSaveSite({
-                      name: site.name,
-                      source: site.source === "catalog" ? "catalog" : "suggestion",
-                      catalogId:
-                        site.source === "catalog"
-                          ? site.id.replace(/^catalog-/, "")
-                          : undefined,
-                      latitude: site.latitude,
-                      longitude: site.longitude,
-                    })
-                  }
-                  disabled={busy}
-                  aria-pressed={dive.userSiteCatalogId === site.id.replace(/^catalog-/, "")}
+                  type="submit"
+                  className="button button-secondary"
+                  disabled={busy || !manualSite.trim()}
                 >
-                  <span>{site.name}</span>
-                  {site.aliases?.length ? (
-                    <em>{site.aliases.join(" / ")}</em>
-                  ) : null}
-                  <small>
-                    {formatDistance(site.distanceKm)}
-                    {" · "}
-                    {site.source === "catalog" ? "DiveFrame catalog" : "Map fallback"}
-                  </small>
+                  Save site
                 </button>
-              ))}
-            </div>
-          ) : (
-            <p className="site-empty">
-              No named OpenStreetMap dive sites were found nearby. Enter the name below.
-            </p>
-          )}
-          <form
-            className="manual-site"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (
-                manualSite.trim() &&
-                dive.gpsEntryLat !== null &&
-                dive.gpsEntryLng !== null
-              ) {
-                void onSaveSite({
-                  name: manualSite.trim(),
-                  source: "manual",
-                  latitude: dive.gpsEntryLat,
-                  longitude: dive.gpsEntryLng,
-                });
-              }
-            }}
-          >
-            <label htmlFor={`site-${dive.id}`}>Dive-site name</label>
-            <div>
-              <input
-                id={`site-${dive.id}`}
-                value={manualSite}
-                onChange={(event) => setManualSite(event.target.value)}
-                placeholder="Type a site name"
-                maxLength={120}
-              />
-              <button
-                type="submit"
-                className="button button-secondary"
-                disabled={busy || !manualSite.trim()}
-              >
-                Save site
-              </button>
-            </div>
-          </form>
-        </section>
+              </div>
+            </form>
+          </div>
+        </details>
       )}
 
       <section className="card photos-card">
