@@ -47,6 +47,9 @@ site corrections back to a source log.
 - A complete device-to-device backup file containing IndexedDB records, dive
   photos, reusable backgrounds, the overlay logo, composer settings, and the
   app-language preference.
+- A pass-through Subsurface export tool that adds matched site names, buddy,
+  and notes to a freshly supplied SSRF/XML copy without rebuilding or dropping
+  the source log's profiles, events, cylinders, or other fields.
 - Full interface localisation in English and Traditional Chinese (Hong Kong),
   with a separately configurable overlay language for exported images.
 - Multiple photos per dive plus a device-local library of reusable diving
@@ -77,6 +80,12 @@ npm run dev
 The deployed Worker is stateless. Dive and photo data stay in the browser;
 server routes only proxy map lookups. Use **Settings â†’ Export app data** to
 back up or transfer that local data.
+
+The normalized browser import is intentionally not a lossless representation
+of every Subsurface XML field. To carry DiveFrame changes back, use
+**Settings → Update a Subsurface export** and choose a fresh original
+Subsurface `.ssrf`/XML file. DiveFrame edits that copy narrowly and downloads a
+new file; it never overwrites the selected source file.
 
 For full depth-profile charts, import Subsurface, UDDF, or FIT data when
 available. Shearwater Cloud exports provide summaries and tank start/end

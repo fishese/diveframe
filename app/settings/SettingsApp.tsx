@@ -36,12 +36,15 @@ import {
   getLocalAppPreferences,
   getLocalOverlayLogo,
   listLocalBackgrounds,
+  listLocalDives,
+  listLocalSourceRecords,
   listLocalSiteContributions,
   saveLocalOverlayLogo,
   type LocalBackground,
   type LocalBrandingAsset,
   type LocalSiteContribution,
 } from "@/lib/indexed-db";
+import { addDiveFrameSitesToSubsurface } from "@/lib/subsurface-site-export";
 import { useAppI18n } from "../AppI18nProvider";
 
 type CatalogSite = {
@@ -203,6 +206,51 @@ export function SettingsApp() {
       setStatus(t("importComplete", counts));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("importBackupFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function exportUpdatedSubsurface(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    setStatus(t("preparingSubsurfaceExport"));
+    try {
+      const [dives, sourceRecords] = await Promise.all([
+        listLocalDives(),
+        listLocalSourceRecords(),
+      ]);
+      const result = await addDiveFrameSitesToSubsurface(
+        file,
+        dives,
+        sourceRecords,
+      );
+      if (!result.updatedDives) {
+        setStatus(t("noSubsurfaceUpdates"));
+        return;
+      }
+      const baseName =
+        file.name.replace(/\.(?:ssrf|xml)$/i, "") || "subsurface-log";
+      downloadBlob(
+        new Blob([result.xml], { type: "application/xml;charset=utf-8" }),
+        `${baseName}-diveframe-updated.ssrf`,
+      );
+      setStatus(
+        t("subsurfaceExportComplete", {
+          dives: result.updatedDives,
+          sites: result.addedSites,
+          buddies: result.updatedBuddies,
+          notes: result.updatedNotes,
+        }),
+      );
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : t("subsurfaceExportFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -444,6 +492,32 @@ export function SettingsApp() {
           </div>
           <p className="settings-note">
             {t("importMergeNote")}
+          </p>
+        </section>
+
+        <section className="settings-card subsurface-export-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><Database size={21} /></span>
+            <div>
+              <p className="eyebrow">{t("sourceLogTools")}</p>
+              <h2>{t("updateSubsurfaceExport")}</h2>
+            </div>
+          </div>
+          <p className="settings-note">
+            {t("updateSubsurfaceDescription")}
+          </p>
+          <label className="button button-primary">
+            <Upload size={16} /> {t("chooseSubsurfaceFile")}
+            <input
+              type="file"
+              accept=".ssrf,.xml,application/xml,text/xml"
+              onChange={exportUpdatedSubsurface}
+              className="visually-hidden"
+              disabled={busy}
+            />
+          </label>
+          <p className="settings-note">
+            {t("subsurfacePassThroughNote")}
           </p>
         </section>
 

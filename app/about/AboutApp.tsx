@@ -67,6 +67,7 @@ export function AboutApp() {
               <li>{t("aboutExportImages")}</li>
               <li>{t("aboutExportBackup")}</li>
               <li>{t("aboutExportSites")}</li>
+              <li>{t("aboutExportSubsurface")}</li>
             </ul>
           </AboutCard>
 

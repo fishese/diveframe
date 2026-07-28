@@ -42,11 +42,7 @@ export function readSubsurfaceLog(xmlText: string): LocalImportedDive[] {
     const site = sites.get(dive.getAttribute("divesiteid") ?? "");
     const entryGps = site?.gps ?? parseGpsPair(extras.get("start location") ?? null);
     const serial = extras.get("serial")?.trim() || null;
-    const deviceId = computer?.getAttribute("deviceid") ?? "unknown-device";
-    const computerDiveId =
-      computer?.getAttribute("diveid") ??
-      `${dive.getAttribute("date") ?? "unknown"}-${dive.getAttribute("time") ?? "unknown"}`;
-    const sourceId = `${deviceId}:${computerDiveId}`;
+    const sourceId = subsurfaceSourceId(dive);
     const date = dive.getAttribute("date");
     const time = dive.getAttribute("time");
     const maximumDepth = parseDepthMetres(depth?.getAttribute("max"));
@@ -116,6 +112,15 @@ export function readSubsurfaceLog(xmlText: string): LocalImportedDive[] {
       tankPressuresEndBar: samplePressures.end,
     };
   });
+}
+
+export function subsurfaceSourceId(dive: Element) {
+  const computer = dive.querySelector("divecomputer");
+  const deviceId = computer?.getAttribute("deviceid") ?? "unknown-device";
+  const computerDiveId =
+    computer?.getAttribute("diveid") ??
+    `${dive.getAttribute("date") ?? "unknown"}-${dive.getAttribute("time") ?? "unknown"}`;
+  return `${deviceId}:${computerDiveId}`;
 }
 
 function parseSample(element: Element): DiveSample | null {

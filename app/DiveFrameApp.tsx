@@ -43,6 +43,7 @@ import {
   type LocalImportedDive,
   type DiveSource,
   updateLocalDiveLocation,
+  updateLocalDiveDetails,
   updateLocalDiveSite,
   upsertLocalDives,
 } from "@/lib/indexed-db";
@@ -337,6 +338,28 @@ export function DiveFrameApp() {
     }
   }
 
+  async function saveDiveDetails(details: {
+    buddy: string | null;
+    notes: string | null;
+  }) {
+    if (!selected) return false;
+    setBusy(true);
+    setStatus(t("savingDiveDetails"));
+    try {
+      const updated = await updateLocalDiveDetails(selected.id, details);
+      setDives((current) =>
+        current.map((dive) => (dive.id === updated.id ? updated : dive)),
+      );
+      setStatus(t("diveDetailsSaved"));
+      return true;
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("diveDetailsSaveFailed"));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function chooseDive(id: string) {
     setSelectedId(id);
     setMobileDetail(true);
@@ -518,6 +541,7 @@ export function DiveFrameApp() {
                   onUpload={uploadPhotos}
                   onShare={sharePhoto}
                   onSaveSite={saveDiveSite}
+                  onSaveDetails={saveDiveDetails}
                 />
               ) : (
                 <div className="no-selection">{t("chooseDive")}</div>
@@ -589,6 +613,7 @@ function DiveDetail({
   onUpload,
   onShare,
   onSaveSite,
+  onSaveDetails,
 }: {
   dive: Dive;
   attachments: Attachment[];
@@ -597,6 +622,10 @@ function DiveDetail({
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onShare: (attachment: Attachment) => void;
   onSaveSite: (site: SiteSelection) => Promise<void>;
+  onSaveDetails: (details: {
+    buddy: string | null;
+    notes: string | null;
+  }) => Promise<boolean>;
 }) {
   const { language, t } = useAppI18n();
   const calculated = safeJson(dive.calculatedJson);
@@ -607,6 +636,9 @@ function DiveDetail({
   const [manualSite, setManualSite] = useState(dive.userSite ?? dive.site ?? "");
   const [nearbySites, setNearbySites] = useState<NearbySite[] | null>(null);
   const [sitePickerOpen, setSitePickerOpen] = useState(!dive.userSite);
+  const [editingDetails, setEditingDetails] = useState(false);
+  const [buddyDraft, setBuddyDraft] = useState(dive.buddy ?? "");
+  const [notesDraft, setNotesDraft] = useState(dive.notes ?? "");
   const locationQuery = [dive.site, dive.location]
     .filter((value, index, values): value is string =>
       Boolean(value && values.indexOf(value) === index),
@@ -795,7 +827,55 @@ function DiveDetail({
               <p className="eyebrow">{t("logNotes")}</p>
               <h3>{t("peopleAndMemory")}</h3>
             </div>
+            <button
+              type="button"
+              className="button button-quiet detail-edit-button"
+              onClick={() => setEditingDetails((value) => !value)}
+              disabled={busy}
+            >
+              {editingDetails ? t("cancel") : t("editDiveDetails")}
+            </button>
           </div>
+          {editingDetails ? (
+            <form
+              className="details-editor"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void onSaveDetails({
+                  buddy: buddyDraft.trim() || null,
+                  notes: notesDraft.trim() || null,
+                }).then((saved) => {
+                  if (saved) setEditingDetails(false);
+                });
+              }}
+            >
+              <label>
+                <span>{t("buddy")}</span>
+                <input
+                  value={buddyDraft}
+                  onChange={(event) => setBuddyDraft(event.target.value)}
+                  maxLength={300}
+                />
+              </label>
+              <label>
+                <span>{t("notes")}</span>
+                <textarea
+                  value={notesDraft}
+                  onChange={(event) => setNotesDraft(event.target.value)}
+                  rows={5}
+                  maxLength={5000}
+                />
+              </label>
+              <p>{t("localDetailsHint")}</p>
+              <button
+                type="submit"
+                className="button button-primary"
+                disabled={busy}
+              >
+                {t("saveChanges")}
+              </button>
+            </form>
+          ) : null}
           <dl className="details-list">
             <div>
               <dt><Users size={16} /> {t("buddy")}</dt>

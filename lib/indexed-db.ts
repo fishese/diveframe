@@ -161,6 +161,13 @@ export async function listLocalDives() {
   });
 }
 
+export async function listLocalSourceRecords() {
+  const database = await openDatabase();
+  return request<SourceRecord[]>(
+    database.transaction(SOURCES_STORE).objectStore(SOURCES_STORE).getAll(),
+  );
+}
+
 export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
   const database = await openDatabase();
   const transaction = database.transaction(
@@ -417,6 +424,17 @@ export async function updateLocalDiveSite(
 
   await transactionComplete(transaction);
   return updated;
+}
+
+export async function updateLocalDiveDetails(
+  id: string,
+  details: { buddy: string | null; notes: string | null },
+) {
+  return updateDive(id, (dive) => ({
+    ...dive,
+    buddy: details.buddy?.trim() || null,
+    notes: details.notes?.trim() || null,
+  }));
 }
 
 export async function listLocalSiteContributions() {

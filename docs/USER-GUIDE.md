@@ -41,9 +41,10 @@ log and photo data and should be kept securely.
 
 ## Changes made in DiveFrame
 
-Site choices, manually entered site names, photos, categories, and image
-settings made in DiveFrame stay in DiveFrame. They are not synchronized back to
-Shearwater, Subsurface, Garmin, Suunto, Oceanic+, or their cloud services.
+Site choices, manually entered site names, buddy, notes, photos, categories,
+and image settings made in DiveFrame stay in DiveFrame. They are not
+automatically synchronized back to Shearwater, Subsurface, Garmin, Suunto,
+Oceanic+, or their cloud services.
 
 To update the original log:
 
@@ -63,9 +64,30 @@ filter.
 - A complete DiveFrame app-data backup for transfer or recovery
 - A JSON log of manually added dive sites
 - A merged `dive-sites.json` catalog for review and updating the app repository
+- An updated copy of a freshly supplied Subsurface `.ssrf`/XML export, with
+  matched site names, buddy, and notes added
 
-DiveFrame does not currently export a modified Shearwater, Subsurface, UDDF, or
-FIT log.
+### Updating a Subsurface copy
+
+The normalized DiveFrame import is lossy: it keeps the fields needed by the
+app, but not every Subsurface setting, event, cylinder attribute, or extension.
+It therefore cannot safely reconstruct a complete Subsurface log from
+IndexedDB.
+
+Use **Settings → Update a Subsurface export** instead:
+
+1. Export a fresh `.ssrf` or XML file from Subsurface.
+2. Select that file in DiveFrame.
+3. DiveFrame matches its original Subsurface source identities and adds the
+   current site name, buddy, and notes where available.
+4. Download the new `-diveframe-updated.ssrf` copy.
+
+This is a pass-through edit. Unrelated XML, including profiles, events,
+cylinders, and fields DiveFrame does not parse, remains in the supplied copy.
+The original selected file is never overwritten. Site names selected in
+DiveFrame take priority, followed by a matched Shearwater site name.
+
+DiveFrame does not currently create modified Shearwater, UDDF, or FIT logs.
 
 ## Open-source license
 

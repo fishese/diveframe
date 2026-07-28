@@ -34,7 +34,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -709,6 +710,59 @@ button {
   color: var(--mist);
   max-height: 150px;
   overflow: auto;
+}
+
+.detail-edit-button {
+  padding: 7px 10px;
+}
+
+.details-editor {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  margin: 0 20px;
+  padding: 18px 0 4px;
+}
+
+.details-editor label {
+  display: grid;
+  gap: 7px;
+}
+
+.details-editor label > span {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.details-editor input,
+.details-editor textarea {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #fff;
+  outline: none;
+  padding: 10px 11px;
+  resize: vertical;
+  width: 100%;
+}
+
+.details-editor input:focus,
+.details-editor textarea:focus {
+  border-color: rgba(141, 235, 215, 0.48);
+  box-shadow: 0 0 0 3px rgba(141, 235, 215, 0.08);
+}
+
+.details-editor > p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.details-editor > .button {
+  justify-self: start;
 }
 
 .site-picker-card {
@@ -1592,6 +1646,7 @@ button {
 .background-settings,
 .branding-settings,
 .backup-settings,
+.subsurface-export-settings,
 .language-settings {
   margin-top: 14px;
   padding: 24px;
@@ -1600,18 +1655,24 @@ button {
 .background-settings > .settings-note,
 .branding-settings > .settings-note,
 .backup-settings > .settings-note,
+.subsurface-export-settings > .settings-note,
 .language-settings > .settings-note {
   margin-top: 20px;
 }
 
 .background-settings > .button,
-.branding-settings > .button {
+.branding-settings > .button,
+.subsurface-export-settings > .button {
   margin-top: 16px;
 }
 
 .backup-settings {
   margin-top: 0;
   order: 1;
+}
+
+.subsurface-export-settings {
+  order: 2;
 }
 
 .branding-settings {
@@ -2183,6 +2244,7 @@ button {
   .background-settings,
   .branding-settings,
   .backup-settings,
+  .subsurface-export-settings,
   .language-settings,
   .catalog-settings {
     padding: 18px;

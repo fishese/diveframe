@@ -162,6 +162,25 @@ Merge rules:
   during import. Existing browser data needs one re-import to
   populate numbers that were not retained by the version-1 schema.
 
+### Subsurface pass-through export
+
+The normalized model is deliberately not treated as a lossless Subsurface
+round-trip schema. Settings asks the user for a fresh `.ssrf`/XML source file,
+matches its dives through stored `deviceid:diveid` source records, and mutates
+only:
+
+- dive-site definitions and the matching dive's `divesiteid`
+- direct `buddy` elements
+- direct `notes` elements
+
+The updated file is downloaded under a new name; the selected original is not
+overwritten. All unrecognized XML remains in the supplied document. A
+DiveFrame site override takes priority over the matched Shearwater site name.
+
+Buddy and notes can be edited on the dive detail page. They use the existing
+nullable fields on the `dives` store, so this feature requires no IndexedDB
+version or schema migration.
+
 ## Dive-site catalog and contribution log
 
 `data/dive-sites.json` is the primary nearby-site source. Active entries within
