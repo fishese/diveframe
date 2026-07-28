@@ -274,6 +274,11 @@ never includes it. Bottom Profile uses a compact lower-third chart while
 Full-width Graph begins its panel higher and uses a larger template-default
 chart height.
 
+Logo placement combines the existing data-driven anchor with normalized
+`logoOffsetX` and `logoOffsetY` values. The renderer applies each offset as a
+fraction of canvas size, then clamps the logo within the canvas. Defaults are
+zero, so older saved composer settings retain their previous appearance.
+
 Overlay fonts are loaded from the public Google Fonts stylesheet imported by
 `app/globals.css`. The renderer waits for all requested weights before preview
 or export and falls back to platform Traditional Chinese fonts when offline.

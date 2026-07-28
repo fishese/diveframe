@@ -234,14 +234,20 @@ export function renderComposition(
   if (logo && settings.showLogo && settings.blockPositions.logo !== "hidden") {
     const maxWidth = width * 0.16;
     const scale = Math.min(maxWidth / logo.width, (height * 0.09) / logo.height, 1);
-    const logoBox = logoRect(
-      settings.blockPositions.logo,
-      panel,
+    const logoBox = offsetLogoRect(
+      logoRect(
+        settings.blockPositions.logo,
+        panel,
+        width,
+        height,
+        margin,
+        logo.width * scale,
+        logo.height * scale,
+      ),
+      settings.logoOffsetX,
+      settings.logoOffsetY,
       width,
       height,
-      margin,
-      logo.width * scale,
-      logo.height * scale,
     );
     context.drawImage(logo, logoBox.x, logoBox.y, logoBox.width, logoBox.height);
   }
@@ -456,5 +462,25 @@ function logoRect(
     y: bottom ? height - margin - desiredHeight : margin,
     width: desiredWidth,
     height: desiredHeight,
+  };
+}
+
+function offsetLogoRect(
+  rect: { x: number; y: number; width: number; height: number },
+  offsetX: number,
+  offsetY: number,
+  canvasWidth: number,
+  canvasHeight: number,
+) {
+  return {
+    ...rect,
+    x: Math.min(
+      canvasWidth - rect.width,
+      Math.max(0, rect.x + offsetX * canvasWidth),
+    ),
+    y: Math.min(
+      canvasHeight - rect.height,
+      Math.max(0, rect.y + offsetY * canvasHeight),
+    ),
   };
 }

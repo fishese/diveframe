@@ -133,6 +133,11 @@ third. **Full-width Graph** starts its information band higher and gives the
 profile substantially more height, so the two presets remain visually
 distinct regardless of the selected photograph.
 
+When a logo is enabled, choose its preset anchor and then use the horizontal
+and vertical position sliders for fine adjustment. The offsets are saved with
+that dive's composer settings and are applied identically to preview and
+high-resolution export.
+
 ### Updating a Subsurface copy
 
 The normalized DiveFrame import is lossy: it keeps the fields needed by the

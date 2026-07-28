@@ -452,6 +452,26 @@ export function ComposerApp() {
                 {logoPositions.map((position) => <option value={position} key={position}>{positionLabel(position, t)}</option>)}
               </select>
             </Control>
+            {logo && settings.showLogo ? (
+              <>
+                <Range
+                  label={t("horizontalPosition")}
+                  value={settings.logoOffsetX}
+                  min={-0.5}
+                  max={0.5}
+                  step={0.01}
+                  onChange={(value) => update("logoOffsetX", value)}
+                />
+                <Range
+                  label={t("verticalPosition")}
+                  value={settings.logoOffsetY}
+                  min={-0.5}
+                  max={0.5}
+                  step={0.01}
+                  onChange={(value) => update("logoOffsetY", value)}
+                />
+              </>
+            ) : null}
             <p className="control-hint">
               {logo ? null : `${t("noLogoSaved")} `}
               <Link href="/settings">{logo ? t("changeLogoInSettings") : t("setLogoInSettings")}</Link>

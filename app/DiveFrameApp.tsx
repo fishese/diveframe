@@ -662,8 +662,6 @@ export function DiveFrameApp() {
                         {formatDuration(
                           dive.durationSeconds ?? dive.lengthText,
                         )}
-                        {dive.photoCount > 0 && <Camera size={13} />}
-                        {dive.photoCount || ""}
                       </span>
                     </span>
                   </button>
