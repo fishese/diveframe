@@ -21,6 +21,10 @@ The original files are parsed in the browser and are never modified. DiveFrame
 stores normalized display fields, source mappings, site choices, and selected
 photo blobs in IndexedDB on the current device.
 
+See the [user guide](docs/USER-GUIDE.md) for supported files, local-storage
+boundaries, available exports, and the workflow for manually copying DiveFrame
+site corrections back to a source log.
+
 ## Features
 
 - Reads `dive_details`, calculated summaries, manual sites, buddies, and notes.
@@ -112,3 +116,9 @@ source control:
 $env:SHEARWATER_DB_FIXTURE='D:\path\to\Shearwater Cloud.db'
 node --test .\tests\import-shearwater.test.mjs
 ```
+
+## License
+
+DiveFrame is free software licensed under the
+[GNU General Public License v3.0 or later](LICENSE). Forks and modifications are
+welcome; redistributed versions must remain open source under the same license.

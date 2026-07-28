@@ -3,9 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and composer workflow", async () => {
-  const [app, settings, composer, chart, composerSettings, backup, fonts, i18n, shearwater, subsurface, uddf, fit, matching, storage, hosting, manifest, catalog] = await Promise.all([
+  const [app, settings, about, composer, chart, composerSettings, backup, fonts, i18n, shearwater, subsurface, uddf, fit, matching, storage, hosting, manifest, catalog, userGuide, license] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("app/settings/SettingsApp.tsx", "utf8"),
+    readFile("app/about/AboutApp.tsx", "utf8"),
     readFile("app/compose/ComposerApp.tsx", "utf8"),
     readFile("lib/chart-renderer.ts", "utf8"),
     readFile("lib/composer-settings.ts", "utf8"),
@@ -21,6 +22,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     readFile(".openai/hosting.json", "utf8"),
     readFile("public/manifest.webmanifest", "utf8"),
     readFile("data/dive-sites.json", "utf8"),
+    readFile("docs/USER-GUIDE.md", "utf8"),
+    readFile("LICENSE", "utf8"),
   ]);
 
   assert.match(shearwater, /GnssEntryLocation/);
@@ -31,6 +34,13 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /readSubsurfaceLog/);
   assert.match(app, /readUddfLog/);
   assert.match(app, /readFitDive/);
+  assert.match(app, /href="\/about"/);
+  assert.match(app, /status !== t\("importDiveLog"\)/);
+  assert.match(about, /t\("aboutImportsTitle"\)/);
+  assert.match(about, /t\("aboutSourceStepFilter"\)/);
+  assert.match(about, /t\("aboutLicenseTitle"\)/);
+  assert.match(userGuide, /\*\*Set in App\*\*/);
+  assert.match(license, /GPL-3\.0-or-later/);
   assert.match(app, /\.uddf/);
   assert.match(app, /\.fit/);
   assert.match(uddf, /source: "uddf"/);

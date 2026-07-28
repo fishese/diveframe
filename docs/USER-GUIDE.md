@@ -1,0 +1,76 @@
+# DiveFrame user guide
+
+DiveFrame is a device-local companion for dive logs. It combines compatible
+exports from several sources into a richer browser-based logbook, adds maps and
+dive-site choices, stores photos, and creates shareable images with dive
+profiles and statistics.
+
+It complements the original dive-computer or logbook application. It does not
+replace that application's cloud backup and does not write changes back to it.
+
+## Supported imports
+
+The **Import log** button accepts one or more of:
+
+- Shearwater Cloud Desktop `.db`, `.sqlite`, or `.sqlite3` databases
+- Subsurface `.ssrf` and XML logs
+- UDDF `.uddf` or XML logs, including Oceanic+ exports
+- Dive `.fit` activities exported from Garmin Dive or the current Suunto app
+
+When two source records can be matched safely, DiveFrame combines them into one
+canonical dive. It retains source-specific dive numbers and fills missing
+fields without allowing an empty field from a later import to erase useful
+existing data. Ambiguous records remain separate rather than being merged
+silently.
+
+## Local data and privacy
+
+Imported records, edits, photos, reusable backgrounds, the overlay logo, and
+settings are stored in IndexedDB for the current browser profile and web
+address. The source files are read in the browser and never modified.
+
+DiveFrame does not store the logbook on its server. Map-name and nearby-site
+lookups use network services. Public webfonts may also be downloaded by the
+browser.
+
+Browser data is not a durable cloud backup. It can be lost when site data is
+cleared, a private-browsing session ends, the browser profile is removed, or
+the app moves to a different web address. Use **Settings → Export app data**
+before changing devices, browsers, or addresses. The backup contains private
+log and photo data and should be kept securely.
+
+## Changes made in DiveFrame
+
+Site choices, manually entered site names, photos, categories, and image
+settings made in DiveFrame stay in DiveFrame. They are not synchronized back to
+Shearwater, Subsurface, Garmin, Suunto, Oceanic+, or their cloud services.
+
+To update the original log:
+
+1. Turn on the **Set in App** filter.
+2. Open a dive and note its source-specific dive number.
+3. Find that dive in the source application and enter the correction manually.
+4. Export and import the source log again.
+
+When a later source import supplies a non-empty site name, DiveFrame replaces
+the temporary app-level site assignment and the dive leaves the **Set in App**
+filter.
+
+## Available exports
+
+- High-resolution PNG or JPEG share images, with selectable photo, profile,
+  statistics, units, language, styling, and optional logo
+- A complete DiveFrame app-data backup for transfer or recovery
+- A JSON log of manually added dive sites
+- A merged `dive-sites.json` catalog for review and updating the app repository
+
+DiveFrame does not currently export a modified Shearwater, Subsurface, UDDF, or
+FIT log.
+
+## Open-source license
+
+DiveFrame is free software under the GNU General Public License version 3 or
+any later version (`GPL-3.0-or-later`). You may fork, study, modify, and
+redistribute it. Distributed modified versions must remain available under the
+same open-source license. See [LICENSE](../LICENSE) for the project notice and
+license link.

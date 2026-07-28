@@ -1408,6 +1408,148 @@ button {
   min-height: 100vh;
 }
 
+.about-page {
+  min-height: 100vh;
+}
+
+.about-shell {
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: 54px 24px 90px;
+}
+
+.about-hero {
+  max-width: 830px;
+}
+
+.about-hero h1 {
+  font-size: clamp(40px, 6vw, 70px);
+  letter-spacing: -0.06em;
+  line-height: 0.98;
+  margin: 0;
+}
+
+.about-hero > p:last-child {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.7;
+  margin: 20px 0 0;
+  max-width: 760px;
+}
+
+.about-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 42px;
+}
+
+.about-card {
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  display: flex;
+  gap: 16px;
+  min-height: 230px;
+  padding: 24px;
+}
+
+.about-card h2,
+.about-reconcile h2,
+.about-license h2 {
+  font-size: 24px;
+  letter-spacing: -0.035em;
+  margin: 1px 0 12px;
+}
+
+.about-card p,
+.about-card li,
+.about-reconcile p,
+.about-reconcile li,
+.about-license p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.about-card p {
+  margin: 0;
+}
+
+.about-card ul,
+.about-reconcile ol {
+  margin: 14px 0 0;
+  padding-left: 20px;
+}
+
+.about-card li + li,
+.about-reconcile li + li {
+  margin-top: 7px;
+}
+
+.about-card .about-emphasis {
+  border-left: 2px solid var(--teal);
+  color: var(--mist);
+  margin-top: 17px;
+  padding-left: 12px;
+}
+
+.about-reconcile {
+  align-items: flex-start;
+  background:
+    linear-gradient(135deg, rgba(141, 235, 215, 0.1), rgba(141, 235, 215, 0.025));
+  border: 1px solid rgba(141, 235, 215, 0.22);
+  border-radius: 22px;
+  display: grid;
+  gap: 19px;
+  grid-template-columns: auto 1fr;
+  margin-top: 14px;
+  padding: 28px;
+}
+
+.about-reconcile-icon {
+  align-items: center;
+  background: var(--teal);
+  border-radius: 12px;
+  color: var(--ink);
+  display: flex;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.about-reconcile .eyebrow,
+.about-license .eyebrow {
+  margin-bottom: 8px;
+}
+
+.about-reconcile h2,
+.about-reconcile p,
+.about-license h2,
+.about-license p {
+  margin-top: 0;
+}
+
+.about-license {
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  margin-top: 26px;
+  padding: 26px 4px;
+}
+
+.about-license p:last-child {
+  margin-bottom: 0;
+  max-width: 800px;
+}
+
+.about-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
 .settings-shell {
   display: flex;
   flex-direction: column;
@@ -1849,6 +1991,29 @@ button {
     font-size: 0;
     gap: 0;
     padding: 8px;
+  }
+
+  .about-shell {
+    padding: 36px 16px 70px;
+  }
+
+  .about-hero h1 {
+    font-size: 41px;
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+    margin-top: 30px;
+  }
+
+  .about-card {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .about-reconcile {
+    grid-template-columns: 1fr;
+    padding: 22px;
   }
 
   .overview {

@@ -25,6 +25,8 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `app/compose/ComposerApp.tsx` — live preview and composer controls.
 - `app/settings/SettingsApp.tsx` — device-local settings and catalog maintenance
   tools, including the reusable background library.
+- `app/about/AboutApp.tsx` — bilingual user-facing explanation of imports,
+  exports, local persistence, source-log reconciliation, and licensing.
 - `lib/parsers/` — separate Shearwater, Subsurface, UDDF, and FIT importers.
 - `lib/dive-model.ts` and `lib/normalize-dive.ts` — normalized internal model.
 - `lib/dive-matching.ts` — cross-source record matching.
@@ -42,6 +44,8 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `app/globals.css` — responsive application styling.
 - `public/manifest.webmanifest` and `public/sw.js` — installable-web-app shell.
 - `tests/` — product contract and optional real Shearwater fixture test.
+- `docs/USER-GUIDE.md` — supported-format and device-local workflow guide.
+- `LICENSE` — project notice for `GPL-3.0-or-later`.
 - `.openai/hosting.json` — current private Sites project reference; D1 and R2
   are intentionally disabled.
 

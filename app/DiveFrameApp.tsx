@@ -11,6 +11,7 @@ import {
   Droplets,
   ImagePlus,
   Images,
+  Info,
   LoaderCircle,
   MapPin,
   Search,
@@ -359,10 +360,16 @@ export function DiveFrameApp() {
           </span>
         </button>
         <div className="topbar-actions">
-          <span className="status-pill">
-            {busy ? <LoaderCircle size={14} className="spin" /> : <Droplets size={14} />}
-            {status}
-          </span>
+          {status !== t("importDiveLog") ? (
+            <span className="status-pill">
+              {busy ? <LoaderCircle size={14} className="spin" /> : <Droplets size={14} />}
+              {status}
+            </span>
+          ) : null}
+          <Link href="/about" className="button button-quiet">
+            <Info size={16} />
+            {t("about")}
+          </Link>
           <Link href="/settings" className="button button-quiet">
             <Settings size={16} />
             {t("settings")}
