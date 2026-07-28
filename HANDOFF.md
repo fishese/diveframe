@@ -201,8 +201,12 @@ the Subsurface log populates samples for browser records created before schema
 version 4.
 
 Chart depth and elapsed-time axis labels are enabled by default and can be
-hidden per dive. One reusable transparent PNG or SVG logo is managed in
-Settings; the composer only controls its visibility and preset position.
+hidden per dive. The depth fill supports solid and upward transparent-fade
+modes. One reusable transparent PNG or SVG logo is managed in Settings; the
+composer only controls its visibility and preset position. Template defaults
+reserve separate title, date, chart, statistics, and branding zones; the
+composer migrates the earlier overlapping Minimal, Poster, and Full-width Graph
+defaults when it loads them.
 
 ## Current hosting
 

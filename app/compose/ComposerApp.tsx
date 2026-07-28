@@ -78,6 +78,7 @@ export function ComposerApp() {
         ...backgrounds.map(backgroundChoice),
       ];
       const initial = { ...defaultComposerSettings(selectedDive.id), ...saved };
+      repairLegacyTemplatePositions(initial);
       if (initial.blockPositions.logo === "hidden") {
         initial.blockPositions = { ...initial.blockPositions, logo: "top-right" };
         if (saved && !("showLogo" in saved)) initial.showLogo = false;
@@ -259,6 +260,7 @@ export function ComposerApp() {
             <Color label={t("temperatureLine")} value={settings.temperatureColor} onChange={(value) => update("temperatureColor", value)} />
             <Range label={t("lineThickness")} value={settings.lineThickness} min={1} max={10} step={0.5} onChange={(value) => update("lineThickness", value)} />
             <Range label={t("fillOpacity")} value={settings.fillOpacity} min={0} max={0.8} step={0.05} onChange={(value) => update("fillOpacity", value)} />
+            <Control label={t("depthFillStyle")}><select value={settings.depthFillMode} onChange={(event) => update("depthFillMode", event.target.value as ComposerSettings["depthFillMode"])}><option value="fade">{t("fadeFill")}</option><option value="solid">{t("solidFill")}</option></select></Control>
             <Range label={t("chartHeight")} value={settings.chartHeight} min={0.12} max={0.48} step={0.01} onChange={(value) => update("chartHeight", value)} />
             <label className="composer-check"><input type="checkbox" checked={settings.showAxisLabels} onChange={(event) => update("showAxisLabels", event.target.checked)} /> {t("showAxisLabels")}</label>
             {(availability.pressure ||
@@ -342,6 +344,51 @@ function photoChoice(photo: LocalAttachment): PhotoChoice {
 }
 function backgroundChoice(photo: LocalBackground): PhotoChoice {
   return { id: `background:${photo.id}`, label: photo.fileName, source: "library", blob: photo.blob };
+}
+function repairLegacyTemplatePositions(settings: ComposerSettings) {
+  if (
+    ["bottom-profile", "minimal", "full-width-graph"].includes(settings.templateId) &&
+    settings.blockPositions.logo === "top-right"
+  ) {
+    settings.blockPositions = {
+      ...settings.blockPositions,
+      logo: "top-centre",
+    };
+  }
+  if (
+    settings.templateId === "minimal" &&
+    settings.blockPositions.chart === "bottom-centre" &&
+    settings.blockPositions.statistics === "bottom-right"
+  ) {
+    settings.blockPositions = {
+      ...settings.blockPositions,
+      date: settings.blockPositions.date === "bottom-left" ? "top-right" : settings.blockPositions.date,
+      chart: "above-graph",
+      statistics: "inside-panel",
+    };
+  }
+  if (
+    settings.templateId === "full-width-graph" &&
+    settings.blockPositions.chart === "bottom-centre" &&
+    settings.blockPositions.statistics === "bottom-centre"
+  ) {
+    settings.blockPositions = {
+      ...settings.blockPositions,
+      chart: "above-graph",
+      statistics: "inside-panel",
+    };
+  }
+  if (
+    settings.templateId === "poster" &&
+    settings.blockPositions.site === "top-centre" &&
+    settings.blockPositions.category === "top-centre" &&
+    settings.blockPositions.date === "inside-panel"
+  ) {
+    settings.blockPositions = {
+      ...settings.blockPositions,
+      date: "top-right",
+    };
+  }
 }
 function fieldAvailable(field: DisplayField, dive: LocalDive) {
   const checks: Partial<Record<DisplayField, boolean>> = {

@@ -30,7 +30,7 @@ export const TEMPLATES: TemplateDefinition[] = [
       date: "top-right",
       chart: "above-graph",
       statistics: "inside-panel",
-      logo: "top-right",
+      logo: "top-centre",
     },
   },
   {
@@ -58,10 +58,10 @@ export const TEMPLATES: TemplateDefinition[] = [
     defaultPositions: {
       site: "top-left",
       category: "hidden",
-      date: "bottom-left",
-      chart: "bottom-centre",
-      statistics: "bottom-right",
-      logo: "top-right",
+      date: "top-right",
+      chart: "above-graph",
+      statistics: "inside-panel",
+      logo: "top-centre",
     },
   },
   {
@@ -73,7 +73,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     defaultPositions: {
       site: "top-centre",
       category: "top-centre",
-      date: "inside-panel",
+      date: "top-right",
       chart: "above-graph",
       statistics: "inside-panel",
       logo: "bottom-right",
@@ -89,9 +89,9 @@ export const TEMPLATES: TemplateDefinition[] = [
       site: "top-left",
       category: "top-left",
       date: "top-right",
-      chart: "bottom-centre",
-      statistics: "bottom-centre",
-      logo: "top-right",
+      chart: "above-graph",
+      statistics: "inside-panel",
+      logo: "top-centre",
     },
   },
 ];

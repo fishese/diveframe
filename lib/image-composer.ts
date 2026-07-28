@@ -59,7 +59,10 @@ export function renderComposition(
   const panel =
     template.layout === "right"
       ? { x: width * 0.61, y: 0, width: width * 0.39, height }
-      : { x: 0, y: height * (template.layout === "minimal" ? 0.72 : 0.58), width, height: height * 0.42 };
+      : (() => {
+          const y = height * (template.layout === "minimal" ? 0.62 : 0.58);
+          return { x: 0, y, width, height: height - y };
+        })();
   drawPhoto(context, image, width, height, settings);
   if (settings.blurBehindText) {
     context.save();
@@ -100,22 +103,58 @@ export function renderComposition(
   }
 
   const metaAnchor = blockAnchor(settings.blockPositions.category, panel, width, height, margin);
-  let metaY = metaAnchor.y + titleSize * 1.35;
+  const categorySharesSite =
+    Boolean(siteName) &&
+    settings.blockPositions.category === settings.blockPositions.site;
+  let metaY = metaAnchor.y + (categorySharesSite ? titleSize * 1.18 : 0);
   context.font = `600 ${Math.round(titleSize * 0.38)}px ${fontStack}`;
   context.fillStyle = template.accent;
   if (settings.visibleFields.category && settings.blockPositions.category !== "hidden") {
-    context.fillText(
+    drawAlignedText(
+      context,
       translate(settings.language, settings.categoryOverride),
       metaAnchor.x,
       metaY,
+      metaAnchor.width,
+      metaAnchor.align,
+      settings,
     );
     metaY += titleSize * 0.55;
   }
   const dateText = formatDateTime(dive, settings);
   if (dateText && settings.blockPositions.date !== "hidden") {
     const dateAnchor = blockAnchor(settings.blockPositions.date, panel, width, height, margin);
+    const dateSharesSite =
+      Boolean(siteName) &&
+      settings.blockPositions.date === settings.blockPositions.site;
+    const dateSharesCategory =
+      settings.visibleFields.category &&
+      settings.blockPositions.category !== "hidden" &&
+      settings.blockPositions.date === settings.blockPositions.category;
+    const dateOffset =
+      (dateSharesSite ? titleSize * 1.18 : 0) +
+      (dateSharesCategory ? titleSize * 0.55 : 0);
     context.fillStyle = "#fff";
-    drawAlignedText(context, dateText, dateAnchor.x, dateAnchor.y + titleSize * 0.58, dateAnchor.width, dateAnchor.align, settings);
+    drawAlignedText(context, dateText, dateAnchor.x, dateAnchor.y + dateOffset, dateAnchor.width, dateAnchor.align, settings);
+  }
+
+  const stats = buildStatistics(dive, settings);
+  const statsWidth =
+    template.layout === "right"
+      ? panel.width - margin * 2
+      : width - margin * 2;
+  const statHeight = statisticsHeight(stats, statsWidth, titleSize);
+  const statsBox = blockRect(
+    settings.blockPositions.statistics,
+    panel,
+    width,
+    height,
+    margin,
+    statsWidth,
+    statHeight,
+  );
+  if (settings.blockPositions.statistics === "inside-panel") {
+    statsBox.y = panel.y + panel.height - margin - statHeight;
   }
 
   const chartHeight = Math.min(height * settings.chartHeight, panel.height * 0.5);
@@ -128,8 +167,21 @@ export function renderComposition(
     template.layout === "right" ? panel.width - margin * 2 : width - margin * 2,
     chartHeight,
   );
-  if (settings.blockPositions.chart === "inside-panel") {
-    chartBox.y = panel.y + panel.height * 0.3;
+  if (
+    settings.blockPositions.chart === "inside-panel" ||
+    settings.blockPositions.chart === "above-graph"
+  ) {
+    if (template.layout === "right") {
+      chartBox.y = panel.y + Math.max(panel.height * 0.25, margin + titleSize * 2.6);
+    }
+    const chartBottom =
+      settings.blockPositions.statistics === "inside-panel"
+        ? statsBox.y - Math.max(8, titleSize * 0.25)
+        : panel.y + panel.height - margin;
+    chartBox.height = Math.max(
+      1,
+      Math.min(chartBox.height, chartBottom - chartBox.y),
+    );
   }
   let renderedChart = false;
   if (settings.blockPositions.chart !== "hidden") {
@@ -160,20 +212,6 @@ export function renderComposition(
     }
   }
 
-  const stats = buildStatistics(dive, settings);
-  const statHeight = titleSize * (stats.length > 4 ? 2.8 : 1.35);
-  const statsBox = blockRect(
-    settings.blockPositions.statistics,
-    panel,
-    width,
-    height,
-    margin,
-    template.layout === "right" ? panel.width - margin * 2 : width - margin * 2,
-    statHeight,
-  );
-  if (settings.blockPositions.statistics === "inside-panel") {
-    statsBox.y = panel.y + panel.height - margin - statHeight;
-  }
   if (settings.blockPositions.statistics !== "hidden") {
     drawStatistics(context, stats, statsBox.x, statsBox.y, statsBox.width, titleSize, settings, fontStack);
   }
@@ -181,7 +219,7 @@ export function renderComposition(
   if (logo && settings.showLogo && settings.blockPositions.logo !== "hidden") {
     const maxWidth = width * 0.16;
     const scale = Math.min(maxWidth / logo.width, (height * 0.09) / logo.height, 1);
-    const logoBox = blockRect(
+    const logoBox = logoRect(
       settings.blockPositions.logo,
       panel,
       width,
@@ -237,7 +275,7 @@ function buildStatistics(dive: Dive, settings: ComposerSettings) {
 
 function drawStatistics(context: CanvasRenderingContext2D, stats: Array<{ label: string; value: string }>, x: number, y: number, width: number, base: number, settings: ComposerSettings, fontStack: string) {
   if (!stats.length) return;
-  const columns = Math.min(4, stats.length);
+  const columns = statisticsColumnCount(stats, width, base);
   stats.slice(0, 8).forEach((stat, index) => {
     const column = index % columns;
     const row = Math.floor(index / columns);
@@ -248,13 +286,35 @@ function drawStatistics(context: CanvasRenderingContext2D, stats: Array<{ label:
     if (settings.textTreatment === "outline") {
       context.strokeStyle = "rgba(0,0,0,.85)";
       context.lineWidth = Math.max(2, base * 0.055);
-      context.strokeText(stat.value, x + column * cellWidth, top);
+      context.strokeText(stat.value, x + column * cellWidth, top, cellWidth * 0.9);
     }
-    context.fillText(stat.value, x + column * cellWidth, top);
+    context.fillText(stat.value, x + column * cellWidth, top, cellWidth * 0.9);
     context.fillStyle = "rgba(255,255,255,.78)";
     context.font = `500 ${Math.round(base * 0.25)}px ${fontStack}`;
-    context.fillText(stat.label, x + column * cellWidth, top + base * 0.62);
+    context.fillText(stat.label, x + column * cellWidth, top + base * 0.62, cellWidth * 0.9);
   });
+}
+
+function statisticsColumnCount(
+  stats: Array<{ label: string; value: string }>,
+  width: number,
+  base: number,
+) {
+  return Math.min(
+    4,
+    stats.length,
+    Math.max(1, Math.floor(width / Math.max(1, base * 2.55))),
+  );
+}
+
+function statisticsHeight(
+  stats: Array<{ label: string; value: string }>,
+  width: number,
+  base: number,
+) {
+  if (!stats.length) return 0;
+  const rows = Math.ceil(Math.min(8, stats.length) / statisticsColumnCount(stats, width, base));
+  return rows * base * 1.35;
 }
 
 function formatDateTime(dive: Dive, settings: ComposerSettings) {
@@ -348,6 +408,38 @@ function blockRect(
         : margin,
     y: bottom ? height - margin - desiredHeight : margin + height * 0.16,
     width: actualWidth,
+    height: desiredHeight,
+  };
+}
+
+function logoRect(
+  position: ComposerSettings["blockPositions"]["logo"],
+  panel: { x: number; y: number; width: number; height: number },
+  width: number,
+  height: number,
+  margin: number,
+  desiredWidth: number,
+  desiredHeight: number,
+) {
+  if (position === "inside-panel" || position === "above-graph") {
+    return {
+      x: panel.x + margin,
+      y: panel.y + margin,
+      width: Math.min(desiredWidth, panel.width - margin * 2),
+      height: desiredHeight,
+    };
+  }
+  const centre = position.endsWith("centre");
+  const right = position.endsWith("right");
+  const bottom = position.startsWith("bottom");
+  return {
+    x: centre
+      ? (width - desiredWidth) / 2
+      : right
+        ? width - margin - desiredWidth
+        : margin,
+    y: bottom ? height - margin - desiredHeight : margin,
+    width: desiredWidth,
     height: desiredHeight,
   };
 }

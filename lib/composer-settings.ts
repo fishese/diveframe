@@ -16,6 +16,7 @@ export type ChartMode =
   | "depth-temperature"
   | "depth-pressure-temperature"
   | "hidden";
+export type DepthFillMode = "solid" | "fade";
 export type PhotoFit = "fill" | "fit";
 export type BlockPosition =
   | "top-left"
@@ -83,6 +84,7 @@ export type ComposerSettings = {
   temperatureColor: string;
   lineThickness: number;
   fillOpacity: number;
+  depthFillMode: DepthFillMode;
   blockPositions: {
     site: BlockPosition;
     category: BlockPosition;
@@ -135,6 +137,7 @@ export function defaultComposerSettings(diveId: string): ComposerSettings {
     temperatureColor: "#a9c7ff",
     lineThickness: 3,
     fillOpacity: 0.2,
+    depthFillMode: "fade",
     blockPositions: {
       site: "top-left",
       category: "top-left",

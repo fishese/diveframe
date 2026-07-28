@@ -63,8 +63,11 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /OVERLAY_FONTS/);
   assert.match(composer, /getLocalOverlayLogo/);
   assert.match(composer, /showLogo/);
+  assert.match(composer, /repairLegacyTemplatePositions/);
   assert.match(chart, /drawAxisLabels/);
+  assert.match(chart, /depthFillMode === "fade"/);
   assert.match(composerSettings, /showAxisLabels: true/);
+  assert.match(composerSettings, /depthFillMode: "fade"/);
   assert.match(settings, /Overlay logo/);
   assert.match(fonts, /Noto Sans HK/);
   assert.match(fonts, /Noto Serif TC/);

@@ -84,7 +84,14 @@ export function renderDiveChart(
     fill.lineTo(xFor(samples[0].elapsedSeconds), plot.y);
     fill.closePath();
     context.globalAlpha = settings.fillOpacity;
-    context.fillStyle = settings.depthColor;
+    if (settings.depthFillMode === "fade") {
+      const gradient = context.createLinearGradient(0, plot.y, 0, plot.y + plot.height);
+      gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+      gradient.addColorStop(1, settings.depthColor);
+      context.fillStyle = gradient;
+    } else {
+      context.fillStyle = settings.depthColor;
+    }
     context.fill(fill);
     context.globalAlpha = 1;
   }
@@ -180,11 +187,14 @@ function drawAxisLabels(
   context.shadowBlur = labelSize * 0.22;
   context.shadowOffsetY = labelSize * 0.08;
 
-  for (let index = 0; index <= 3; index += 1) {
-    const ratio = index / 3;
+  const timeIntervals =
+    plot.width < labelSize * 22 ? 1 : plot.width < labelSize * 34 ? 2 : 3;
+  for (let index = 0; index <= timeIntervals; index += 1) {
+    const ratio = index / timeIntervals;
     const x = plot.x + plot.width * ratio;
     const value = formatDuration(Math.round(maximumTime * ratio));
-    context.textAlign = index === 0 ? "left" : index === 3 ? "right" : "center";
+    context.textAlign =
+      index === 0 ? "left" : index === timeIntervals ? "right" : "center";
     context.fillText(value, x, plot.y + plot.height + labelSize * 0.35);
   }
 
