@@ -542,12 +542,24 @@ button {
   margin: 20px 0 14px;
 }
 
-.detail-hero p {
+.detail-hero-actions {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.detail-hero-actions p {
   align-items: center;
   color: var(--muted);
   display: flex;
   gap: 7px;
   margin: 0;
+}
+
+.compose-hero-button {
+  flex: 0 0 auto;
+  text-decoration: none;
 }
 
 .metric-grid {
@@ -1722,6 +1734,16 @@ button {
 
   .detail-hero h2 {
     font-size: 42px;
+  }
+
+  .detail-hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .compose-hero-button {
+    justify-content: center;
+    width: 100%;
   }
 
   .metric-grid {

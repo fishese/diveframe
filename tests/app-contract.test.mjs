@@ -33,6 +33,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /BACKGROUNDS_STORE/);
   assert.match(app, /createShareCard/);
   assert.match(app, /Add photos/);
+  assert.match(app, /Create share image/);
+  assert.match(app, /\/compose\?dive=/);
   assert.match(app, /openstreetmap\.org/);
   assert.match(app, /api\/geocode/);
   assert.match(app, /api\/nearby-sites/);

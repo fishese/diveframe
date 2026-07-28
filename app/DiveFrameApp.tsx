@@ -681,10 +681,19 @@ function DiveDetail({
           <span>{formatDate(dive.diveDate)}</span>
         </div>
         <h2>{displaySite(dive)}</h2>
-        <p>
-          <MapPin size={16} />
-          {displayLocation(dive) || (hasGps ? "Resolving GPS location…" : "Location not entered")}
-        </p>
+        <div className="detail-hero-actions">
+          <p>
+            <MapPin size={16} />
+            {displayLocation(dive) || (hasGps ? "Resolving GPS location…" : "Location not entered")}
+          </p>
+          <Link
+            href={`/compose?dive=${encodeURIComponent(dive.id)}`}
+            className="button button-primary compose-hero-button"
+          >
+            <Sparkles size={17} />
+            Create share image
+          </Link>
+        </div>
       </div>
 
       <div className="metric-grid">
