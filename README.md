@@ -42,11 +42,15 @@ site corrections back to a source log.
 - OpenStreetMap entry-location maps.
 - Mutually exclusive Site Named, GPS Data, and Set in App filters with an
   explicit clear action.
+- Documented `source:shearwater-only` and `source:subsurface-only` search
+  operators for finding records that have not matched across those two logs.
 - A single broader geocoding retry for named dives without GPS, so a failed
   site-level query can still resolve its city/region (for example,
   `Mikomotojima, Shizuoka, Japan` → `Shizuoka, Japan`).
 - A curated local dive-site catalog with proximity-ranked suggestions and an
   OpenStreetMap fallback.
+- Editable dive-site and broader location names, with autocomplete suggestions
+  from the current local logbook.
 - Separate source-specific dive numbers on merged records.
 - A filter for site names assigned in DiveFrame and a JSON export of manually
   typed site candidates.
@@ -84,6 +88,7 @@ site corrections back to a source log.
   presets are available per dive; the device default starts at Aluminium 80
   (11.1 L). Unitless Shearwater air-integration values are normalized from PSI
   to bar before the calculation.
+  The overview average excludes dives shorter than 20 minutes.
 - One device-local transparent PNG or SVG overlay logo configured in Settings,
   with per-dive visibility and placement controls in the composer.
 - Installable web-app metadata for mobile and desktop browsers.

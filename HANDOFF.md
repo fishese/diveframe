@@ -238,6 +238,19 @@ device default. Dives with insufficient data are excluded rather than counted
 as zero. Shearwater Cloud air-integration values above 500 are treated as
 unitless PSI and the entire start/end pair is normalized to bar. Hydration also
 repairs already stored pre-fix values, so users do not have to clear IndexedDB.
+The overview additionally excludes dives shorter than 1,200 seconds; per-dive
+SAC display remains available for those dives.
+
+The logbook search parser recognizes `source:shearwater-only` and
+`source:subsurface-only`, removes the operator from the free-text query, and
+filters on the canonical record's `sources` array. The About page documents
+both operators without adding more filter buttons.
+
+Dive details can persist an edited broad `location` directly on the canonical
+record and a specific site through the existing `userSite` override path.
+HTML datalists offer unique names already present in local dives. GPS records
+retain the existing catalog/OSM nearby-site picker; manually entered non-GPS
+locations feed the existing geocoder/map flow.
 
 ## Image composer
 

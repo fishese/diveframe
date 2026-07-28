@@ -92,9 +92,11 @@ type SiteSelection = {
   name: string;
   source: "catalog" | "suggestion" | "manual";
   catalogId?: string;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
 };
+
+const MINIMUM_AVERAGE_SAC_DURATION_SECONDS = 20 * 60;
 
 export function DiveFrameApp() {
   const { language, t } = useAppI18n();
@@ -226,9 +228,23 @@ export function DiveFrameApp() {
   }, [selectedId]);
 
   const visibleDives = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const search = parseDiveSearch(query);
+    const needle = search.text.toLowerCase();
     return dives
       .filter((dive) => {
+        if (
+          search.sourceOnly &&
+          !(
+            dive.sources.includes(search.sourceOnly) &&
+            !dive.sources.includes(
+              search.sourceOnly === "shearwater"
+                ? "subsurface"
+                : "shearwater",
+            )
+          )
+        ) {
+          return false;
+        }
         if (
           namedOnly &&
           !(
@@ -263,6 +279,11 @@ export function DiveFrameApp() {
 
   const stats = useMemo(() => {
     const sacRates = dives
+      .filter(
+        (dive) =>
+          dive.durationSeconds !== null &&
+          dive.durationSeconds >= MINIMUM_AVERAGE_SAC_DURATION_SECONDS,
+      )
       .map((dive) => sacRateForDive(dive, defaultCylinderPresetId))
       .filter((rate): rate is number => rate !== null);
     return {
@@ -300,6 +321,21 @@ export function DiveFrameApp() {
       ).size,
     };
   }, [defaultCylinderPresetId, dives]);
+
+  const siteSuggestions = useMemo(
+    () =>
+      uniqueSuggestions(
+        dives.flatMap((dive) => [dive.userSite, dive.site]),
+      ),
+    [dives],
+  );
+  const locationSuggestions = useMemo(
+    () =>
+      uniqueSuggestions(
+        dives.flatMap((dive) => [dive.location, dive.resolvedLocation]),
+      ),
+    [dives],
+  );
 
   async function importDatabase(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -373,7 +409,7 @@ export function DiveFrameApp() {
   }
 
   async function saveDiveSite(selection: SiteSelection) {
-    if (!selected) return;
+    if (!selected) return false;
     setBusy(true);
     setStatus(t("savingDiveSite"));
     try {
@@ -386,14 +422,17 @@ export function DiveFrameApp() {
           ? t("manualSiteSaved", { name: selection.name })
           : t("siteSavedAs", { name: selection.name }),
       );
+      return true;
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("siteSaveFailed"));
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
   async function saveDiveDetails(details: {
+    location?: string | null;
     buddy: string | null;
     notes: string | null;
     cylinderPresetId?: string | null;
@@ -639,6 +678,8 @@ export function DiveFrameApp() {
                   onShare={sharePhoto}
                   onSaveSite={saveDiveSite}
                   onSaveDetails={saveDiveDetails}
+                  siteSuggestions={siteSuggestions}
+                  locationSuggestions={locationSuggestions}
                 />
               ) : (
                 <div className="no-selection">{t("chooseDive")}</div>
@@ -719,6 +760,8 @@ function DiveDetail({
   onShare,
   onSaveSite,
   onSaveDetails,
+  siteSuggestions,
+  locationSuggestions,
 }: {
   dive: Dive;
   attachments: Attachment[];
@@ -726,8 +769,9 @@ function DiveDetail({
   onBack: () => void;
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onShare: (attachment: Attachment) => void;
-  onSaveSite: (site: SiteSelection) => Promise<void>;
+  onSaveSite: (site: SiteSelection) => Promise<boolean>;
   onSaveDetails: (details: {
+    location?: string | null;
     buddy: string | null;
     notes: string | null;
     cylinderPresetId?: string | null;
@@ -735,6 +779,8 @@ function DiveDetail({
     startPressureBar?: number | null;
     endPressureBar?: number | null;
   }) => Promise<boolean>;
+  siteSuggestions: string[];
+  locationSuggestions: string[];
 }) {
   const { language, t } = useAppI18n();
   const calculated = safeJson(dive.calculatedJson);
@@ -747,6 +793,8 @@ function DiveDetail({
   );
   const hasGps = dive.gpsEntryLat !== null && dive.gpsEntryLng !== null;
   const [manualSite, setManualSite] = useState(dive.userSite ?? dive.site ?? "");
+  const [siteDraft, setSiteDraft] = useState(dive.userSite ?? dive.site ?? "");
+  const [locationDraft, setLocationDraft] = useState(dive.location ?? "");
   const [nearbySites, setNearbySites] = useState<NearbySite[] | null>(null);
   const [sitePickerOpen, setSitePickerOpen] = useState(!dive.userSite);
   const [editingDetails, setEditingDetails] = useState(false);
@@ -764,7 +812,7 @@ function DiveDetail({
   const [endPressureDraft, setEndPressureDraft] = useState(
     pressurePair?.end?.toString() ?? "",
   );
-  const locationQuery = [dive.site, dive.location]
+  const locationQuery = [dive.userSite ?? dive.site, dive.location]
     .filter((value, index, values): value is string =>
       Boolean(value && values.indexOf(value) === index),
     )
@@ -838,9 +886,11 @@ function DiveDetail({
   }, [dive.cylinderPresetId]);
 
   async function saveSiteAndCollapse(selection: SiteSelection) {
-    await onSaveSite(selection);
-    setManualSite(selection.name);
-    setSitePickerOpen(false);
+    if (await onSaveSite(selection)) {
+      setManualSite(selection.name);
+      setSiteDraft(selection.name);
+      setSitePickerOpen(false);
+    }
   }
 
   useEffect(() => {
@@ -1002,18 +1052,62 @@ function DiveDetail({
               className="details-editor"
               onSubmit={(event) => {
                 event.preventDefault();
-                void onSaveDetails({
-                  buddy: buddyDraft.trim() || null,
-                  notes: notesDraft.trim() || null,
-                  cylinderPresetId: cylinderPresetDraft,
-                  cylinderVolumeL: cylinderPreset(cylinderPresetDraft).volumeL,
-                  startPressureBar: optionalPositiveNumber(startPressureDraft),
-                  endPressureBar: optionalPositiveNumber(endPressureDraft),
-                }).then((saved) => {
+                void (async () => {
+                  const siteName = siteDraft.trim();
+                  const currentSite = (dive.userSite ?? dive.site ?? "").trim();
+                  if (siteName && siteName !== currentSite) {
+                    const saved = await onSaveSite({
+                      name: siteName,
+                      source: "manual",
+                      latitude: hasGps ? dive.gpsEntryLat : null,
+                      longitude: hasGps ? dive.gpsEntryLng : null,
+                    });
+                    if (!saved) return;
+                  }
+                  const saved = await onSaveDetails({
+                    location: locationDraft.trim() || null,
+                    buddy: buddyDraft.trim() || null,
+                    notes: notesDraft.trim() || null,
+                    cylinderPresetId: cylinderPresetDraft,
+                    cylinderVolumeL: cylinderPreset(cylinderPresetDraft).volumeL,
+                    startPressureBar: optionalPositiveNumber(startPressureDraft),
+                    endPressureBar: optionalPositiveNumber(endPressureDraft),
+                  });
                   if (saved) setEditingDetails(false);
-                });
+                })();
               }}
             >
+              <div className="details-editor-row location-editor-row">
+                <label>
+                  <span>{t("diveSiteName")}</span>
+                  <input
+                    value={siteDraft}
+                    onChange={(event) => setSiteDraft(event.target.value)}
+                    list={`site-suggestions-${dive.id}`}
+                    maxLength={120}
+                  />
+                  <datalist id={`site-suggestions-${dive.id}`}>
+                    {siteSuggestions.map((site) => (
+                      <option key={site} value={site} />
+                    ))}
+                  </datalist>
+                </label>
+                <label>
+                  <span>{t("location")}</span>
+                  <input
+                    value={locationDraft}
+                    onChange={(event) => setLocationDraft(event.target.value)}
+                    list={`location-suggestions-${dive.id}`}
+                    maxLength={160}
+                  />
+                  <datalist id={`location-suggestions-${dive.id}`}>
+                    {locationSuggestions.map((location) => (
+                      <option key={location} value={location} />
+                    ))}
+                  </datalist>
+                </label>
+              </div>
+              <p>{t("siteLocationEditorHint")}</p>
               <label>
                 <span>{t("buddy")}</span>
                 <input
@@ -1679,6 +1773,33 @@ function sacRateForDive(dive: Dive, defaultCylinderPresetId: string) {
 function normalizeLocation(value: string | null) {
   const normalized = value?.trim().replace(/\s+/g, " ");
   return normalized ? normalized.toLocaleLowerCase("en") : null;
+}
+
+function parseDiveSearch(query: string) {
+  let sourceOnly: "shearwater" | "subsurface" | null = null;
+  const text = query
+    .trim()
+    .split(/\s+/)
+    .filter((token) => {
+      const normalized = token.toLowerCase();
+      if (normalized === "source:shearwater-only") {
+        sourceOnly = "shearwater";
+        return false;
+      }
+      if (normalized === "source:subsurface-only") {
+        sourceOnly = "subsurface";
+        return false;
+      }
+      return true;
+    })
+    .join(" ");
+  return { sourceOnly, text };
+}
+
+function uniqueSuggestions(values: Array<string | null>) {
+  return [...new Set(values.map((value) => value?.trim()).filter(Boolean))]
+    .filter((value): value is string => Boolean(value))
+    .sort((a, b) => a.localeCompare(b));
 }
 
 function formatUnderwaterTime(seconds: number, t: AppTranslate) {

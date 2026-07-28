@@ -832,6 +832,10 @@ button {
   grid-template-columns: 1.35fr 1fr 1fr;
 }
 
+.details-editor-row.location-editor-row {
+  grid-template-columns: 1fr 1fr;
+}
+
 .details-editor > p {
   color: var(--muted);
   font-size: 11px;
@@ -1715,6 +1719,18 @@ button {
 .about-license p:last-child {
   margin-bottom: 0;
   max-width: 800px;
+}
+
+.about-license ul {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+  margin: 12px 0 18px;
+  padding-left: 20px;
+}
+
+.about-license code {
+  color: var(--teal);
 }
 
 .about-actions {

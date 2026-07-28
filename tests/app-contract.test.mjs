@@ -43,6 +43,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(about, /t\("aboutImportsTitle"\)/);
   assert.match(about, /t\("aboutSourceStepFilter"\)/);
   assert.match(about, /t\("aboutLicenseTitle"\)/);
+  assert.match(about, /source:shearwater-only/);
+  assert.match(about, /source:subsurface-only/);
   assert.match(userGuide, /\*\*Set in App\*\*/);
   assert.match(license, /GPL-3\.0-or-later/);
   assert.match(app, /\.uddf/);
@@ -142,8 +144,13 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /namedDives/);
   assert.match(app, /underwaterSeconds/);
   assert.match(app, /averageSac/);
+  assert.match(app, /MINIMUM_AVERAGE_SAC_DURATION_SECONDS/);
   assert.match(app, /normalizeLocation/);
   assert.match(app, /sacRateForDive/);
+  assert.match(app, /parseDiveSearch/);
+  assert.match(app, /siteSuggestions/);
+  assert.match(app, /locationDraft/);
+  assert.match(storage, /details\.location/);
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
 
   const globalStyles = await readFile(

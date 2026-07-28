@@ -32,6 +32,16 @@ they represent countries, regions, or towns.
 Use the logbook sort menu to order dives by date, dive duration, or maximum
 depth in either direction. Dives missing the selected value appear last.
 
+The normal search box also accepts two advanced source-matching operators:
+
+- `source:shearwater-only` shows dives with Shearwater data but no matched
+  Subsurface record.
+- `source:subsurface-only` shows dives with Subsurface data but no matched
+  Shearwater record.
+
+An operator can be followed by normal search words, such as
+`source:subsurface-only Maldives`.
+
 ## Dive profiles and gas use
 
 When a source log contains samples, each dive page shows a compact depth
@@ -45,7 +55,8 @@ one valid starting/ending pressure pair, and a cylinder volume. Missing inputs
 remain unavailable rather than being replaced with invented values.
 Shearwater Cloud's unitless air-integration fields may contain PSI; DiveFrame
 detects those values and converts the pressure pair to bar before calculating
-SAC.
+SAC. The logbook overview excludes dives shorter than 20 minutes from its
+average SAC figure; the individual dive page can still show their estimates.
 
 Use **Settings → Default tank size** to choose the device default. A new
 installation uses Aluminium 80 (11.1 L). Open a dive's **People & memory**
@@ -91,6 +102,13 @@ To update the original log:
 When a later source import supplies a non-empty site name, DiveFrame replaces
 the temporary app-level site assignment and the dive leaves the **Set in App**
 filter.
+
+Open **Edit dive details** to enter or change both the specific dive-site name
+and the broader location. The fields suggest site and location names already
+present in the local logbook. For a dive with GPS, the separate site picker
+continues to offer the bundled catalog and OpenStreetMap results. A manually
+entered location is used by the existing approximate map lookup when the dive
+has no GPS.
 
 ## Available exports
 

@@ -387,8 +387,8 @@ export async function updateLocalDiveSite(
     name: string;
     source: "catalog" | "suggestion" | "manual";
     catalogId?: string;
-    latitude: number;
-    longitude: number;
+    latitude: number | null;
+    longitude: number | null;
   },
 ) {
   const database = await openDatabase();
@@ -414,7 +414,11 @@ export async function updateLocalDiveSite(
   };
   divesStore.put(updated);
 
-  if (selection.source === "manual") {
+  if (
+    selection.source === "manual" &&
+    selection.latitude !== null &&
+    selection.longitude !== null
+  ) {
     const existing = await request<LocalSiteContribution | undefined>(
       contributionsStore.get(id),
     );
@@ -441,6 +445,7 @@ export async function updateLocalDiveSite(
 export async function updateLocalDiveDetails(
   id: string,
   details: {
+    location?: string | null;
     buddy: string | null;
     notes: string | null;
     cylinderPresetId?: string | null;
@@ -451,6 +456,10 @@ export async function updateLocalDiveDetails(
 ) {
   return updateDive(id, (dive) => ({
     ...dive,
+    location:
+      details.location === undefined
+        ? dive.location
+        : details.location?.trim() || null,
     buddy: details.buddy?.trim() || null,
     notes: details.notes?.trim() || null,
     cylinderPresetId: details.cylinderPresetId ?? dive.cylinderPresetId ?? null,

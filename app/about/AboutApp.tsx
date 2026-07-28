@@ -95,6 +95,17 @@ export function AboutApp() {
         </section>
 
         <section className="about-license">
+          <p className="eyebrow">{t("aboutSearchEyebrow")}</p>
+          <h2>{t("aboutSearchTitle")}</h2>
+          <p>{t("aboutSearchDescription")}</p>
+          <ul>
+            <li><code>source:shearwater-only</code> — {t("aboutSearchShearwater")}</li>
+            <li><code>source:subsurface-only</code> — {t("aboutSearchSubsurface")}</li>
+          </ul>
+          <p>{t("aboutSacRule")}</p>
+        </section>
+
+        <section className="about-license">
           <p className="eyebrow">{t("aboutLicenseEyebrow")}</p>
           <h2>{t("aboutLicenseTitle")}</h2>
           <p>{t("aboutLicenseDescription")}</p>
