@@ -32,6 +32,8 @@ https://diveframe-logbook.fishese.chatgpt.site
 - `lib/image-composer.ts`, `lib/templates.ts`, and `lib/exporter.ts` — data-driven
   layouts, rendering, and PNG/JPEG export.
 - `lib/i18n.ts` and `lib/unit-conversion.ts` — overlay translations and units.
+- `lib/composer-fonts.ts` — curated bilingual overlay fonts and export-time
+  font loading.
 - `lib/indexed-db.ts` — device-local persistence and merge orchestration.
 - `app/api/geocode/route.ts` — stateless OpenStreetMap/Nominatim lookup proxy.
 - `app/api/nearby-sites/route.ts` — local catalog and OpenStreetMap fallback.
@@ -176,6 +178,10 @@ Right Information Panel, Minimal, Poster, and Full-width Graph. They share one
 high-resolution renderer rather than duplicating fixed component coordinates.
 The preview is rendered at a smaller working size; export rerenders the same
 geometry at social, 3000-pixel, or source-photo-area dimensions.
+
+Overlay fonts are loaded from the public Google Fonts stylesheet imported by
+`app/globals.css`. The renderer waits for all requested weights before preview
+or export and falls back to platform Traditional Chinese fonts when offline.
 
 Site display priority is user override, linked source name, app catalog/OSM
 assignment, formatted GPS coordinates, then omission. Fields with no source

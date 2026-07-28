@@ -1,6 +1,7 @@
 import type { CanvasRatio, ComposerSettings } from "./composer-settings";
 import type { Dive } from "./dive-model";
 import { renderComposition } from "./image-composer";
+import { ensureOverlayFont } from "./composer-fonts";
 
 export function outputDimensions(
   image: { width: number; height: number },
@@ -24,6 +25,7 @@ export async function exportComposition(
   settings: ComposerSettings,
   logo?: CanvasImageSource & { width: number; height: number },
 ) {
+  await ensureOverlayFont(settings.fontFamily);
   const dimensions = outputDimensions(image, settings);
   const canvas = document.createElement("canvas");
   renderComposition(canvas, image, dive, settings, dimensions.width, dimensions.height, logo);

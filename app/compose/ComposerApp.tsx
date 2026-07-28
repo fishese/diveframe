@@ -10,6 +10,7 @@ import {
   type DisplayField,
 } from "@/lib/composer-settings";
 import { chartAvailability } from "@/lib/chart-renderer";
+import { ensureOverlayFont, getOverlayFont, OVERLAY_FONTS } from "@/lib/composer-fonts";
 import { exportComposition } from "@/lib/exporter";
 import { loadPhoto, renderComposition } from "@/lib/image-composer";
 import { translate } from "@/lib/i18n";
@@ -113,7 +114,13 @@ export function ComposerApp() {
       ? bitmap.width / bitmap.height
       : (() => { const [w, h] = settings.ratio.split(":").map(Number); return w / h; })();
     const height = 900;
-    renderComposition(canvasRef.current, bitmap, normalized, settings, Math.round(height * previewRatio), height, logo ?? undefined);
+    let cancelled = false;
+    void ensureOverlayFont(settings.fontFamily).finally(() => {
+      if (!cancelled && canvasRef.current) {
+        renderComposition(canvasRef.current, bitmap, normalized, settings, Math.round(height * previewRatio), height, logo ?? undefined);
+      }
+    });
+    return () => { cancelled = true; };
   }, [bitmap, normalized, settings, logo]);
 
   useEffect(() => {
@@ -261,6 +268,10 @@ export function ComposerApp() {
 
           <ControlSection title={t("appearance")}>
             <Control label={t("language")}><select value={settings.language} onChange={(event) => update("language", event.target.value as ComposerSettings["language"])}><option value="en">English</option><option value="zh-Hant">繁體中文</option></select></Control>
+            <Control label={t("fontFamily")}><select value={settings.fontFamily} onChange={(event) => update("fontFamily", event.target.value as ComposerSettings["fontFamily"])}>
+              {OVERLAY_FONTS.map((font) => <option key={font.id} value={font.id}>{font.name} · {font.description}</option>)}
+            </select></Control>
+            <p className="font-preview" style={{ fontFamily: getOverlayFont(settings.fontFamily).stack }}>{t("fontPreview")}</p>
             <Control label={t("units")}><select value={settings.units} onChange={(event) => update("units", event.target.value as ComposerSettings["units"])}><option value="metric">{t("metric")}</option><option value="imperial">{t("imperial")}</option></select></Control>
             <Control label={t("dateFormat")}><select value={settings.dateFormat} onChange={(event) => update("dateFormat", event.target.value as ComposerSettings["dateFormat"])}><option value="medium">Medium</option><option value="numeric">Numeric</option><option value="iso">ISO</option></select></Control>
             <Control label={t("timeFormat")}><select value={settings.hourCycle} onChange={(event) => update("hourCycle", event.target.value as ComposerSettings["hourCycle"])}><option value="24">24 hour</option><option value="12">12 hour</option></select></Control>

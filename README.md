@@ -37,6 +37,8 @@ photo blobs in IndexedDB on the current device.
 - A live image composer with five original layouts, high-resolution PNG/JPEG
   output, common aspect ratios, metric/imperial units, and English/Traditional
   Chinese overlays.
+- A curated overlay-font menu with public Traditional Chinese/Latin webfonts:
+  Noto Sans HK, Noto Sans TC, Noto Serif TC, and LXGW WenKai TC.
 - Depth-profile charts from Subsurface samples, with optional sparse tank
   pressure and temperature telemetry. Missing fields are omitted rather than
   replaced with fabricated values.

@@ -253,7 +253,7 @@ export function SettingsApp() {
           </p>
         </section>
 
-        <section className="settings-card">
+        <section className="settings-card background-settings">
           <div className="settings-card-heading">
             <span className="settings-icon"><Camera size={21} /></span>
             <div>

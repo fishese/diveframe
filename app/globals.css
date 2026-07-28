@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Sans+HK:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -1203,6 +1204,16 @@ button {
   margin-right: 6px;
 }
 
+.font-preview {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #fff;
+  font-size: 20px;
+  margin: -4px 0 14px;
+  padding: 12px;
+}
+
 .composer-export {
   justify-content: center;
   margin-top: 8px;
@@ -1413,6 +1424,24 @@ button {
 
 .catalog-settings {
   padding: 24px;
+}
+
+.background-settings {
+  margin-top: 14px;
+  padding: 24px;
+}
+
+.background-settings > .settings-note {
+  margin-top: 20px;
+}
+
+.background-settings > .button {
+  margin-top: 16px;
+}
+
+.background-settings > .empty-compact {
+  margin-bottom: 0;
+  margin-top: 24px;
 }
 
 .settings-card-heading {
@@ -1764,6 +1793,10 @@ button {
   }
 
   .catalog-settings {
+    padding: 18px;
+  }
+
+  .background-settings {
     padding: 18px;
   }
 

@@ -1,6 +1,7 @@
 import type { ComposerLanguage } from "./i18n";
 import type { DiveCategory } from "./dive-model";
 import type { UnitSystem } from "./unit-conversion";
+import type { OverlayFontId } from "./composer-fonts";
 
 export type TemplateId =
   | "bottom-profile"
@@ -68,6 +69,7 @@ export type ComposerSettings = {
   blurBehindText: boolean;
   graphGradient: boolean;
   fontSize: number;
+  fontFamily: OverlayFontId;
   textAlign: "left" | "centre" | "right";
   textTreatment: "shadow" | "outline" | "none";
   panelOpacity: number;
@@ -117,6 +119,7 @@ export function defaultComposerSettings(diveId: string): ComposerSettings {
     blurBehindText: false,
     graphGradient: true,
     fontSize: 1,
+    fontFamily: "noto-sans-hk",
     textAlign: "left",
     textTreatment: "shadow",
     panelOpacity: 0.68,

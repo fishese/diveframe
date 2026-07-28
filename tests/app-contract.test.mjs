@@ -3,10 +3,11 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and composer workflow", async () => {
-  const [app, settings, composer, i18n, shearwater, subsurface, matching, storage, hosting, manifest, catalog] = await Promise.all([
+  const [app, settings, composer, fonts, i18n, shearwater, subsurface, matching, storage, hosting, manifest, catalog] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("app/settings/SettingsApp.tsx", "utf8"),
     readFile("app/compose/ComposerApp.tsx", "utf8"),
+    readFile("lib/composer-fonts.ts", "utf8"),
     readFile("lib/i18n.ts", "utf8"),
     readFile("lib/parsers/shearwater.ts", "utf8"),
     readFile("lib/parsers/subsurface.ts", "utf8"),
@@ -49,6 +50,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /exportComposition/);
   assert.match(composer, /depth-pressure-temperature/);
   assert.match(composer, /zh-Hant/);
+  assert.match(composer, /OVERLAY_FONTS/);
+  assert.match(fonts, /Noto Sans HK/);
+  assert.match(fonts, /Noto Serif TC/);
+  assert.match(fonts, /LXGW WenKai TC/);
   assert.match(i18n, /Manage reusable backgrounds/);
   assert.match(settings, /distanceKm/);
   assert.match(app, /Save site/);

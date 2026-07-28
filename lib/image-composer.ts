@@ -1,4 +1,5 @@
 import { chartAvailability, renderDiveChart } from "./chart-renderer";
+import { getOverlayFont } from "./composer-fonts";
 import type { ComposerSettings } from "./composer-settings";
 import { formattedCoordinates, gasMixLabel, type Dive } from "./dive-model";
 import { translate } from "./i18n";
@@ -49,6 +50,7 @@ export function renderComposition(
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas is unavailable.");
   const template = getTemplate(settings.templateId);
+  const fontStack = getOverlayFont(settings.fontFamily).stack;
   const margin = Math.round(Math.min(width, height) * settings.safeMargin);
   const panel =
     template.layout === "right"
@@ -89,13 +91,13 @@ export function renderComposition(
   const titleSize = Math.round(Math.min(width, height) * 0.055 * settings.fontSize);
   if (siteName && settings.blockPositions.site !== "hidden") {
     const siteAnchor = blockAnchor(settings.blockPositions.site, panel, width, height, margin);
-    context.font = `700 ${titleSize}px system-ui, sans-serif`;
+    context.font = `700 ${titleSize}px ${fontStack}`;
     drawAlignedText(context, siteName, siteAnchor.x, siteAnchor.y, siteAnchor.width, siteAnchor.align, settings);
   }
 
   const metaAnchor = blockAnchor(settings.blockPositions.category, panel, width, height, margin);
   let metaY = metaAnchor.y + titleSize * 1.35;
-  context.font = `600 ${Math.round(titleSize * 0.38)}px system-ui, sans-serif`;
+  context.font = `600 ${Math.round(titleSize * 0.38)}px ${fontStack}`;
   context.fillStyle = template.accent;
   if (settings.visibleFields.category && settings.blockPositions.category !== "hidden") {
     context.fillText(
@@ -143,7 +145,7 @@ export function renderComposition(
     if (settings.chartMode.includes("temperature") && availability.temperature) {
       legend.push({ label: translate(settings.language, "waterTemperature"), color: settings.temperatureColor });
     }
-    context.font = `600 ${Math.round(titleSize * 0.22)}px system-ui, sans-serif`;
+    context.font = `600 ${Math.round(titleSize * 0.22)}px ${fontStack}`;
     let legendX = chartBox.x;
     for (const item of legend) {
       context.fillStyle = item.color;
@@ -169,7 +171,7 @@ export function renderComposition(
     statsBox.y = panel.y + panel.height - margin - statHeight;
   }
   if (settings.blockPositions.statistics !== "hidden") {
-    drawStatistics(context, stats, statsBox.x, statsBox.y, statsBox.width, titleSize, settings);
+    drawStatistics(context, stats, statsBox.x, statsBox.y, statsBox.width, titleSize, settings, fontStack);
   }
 
   if (logo && settings.blockPositions.logo !== "hidden") {
@@ -229,7 +231,7 @@ function buildStatistics(dive: Dive, settings: ComposerSettings) {
   return result;
 }
 
-function drawStatistics(context: CanvasRenderingContext2D, stats: Array<{ label: string; value: string }>, x: number, y: number, width: number, base: number, settings: ComposerSettings) {
+function drawStatistics(context: CanvasRenderingContext2D, stats: Array<{ label: string; value: string }>, x: number, y: number, width: number, base: number, settings: ComposerSettings, fontStack: string) {
   if (!stats.length) return;
   const columns = Math.min(4, stats.length);
   stats.slice(0, 8).forEach((stat, index) => {
@@ -238,7 +240,7 @@ function drawStatistics(context: CanvasRenderingContext2D, stats: Array<{ label:
     const cellWidth = width / columns;
     const top = y + row * base * 1.35;
     context.fillStyle = "#fff";
-    context.font = `700 ${Math.round(base * 0.55)}px system-ui, sans-serif`;
+    context.font = `700 ${Math.round(base * 0.55)}px ${fontStack}`;
     if (settings.textTreatment === "outline") {
       context.strokeStyle = "rgba(0,0,0,.85)";
       context.lineWidth = Math.max(2, base * 0.055);
@@ -246,7 +248,7 @@ function drawStatistics(context: CanvasRenderingContext2D, stats: Array<{ label:
     }
     context.fillText(stat.value, x + column * cellWidth, top);
     context.fillStyle = "rgba(255,255,255,.78)";
-    context.font = `500 ${Math.round(base * 0.25)}px system-ui, sans-serif`;
+    context.font = `500 ${Math.round(base * 0.25)}px ${fontStack}`;
     context.fillText(stat.label, x + column * cellWidth, top + base * 0.62);
   });
 }
