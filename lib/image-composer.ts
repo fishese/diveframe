@@ -13,7 +13,11 @@ import {
 
 export async function loadPhoto(blob: Blob) {
   if ("createImageBitmap" in window) {
-    return createImageBitmap(blob, { imageOrientation: "from-image" });
+    try {
+      return await createImageBitmap(blob, { imageOrientation: "from-image" });
+    } catch {
+      // Some browsers do not decode SVG through createImageBitmap.
+    }
   }
   const url = URL.createObjectURL(blob);
   try {
@@ -174,7 +178,7 @@ export function renderComposition(
     drawStatistics(context, stats, statsBox.x, statsBox.y, statsBox.width, titleSize, settings, fontStack);
   }
 
-  if (logo && settings.blockPositions.logo !== "hidden") {
+  if (logo && settings.showLogo && settings.blockPositions.logo !== "hidden") {
     const maxWidth = width * 0.16;
     const scale = Math.min(maxWidth / logo.width, (height * 0.09) / logo.height, 1);
     const logoBox = blockRect(

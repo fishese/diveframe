@@ -3,10 +3,12 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and composer workflow", async () => {
-  const [app, settings, composer, fonts, i18n, shearwater, subsurface, matching, storage, hosting, manifest, catalog] = await Promise.all([
+  const [app, settings, composer, chart, composerSettings, fonts, i18n, shearwater, subsurface, matching, storage, hosting, manifest, catalog] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("app/settings/SettingsApp.tsx", "utf8"),
     readFile("app/compose/ComposerApp.tsx", "utf8"),
+    readFile("lib/chart-renderer.ts", "utf8"),
+    readFile("lib/composer-settings.ts", "utf8"),
     readFile("lib/composer-fonts.ts", "utf8"),
     readFile("lib/i18n.ts", "utf8"),
     readFile("lib/parsers/shearwater.ts", "utf8"),
@@ -34,6 +36,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /attachmentStore\.createIndex\("diveId"/);
   assert.match(storage, /blob: file\.slice/);
   assert.match(storage, /BACKGROUNDS_STORE/);
+  assert.match(storage, /BRANDING_ASSETS_STORE/);
+  assert.match(storage, /saveLocalOverlayLogo/);
   assert.match(app, /createShareCard/);
   assert.match(app, /Add photos/);
   assert.match(app, /Create share image/);
@@ -57,6 +61,11 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /depth-pressure-temperature/);
   assert.match(composer, /zh-Hant/);
   assert.match(composer, /OVERLAY_FONTS/);
+  assert.match(composer, /getLocalOverlayLogo/);
+  assert.match(composer, /showLogo/);
+  assert.match(chart, /drawAxisLabels/);
+  assert.match(composerSettings, /showAxisLabels: true/);
+  assert.match(settings, /Overlay logo/);
   assert.match(fonts, /Noto Sans HK/);
   assert.match(fonts, /Noto Serif TC/);
   assert.match(fonts, /LXGW WenKai TC/);

@@ -76,6 +76,8 @@ export type ComposerSettings = {
   chartHeight: number;
   safeMargin: number;
   chartMode: ChartMode;
+  showAxisLabels: boolean;
+  showLogo: boolean;
   depthColor: string;
   pressureColor: string;
   temperatureColor: string;
@@ -126,6 +128,8 @@ export function defaultComposerSettings(diveId: string): ComposerSettings {
     chartHeight: 0.27,
     safeMargin: 0.055,
     chartMode: "depth",
+    showAxisLabels: true,
+    showLogo: true,
     depthColor: "#8debd7",
     pressureColor: "#ffb36b",
     temperatureColor: "#a9c7ff",

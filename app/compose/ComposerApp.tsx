@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Download, ImagePlus, LoaderCircle, Settings as SettingsIcon, Waves } from "lucide-react";
-import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   defaultComposerSettings,
   type BlockPosition,
@@ -16,6 +16,7 @@ import { loadPhoto, renderComposition } from "@/lib/image-composer";
 import { translate } from "@/lib/i18n";
 import {
   getLocalComposerSettings,
+  getLocalOverlayLogo,
   listLocalAttachments,
   listLocalBackgrounds,
   listLocalDives,
@@ -39,6 +40,7 @@ const positions: BlockPosition[] = [
   "top-left", "top-centre", "top-right", "above-graph", "inside-panel",
   "bottom-left", "bottom-centre", "bottom-right", "hidden",
 ];
+const logoPositions = positions.filter((position) => position !== "hidden");
 const fieldLabels: Array<[DisplayField, Parameters<typeof translate>[1]]> = [
   ["site", "diveSite"], ["category", "category"], ["date", "date"],
   ["startTime", "startTime"], ["duration", "diveTime"], ["maxDepth", "maximumDepth"],
@@ -65,16 +67,21 @@ export function ComposerApp() {
     listLocalDives().then(async (dives) => {
       const selectedDive = dives.find((item) => item.id === requestedDive) ?? dives[0];
       if (!selectedDive) throw new Error("Import a dive before opening the composer.");
-      const [attachments, backgrounds, saved] = await Promise.all([
+      const [attachments, backgrounds, saved, savedLogo] = await Promise.all([
         listLocalAttachments(selectedDive.id),
         listLocalBackgrounds(),
         getLocalComposerSettings(selectedDive.id),
+        getLocalOverlayLogo(),
       ]);
       const choices = [
         ...attachments.map(photoChoice),
         ...backgrounds.map(backgroundChoice),
       ];
       const initial = { ...defaultComposerSettings(selectedDive.id), ...saved };
+      if (initial.blockPositions.logo === "hidden") {
+        initial.blockPositions = { ...initial.blockPositions, logo: "top-right" };
+        if (saved && !("showLogo" in saved)) initial.showLogo = false;
+      }
       initial.categoryOverride = selectedDive.category;
       initial.selectedPhotoId =
         requestedPhoto && choices.some((item) => item.id === requestedPhoto)
@@ -85,6 +92,7 @@ export function ComposerApp() {
       setDive(selectedDive);
       setPhotos(choices);
       setSettings(initial);
+      if (savedLogo) setLogo(await loadPhoto(savedLogo.blob));
       setStatus(choices.length ? "Ready" : "Add a dive photo or reusable background first.");
     }).catch((error) => setStatus(error instanceof Error ? error.message : "Could not open composer."));
   }, []);
@@ -138,13 +146,6 @@ export function ComposerApp() {
       ...current,
       visibleFields: { ...current.visibleFields, [field]: !current.visibleFields[field] },
     } : current);
-  }
-
-  async function chooseLogo(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    setLogo(await loadPhoto(file));
   }
 
   async function exportImage() {
@@ -236,14 +237,13 @@ export function ComposerApp() {
                 </label>
               ))}
             </div>
-            {(["site", "category", "date", "chart", "statistics", "logo"] as const).map((block) => (
+            {(["site", "category", "date", "chart", "statistics"] as const).map((block) => (
               <Control key={block} label={`${blockLabel(block, t)} ${t("position")}`}>
                 <select value={settings.blockPositions[block]} onChange={(event) => update("blockPositions", { ...settings.blockPositions, [block]: event.target.value as BlockPosition })}>
                   {positions.map((position) => <option value={position} key={position}>{positionLabel(position, t)}</option>)}
                 </select>
               </Control>
             ))}
-            <label className="button button-secondary"><ImagePlus size={15} /> {t("optionalLogo")}<input type="file" accept="image/*" className="visually-hidden" onChange={chooseLogo} /></label>
           </ControlSection>
 
           <ControlSection title={t("chart")}>
@@ -260,10 +260,36 @@ export function ComposerApp() {
             <Range label={t("lineThickness")} value={settings.lineThickness} min={1} max={10} step={0.5} onChange={(value) => update("lineThickness", value)} />
             <Range label={t("fillOpacity")} value={settings.fillOpacity} min={0} max={0.8} step={0.05} onChange={(value) => update("fillOpacity", value)} />
             <Range label={t("chartHeight")} value={settings.chartHeight} min={0.12} max={0.48} step={0.01} onChange={(value) => update("chartHeight", value)} />
+            <label className="composer-check"><input type="checkbox" checked={settings.showAxisLabels} onChange={(event) => update("showAxisLabels", event.target.checked)} /> {t("showAxisLabels")}</label>
             {(availability.pressure ||
               dive.tankPressuresStartBar.some((value) => value !== null)) && (
               <p className="control-hint">{t("cannotCalculateGas")}</p>
             )}
+          </ControlSection>
+
+          <ControlSection title={t("logo")}>
+            <label className={`composer-check${logo ? "" : " disabled"}`}>
+              <input
+                type="checkbox"
+                checked={settings.showLogo && Boolean(logo)}
+                disabled={!logo}
+                onChange={(event) => update("showLogo", event.target.checked)}
+              />{" "}
+              {t("showLogo")}
+            </label>
+            <Control label={t("logoPosition")}>
+              <select
+                value={settings.blockPositions.logo}
+                disabled={!logo || !settings.showLogo}
+                onChange={(event) => update("blockPositions", { ...settings.blockPositions, logo: event.target.value as BlockPosition })}
+              >
+                {logoPositions.map((position) => <option value={position} key={position}>{positionLabel(position, t)}</option>)}
+              </select>
+            </Control>
+            <p className="control-hint">
+              {logo ? null : `${t("noLogoSaved")} `}
+              <Link href="/settings">{logo ? t("changeLogoInSettings") : t("setLogoInSettings")}</Link>
+            </p>
           </ControlSection>
 
           <ControlSection title={t("appearance")}>

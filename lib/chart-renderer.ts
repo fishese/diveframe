@@ -1,5 +1,8 @@
 import type { ComposerSettings } from "./composer-settings";
+import { getOverlayFont } from "./composer-fonts";
 import type { Dive, DiveSample } from "./dive-model";
+import { translate } from "./i18n";
+import { formatDepthValue, formatDuration } from "./unit-conversion";
 
 export type ChartRect = { x: number; y: number; width: number; height: number };
 
@@ -41,12 +44,29 @@ export function renderDiveChart(
   const samples = downsampleProfile(dive.samples, Math.max(240, Math.round(rect.width / 2)));
   const maximumTime = Math.max(...samples.map((sample) => sample.elapsedSeconds), 1);
   const maximumDepth = Math.max(...samples.map((sample) => sample.depthM), 1);
-  const xFor = (time: number) => rect.x + (time / maximumTime) * rect.width;
-  const yForDepth = (depth: number) => rect.y + (depth / maximumDepth) * rect.height;
+  const labelSize = Math.max(10, Math.round(Math.min(rect.width, rect.height) * 0.045));
+  const axisPadding = settings.showAxisLabels
+    ? {
+        left: Math.max(labelSize * 4.2, rect.width * 0.1),
+        bottom: Math.max(labelSize * 3.4, rect.height * 0.24),
+      }
+    : { left: 0, bottom: 0 };
+  const plot = {
+    x: rect.x + axisPadding.left,
+    y: rect.y,
+    width: Math.max(1, rect.width - axisPadding.left),
+    height: Math.max(1, rect.height - axisPadding.bottom),
+  };
+  const xFor = (time: number) => plot.x + (time / maximumTime) * plot.width;
+  const yForDepth = (depth: number) => plot.y + (depth / maximumDepth) * plot.height;
 
   context.save();
+  if (settings.showAxisLabels) {
+    drawAxisGrid(context, plot, labelSize);
+  }
+  context.save();
   context.beginPath();
-  context.rect(rect.x, rect.y, rect.width, rect.height);
+  context.rect(plot.x, plot.y, plot.width, plot.height);
   context.clip();
   context.lineJoin = "round";
   context.lineCap = "round";
@@ -60,8 +80,8 @@ export function renderDiveChart(
   });
   if (settings.fillOpacity > 0) {
     const fill = new Path2D(depthPath);
-    fill.lineTo(xFor(samples[samples.length - 1].elapsedSeconds), rect.y);
-    fill.lineTo(xFor(samples[0].elapsedSeconds), rect.y);
+    fill.lineTo(xFor(samples[samples.length - 1].elapsedSeconds), plot.y);
+    fill.lineTo(xFor(samples[0].elapsedSeconds), plot.y);
     fill.closePath();
     context.globalAlpha = settings.fillOpacity;
     context.fillStyle = settings.depthColor;
@@ -80,7 +100,7 @@ export function renderDiveChart(
       renderSparseLine(
         context,
         samples,
-        rect,
+        plot,
         maximumTime,
         (sample) => sample.pressuresBar[cylinder],
         settings.pressureColor,
@@ -93,7 +113,7 @@ export function renderDiveChart(
     renderSparseLine(
       context,
       samples,
-      rect,
+      plot,
       maximumTime,
       (sample) => sample.temperatureC,
       settings.temperatureColor,
@@ -102,7 +122,100 @@ export function renderDiveChart(
     );
   }
   context.restore();
+  if (settings.showAxisLabels) {
+    drawAxisLabels(
+      context,
+      rect,
+      plot,
+      maximumTime,
+      maximumDepth,
+      labelSize,
+      settings,
+    );
+  }
+  context.restore();
   return true;
+}
+
+function drawAxisGrid(
+  context: CanvasRenderingContext2D,
+  plot: ChartRect,
+  labelSize: number,
+) {
+  context.save();
+  context.strokeStyle = "rgba(255, 255, 255, 0.2)";
+  context.lineWidth = Math.max(1, labelSize * 0.06);
+  context.setLineDash([labelSize * 0.35, labelSize * 0.5]);
+  for (let index = 0; index <= 3; index += 1) {
+    const y = plot.y + (plot.height * index) / 3;
+    context.beginPath();
+    context.moveTo(plot.x, y);
+    context.lineTo(plot.x + plot.width, y);
+    context.stroke();
+  }
+  context.setLineDash([]);
+  context.strokeStyle = "rgba(255, 255, 255, 0.56)";
+  context.beginPath();
+  context.moveTo(plot.x, plot.y);
+  context.lineTo(plot.x, plot.y + plot.height);
+  context.lineTo(plot.x + plot.width, plot.y + plot.height);
+  context.stroke();
+  context.restore();
+}
+
+function drawAxisLabels(
+  context: CanvasRenderingContext2D,
+  rect: ChartRect,
+  plot: ChartRect,
+  maximumTime: number,
+  maximumDepth: number,
+  labelSize: number,
+  settings: ComposerSettings,
+) {
+  context.save();
+  context.fillStyle = "rgba(255, 255, 255, 0.9)";
+  context.font = `500 ${labelSize}px ${getOverlayFont(settings.fontFamily).stack}`;
+  context.textBaseline = "top";
+  context.shadowColor = "rgba(0, 0, 0, 0.75)";
+  context.shadowBlur = labelSize * 0.22;
+  context.shadowOffsetY = labelSize * 0.08;
+
+  for (let index = 0; index <= 3; index += 1) {
+    const ratio = index / 3;
+    const x = plot.x + plot.width * ratio;
+    const value = formatDuration(Math.round(maximumTime * ratio));
+    context.textAlign = index === 0 ? "left" : index === 3 ? "right" : "center";
+    context.fillText(value, x, plot.y + plot.height + labelSize * 0.35);
+  }
+
+  context.textAlign = "center";
+  context.font = `600 ${labelSize}px ${getOverlayFont(settings.fontFamily).stack}`;
+  context.fillText(
+    translate(settings.language, "elapsedTime"),
+    plot.x + plot.width / 2,
+    rect.y + rect.height - labelSize * 1.15,
+  );
+
+  context.font = `500 ${labelSize}px ${getOverlayFont(settings.fontFamily).stack}`;
+  context.textAlign = "right";
+  context.textBaseline = "middle";
+  for (let index = 0; index <= 3; index += 1) {
+    const ratio = index / 3;
+    context.fillText(
+      formatDepthValue(maximumDepth * ratio, settings.units, settings.decimals),
+      plot.x - labelSize * 0.45,
+      plot.y + plot.height * ratio,
+    );
+  }
+
+  context.save();
+  context.translate(rect.x + labelSize * 0.65, plot.y + plot.height / 2);
+  context.rotate(-Math.PI / 2);
+  context.textAlign = "center";
+  context.font = `600 ${labelSize}px ${getOverlayFont(settings.fontFamily).stack}`;
+  context.fillText(translate(settings.language, "depthAxis"), 0, 0);
+  context.restore();
+  context.restore();
 }
 
 function renderSparseLine(
@@ -137,4 +250,3 @@ function renderSparseLine(
   context.stroke();
   context.setLineDash([]);
 }
-

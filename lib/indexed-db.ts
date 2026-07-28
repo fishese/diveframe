@@ -90,6 +90,15 @@ export type LocalBackground = {
   blob: Blob;
 };
 
+export type LocalBrandingAsset = {
+  id: "overlay-logo";
+  fileName: string;
+  contentType: string;
+  size: number;
+  updatedAt: string;
+  blob: Blob;
+};
+
 export type LocalSiteContribution = {
   id: string;
   diveId: string;
@@ -112,13 +121,14 @@ type SourceRecord = {
 };
 
 const DATABASE_NAME = "diveframe-local";
-const DATABASE_VERSION = 4;
+const DATABASE_VERSION = 5;
 const DIVES_STORE = "dives";
 const SOURCES_STORE = "sourceRecords";
 const ATTACHMENTS_STORE = "attachments";
 const SITE_CONTRIBUTIONS_STORE = "siteContributions";
 const COMPOSER_SETTINGS_STORE = "composerSettings";
 const BACKGROUNDS_STORE = "backgrounds";
+const BRANDING_ASSETS_STORE = "brandingAssets";
 
 export async function listLocalDives() {
   const database = await openDatabase();
@@ -258,6 +268,52 @@ export async function deleteLocalBackground(id: string) {
   const database = await openDatabase();
   const transaction = database.transaction(BACKGROUNDS_STORE, "readwrite");
   transaction.objectStore(BACKGROUNDS_STORE).delete(id);
+  await transactionComplete(transaction);
+}
+
+export async function getLocalOverlayLogo() {
+  const database = await openDatabase();
+  return request<LocalBrandingAsset | undefined>(
+    database
+      .transaction(BRANDING_ASSETS_STORE)
+      .objectStore(BRANDING_ASSETS_STORE)
+      .get("overlay-logo"),
+  );
+}
+
+export async function saveLocalOverlayLogo(file: File) {
+  const extension = file.name.toLowerCase();
+  const supported =
+    file.type === "image/png" ||
+    file.type === "image/svg+xml" ||
+    extension.endsWith(".png") ||
+    extension.endsWith(".svg");
+  if (!supported) throw new Error("Choose a transparent PNG or SVG logo.");
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error("The logo must be smaller than 10 MB.");
+  }
+  const contentType =
+    file.type ||
+    (extension.endsWith(".svg") ? "image/svg+xml" : "image/png");
+  const asset: LocalBrandingAsset = {
+    id: "overlay-logo",
+    fileName: file.name || "overlay-logo",
+    contentType,
+    size: file.size,
+    updatedAt: new Date().toISOString(),
+    blob: file.slice(0, file.size, contentType),
+  };
+  const database = await openDatabase();
+  const transaction = database.transaction(BRANDING_ASSETS_STORE, "readwrite");
+  transaction.objectStore(BRANDING_ASSETS_STORE).put(asset);
+  await transactionComplete(transaction);
+  return asset;
+}
+
+export async function deleteLocalOverlayLogo() {
+  const database = await openDatabase();
+  const transaction = database.transaction(BRANDING_ASSETS_STORE, "readwrite");
+  transaction.objectStore(BRANDING_ASSETS_STORE).delete("overlay-logo");
   await transactionComplete(transaction);
 }
 
@@ -524,6 +580,9 @@ function openDatabase() {
       }
       if (!database.objectStoreNames.contains(BACKGROUNDS_STORE)) {
         database.createObjectStore(BACKGROUNDS_STORE, { keyPath: "id" });
+      }
+      if (!database.objectStoreNames.contains(BRANDING_ASSETS_STORE)) {
+        database.createObjectStore(BRANDING_ASSETS_STORE, { keyPath: "id" });
       }
     };
     operation.onsuccess = () => resolve(operation.result);

@@ -84,7 +84,7 @@ real dive exports, photos, or generated share cards to the repository.
 
 Database: `diveframe-local`
 
-Version: `4`
+Version: `5`
 
 Object stores:
 
@@ -96,6 +96,7 @@ Object stores:
 | `siteContributions` | `id` | Sites manually typed for a dive and available for JSON export |
 | `composerSettings` | `id` | Per-dive composer state and selected image |
 | `backgrounds` | `id` | Reusable generic diving background image blobs |
+| `brandingAssets` | `id` | Device-local transparent PNG/SVG overlay logo |
 
 `attachments` and `sourceRecords` each have a `diveId` index.
 
@@ -199,6 +200,10 @@ true profile because its sample stream is proprietary. A one-time re-import of
 the Subsurface log populates samples for browser records created before schema
 version 4.
 
+Chart depth and elapsed-time axis labels are enabled by default and can be
+hidden per dive. One reusable transparent PNG or SVG logo is managed in
+Settings; the composer only controls its visibility and preset position.
+
 ## Current hosting
 
 The project uses the bundled Vinext/Cloudflare-compatible build. It is deployed
@@ -248,8 +253,7 @@ Google Drive, iCloud Drive, or a small private API.
 - Add backup export/import before users build large photo libraries.
 - Add dive-photo deletion, captions, and storage-usage reporting.
 - Add draggable custom block positions (preset positions are implemented).
-- Persist reusable logo assets and named composer presets globally; logo
-  selection is currently session-only.
+- Add named composer presets that can be reused across dives.
 - Translate template descriptions and transient status/error messages; overlay
   labels and composer controls are already available in Traditional Chinese.
 - Show whether persistent browser storage was granted.

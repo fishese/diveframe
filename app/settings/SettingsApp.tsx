@@ -26,9 +26,13 @@ import bundledCatalog from "@/data/dive-sites.json";
 import {
   addLocalBackgrounds,
   deleteLocalBackground,
+  deleteLocalOverlayLogo,
+  getLocalOverlayLogo,
   listLocalBackgrounds,
   listLocalSiteContributions,
+  saveLocalOverlayLogo,
   type LocalBackground,
+  type LocalBrandingAsset,
   type LocalSiteContribution,
 } from "@/lib/indexed-db";
 
@@ -61,14 +65,20 @@ export function SettingsApp() {
   const [catalog, setCatalog] = useState<DiveSiteCatalog>(BUILT_IN_CATALOG);
   const [catalogLabel, setCatalogLabel] = useState("Catalog included with this app");
   const [backgrounds, setBackgrounds] = useState<LocalBackground[]>([]);
+  const [logo, setLogo] = useState<LocalBrandingAsset | null>(null);
   const [status, setStatus] = useState("Loading device-local settings…");
   const [busy, setBusy] = useState(true);
 
   useEffect(() => {
-    Promise.all([listLocalSiteContributions(), listLocalBackgrounds()])
-      .then(([items, savedBackgrounds]) => {
+    Promise.all([
+      listLocalSiteContributions(),
+      listLocalBackgrounds(),
+      getLocalOverlayLogo(),
+    ])
+      .then(([items, savedBackgrounds, savedLogo]) => {
         setContributions(items);
         setBackgrounds(savedBackgrounds);
+        setLogo(savedLogo ?? null);
         setStatus(
           items.length
             ? `${items.length} manually added site${items.length === 1 ? "" : "s"} ready`
@@ -105,6 +115,35 @@ export function SettingsApp() {
       setStatus("Removed reusable background");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not remove this background.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function chooseLogo(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    try {
+      const saved = await saveLocalOverlayLogo(file);
+      setLogo(saved);
+      setStatus(`Saved ${saved.fileName} as the overlay logo on this device`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not save this logo.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeLogo() {
+    setBusy(true);
+    try {
+      await deleteLocalOverlayLogo();
+      setLogo(null);
+      setStatus("Removed the overlay logo");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not remove this logo.");
     } finally {
       setBusy(false);
     }
@@ -174,8 +213,8 @@ export function SettingsApp() {
           <p className="eyebrow">Device-local preferences</p>
           <h1>Settings & data tools</h1>
           <p>
-            Manage the site catalog used by this browser. Future overlay branding,
-            styles, and language preferences will live here too.
+            Manage the site catalog, reusable photos, and overlay branding stored
+            in this browser. More style and language preferences will live here too.
           </p>
         </section>
 
@@ -253,6 +292,55 @@ export function SettingsApp() {
           </p>
         </section>
 
+        <section className="settings-card branding-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><ImageIcon size={21} /></span>
+            <div>
+              <p className="eyebrow">Image composer</p>
+              <h2>Overlay logo</h2>
+            </div>
+          </div>
+          <p className="settings-note">
+            Save one transparent PNG or SVG for all dives on this device. The
+            composer controls whether it appears and where it is placed.
+          </p>
+          {logo ? (
+            <div className="logo-settings-row">
+              <LogoPreview logo={logo} />
+              <div className="logo-settings-details">
+                <strong>{logo.fileName}</strong>
+                <small>{Math.max(1, Math.round(logo.size / 1024))} KB</small>
+                <div className="settings-actions">
+                  <label className="button button-secondary">
+                    <Upload size={16} /> Replace logo
+                    <input
+                      type="file"
+                      accept=".png,.svg,image/png,image/svg+xml"
+                      onChange={chooseLogo}
+                      className="visually-hidden"
+                      disabled={busy}
+                    />
+                  </label>
+                  <button type="button" className="button button-quiet" onClick={removeLogo} disabled={busy}>
+                    <Trash2 size={16} /> Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <label className="button button-primary branding-upload">
+              <Upload size={16} /> Add logo
+              <input
+                type="file"
+                accept=".png,.svg,image/png,image/svg+xml"
+                onChange={chooseLogo}
+                className="visually-hidden"
+                disabled={busy}
+              />
+            </label>
+          )}
+        </section>
+
         <section className="settings-card background-settings">
           <div className="settings-card-heading">
             <span className="settings-icon"><Camera size={21} /></span>
@@ -293,11 +381,6 @@ export function SettingsApp() {
 
         <section className="future-settings" aria-label="Planned settings">
           <FutureSetting
-            icon={<ImageIcon size={20} />}
-            title="Overlay branding"
-            description="Logo and attribution used on shared dive images."
-          />
-          <FutureSetting
             icon={<Palette size={20} />}
             title="Overlay styles"
             description="Reusable layouts, typography, and color treatments."
@@ -336,6 +419,17 @@ function BackgroundTile({
         <Trash2 size={15} />
       </button>
     </article>
+  );
+}
+
+function LogoPreview({ logo }: { logo: LocalBrandingAsset }) {
+  const source = useMemo(() => URL.createObjectURL(logo.blob), [logo.blob]);
+  useEffect(() => () => URL.revokeObjectURL(source), [source]);
+  return (
+    <div className="logo-settings-preview">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={source} alt={`${logo.fileName} preview`} />
+    </div>
   );
 }
 

@@ -42,8 +42,11 @@ photo blobs in IndexedDB on the current device.
 - A curated overlay-font menu with public Traditional Chinese/Latin webfonts:
   Noto Sans HK, Noto Sans TC, Noto Serif TC, and LXGW WenKai TC.
 - Depth-profile charts from Subsurface samples, with optional sparse tank
-  pressure and temperature telemetry. Missing fields are omitted rather than
-  replaced with fabricated values.
+  pressure and temperature telemetry, plus optional elapsed-time and depth axes
+  that are enabled by default. Missing fields are omitted rather than replaced
+  with fabricated values.
+- One device-local transparent PNG or SVG overlay logo configured in Settings,
+  with per-dive visibility and placement controls in the composer.
 - Installable web-app metadata for mobile and desktop browsers.
 
 ## Development
