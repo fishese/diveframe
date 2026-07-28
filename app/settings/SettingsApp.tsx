@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  Archive,
   ArrowLeft,
   Camera,
   Database,
@@ -11,6 +12,7 @@ import {
   Languages,
   LoaderCircle,
   Palette,
+  RefreshCw,
   Trash2,
   Upload,
   Waves,
@@ -23,6 +25,10 @@ import {
   useState,
 } from "react";
 import bundledCatalog from "@/data/dive-sites.json";
+import {
+  createLocalAppBackup,
+  restoreLocalAppBackup,
+} from "@/lib/app-backup";
 import {
   addLocalBackgrounds,
   deleteLocalBackground,
@@ -58,10 +64,15 @@ type DiveSiteCatalog = {
   sites: CatalogSite[];
 };
 
+type SiteContributionDraft = LocalSiteContribution & {
+  aliasesText: string;
+};
+
 const BUILT_IN_CATALOG = bundledCatalog as DiveSiteCatalog;
 
 export function SettingsApp() {
   const [contributions, setContributions] = useState<LocalSiteContribution[]>([]);
+  const [reviewedSites, setReviewedSites] = useState<SiteContributionDraft[]>([]);
   const [catalog, setCatalog] = useState<DiveSiteCatalog>(BUILT_IN_CATALOG);
   const [catalogLabel, setCatalogLabel] = useState("Catalog included with this app");
   const [backgrounds, setBackgrounds] = useState<LocalBackground[]>([]);
@@ -77,6 +88,7 @@ export function SettingsApp() {
     ])
       .then(([items, savedBackgrounds, savedLogo]) => {
         setContributions(items);
+        setReviewedSites(items.map(toSiteDraft));
         setBackgrounds(savedBackgrounds);
         setLogo(savedLogo ?? null);
         setStatus(
@@ -149,21 +161,66 @@ export function SettingsApp() {
     }
   }
 
+  async function exportAppData() {
+    setBusy(true);
+    setStatus("Preparing app backup with photosâ€¦");
+    try {
+      const backup = await createLocalAppBackup();
+      const date = new Date().toISOString().slice(0, 10);
+      downloadBlob(backup.blob, `diveframe-backup-${date}.json`);
+      setStatus(
+        `Backed up ${backup.counts.dives} dives, ${backup.counts.photos} dive photos, and ${backup.counts.backgrounds} reusable backgrounds`,
+      );
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not create the backup.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function importAppData(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    setStatus("Restoring app data and imagesâ€¦");
+    try {
+      const counts = await restoreLocalAppBackup(file);
+      const [items, savedBackgrounds, savedLogo] = await Promise.all([
+        listLocalSiteContributions(),
+        listLocalBackgrounds(),
+        getLocalOverlayLogo(),
+      ]);
+      setContributions(items);
+      setReviewedSites(items.map(toSiteDraft));
+      setBackgrounds(savedBackgrounds);
+      setLogo(savedLogo ?? null);
+      setStatus(
+        `Imported ${counts.dives} dives, ${counts.photos} dive photos, and ${counts.backgrounds} reusable backgrounds. Existing unrelated records were kept.`,
+      );
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not import this backup.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const mergePreview = useMemo(
-    () => mergeContributions(catalog, contributions),
-    [catalog, contributions],
+    () => mergeContributions(catalog, reviewedSites),
+    [catalog, reviewedSites],
   );
 
   function exportAddedSiteLog() {
+    const includedSites = reviewedSites.filter((site) => site.name.trim());
     const payload = {
       schemaVersion: 1,
       generatedAt: new Date().toISOString(),
       description:
         "Dive sites typed into DiveFrame. Review before adding them to data/dive-sites.json.",
-      sites: contributions.map(contributionForExport),
+      sites: includedSites.map(contributionForExport),
     };
     downloadJson(payload, "diveframe-added-sites.json");
-    setStatus(`Exported ${contributions.length} added site${contributions.length === 1 ? "" : "s"}`);
+    setStatus(`Exported ${includedSites.length} reviewed site${includedSites.length === 1 ? "" : "s"}`);
   }
 
   function downloadMergedCatalog() {
@@ -242,6 +299,74 @@ export function SettingsApp() {
             </div>
           </div>
 
+          <details className="site-review">
+            <summary>
+              <span>
+                Review sites to add
+                <small>Edit names and aliases, or exclude an entry from this merge.</small>
+              </span>
+              <strong>{reviewedSites.length}</strong>
+            </summary>
+            <div className="site-review-list">
+              {reviewedSites.length ? (
+                reviewedSites.map((site) => (
+                  <article className="site-review-item" key={site.id}>
+                    <div className="site-review-fields">
+                      <label>
+                        <span>Site name</span>
+                        <input
+                          value={site.name}
+                          onChange={(event) =>
+                            setReviewedSites((items) =>
+                              items.map((item) =>
+                                item.id === site.id
+                                  ? { ...item, name: event.target.value }
+                                  : item,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>Aliases</span>
+                        <input
+                          value={site.aliasesText}
+                          placeholder="Comma-separated aliases"
+                          onChange={(event) =>
+                            setReviewedSites((items) =>
+                              items.map((item) =>
+                                item.id === site.id
+                                  ? { ...item, aliasesText: event.target.value }
+                                  : item,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                    </div>
+                    <small>
+                      {site.latitude.toFixed(5)}, {site.longitude.toFixed(5)}
+                      {site.diveDate ? ` Â· ${site.diveDate}` : ""}
+                    </small>
+                    <button
+                      type="button"
+                      className="button button-quiet"
+                      onClick={() =>
+                        setReviewedSites((items) =>
+                          items.filter((item) => item.id !== site.id),
+                        )
+                      }
+                    >
+                      <Trash2 size={15} /> Exclude from merge
+                    </button>
+                  </article>
+                ))
+              ) : (
+                <p className="empty-compact">No sites are included in this merge.</p>
+              )}
+            </div>
+          </details>
+
           <div className="catalog-source">
             <div>
               <FileJson size={18} />
@@ -270,7 +395,7 @@ export function SettingsApp() {
               type="button"
               className="button button-secondary"
               onClick={exportAddedSiteLog}
-              disabled={busy || contributions.length === 0}
+              disabled={busy || reviewedSites.length === 0}
             >
               <Download size={16} /> Export addition log
             </button>
@@ -278,7 +403,7 @@ export function SettingsApp() {
               type="button"
               className="button button-primary"
               onClick={downloadMergedCatalog}
-              disabled={busy || contributions.length === 0}
+              disabled={busy || reviewedSites.length === 0}
             >
               <Download size={16} /> Download merged dive-sites.json
             </button>
@@ -289,6 +414,40 @@ export function SettingsApp() {
             250 metres. New entries are marked active and retain a reference to the
             dive that supplied their coordinates. Review the downloaded file, then
             replace <code>data/dive-sites.json</code> in GitHub.
+          </p>
+        </section>
+
+        <section className="settings-card backup-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><Archive size={21} /></span>
+            <div>
+              <p className="eyebrow">Portable backup</p>
+              <h2>Export or import app data</h2>
+            </div>
+          </div>
+          <p className="settings-note">
+            The backup contains dives, source matching, site choices, composer
+            settings, dive photos, reusable backgrounds, and your logo. Keep the
+            downloaded file private.
+          </p>
+          <div className="settings-actions">
+            <button type="button" className="button button-primary" onClick={exportAppData} disabled={busy}>
+              <Download size={16} /> Export app data
+            </button>
+            <label className="button button-secondary">
+              <RefreshCw size={16} /> Import app data
+              <input
+                type="file"
+                accept=".json,application/json"
+                onChange={importAppData}
+                className="visually-hidden"
+                disabled={busy}
+              />
+            </label>
+          </div>
+          <p className="settings-note">
+            Importing merges by record ID. Backup records replace matching local
+            records; local records that are not in the backup remain untouched.
           </p>
         </section>
 
@@ -452,9 +611,10 @@ function FutureSetting({
   );
 }
 
-function contributionForExport(site: LocalSiteContribution) {
+function contributionForExport(site: SiteContributionDraft) {
   return {
     name: site.name,
+    aliases: aliasesForDraft(site),
     coordinates: {
       latitude: site.latitude,
       longitude: site.longitude,
@@ -477,7 +637,7 @@ function contributionForExport(site: LocalSiteContribution) {
 
 function mergeContributions(
   base: DiveSiteCatalog,
-  contributions: LocalSiteContribution[],
+  contributions: SiteContributionDraft[],
 ) {
   const sites = base.sites.map((site) => structuredClone(site));
   const usedIds = new Set(sites.map((site) => site.id));
@@ -485,6 +645,10 @@ function mergeContributions(
   let skipped = 0;
 
   for (const contribution of contributions) {
+    if (!contribution.name.trim()) {
+      skipped += 1;
+      continue;
+    }
     const normalized = normalizeName(contribution.name);
     const duplicate = sites.some((site) => {
       const names = [site.name, ...(site.aliases ?? [])].map(normalizeName);
@@ -508,7 +672,7 @@ function mergeContributions(
     sites.push({
       id,
       name: contribution.name,
-      aliases: [],
+      aliases: aliasesForDraft(contribution),
       coordinates: {
         latitude: contribution.latitude,
         longitude: contribution.longitude,
@@ -569,7 +733,7 @@ function isCatalogSite(value: unknown): value is CatalogSite {
 }
 
 function uniqueCatalogId(
-  contribution: LocalSiteContribution,
+  contribution: SiteContributionDraft,
   usedIds: Set<string>,
 ) {
   const slug =
@@ -589,6 +753,22 @@ function uniqueCatalogId(
     suffix += 1;
   }
   return id;
+}
+
+function toSiteDraft(site: LocalSiteContribution): SiteContributionDraft {
+  return { ...site, aliasesText: "" };
+}
+
+function aliasesForDraft(site: SiteContributionDraft) {
+  const primaryName = normalizeName(site.name);
+  return [
+    ...new Set(
+      site.aliasesText
+        .split(",")
+        .map((alias) => alias.trim())
+        .filter((alias) => alias && normalizeName(alias) !== primaryName),
+    ),
+  ];
 }
 
 function normalizeName(value: string) {
@@ -611,6 +791,10 @@ function downloadJson(value: unknown, fileName: string) {
   const blob = new Blob([JSON.stringify(value, null, 2)], {
     type: "application/json",
   });
+  downloadBlob(blob, fileName);
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = fileName;

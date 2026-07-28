@@ -103,6 +103,12 @@ Object stores:
 The app requests persistent browser storage when available. This reduces
 eviction risk but does not replace a backup.
 
+Settings can export a versioned `diveframe-local-backup` JSON document covering
+all seven stores, including base64-encoded photo, reusable-background, and logo
+blobs. Import is additive by primary key: backup records replace matching local
+records while destination-only records remain. The file is not encrypted and
+the UI warns the user to keep it private.
+
 ### Import matching
 
 Source identity is stored separately from the canonical dive ID:
@@ -223,12 +229,14 @@ requests into the browser and configure a static Next/Vite export. Verify the
 public OpenStreetMap services' browser CORS and usage-policy requirements
 before doing so.
 
-## Recommended next milestone: portable backup
+## Recommended next milestone: backup hardening
 
-Before attempting live synchronization, add one encrypted, versioned backup
-format that works between phone and PC.
+The first portable backup/import implementation is now complete. A future
+iteration should add encryption, checksums, streaming ZIP output for very large
+photo libraries, and an import preview/conflict UI.
 
-Suggested archive:
+The current JSON format deliberately favors a simple first transfer workflow.
+For large libraries, migrate it to a streaming archive such as:
 
 ```text
 diveframe-backup.zip
@@ -239,9 +247,9 @@ diveframe-backup.zip
     └── <attachment-id>.<extension>
 ```
 
-Recommended behavior:
+Recommended hardening:
 
-1. Export all three IndexedDB stores and image blobs.
+1. Retain coverage of all IndexedDB stores and image blobs.
 2. Include a format version, creation timestamp, and checksums.
 3. Encrypt the archive client-side with a user passphrase.
 4. On import, merge dives using the existing source mapping and matching rules.
@@ -254,7 +262,7 @@ Google Drive, iCloud Drive, or a small private API.
 
 ## Known follow-ups
 
-- Add backup export/import before users build large photo libraries.
+- Add streaming, encrypted backup export before photo libraries become very large.
 - Add dive-photo deletion, captions, and storage-usage reporting.
 - Add draggable custom block positions (preset positions are implemented).
 - Add named composer presets that can be reused across dives.

@@ -3,12 +3,13 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and composer workflow", async () => {
-  const [app, settings, composer, chart, composerSettings, fonts, i18n, shearwater, subsurface, matching, storage, hosting, manifest, catalog] = await Promise.all([
+  const [app, settings, composer, chart, composerSettings, backup, fonts, i18n, shearwater, subsurface, matching, storage, hosting, manifest, catalog] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("app/settings/SettingsApp.tsx", "utf8"),
     readFile("app/compose/ComposerApp.tsx", "utf8"),
     readFile("lib/chart-renderer.ts", "utf8"),
     readFile("lib/composer-settings.ts", "utf8"),
+    readFile("lib/app-backup.ts", "utf8"),
     readFile("lib/composer-fonts.ts", "utf8"),
     readFile("lib/i18n.ts", "utf8"),
     readFile("lib/parsers/shearwater.ts", "utf8"),
@@ -38,6 +39,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /BACKGROUNDS_STORE/);
   assert.match(storage, /BRANDING_ASSETS_STORE/);
   assert.match(storage, /saveLocalOverlayLogo/);
+  assert.match(storage, /exportLocalBackupSnapshot/);
+  assert.match(storage, /importLocalBackupSnapshot/);
+  assert.match(backup, /diveframe-local-backup/);
+  assert.match(backup, /blobBase64/);
   assert.match(app, /createShareCard/);
   assert.match(app, /Add photos/);
   assert.match(app, /Create share image/);
@@ -69,6 +74,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composerSettings, /showAxisLabels: true/);
   assert.match(composerSettings, /depthFillMode: "fade"/);
   assert.match(settings, /Overlay logo/);
+  assert.match(settings, /Export app data/);
+  assert.match(settings, /Import app data/);
+  assert.match(settings, /Review sites to add/);
+  assert.match(settings, /aliasesText/);
   assert.match(fonts, /Noto Sans HK/);
   assert.match(fonts, /Noto Serif TC/);
   assert.match(fonts, /LXGW WenKai TC/);

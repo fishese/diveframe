@@ -112,12 +112,22 @@ export type LocalSiteContribution = {
   updatedAt: string;
 };
 
-type SourceRecord = {
+export type SourceRecord = {
   key: string;
   source: LocalImportedDive["source"];
   sourceId: string;
   diveId: string;
   importedAt: string;
+};
+
+export type LocalBackupSnapshot = {
+  dives: LocalDive[];
+  sourceRecords: SourceRecord[];
+  attachments: LocalAttachment[];
+  siteContributions: LocalSiteContribution[];
+  composerSettings: ComposerSettings[];
+  backgrounds: LocalBackground[];
+  brandingAssets: LocalBrandingAsset[];
 };
 
 const DATABASE_NAME = "diveframe-local";
@@ -430,6 +440,87 @@ export async function saveLocalComposerSettings(settings: ComposerSettings) {
 export async function requestPersistentLocalStorage() {
   if (!navigator.storage?.persist) return null;
   return navigator.storage.persist();
+}
+
+export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> {
+  const database = await openDatabase();
+  const transaction = database.transaction([
+    DIVES_STORE,
+    SOURCES_STORE,
+    ATTACHMENTS_STORE,
+    SITE_CONTRIBUTIONS_STORE,
+    COMPOSER_SETTINGS_STORE,
+    BACKGROUNDS_STORE,
+    BRANDING_ASSETS_STORE,
+  ]);
+  const [
+    dives,
+    sourceRecords,
+    attachments,
+    siteContributions,
+    composerSettings,
+    backgrounds,
+    brandingAssets,
+  ] = await Promise.all([
+    request<LocalDive[]>(transaction.objectStore(DIVES_STORE).getAll()),
+    request<SourceRecord[]>(transaction.objectStore(SOURCES_STORE).getAll()),
+    request<LocalAttachment[]>(transaction.objectStore(ATTACHMENTS_STORE).getAll()),
+    request<LocalSiteContribution[]>(
+      transaction.objectStore(SITE_CONTRIBUTIONS_STORE).getAll(),
+    ),
+    request<ComposerSettings[]>(
+      transaction.objectStore(COMPOSER_SETTINGS_STORE).getAll(),
+    ),
+    request<LocalBackground[]>(transaction.objectStore(BACKGROUNDS_STORE).getAll()),
+    request<LocalBrandingAsset[]>(
+      transaction.objectStore(BRANDING_ASSETS_STORE).getAll(),
+    ),
+  ]);
+  return {
+    dives: dives.map(hydrateDive),
+    sourceRecords,
+    attachments,
+    siteContributions,
+    composerSettings,
+    backgrounds,
+    brandingAssets,
+  };
+}
+
+export async function importLocalBackupSnapshot(snapshot: LocalBackupSnapshot) {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [
+      DIVES_STORE,
+      SOURCES_STORE,
+      ATTACHMENTS_STORE,
+      SITE_CONTRIBUTIONS_STORE,
+      COMPOSER_SETTINGS_STORE,
+      BACKGROUNDS_STORE,
+      BRANDING_ASSETS_STORE,
+    ],
+    "readwrite",
+  );
+  const recordsByStore: Array<[string, unknown[]]> = [
+    [DIVES_STORE, snapshot.dives],
+    [SOURCES_STORE, snapshot.sourceRecords],
+    [ATTACHMENTS_STORE, snapshot.attachments],
+    [SITE_CONTRIBUTIONS_STORE, snapshot.siteContributions],
+    [COMPOSER_SETTINGS_STORE, snapshot.composerSettings],
+    [BACKGROUNDS_STORE, snapshot.backgrounds],
+    [BRANDING_ASSETS_STORE, snapshot.brandingAssets],
+  ];
+  for (const [storeName, records] of recordsByStore) {
+    const store = transaction.objectStore(storeName);
+    records.forEach((record) => store.put(record));
+  }
+  await transactionComplete(transaction);
+  return {
+    dives: snapshot.dives.length,
+    photos: snapshot.attachments.length,
+    backgrounds: snapshot.backgrounds.length,
+    siteContributions: snapshot.siteContributions.length,
+  };
 }
 
 async function updateDive(id: string, change: (dive: LocalDive) => LocalDive) {

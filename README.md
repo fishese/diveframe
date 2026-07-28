@@ -33,7 +33,10 @@ photo blobs in IndexedDB on the current device.
 - A filter for site names assigned in DiveFrame and a JSON export of manually
   typed site candidates.
 - A settings page that can merge device-added sites into the bundled catalog
-  and download a replacement `dive-sites.json` for repository updates.
+  and download a replacement `dive-sites.json` for repository updates. The
+  pending additions can be reviewed, renamed, given aliases, or excluded first.
+- A complete device-to-device backup file containing IndexedDB records, dive
+  photos, reusable backgrounds, the overlay logo, and composer settings.
 - Multiple photos per dive plus a device-local library of reusable diving
   backgrounds.
 - A live image composer with five original layouts, high-resolution PNG/JPEG
@@ -60,7 +63,8 @@ npm run dev
 ```
 
 The deployed Worker is stateless. Dive and photo data stay in the browser;
-server routes only proxy map lookups.
+server routes only proxy map lookups. Use **Settings â†’ Export app data** to
+back up or transfer that local data.
 
 For full depth-profile charts, re-import a Subsurface `.ssrf` after upgrading.
 Shearwater Cloud exports provide summaries and tank start/end values, but the
