@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
+import { AppI18nProvider } from "./AppI18nProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,9 +24,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const origin = host ? `${protocol}://${host}` : "http://localhost:3000";
 
   return {
-    title: "DiveFrame — Shearwater companion",
+    title: "DiveFrame — Dive log companion",
     description:
-      "A private visual logbook for Shearwater dives, maps, photos, and share cards.",
+      "A private visual companion for merged dive logs, maps, photos, and share images.",
     manifest: "/manifest.webmanifest",
     appleWebApp: {
       capable: true,
@@ -34,13 +35,13 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       title: "DiveFrame",
-      description: "Your dives, given room to breathe.",
+      description: "Your dives, enhanced.",
       images: [{ url: `${origin}/og.png`, width: 1732, height: 909 }],
     },
     twitter: {
       card: "summary_large_image",
       title: "DiveFrame",
-      description: "Your dives, given room to breathe.",
+      description: "Your dives, enhanced.",
       images: [`${origin}/og.png`],
     },
   };
@@ -60,7 +61,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AppI18nProvider>{children}</AppI18nProvider>
       </body>
     </html>
   );

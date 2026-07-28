@@ -33,6 +33,7 @@ import {
   addLocalBackgrounds,
   deleteLocalBackground,
   deleteLocalOverlayLogo,
+  getLocalAppPreferences,
   getLocalOverlayLogo,
   listLocalBackgrounds,
   listLocalSiteContributions,
@@ -41,6 +42,7 @@ import {
   type LocalBrandingAsset,
   type LocalSiteContribution,
 } from "@/lib/indexed-db";
+import { useAppI18n } from "../AppI18nProvider";
 
 type CatalogSite = {
   id: string;
@@ -71,13 +73,14 @@ type SiteContributionDraft = LocalSiteContribution & {
 const BUILT_IN_CATALOG = bundledCatalog as DiveSiteCatalog;
 
 export function SettingsApp() {
+  const { language, setLanguage, t } = useAppI18n();
   const [contributions, setContributions] = useState<LocalSiteContribution[]>([]);
   const [reviewedSites, setReviewedSites] = useState<SiteContributionDraft[]>([]);
   const [catalog, setCatalog] = useState<DiveSiteCatalog>(BUILT_IN_CATALOG);
-  const [catalogLabel, setCatalogLabel] = useState("Catalog included with this app");
+  const [catalogLabel, setCatalogLabel] = useState<string | null>(null);
   const [backgrounds, setBackgrounds] = useState<LocalBackground[]>([]);
   const [logo, setLogo] = useState<LocalBrandingAsset | null>(null);
-  const [status, setStatus] = useState("Loading device-local settings…");
+  const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(true);
 
   useEffect(() => {
@@ -93,15 +96,15 @@ export function SettingsApp() {
         setLogo(savedLogo ?? null);
         setStatus(
           items.length
-            ? `${items.length} manually added site${items.length === 1 ? "" : "s"} ready`
-            : "No manually added sites on this device",
+            ? t("manualSitesReady", { count: items.length, suffix: items.length === 1 ? "" : "s" })
+            : t("noManualSites"),
         );
       })
       .catch((error) => {
-        setStatus(error instanceof Error ? error.message : "Could not read site additions.");
+        setStatus(error instanceof Error ? error.message : t("settingsLoadFailed"));
       })
       .finally(() => setBusy(false));
-  }, []);
+  }, [t]);
 
   async function chooseBackgrounds(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -111,9 +114,9 @@ export function SettingsApp() {
     try {
       await addLocalBackgrounds(files);
       setBackgrounds(await listLocalBackgrounds());
-      setStatus(`Saved ${files.length} reusable background${files.length === 1 ? "" : "s"} on this device`);
+      setStatus(t("savedBackgrounds", { count: files.length, suffix: files.length === 1 ? "" : "s" }));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not save these backgrounds.");
+      setStatus(error instanceof Error ? error.message : t("backgroundsSaveFailed"));
     } finally {
       setBusy(false);
     }
@@ -124,9 +127,9 @@ export function SettingsApp() {
     try {
       await deleteLocalBackground(id);
       setBackgrounds((items) => items.filter((item) => item.id !== id));
-      setStatus("Removed reusable background");
+      setStatus(t("removedBackground"));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not remove this background.");
+      setStatus(error instanceof Error ? error.message : t("backgroundRemoveFailed"));
     } finally {
       setBusy(false);
     }
@@ -140,9 +143,9 @@ export function SettingsApp() {
     try {
       const saved = await saveLocalOverlayLogo(file);
       setLogo(saved);
-      setStatus(`Saved ${saved.fileName} as the overlay logo on this device`);
+      setStatus(t("savedLogo", { name: saved.fileName }));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not save this logo.");
+      setStatus(error instanceof Error ? error.message : t("logoSaveFailed"));
     } finally {
       setBusy(false);
     }
@@ -153,9 +156,9 @@ export function SettingsApp() {
     try {
       await deleteLocalOverlayLogo();
       setLogo(null);
-      setStatus("Removed the overlay logo");
+      setStatus(t("removedLogo"));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not remove this logo.");
+      setStatus(error instanceof Error ? error.message : t("logoRemoveFailed"));
     } finally {
       setBusy(false);
     }
@@ -163,16 +166,14 @@ export function SettingsApp() {
 
   async function exportAppData() {
     setBusy(true);
-    setStatus("Preparing app backup with photosâ€¦");
+    setStatus(t("preparingBackup"));
     try {
       const backup = await createLocalAppBackup();
       const date = new Date().toISOString().slice(0, 10);
       downloadBlob(backup.blob, `diveframe-backup-${date}.json`);
-      setStatus(
-        `Backed up ${backup.counts.dives} dives, ${backup.counts.photos} dive photos, and ${backup.counts.backgrounds} reusable backgrounds`,
-      );
+      setStatus(t("backupComplete", backup.counts));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not create the backup.");
+      setStatus(error instanceof Error ? error.message : t("backupFailed"));
     } finally {
       setBusy(false);
     }
@@ -183,23 +184,25 @@ export function SettingsApp() {
     event.target.value = "";
     if (!file) return;
     setBusy(true);
-    setStatus("Restoring app data and imagesâ€¦");
+    setStatus(t("restoringBackup"));
     try {
       const counts = await restoreLocalAppBackup(file);
-      const [items, savedBackgrounds, savedLogo] = await Promise.all([
+      const [items, savedBackgrounds, savedLogo, restoredPreferences] = await Promise.all([
         listLocalSiteContributions(),
         listLocalBackgrounds(),
         getLocalOverlayLogo(),
+        getLocalAppPreferences(),
       ]);
       setContributions(items);
       setReviewedSites(items.map(toSiteDraft));
       setBackgrounds(savedBackgrounds);
       setLogo(savedLogo ?? null);
-      setStatus(
-        `Imported ${counts.dives} dives, ${counts.photos} dive photos, and ${counts.backgrounds} reusable backgrounds. Existing unrelated records were kept.`,
-      );
+      if (restoredPreferences?.uiLanguage) {
+        await setLanguage(restoredPreferences.uiLanguage);
+      }
+      setStatus(t("importComplete", counts));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not import this backup.");
+      setStatus(error instanceof Error ? error.message : t("importBackupFailed"));
     } finally {
       setBusy(false);
     }
@@ -220,14 +223,17 @@ export function SettingsApp() {
       sites: includedSites.map(contributionForExport),
     };
     downloadJson(payload, "diveframe-added-sites.json");
-    setStatus(`Exported ${includedSites.length} reviewed site${includedSites.length === 1 ? "" : "s"}`);
+    setStatus(t("reviewedSitesExported", { count: includedSites.length, suffix: includedSites.length === 1 ? "" : "s" }));
   }
 
   function downloadMergedCatalog() {
     downloadJson(mergePreview.catalog, "dive-sites.json");
-    setStatus(
-      `Downloaded catalog with ${mergePreview.added} new site${mergePreview.added === 1 ? "" : "s"} (${mergePreview.skipped} duplicate${mergePreview.skipped === 1 ? "" : "s"} skipped)`,
-    );
+    setStatus(t("mergedCatalogDownloaded", {
+      added: mergePreview.added,
+      addedSuffix: mergePreview.added === 1 ? "" : "s",
+      skipped: mergePreview.skipped,
+      skippedSuffix: mergePreview.skipped === 1 ? "" : "s",
+    }));
   }
 
   async function chooseCatalog(event: ChangeEvent<HTMLInputElement>) {
@@ -240,9 +246,9 @@ export function SettingsApp() {
       const validated = validateCatalog(parsed);
       setCatalog(validated);
       setCatalogLabel(file.name);
-      setStatus(`Using ${file.name} with ${validated.sites.length} sites`);
+      setStatus(t("usingCatalog", { name: file.name, count: validated.sites.length }));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not read this catalog.");
+      setStatus(error instanceof Error ? error.message : t("catalogReadFailed"));
     } finally {
       setBusy(false);
     }
@@ -251,59 +257,56 @@ export function SettingsApp() {
   return (
     <main className="settings-page">
       <header className="topbar settings-topbar">
-        <Link href="/" className="brand settings-brand" aria-label="Back to DiveFrame">
+        <Link href="/" className="brand settings-brand" aria-label={t("backToDives")}>
           <span className="brand-mark">
             <Waves size={19} strokeWidth={2.4} />
           </span>
           <span>
             <strong>DiveFrame</strong>
-            <small>Settings</small>
+            <small>{t("settings")}</small>
           </span>
         </Link>
         <Link href="/" className="button button-quiet">
-          <ArrowLeft size={16} /> Back to dives
+          <ArrowLeft size={16} /> {t("backToDives")}
         </Link>
       </header>
 
       <div className="settings-shell">
         <section className="settings-hero">
-          <p className="eyebrow">Device-local preferences</p>
-          <h1>Settings & data tools</h1>
-          <p>
-            Manage the site catalog, reusable photos, and overlay branding stored
-            in this browser. More style and language preferences will live here too.
-          </p>
+          <p className="eyebrow">{t("deviceLocalPreferences")}</p>
+          <h1>{t("settingsAndData")}</h1>
+          <p>{t("settingsDescription")}</p>
         </section>
 
         <section className="settings-card catalog-settings">
           <div className="settings-card-heading">
             <span className="settings-icon"><Database size={21} /></span>
             <div>
-              <p className="eyebrow">Dive-site catalog</p>
-              <h2>Review and publish added sites</h2>
+              <p className="eyebrow">{t("diveSiteCatalog")}</p>
+              <h2>{t("reviewPublishSites")}</h2>
             </div>
           </div>
 
           <div className="catalog-summary">
             <div>
               <strong>{catalog.sites.length}</strong>
-              <span>catalog sites</span>
+              <span>{t("catalogSites")}</span>
             </div>
             <div>
               <strong>{contributions.length}</strong>
-              <span>device additions</span>
+              <span>{t("deviceAdditions")}</span>
             </div>
             <div>
               <strong>{mergePreview.added}</strong>
-              <span>new after merge</span>
+              <span>{t("newAfterMerge")}</span>
             </div>
           </div>
 
           <details className="site-review">
             <summary>
               <span>
-                Review sites to add
-                <small>Edit names and aliases, or exclude an entry from this merge.</small>
+                {t("reviewSitesToAdd")}
+                <small>{t("reviewSitesDescription")}</small>
               </span>
               <strong>{reviewedSites.length}</strong>
             </summary>
@@ -313,7 +316,7 @@ export function SettingsApp() {
                   <article className="site-review-item" key={site.id}>
                     <div className="site-review-fields">
                       <label>
-                        <span>Site name</span>
+                        <span>{t("siteName")}</span>
                         <input
                           value={site.name}
                           onChange={(event) =>
@@ -328,10 +331,10 @@ export function SettingsApp() {
                         />
                       </label>
                       <label>
-                        <span>Aliases</span>
+                        <span>{t("aliases")}</span>
                         <input
                           value={site.aliasesText}
-                          placeholder="Comma-separated aliases"
+                          placeholder={t("aliasesPlaceholder")}
                           onChange={(event) =>
                             setReviewedSites((items) =>
                               items.map((item) =>
@@ -357,12 +360,12 @@ export function SettingsApp() {
                         )
                       }
                     >
-                      <Trash2 size={15} /> Exclude from merge
+                      <Trash2 size={15} /> {t("excludeFromMerge")}
                     </button>
                   </article>
                 ))
               ) : (
-                <p className="empty-compact">No sites are included in this merge.</p>
+                <p className="empty-compact">{t("noSitesInMerge")}</p>
               )}
             </div>
           </details>
@@ -371,15 +374,14 @@ export function SettingsApp() {
             <div>
               <FileJson size={18} />
               <span>
-                <strong>{catalogLabel}</strong>
+                <strong>{catalogLabel ?? t("bundledCatalog")}</strong>
                 <small>
-                  Use the included catalog, or choose a newer `dive-sites.json`
-                  before merging.
+                  {t("chooseCatalogDescription")}
                 </small>
               </span>
             </div>
             <label className="button button-secondary">
-              <Upload size={16} /> Choose catalog
+              <Upload size={16} /> {t("chooseCatalog")}
               <input
                 type="file"
                 accept=".json,application/json"
@@ -397,7 +399,7 @@ export function SettingsApp() {
               onClick={exportAddedSiteLog}
               disabled={busy || reviewedSites.length === 0}
             >
-              <Download size={16} /> Export addition log
+              <Download size={16} /> {t("exportAdditionLog")}
             </button>
             <button
               type="button"
@@ -405,15 +407,12 @@ export function SettingsApp() {
               onClick={downloadMergedCatalog}
               disabled={busy || reviewedSites.length === 0}
             >
-              <Download size={16} /> Download merged dive-sites.json
+              <Download size={16} /> {t("downloadMergedCatalog")}
             </button>
           </div>
 
           <p className="settings-note">
-            The merge skips an addition when the same name already exists within
-            250 metres. New entries are marked active and retain a reference to the
-            dive that supplied their coordinates. Review the downloaded file, then
-            replace <code>data/dive-sites.json</code> in GitHub.
+            {t("mergeCatalogNote")}
           </p>
         </section>
 
@@ -421,21 +420,19 @@ export function SettingsApp() {
           <div className="settings-card-heading">
             <span className="settings-icon"><Archive size={21} /></span>
             <div>
-              <p className="eyebrow">Portable backup</p>
-              <h2>Export or import app data</h2>
+              <p className="eyebrow">{t("portableBackup")}</p>
+              <h2>{t("backupTitle")}</h2>
             </div>
           </div>
           <p className="settings-note">
-            The backup contains dives, source matching, site choices, composer
-            settings, dive photos, reusable backgrounds, and your logo. Keep the
-            downloaded file private.
+            {t("backupDescription")}
           </p>
           <div className="settings-actions">
             <button type="button" className="button button-primary" onClick={exportAppData} disabled={busy}>
-              <Download size={16} /> Export app data
+              <Download size={16} /> {t("exportAppData")}
             </button>
             <label className="button button-secondary">
-              <RefreshCw size={16} /> Import app data
+              <RefreshCw size={16} /> {t("importAppData")}
               <input
                 type="file"
                 accept=".json,application/json"
@@ -446,22 +443,43 @@ export function SettingsApp() {
             </label>
           </div>
           <p className="settings-note">
-            Importing merges by record ID. Backup records replace matching local
-            records; local records that are not in the backup remain untouched.
+            {t("importMergeNote")}
           </p>
+        </section>
+
+        <section className="settings-card language-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><Languages size={21} /></span>
+            <div>
+              <p className="eyebrow">{t("settings")}</p>
+              <h2>{t("appLanguage")}</h2>
+            </div>
+          </div>
+          <p className="settings-note">{t("appLanguageDescription")}</p>
+          <label className="language-select">
+            <span>{t("appLanguage")}</span>
+            <select
+              value={language}
+              onChange={(event) =>
+                void setLanguage(event.target.value as "en" | "zh-Hant")
+              }
+            >
+              <option value="en">{t("english")}</option>
+              <option value="zh-Hant">{t("traditionalChineseHK")}</option>
+            </select>
+          </label>
         </section>
 
         <section className="settings-card branding-settings">
           <div className="settings-card-heading">
             <span className="settings-icon"><ImageIcon size={21} /></span>
             <div>
-              <p className="eyebrow">Image composer</p>
-              <h2>Overlay logo</h2>
+              <p className="eyebrow">{t("imageComposer")}</p>
+              <h2>{t("overlayLogo")}</h2>
             </div>
           </div>
           <p className="settings-note">
-            Save one transparent PNG or SVG for all dives on this device. The
-            composer controls whether it appears and where it is placed.
+            {t("overlayLogoDescription")}
           </p>
           {logo ? (
             <div className="logo-settings-row">
@@ -471,7 +489,7 @@ export function SettingsApp() {
                 <small>{Math.max(1, Math.round(logo.size / 1024))} KB</small>
                 <div className="settings-actions">
                   <label className="button button-secondary">
-                    <Upload size={16} /> Replace logo
+                    <Upload size={16} /> {t("replaceLogo")}
                     <input
                       type="file"
                       accept=".png,.svg,image/png,image/svg+xml"
@@ -481,14 +499,14 @@ export function SettingsApp() {
                     />
                   </label>
                   <button type="button" className="button button-quiet" onClick={removeLogo} disabled={busy}>
-                    <Trash2 size={16} /> Remove
+                    <Trash2 size={16} /> {t("remove")}
                   </button>
                 </div>
               </div>
             </div>
           ) : (
             <label className="button button-primary branding-upload">
-              <Upload size={16} /> Add logo
+              <Upload size={16} /> {t("addLogo")}
               <input
                 type="file"
                 accept=".png,.svg,image/png,image/svg+xml"
@@ -504,16 +522,15 @@ export function SettingsApp() {
           <div className="settings-card-heading">
             <span className="settings-icon"><Camera size={21} /></span>
             <div>
-              <p className="eyebrow">Image composer</p>
-              <h2>Reusable diving backgrounds</h2>
+              <p className="eyebrow">{t("imageComposer")}</p>
+              <h2>{t("reusableBackgrounds")}</h2>
             </div>
           </div>
           <p className="settings-note">
-            These photos stay in this browser and can be used with any dive. They
-            are separate from photos attached to an individual log entry.
+            {t("reusableBackgroundsDescription")}
           </p>
           <label className="button button-primary">
-            <Upload size={16} /> Add backgrounds
+            <Upload size={16} /> {t("addBackgrounds")}
             <input
               type="file"
               accept="image/*"
@@ -534,20 +551,15 @@ export function SettingsApp() {
               ))}
             </div>
           ) : (
-            <p className="empty-compact">No reusable backgrounds saved yet.</p>
+            <p className="empty-compact">{t("noBackgrounds")}</p>
           )}
         </section>
 
-        <section className="future-settings" aria-label="Planned settings">
+        <section className="future-settings" aria-label={t("plannedSettings")}>
           <FutureSetting
             icon={<Palette size={20} />}
-            title="Overlay styles"
-            description="Reusable layouts, typography, and color treatments."
-          />
-          <FutureSetting
-            icon={<Languages size={20} />}
-            title="Language & region"
-            description="Interface language, units, and local formatting."
+            title={t("overlayStyles")}
+            description={t("overlayStylesDescription")}
           />
         </section>
 
@@ -567,6 +579,7 @@ function BackgroundTile({
   background: LocalBackground;
   onRemove: () => void;
 }) {
+  const { t } = useAppI18n();
   const source = useMemo(() => URL.createObjectURL(background.blob), [background.blob]);
   useEffect(() => () => URL.revokeObjectURL(source), [source]);
   return (
@@ -574,7 +587,7 @@ function BackgroundTile({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={source} alt={background.fileName} />
       <span title={background.fileName}>{background.fileName}</span>
-      <button type="button" onClick={onRemove} aria-label={`Remove ${background.fileName}`}>
+      <button type="button" onClick={onRemove} aria-label={`${t("remove")} ${background.fileName}`}>
         <Trash2 size={15} />
       </button>
     </article>
@@ -601,10 +614,11 @@ function FutureSetting({
   title: string;
   description: string;
 }) {
+  const { t } = useAppI18n();
   return (
     <article className="settings-card future-card">
       <span className="settings-icon">{icon}</span>
-      <small>Planned</small>
+      <small>{t("planned")}</small>
       <h2>{title}</h2>
       <p>{description}</p>
     </article>

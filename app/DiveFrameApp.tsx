@@ -46,6 +46,9 @@ import {
 } from "@/lib/indexed-db";
 import { readShearwaterDatabase } from "@/lib/parsers/shearwater";
 import { readSubsurfaceLog } from "@/lib/parsers/subsurface";
+import diveSiteCatalog from "@/data/dive-sites.json";
+import type { AppLanguage } from "@/lib/app-i18n";
+import { useAppI18n } from "./AppI18nProvider";
 
 type Dive = LocalDive;
 type Attachment = LocalAttachment;
@@ -66,6 +69,7 @@ type NearbySite = {
   longitude: number;
   distanceKm: number;
   source: "catalog" | "openstreetmap";
+  notes?: string;
 };
 
 type SiteSelection = {
@@ -77,6 +81,7 @@ type SiteSelection = {
 };
 
 export function DiveFrameApp() {
+  const { language, t } = useAppI18n();
   const [dives, setDives] = useState<Dive[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -85,7 +90,7 @@ export function DiveFrameApp() {
   const [gpsOnly, setGpsOnly] = useState(false);
   const [appSiteOnly, setAppSiteOnly] = useState(false);
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
-  const [status, setStatus] = useState("Loading your private logbook…");
+  const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(false);
   const [mobileDetail, setMobileDetail] = useState(false);
   const importInput = useRef<HTMLInputElement>(null);
@@ -95,8 +100,8 @@ export function DiveFrameApp() {
     const next = await listLocalDives();
     setDives(next);
     setSelectedId((current) => preferredId ?? current ?? next[0]?.id ?? null);
-    setStatus(next.length ? `${next.length} dives ready` : "Import a dive log");
-  }, []);
+    setStatus(next.length ? t("divesReady", { count: next.length }) : t("importDiveLog"));
+  }, [t]);
 
   useEffect(() => {
     let active = true;
@@ -105,12 +110,12 @@ export function DiveFrameApp() {
         if (!active) return;
         setDives(next);
         setSelectedId(next[0]?.id ?? null);
-        setStatus(next.length ? `${next.length} dives ready` : "Import a dive log");
+        setStatus(next.length ? t("divesReady", { count: next.length }) : t("importDiveLog"));
         void requestPersistentLocalStorage();
       })
       .catch((error) => {
         if (active) {
-          setStatus(error instanceof Error ? error.message : "Unable to load dives.");
+          setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
         }
       });
     if ("serviceWorker" in navigator) {
@@ -119,7 +124,7 @@ export function DiveFrameApp() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   const selected = useMemo(
     () => dives.find((dive) => dive.id === selectedId) ?? null,
@@ -164,7 +169,7 @@ export function DiveFrameApp() {
         }
       } catch (error) {
         if ((error as DOMException)?.name !== "AbortError") {
-          setStatus("Some GPS place names could not be resolved yet.");
+          setStatus(t("gpsNamesPending"));
         }
       } finally {
         enrichingLocations.current = false;
@@ -172,7 +177,7 @@ export function DiveFrameApp() {
     })();
 
     return () => controller.abort();
-  }, [dives]);
+  }, [dives, t]);
 
   useEffect(() => {
     let active = true;
@@ -242,14 +247,14 @@ export function DiveFrameApp() {
     event.target.value = "";
     if (!file) return;
     setBusy(true);
-    setStatus("Reading the extract on this device…");
+    setStatus(t("readingExtract"));
     try {
       const imported = await readDiveImport(file);
-      setStatus(`Found ${imported.length} dives. Updating your view…`);
+      setStatus(t("foundDives", { count: imported.length }));
       await upsertLocalDives(imported);
       await refreshDives();
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Import failed.");
+      setStatus(error instanceof Error ? error.message : t("importFailed"));
     } finally {
       setBusy(false);
     }
@@ -260,14 +265,14 @@ export function DiveFrameApp() {
     event.target.value = "";
     if (!files.length || !selected) return;
     setBusy(true);
-    setStatus(`Saving ${files.length} photo${files.length === 1 ? "" : "s"} locally…`);
+    setStatus(t("savingPhotos", { count: files.length, suffix: files.length === 1 ? "" : "s" }));
     try {
       const additions = await addLocalPhotos(selected.id, files);
       setAttachments((current) => [...current, ...additions]);
       await refreshDives(selected.id);
-      setStatus("Photos saved on this device");
+      setStatus(t("photosSaved"));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Local save failed.");
+      setStatus(error instanceof Error ? error.message : t("localSaveFailed"));
     } finally {
       setBusy(false);
     }
@@ -276,24 +281,30 @@ export function DiveFrameApp() {
   async function sharePhoto(attachment: Attachment) {
     if (!selected) return;
     setBusy(true);
-    setStatus("Creating your share card…");
+    setStatus(t("creatingShareCard"));
     try {
-      const blob = await createShareCard(selected, attachment);
+      const blob = await createShareCard(
+        selected,
+        attachment,
+        language,
+        t("dive"),
+        t("diveTime"),
+      );
       const fileName = `dive-${selected.diveNumber ?? "log"}-share.png`;
       const file = new File([blob], fileName, { type: "image/png" });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: displaySite(selected),
-          text: `Dive ${selected.diveNumber ?? ""} · ${formatDate(selected.diveDate)}`,
+          title: displaySite(selected, t("unnamedDiveSite")),
+          text: `${t("dive")} ${selected.diveNumber ?? ""} · ${formatDate(selected.diveDate, language, t("dateUnknown"))}`,
         });
       } else {
         downloadBlob(blob, fileName);
       }
-      setStatus("Share card ready");
+      setStatus(t("shareCardReady"));
     } catch (error) {
       if ((error as DOMException)?.name !== "AbortError") {
-        setStatus(error instanceof Error ? error.message : "Could not create card.");
+        setStatus(error instanceof Error ? error.message : t("shareCardFailed"));
       }
     } finally {
       setBusy(false);
@@ -303,7 +314,7 @@ export function DiveFrameApp() {
   async function saveDiveSite(selection: SiteSelection) {
     if (!selected) return;
     setBusy(true);
-    setStatus("Saving dive site…");
+    setStatus(t("savingDiveSite"));
     try {
       const updated = await updateLocalDiveSite(selected.id, selection);
       setDives((current) =>
@@ -311,11 +322,11 @@ export function DiveFrameApp() {
       );
       setStatus(
         selection.source === "manual"
-          ? `${selection.name} saved and added to your local site log`
-          : `Dive site saved as ${selection.name}`,
+          ? t("manualSiteSaved", { name: selection.name })
+          : t("siteSavedAs", { name: selection.name }),
       );
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not save dive site.");
+      setStatus(error instanceof Error ? error.message : t("siteSaveFailed"));
     } finally {
       setBusy(false);
     }
@@ -333,14 +344,14 @@ export function DiveFrameApp() {
           type="button"
           className="brand"
           onClick={() => setMobileDetail(false)}
-          aria-label="DiveFrame home"
+          aria-label={t("home")}
         >
           <span className="brand-mark">
             <Waves size={24} strokeWidth={2.4} />
           </span>
           <span>
             <strong>DiveFrame</strong>
-            <small>Shearwater companion</small>
+            <small>{t("diveLogCompanion")}</small>
           </span>
         </button>
         <div className="topbar-actions">
@@ -350,7 +361,7 @@ export function DiveFrameApp() {
           </span>
           <Link href="/settings" className="button button-quiet">
             <Settings size={16} />
-            Settings
+            {t("settings")}
           </Link>
           <button
             type="button"
@@ -359,7 +370,7 @@ export function DiveFrameApp() {
             disabled={busy}
           >
             <Upload size={17} />
-            Import log
+            {t("importLog")}
           </button>
           <input
             ref={importInput}
@@ -381,18 +392,15 @@ export function DiveFrameApp() {
         <>
           <section className="overview">
             <div className="overview-copy">
-              <p className="eyebrow">Private dive archive</p>
-              <h1>Your dives, finally given room to breathe.</h1>
-              <p>
-                Shearwater stays your backup. DiveFrame merges its export with
-                Subsurface GPS data and keeps the resulting logbook on this device.
-              </p>
+              <p className="eyebrow">{t("privateDiveArchive")}</p>
+              <h1>{t("heroTitle")}</h1>
+              <p>{t("heroDescription")}</p>
             </div>
             <div className="stat-grid">
-              <Stat icon={<Compass size={19} />} value={stats.dives} label="dives" />
-              <Stat icon={<MapPin size={19} />} value={stats.gps} label="mapped" />
-              <Stat icon={<Images size={19} />} value={stats.photos} label="photos" />
-              <Stat icon={<Users size={19} />} value={stats.buddies} label="buddies" />
+              <Stat icon={<Compass size={19} />} value={stats.dives} label={t("dives")} />
+              <Stat icon={<MapPin size={19} />} value={stats.gps} label={t("mapped")} />
+              <Stat icon={<Images size={19} />} value={stats.photos} label={t("photos")} />
+              <Stat icon={<Users size={19} />} value={stats.buddies} label={t("buddies")} />
             </div>
           </section>
 
@@ -401,20 +409,20 @@ export function DiveFrameApp() {
               <div className="browser-heading">
                 <div className="browser-title-row">
                   <div>
-                    <p className="eyebrow">Logbook</p>
-                    <h2>{visibleDives.length} dives</h2>
+                    <p className="eyebrow">{t("logbook")}</p>
+                    <h2>{visibleDives.length} {t("dives")}</h2>
                   </div>
                   <label className="sort-control">
-                    <span>Order by date</span>
+                    <span>{t("orderByDate")}</span>
                     <select
                       value={sortDirection}
                       onChange={(event) =>
                         setSortDirection(event.target.value as "desc" | "asc")
                       }
-                      aria-label="Order dives by date"
+                      aria-label={t("orderByDate")}
                     >
-                      <option value="desc">Newest first</option>
-                      <option value="asc">Oldest first</option>
+                      <option value="desc">{t("newestFirst")}</option>
+                      <option value="asc">{t("oldestFirst")}</option>
                     </select>
                   </label>
                 </div>
@@ -423,25 +431,25 @@ export function DiveFrameApp() {
                   <input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Site, buddy, notes…"
-                    aria-label="Search dives"
+                    placeholder={t("searchPlaceholder")}
+                    aria-label={t("searchDives")}
                   />
                   {query && (
-                    <button type="button" onClick={() => setQuery("")} aria-label="Clear search">
+                    <button type="button" onClick={() => setQuery("")} aria-label={t("clearSearch")}>
                       <X size={15} />
                     </button>
                   )}
                 </div>
               </div>
               <div className="dive-list">
-                <div className="filter-row" aria-label="Dive filters">
+                <div className="filter-row" aria-label={t("diveFilters")}>
                   <button
                     type="button"
                     className={namedOnly ? "active" : ""}
                     onClick={() => setNamedOnly((value) => !value)}
                     aria-pressed={namedOnly}
                   >
-                    <MapPin size={14} /> Site Named
+                    <MapPin size={14} /> {t("siteNamed")}
                   </button>
                   <button
                     type="button"
@@ -449,7 +457,7 @@ export function DiveFrameApp() {
                     onClick={() => setGpsOnly((value) => !value)}
                     aria-pressed={gpsOnly}
                   >
-                    <Compass size={14} /> GPS Data
+                    <Compass size={14} /> {t("gpsData")}
                   </button>
                   <button
                     type="button"
@@ -457,7 +465,7 @@ export function DiveFrameApp() {
                     onClick={() => setAppSiteOnly((value) => !value)}
                     aria-pressed={appSiteOnly}
                   >
-                    <Sparkles size={14} /> Set in App
+                    <Sparkles size={14} /> {t("setInApp")}
                   </button>
                 </div>
                 {visibleDives.map((dive) => (
@@ -468,12 +476,12 @@ export function DiveFrameApp() {
                     onClick={() => chooseDive(dive.id)}
                   >
                     <span className="dive-number">
-                      <small>DIVE</small>
+                      <small>{t("dive").toUpperCase()}</small>
                       {dive.diveNumber ?? "—"}
                     </span>
                     <span className="dive-summary">
-                      <strong>{displaySite(dive)}</strong>
-                      <span>{formatDate(dive.diveDate)}</span>
+                      <strong>{displaySite(dive, t("unnamedDiveSite"))}</strong>
+                      <span>{formatDate(dive.diveDate, language, t("dateUnknown"))}</span>
                     </span>
                     <span className="dive-meta">
                       <strong>{formatDepth(dive.depth)}</strong>
@@ -500,7 +508,7 @@ export function DiveFrameApp() {
                   onSaveSite={saveDiveSite}
                 />
               ) : (
-                <div className="no-selection">Choose a dive to explore it.</div>
+                <div className="no-selection">{t("chooseDive")}</div>
               )}
             </section>
           </section>
@@ -519,6 +527,7 @@ function EmptyState({
   onImport: () => void;
   status: string;
 }) {
+  const { t } = useAppI18n();
   return (
     <section className="empty-state">
       <div className="empty-orbit orbit-one" />
@@ -527,12 +536,9 @@ function EmptyState({
         <span className="empty-icon">
           <DatabaseIcon size={34} />
         </span>
-        <p className="eyebrow">Start with a dive log export</p>
-        <h1>A more visual home for every dive.</h1>
-        <p>
-          Choose a Shearwater Cloud database or Subsurface SSRF file. It is read
-          and saved only in this browser; the original file is never changed.
-        </p>
+        <p className="eyebrow">{t("startWithExport")}</p>
+        <h1>{t("emptyTitle")}</h1>
+        <p>{t("emptyDescription")}</p>
         <button
           type="button"
           className="button button-primary button-large"
@@ -540,14 +546,14 @@ function EmptyState({
           disabled={busy}
         >
           {busy ? <LoaderCircle className="spin" /> : <ArrowDownToLine />}
-          Choose dive log
+          {t("chooseDiveLog")}
         </button>
         <span className="empty-status">{status}</span>
       </div>
       <div className="empty-proof">
-        <span><Sparkles size={16} /> Maps from hidden GNSS fields</span>
-        <span><Camera size={16} /> Photos stay on this device</span>
-        <span><Share2 size={16} /> Share cards made on demand</span>
+        <span><Sparkles size={16} /> {t("proofMaps")}</span>
+        <span><Camera size={16} /> {t("proofPhotos")}</span>
+        <span><Share2 size={16} /> {t("proofShare")}</span>
       </div>
     </section>
   );
@@ -580,6 +586,7 @@ function DiveDetail({
   onShare: (attachment: Attachment) => void;
   onSaveSite: (site: SiteSelection) => Promise<void>;
 }) {
+  const { language, t } = useAppI18n();
   const calculated = safeJson(dive.calculatedJson);
   const averageDepth =
     numberFrom(calculated?.AverageDepth) ?? positiveNumber(dive.averageDepth);
@@ -638,6 +645,7 @@ function DiveDetail({
   const mapLatitude = hasGps ? dive.gpsEntryLat : resolvedLocation?.latitude ?? null;
   const mapLongitude = hasGps ? dive.gpsEntryLng : resolvedLocation?.longitude ?? null;
   const hasMap = mapLatitude !== null && mapLongitude !== null;
+  const siteNotes = catalogNotesForDive(dive);
 
   async function saveSiteAndCollapse(selection: SiteSelection) {
     await onSaveSite(selection);
@@ -672,44 +680,44 @@ function DiveDetail({
   return (
     <div className="detail-content">
       <button type="button" className="mobile-back" onClick={onBack}>
-        <ChevronLeft size={18} /> All dives
+        <ChevronLeft size={18} /> {t("allDives")}
       </button>
 
       <div className="detail-hero">
         <div className="hero-topline">
-          <span>Dive {dive.diveNumber ?? "—"}</span>
-          <span>{formatDate(dive.diveDate)}</span>
+          <span>{t("dive")} {dive.diveNumber ?? "—"}</span>
+          <span>{formatDate(dive.diveDate, language, t("dateUnknown"))}</span>
         </div>
-        <h2>{displaySite(dive)}</h2>
+        <h2>{displaySite(dive, t("unnamedDiveSite"))}</h2>
         <div className="detail-hero-actions">
           <p>
             <MapPin size={16} />
-            {displayLocation(dive) || (hasGps ? "Resolving GPS location…" : "Location not entered")}
+            {displayLocation(dive) || (hasGps ? t("resolvingGps") : t("locationNotEntered"))}
           </p>
           <Link
             href={`/compose?dive=${encodeURIComponent(dive.id)}`}
             className="button button-primary compose-hero-button"
           >
             <Sparkles size={17} />
-            Create share image
+            {t("createShareImage")}
           </Link>
         </div>
       </div>
 
       <div className="metric-grid">
-        <Metric label="Maximum depth" value={formatDepth(dive.depth)} icon={<Waves />} />
+        <Metric label={t("maximumDepth")} value={formatDepth(dive.depth)} icon={<Waves />} />
         <Metric
-          label="Dive time"
+          label={t("diveTime")}
           value={formatDuration(dive.lengthText)}
           icon={<Compass />}
         />
         <Metric
-          label="Average depth"
+          label={t("averageDepth")}
           value={averageDepth ? `${averageDepth.toFixed(1)} m` : "—"}
           icon={<Droplets />}
         />
         <Metric
-          label="Minimum temp"
+          label={t("minimumTemperature")}
           value={minTemp ? `${minTemp.toFixed(1)} °C` : "—"}
           icon={<Thermometer />}
         />
@@ -719,15 +727,15 @@ function DiveDetail({
         <section className="card map-card">
           <div className="card-heading">
             <div>
-              <p className="eyebrow">Dive position</p>
+              <p className="eyebrow">{t("divePosition")}</p>
               <h3>
                 {hasGps
-                  ? "Entry location"
+                  ? t("entryLocation")
                   : hasMap
-                    ? "Approximate location"
+                    ? t("approximateLocation")
                     : mapLookup === "loading"
-                      ? "Finding this location…"
-                      : "No map location found"}
+                      ? t("findingLocation")
+                      : t("noMapLocation")}
               </h3>
             </div>
             {hasMap && (
@@ -736,13 +744,13 @@ function DiveDetail({
                 target="_blank"
                 rel="noreferrer"
               >
-                Open map
+                {t("openMap")}
               </a>
             )}
           </div>
           {hasMap ? (
             <iframe
-              title={`Map for ${displaySite(dive)}`}
+              title={t("mapFor", { site: displaySite(dive, t("unnamedDiveSite")) })}
               src={mapEmbedUrl(mapLatitude, mapLongitude)}
               loading="lazy"
             />
@@ -755,16 +763,16 @@ function DiveDetail({
               )}
               <p>
                 {mapLookup === "loading"
-                  ? `Looking up ${locationQuery}…`
+                  ? t("lookingUp", { location: locationQuery })
                   : locationQuery
-                    ? `No map match was found for ${locationQuery}.`
-                    : "This dive has no GNSS coordinate or location name."}
+                    ? t("noMapMatch", { location: locationQuery })
+                    : t("noCoordinateOrLocation")}
               </p>
             </div>
           )}
           {!hasGps && resolvedLocation && (
             <p className="map-source">
-              Approximate match: {resolvedLocation.displayName}
+              {t("approximateMatch", { location: resolvedLocation.displayName })}
             </p>
           )}
         </section>
@@ -772,21 +780,21 @@ function DiveDetail({
         <section className="card log-card">
           <div className="card-heading">
             <div>
-              <p className="eyebrow">Log notes</p>
-              <h3>People & memory</h3>
+              <p className="eyebrow">{t("logNotes")}</p>
+              <h3>{t("peopleAndMemory")}</h3>
             </div>
           </div>
           <dl className="details-list">
             <div>
-              <dt><Users size={16} /> Buddy</dt>
-              <dd>{dive.buddy || "Not entered"}</dd>
+              <dt><Users size={16} /> {t("buddy")}</dt>
+              <dd>{dive.buddy || t("notEntered")}</dd>
             </div>
             <div>
-              <dt><DatabaseIcon size={16} /> Computer</dt>
-              <dd>{dive.computerModel || "Unknown"}</dd>
+              <dt><DatabaseIcon size={16} /> {t("computer")}</dt>
+              <dd>{dive.computerModel || t("unknown")}</dd>
             </div>
             <div>
-              <dt><ArrowDownToLine size={16} /> Imported from</dt>
+              <dt><ArrowDownToLine size={16} /> {t("importedFrom")}</dt>
               <dd>
                 {dive.sources.length ? (
                   <span className="source-references">
@@ -795,19 +803,25 @@ function DiveDetail({
                         {formatSourceName(source)}
                         {sourceDiveNumber(dive, source) !== null
                           ? ` #${sourceDiveNumber(dive, source)}`
-                          : " · number available after reimport"}
+                          : ` · ${t("numberAfterReimport")}`}
                       </span>
                     ))}
                   </span>
                 ) : (
-                  "Legacy import"
+                  t("legacyImport")
                 )}
               </dd>
             </div>
             <div className="notes-row">
-              <dt><Sparkles size={16} /> Notes</dt>
-              <dd>{dive.notes || "No notes for this dive yet."}</dd>
+              <dt><Sparkles size={16} /> {t("notes")}</dt>
+              <dd>{dive.notes || t("noDiveNotes")}</dd>
             </div>
+            {siteNotes && (
+              <div className="notes-row">
+                <dt><MapPin size={16} /> {t("siteNotes")}</dt>
+                <dd>{siteNotes}</dd>
+              </div>
+            )}
           </dl>
         </section>
       </div>
@@ -820,18 +834,18 @@ function DiveDetail({
         >
           <summary className="card-heading site-picker-summary">
             <div>
-              <p className="eyebrow">Name this dive</p>
-              <h3>{dive.userSite || "Nearby dive sites"}</h3>
-              {dive.userSite && <small>Selected in DiveFrame · expand to change</small>}
+              <p className="eyebrow">{t("nameThisDive")}</p>
+              <h3>{dive.userSite || t("nearbyDiveSites")}</h3>
+              {dive.userSite && <small>{t("selectedExpand")}</small>}
             </div>
             <span className="site-picker-toggle">
-              Within 30 km <ChevronDown size={17} />
+              {t("within30Km")} <ChevronDown size={17} />
             </span>
           </summary>
           <div className="site-picker-body">
             {nearbySites === null ? (
               <div className="site-loading">
-                <LoaderCircle size={18} className="spin" /> Looking for mapped dive sites…
+                <LoaderCircle size={18} className="spin" /> {t("lookingForSites")}
               </div>
             ) : nearbySites.length ? (
               <div className="site-suggestions">
@@ -861,14 +875,14 @@ function DiveDetail({
                     <small>
                       {formatDistance(site.distanceKm)}
                       {" · "}
-                      {site.source === "catalog" ? "DiveFrame catalog" : "Map fallback"}
+                      {site.source === "catalog" ? t("catalogSource") : t("mapFallback")}
                     </small>
                   </button>
                 ))}
               </div>
             ) : (
               <p className="site-empty">
-                No named OpenStreetMap dive sites were found nearby. Enter the name below.
+                {t("noNearbySites")}
               </p>
             )}
             <form
@@ -889,13 +903,13 @@ function DiveDetail({
                 }
               }}
             >
-              <label htmlFor={`site-${dive.id}`}>Dive-site name</label>
+              <label htmlFor={`site-${dive.id}`}>{t("diveSiteName")}</label>
               <div>
                 <input
                   id={`site-${dive.id}`}
                   value={manualSite}
                   onChange={(event) => setManualSite(event.target.value)}
-                  placeholder="Type a site name"
+                  placeholder={t("typeSiteName")}
                   maxLength={120}
                 />
                 <button
@@ -903,7 +917,7 @@ function DiveDetail({
                   className="button button-secondary"
                   disabled={busy || !manualSite.trim()}
                 >
-                  Save site
+                  {t("saveSite")}
                 </button>
               </div>
             </form>
@@ -914,12 +928,12 @@ function DiveDetail({
       <section className="card photos-card">
         <div className="card-heading">
           <div>
-            <p className="eyebrow">Dive gallery</p>
-            <h3>{attachments.length ? `${attachments.length} memories` : "Add your first photos"}</h3>
+            <p className="eyebrow">{t("diveGallery")}</p>
+            <h3>{attachments.length ? t("memories", { count: attachments.length }) : t("addFirstPhotos")}</h3>
           </div>
           <label className="button button-secondary">
             <ImagePlus size={17} />
-            Add photos
+            {t("addPhotos")}
             <input
               type="file"
               accept="image/*"
@@ -945,14 +959,14 @@ function DiveDetail({
                     href={`/compose?dive=${encodeURIComponent(dive.id)}&photo=${encodeURIComponent(attachment.id)}`}
                     className="photo-compose-link"
                   >
-                    <Sparkles size={16} /> Compose
+                    <Sparkles size={16} /> {t("compose")}
                   </Link>
                   <button
                     type="button"
                     onClick={() => onShare(attachment)}
                     disabled={busy}
                   >
-                    <Share2 size={16} /> Share card
+                    <Share2 size={16} /> {t("shareCard")}
                   </button>
                 </div>
               </article>
@@ -961,8 +975,8 @@ function DiveDetail({
         ) : (
           <label className="photo-drop">
             <Camera size={28} />
-            <strong>Bring this dive back to life</strong>
-            <span>Choose photos from your phone or computer.</span>
+            <strong>{t("bringDiveBack")}</strong>
+            <span>{t("choosePhotos")}</span>
             <input
               type="file"
               accept="image/*"
@@ -1013,7 +1027,13 @@ async function readDiveImport(file: File): Promise<ImportedDive[]> {
   return readShearwaterDatabase(file);
 }
 
-async function createShareCard(dive: Dive, attachment: Attachment) {
+async function createShareCard(
+  dive: Dive,
+  attachment: Attachment,
+  language: AppLanguage,
+  diveLabel: string,
+  diveTimeLabel: string,
+) {
   const image = await loadImage(attachment.blob);
   const canvas = document.createElement("canvas");
   const width = 1440;
@@ -1043,14 +1063,14 @@ async function createShareCard(dive: Dive, attachment: Attachment) {
 
   context.fillStyle = "#8debd7";
   context.font = "600 30px Arial";
-  context.fillText(`DIVE ${dive.diveNumber ?? "—"}  ·  ${formatDate(dive.diveDate).toUpperCase()}`, 96, 1385);
+  context.fillText(`${diveLabel.toUpperCase()} ${dive.diveNumber ?? "—"}  ·  ${formatDate(dive.diveDate, language, "").toUpperCase()}`, 96, 1385);
   context.fillStyle = "#ffffff";
   context.font = "700 78px Arial";
-  drawWrappedText(context, displaySite(dive), 96, 1485, width - 192, 86, 2);
+  drawWrappedText(context, displaySite(dive, ""), 96, 1485, width - 192, 86, 2);
 
   const details = [
     `${formatDepth(dive.depth)} MAX`,
-    `${formatDuration(dive.lengthText)} DIVE TIME`,
+    `${formatDuration(dive.lengthText)} ${diveTimeLabel.toUpperCase()}`,
     dive.buddy ? `WITH ${dive.buddy.toUpperCase()}` : null,
   ].filter(Boolean);
   context.fillStyle = "rgba(255,255,255,.86)";
@@ -1121,8 +1141,9 @@ function downloadBlob(blob: Blob, fileName: string) {
 
 function displaySite(
   dive: Pick<Dive, "userSite" | "site" | "location" | "resolvedLocation">,
+  fallback: string,
 ) {
-  return dive.userSite || dive.site || dive.location || dive.resolvedLocation || "Unnamed dive site";
+  return dive.userSite || dive.site || dive.location || dive.resolvedLocation || fallback;
 }
 
 function displayLocation(
@@ -1181,15 +1202,38 @@ function delay(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-function formatDate(value: string | null) {
-  if (!value) return "Date unknown";
+function formatDate(value: string | null, language: AppLanguage, fallback: string) {
+  if (!value) return fallback;
   const date = new Date(value.replace(" ", "T"));
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat(language === "zh-Hant" ? "zh-HK" : "en", {
     day: "numeric",
     month: "short",
     year: "numeric",
   }).format(date);
+}
+
+function catalogNotesForDive(dive: Dive) {
+  const catalogId = dive.userSiteCatalogId;
+  if (catalogId) {
+    const direct = diveSiteCatalog.sites.find((site) => site.id === catalogId);
+    if (direct?.notes) return direct.notes;
+  }
+  const names = [dive.userSite, dive.site].filter(
+    (value): value is string => Boolean(value),
+  );
+  if (!names.length) return null;
+  const normalized = new Set(names.map(normalizeSiteName));
+  const match = diveSiteCatalog.sites.find((site) =>
+    [site.name, ...(site.aliases ?? [])]
+      .map(normalizeSiteName)
+      .some((name) => normalized.has(name)),
+  );
+  return match?.notes ?? null;
+}
+
+function normalizeSiteName(value: string) {
+  return value.trim().toLocaleLowerCase("en").replace(/\s+/g, " ");
 }
 
 function formatDepth(value: string | null) {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Download, ImagePlus, LoaderCircle, Settings as SettingsIcon, Waves } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   defaultComposerSettings,
   type BlockPosition,
@@ -13,7 +13,7 @@ import { chartAvailability } from "@/lib/chart-renderer";
 import { ensureOverlayFont, getOverlayFont, OVERLAY_FONTS } from "@/lib/composer-fonts";
 import { exportComposition } from "@/lib/exporter";
 import { loadPhoto, renderComposition } from "@/lib/image-composer";
-import { translate } from "@/lib/i18n";
+import type { AppTranslate, AppTranslationKey } from "@/lib/app-i18n";
 import {
   getLocalComposerSettings,
   getLocalOverlayLogo,
@@ -28,6 +28,7 @@ import {
 } from "@/lib/indexed-db";
 import { toNormalizedDive } from "@/lib/normalize-dive";
 import { TEMPLATES } from "@/lib/templates";
+import { useAppI18n } from "../AppI18nProvider";
 
 type PhotoChoice = {
   id: string;
@@ -41,7 +42,7 @@ const positions: BlockPosition[] = [
   "bottom-left", "bottom-centre", "bottom-right", "hidden",
 ];
 const logoPositions = positions.filter((position) => position !== "hidden");
-const fieldLabels: Array<[DisplayField, Parameters<typeof translate>[1]]> = [
+const fieldLabels: Array<[DisplayField, AppTranslationKey]> = [
   ["site", "diveSite"], ["category", "category"], ["date", "date"],
   ["startTime", "startTime"], ["duration", "diveTime"], ["maxDepth", "maximumDepth"],
   ["averageDepth", "averageDepth"], ["temperature", "waterTemperature"],
@@ -49,15 +50,26 @@ const fieldLabels: Array<[DisplayField, Parameters<typeof translate>[1]]> = [
   ["endPressure", "endingTankPressure"], ["coordinates", "coordinates"],
   ["diveNumber", "diveNumber"], ["computerModel", "computerModel"],
 ];
+const templateTranslationKeys = {
+  "bottom-profile": { name: "bottomProfile", description: "bottomProfileDescription" },
+  "right-panel": { name: "rightPanel", description: "rightPanelDescription" },
+  minimal: { name: "minimalTemplate", description: "minimalTemplateDescription" },
+  poster: { name: "posterTemplate", description: "posterTemplateDescription" },
+  "full-width-graph": { name: "fullWidthGraph", description: "fullWidthGraphDescription" },
+} as const satisfies Record<
+  (typeof TEMPLATES)[number]["id"],
+  { name: AppTranslationKey; description: AppTranslationKey }
+>;
 
 export function ComposerApp() {
+  const { t } = useAppI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dive, setDive] = useState<LocalDive | null>(null);
   const [photos, setPhotos] = useState<PhotoChoice[]>([]);
   const [settings, setSettings] = useState<ComposerSettings | null>(null);
   const [bitmap, setBitmap] = useState<(CanvasImageSource & { width: number; height: number }) | null>(null);
   const [logo, setLogo] = useState<(CanvasImageSource & { width: number; height: number }) | null>(null);
-  const [status, setStatus] = useState("Loading composer…");
+  const [status, setStatus] = useState(t("loadingComposer"));
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -66,7 +78,7 @@ export function ComposerApp() {
     const requestedPhoto = parameters.get("photo");
     listLocalDives().then(async (dives) => {
       const selectedDive = dives.find((item) => item.id === requestedDive) ?? dives[0];
-      if (!selectedDive) throw new Error("Import a dive before opening the composer.");
+      if (!selectedDive) throw new Error(t("importBeforeComposer"));
       const [attachments, backgrounds, saved, savedLogo] = await Promise.all([
         listLocalAttachments(selectedDive.id),
         listLocalBackgrounds(),
@@ -94,28 +106,23 @@ export function ComposerApp() {
       setPhotos(choices);
       setSettings(initial);
       if (savedLogo) setLogo(await loadPhoto(savedLogo.blob));
-      setStatus(choices.length ? "Ready" : "Add a dive photo or reusable background first.");
-    }).catch((error) => setStatus(error instanceof Error ? error.message : "Could not open composer."));
-  }, []);
+      setStatus(choices.length ? t("ready") : t("addPhotoFirst"));
+    }).catch((error) => setStatus(error instanceof Error ? error.message : t("composerOpenFailed")));
+  }, [t]);
 
   const selectedPhoto = useMemo(
     () => photos.find((photo) => photo.id === settings?.selectedPhotoId) ?? null,
     [photos, settings?.selectedPhotoId],
   );
   const normalized = useMemo(() => dive ? toNormalizedDive(dive) : null, [dive]);
-  const t = useCallback(
-    (key: Parameters<typeof translate>[1]) => translate(settings?.language ?? "en", key),
-    [settings?.language],
-  );
-
   useEffect(() => {
     if (!selectedPhoto) return;
     let cancelled = false;
     loadPhoto(selectedPhoto.blob).then((loaded) => {
       if (!cancelled) setBitmap(loaded);
-    }).catch(() => setStatus("Could not decode this photo."));
+    }).catch(() => setStatus(t("photoDecodeFailed")));
     return () => { cancelled = true; };
-  }, [selectedPhoto]);
+  }, [selectedPhoto, t]);
 
   useEffect(() => {
     if (!canvasRef.current || !bitmap || !normalized || !settings) return;
@@ -152,12 +159,12 @@ export function ComposerApp() {
   async function exportImage() {
     if (!bitmap || !normalized || !settings) return;
     setExporting(true);
-    setStatus("Rendering high-resolution image…");
+    setStatus(t("renderingImage"));
     try {
       await exportComposition(bitmap, normalized, settings, logo ?? undefined);
-      setStatus("Export ready");
+      setStatus(t("exportReady"));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not export image.");
+      setStatus(error instanceof Error ? error.message : t("exportFailed"));
     } finally {
       setExporting(false);
     }
@@ -186,13 +193,13 @@ export function ComposerApp() {
       <div className="composer-shell">
         <section className="composer-preview-pane">
           <div className="composer-preview-frame">
-            {bitmap ? <canvas ref={canvasRef} aria-label="Live dive image preview" /> : (
-              <div className="composer-empty-photo"><ImagePlus size={34} /><p>{status}</p><Link href={`/?dive=${encodeURIComponent(dive.id)}`}>Add a dive photo</Link></div>
+            {bitmap ? <canvas ref={canvasRef} aria-label={t("composer")} /> : (
+              <div className="composer-empty-photo"><ImagePlus size={34} /><p>{status}</p><Link href={`/?dive=${encodeURIComponent(dive.id)}`}>{t("addDivePhoto")}</Link></div>
             )}
           </div>
           <p className="composer-status" role="status">{status}</p>
           {!availability.depth && (
-            <p className="composer-warning">{t("noProfile")}. Re-import your Subsurface log once to add profile samples to older locally stored dives.</p>
+            <p className="composer-warning">{t("noProfile")}. {t("olderProfileHint")}</p>
           )}
         </section>
 
@@ -222,7 +229,7 @@ export function ComposerApp() {
                     blockPositions: { ...template.defaultPositions },
                   } : current)}
                 >
-                  <strong>{template.name}</strong><small>{template.description}</small>
+                  <strong>{t(templateTranslationKeys[template.id].name)}</strong><small>{t(templateTranslationKeys[template.id].description)}</small>
                 </button>
               ))}
             </div>
@@ -295,14 +302,14 @@ export function ComposerApp() {
           </ControlSection>
 
           <ControlSection title={t("appearance")}>
-            <Control label={t("language")}><select value={settings.language} onChange={(event) => update("language", event.target.value as ComposerSettings["language"])}><option value="en">English</option><option value="zh-Hant">繁體中文</option></select></Control>
+            <Control label={t("overlayLanguage")}><select value={settings.language} onChange={(event) => update("language", event.target.value as ComposerSettings["language"])}><option value="en">{t("english")}</option><option value="zh-Hant">{t("traditionalChineseHK")}</option></select></Control>
             <Control label={t("fontFamily")}><select value={settings.fontFamily} onChange={(event) => update("fontFamily", event.target.value as ComposerSettings["fontFamily"])}>
-              {OVERLAY_FONTS.map((font) => <option key={font.id} value={font.id}>{font.name} · {font.description}</option>)}
+              {OVERLAY_FONTS.map((font) => <option key={font.id} value={font.id}>{font.name}</option>)}
             </select></Control>
             <p className="font-preview" style={{ fontFamily: getOverlayFont(settings.fontFamily).stack }}>{t("fontPreview")}</p>
             <Control label={t("units")}><select value={settings.units} onChange={(event) => update("units", event.target.value as ComposerSettings["units"])}><option value="metric">{t("metric")}</option><option value="imperial">{t("imperial")}</option></select></Control>
-            <Control label={t("dateFormat")}><select value={settings.dateFormat} onChange={(event) => update("dateFormat", event.target.value as ComposerSettings["dateFormat"])}><option value="medium">Medium</option><option value="numeric">Numeric</option><option value="iso">ISO</option></select></Control>
-            <Control label={t("timeFormat")}><select value={settings.hourCycle} onChange={(event) => update("hourCycle", event.target.value as ComposerSettings["hourCycle"])}><option value="24">24 hour</option><option value="12">12 hour</option></select></Control>
+            <Control label={t("dateFormat")}><select value={settings.dateFormat} onChange={(event) => update("dateFormat", event.target.value as ComposerSettings["dateFormat"])}><option value="medium">{t("mediumDate")}</option><option value="numeric">{t("numericDate")}</option><option value="iso">{t("isoDate")}</option></select></Control>
+            <Control label={t("timeFormat")}><select value={settings.hourCycle} onChange={(event) => update("hourCycle", event.target.value as ComposerSettings["hourCycle"])}><option value="24">{t("hour24")}</option><option value="12">{t("hour12")}</option></select></Control>
             <Control label={t("decimals")}><select value={settings.decimals} onChange={(event) => update("decimals", Number(event.target.value) as ComposerSettings["decimals"])}><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></Control>
             <Control label={t("textAlignment")}><select value={settings.textAlign} onChange={(event) => update("textAlign", event.target.value as ComposerSettings["textAlign"])}><option value="left">{t("left")}</option><option value="centre">{t("centre")}</option><option value="right">{t("right")}</option></select></Control>
             <Control label={t("textContrast")}><select value={settings.textTreatment} onChange={(event) => update("textTreatment", event.target.value as ComposerSettings["textTreatment"])}><option value="shadow">{t("shadow")}</option><option value="outline">{t("outline")}</option><option value="none">{t("none")}</option></select></Control>
@@ -315,10 +322,10 @@ export function ComposerApp() {
           </ControlSection>
 
           <ControlSection title={t("output")}>
-            <Control label={t("canvasRatio")}><select value={settings.ratio} onChange={(event) => update("ratio", event.target.value as ComposerSettings["ratio"])}>{["original", "1:1", "4:5", "9:16", "16:9"].map((ratio) => <option key={ratio}>{ratio}</option>)}</select></Control>
+            <Control label={t("canvasRatio")}><select value={settings.ratio} onChange={(event) => update("ratio", event.target.value as ComposerSettings["ratio"])}>{["original", "1:1", "4:5", "9:16", "16:9"].map((ratio) => <option key={ratio}>{ratio === "original" ? t("optionalOriginal") : ratio}</option>)}</select></Control>
             <Control label={t("resolution")}><select value={settings.outputSize} onChange={(event) => update("outputSize", event.target.value as ComposerSettings["outputSize"])}><option value="social">{t("socialMedia")}</option><option value="high">{t("highResolution")}</option><option value="source">{t("sourcePhoto")}</option></select></Control>
             <Control label={t("format")}><select value={settings.format} onChange={(event) => update("format", event.target.value as ComposerSettings["format"])}><option value="png">PNG</option><option value="jpeg">JPEG</option></select></Control>
-            {settings.format === "jpeg" && <Range label="JPEG quality" value={settings.jpegQuality} min={0.5} max={1} step={0.01} onChange={(value) => update("jpegQuality", value)} />}
+            {settings.format === "jpeg" && <Range label={t("jpegQuality")} value={settings.jpegQuality} min={0.5} max={1} step={0.01} onChange={(value) => update("jpegQuality", value)} />}
             <button className="button button-primary composer-export" onClick={exportImage} disabled={!bitmap || exporting}><Download size={16} /> {t("exportImage")}</button>
           </ControlSection>
         </aside>
@@ -407,7 +414,7 @@ function fieldAvailable(field: DisplayField, dive: LocalDive) {
 
 function blockLabel(
   block: keyof ComposerSettings["blockPositions"],
-  t: (key: Parameters<typeof translate>[1]) => string,
+  t: AppTranslate,
 ) {
   const keys = {
     site: "diveSite",
@@ -422,7 +429,7 @@ function blockLabel(
 
 function positionLabel(
   position: BlockPosition,
-  t: (key: Parameters<typeof translate>[1]) => string,
+  t: AppTranslate,
 ) {
   const keys = {
     "top-left": "topLeft",

@@ -1,8 +1,8 @@
 # DiveFrame
 
-DiveFrame is a private web companion for Shearwater Cloud exports. It leaves
-Bluetooth synchronization and primary backup with Shearwater, then provides a
-more visual logbook for maps, photos, and shareable image overlays.
+DiveFrame is a device-local dive log companion. Your dive-computer apps remain
+the source and backup; DiveFrame brings those records together with Subsurface
+data, then adds maps, photos, site details, and shareable image overlays.
 
 ## Current workflow
 
@@ -36,7 +36,10 @@ photo blobs in IndexedDB on the current device.
   and download a replacement `dive-sites.json` for repository updates. The
   pending additions can be reviewed, renamed, given aliases, or excluded first.
 - A complete device-to-device backup file containing IndexedDB records, dive
-  photos, reusable backgrounds, the overlay logo, and composer settings.
+  photos, reusable backgrounds, the overlay logo, composer settings, and the
+  app-language preference.
+- Full interface localisation in English and Traditional Chinese (Hong Kong),
+  with a separately configurable overlay language for exported images.
 - Multiple photos per dive plus a device-local library of reusable diving
   backgrounds.
 - A live image composer with five original layouts, high-resolution PNG/JPEG

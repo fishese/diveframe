@@ -1443,20 +1443,22 @@ button {
 
 .catalog-settings {
   margin-top: 14px;
-  order: 5;
+  order: 6;
   padding: 24px;
 }
 
 .background-settings,
 .branding-settings,
-.backup-settings {
+.backup-settings,
+.language-settings {
   margin-top: 14px;
   padding: 24px;
 }
 
 .background-settings > .settings-note,
 .branding-settings > .settings-note,
-.backup-settings > .settings-note {
+.backup-settings > .settings-note,
+.language-settings > .settings-note {
   margin-top: 20px;
 }
 
@@ -1471,11 +1473,36 @@ button {
 }
 
 .branding-settings {
-  order: 2;
+  order: 3;
 }
 
 .background-settings {
-  order: 3;
+  order: 4;
+}
+
+.language-settings {
+  order: 2;
+}
+
+.language-select {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  max-width: 360px;
+}
+
+.language-select > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.language-select select {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #fff;
+  min-height: 40px;
+  padding: 7px 9px;
 }
 
 .background-settings > .empty-compact {
@@ -1735,7 +1762,7 @@ button {
   gap: 12px;
   grid-template-columns: repeat(2, 1fr);
   margin-top: 14px;
-  order: 4;
+  order: 5;
 }
 
 .future-card {
@@ -1767,7 +1794,7 @@ button {
   font-size: 12px;
   gap: 7px;
   margin-top: 18px;
-  order: 6;
+  order: 7;
 }
 
 @media (max-width: 1100px) {
@@ -1991,6 +2018,7 @@ button {
   .background-settings,
   .branding-settings,
   .backup-settings,
+  .language-settings,
   .catalog-settings {
     padding: 18px;
   }

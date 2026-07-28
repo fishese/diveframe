@@ -1,7 +1,7 @@
 {
-  "name": "DiveFrame — Shearwater companion",
+  "name": "DiveFrame — Dive log companion",
   "short_name": "DiveFrame",
-  "description": "A private visual logbook for Shearwater dives, photos, maps, and share cards.",
+  "description": "Your dives, enhanced with merged records, maps, photos, and shareable image overlays.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#071820",

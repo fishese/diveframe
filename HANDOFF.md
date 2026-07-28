@@ -15,8 +15,7 @@ The current product is deliberately device-local:
 - Map search and nearby-site endpoints are stateless network helpers.
 - There is no cross-device synchronization yet.
 
-Current private deployment:
-https://diveframe-logbook.fishese.chatgpt.site
+Deployment is managed by the repository's Cloudflare Worker integration.
 
 ## Repository map
 
@@ -31,7 +30,8 @@ https://diveframe-logbook.fishese.chatgpt.site
 - `lib/chart-renderer.ts` — profile downsampling and vector-like canvas paths.
 - `lib/image-composer.ts`, `lib/templates.ts`, and `lib/exporter.ts` — data-driven
   layouts, rendering, and PNG/JPEG export.
-- `lib/i18n.ts` and `lib/unit-conversion.ts` — overlay translations and units.
+- `lib/app-i18n.ts`, `lib/i18n.ts`, and `lib/unit-conversion.ts` — application
+  translations, overlay translations, and units.
 - `lib/composer-fonts.ts` — curated bilingual overlay fonts and export-time
   font loading.
 - `lib/indexed-db.ts` — device-local persistence and merge orchestration.
@@ -84,7 +84,7 @@ real dive exports, photos, or generated share cards to the repository.
 
 Database: `diveframe-local`
 
-Version: `5`
+Version: `6`
 
 Object stores:
 
@@ -97,6 +97,7 @@ Object stores:
 | `composerSettings` | `id` | Per-dive composer state and selected image |
 | `backgrounds` | `id` | Reusable generic diving background image blobs |
 | `brandingAssets` | `id` | Device-local transparent PNG/SVG overlay logo |
+| `appPreferences` | `id` | Device-local interface language and future global preferences |
 
 `attachments` and `sourceRecords` each have a `diveId` index.
 

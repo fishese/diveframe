@@ -99,6 +99,12 @@ export type LocalBrandingAsset = {
   blob: Blob;
 };
 
+export type LocalAppPreferences = {
+  id: "app";
+  uiLanguage: "en" | "zh-Hant";
+  updatedAt: string;
+};
+
 export type LocalSiteContribution = {
   id: string;
   diveId: string;
@@ -128,10 +134,11 @@ export type LocalBackupSnapshot = {
   composerSettings: ComposerSettings[];
   backgrounds: LocalBackground[];
   brandingAssets: LocalBrandingAsset[];
+  appPreferences: LocalAppPreferences[];
 };
 
 const DATABASE_NAME = "diveframe-local";
-const DATABASE_VERSION = 5;
+const DATABASE_VERSION = 6;
 const DIVES_STORE = "dives";
 const SOURCES_STORE = "sourceRecords";
 const ATTACHMENTS_STORE = "attachments";
@@ -139,6 +146,7 @@ const SITE_CONTRIBUTIONS_STORE = "siteContributions";
 const COMPOSER_SETTINGS_STORE = "composerSettings";
 const BACKGROUNDS_STORE = "backgrounds";
 const BRANDING_ASSETS_STORE = "brandingAssets";
+const APP_PREFERENCES_STORE = "appPreferences";
 
 export async function listLocalDives() {
   const database = await openDatabase();
@@ -327,6 +335,31 @@ export async function deleteLocalOverlayLogo() {
   await transactionComplete(transaction);
 }
 
+export async function getLocalAppPreferences() {
+  const database = await openDatabase();
+  return request<LocalAppPreferences | undefined>(
+    database
+      .transaction(APP_PREFERENCES_STORE)
+      .objectStore(APP_PREFERENCES_STORE)
+      .get("app"),
+  );
+}
+
+export async function saveLocalAppPreferences(
+  preferences: Pick<LocalAppPreferences, "uiLanguage">,
+) {
+  const saved: LocalAppPreferences = {
+    id: "app",
+    uiLanguage: preferences.uiLanguage,
+    updatedAt: new Date().toISOString(),
+  };
+  const database = await openDatabase();
+  const transaction = database.transaction(APP_PREFERENCES_STORE, "readwrite");
+  transaction.objectStore(APP_PREFERENCES_STORE).put(saved);
+  await transactionComplete(transaction);
+  return saved;
+}
+
 export async function updateLocalDiveSite(
   id: string,
   selection: {
@@ -452,6 +485,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     COMPOSER_SETTINGS_STORE,
     BACKGROUNDS_STORE,
     BRANDING_ASSETS_STORE,
+    APP_PREFERENCES_STORE,
   ]);
   const [
     dives,
@@ -461,6 +495,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     composerSettings,
     backgrounds,
     brandingAssets,
+    appPreferences,
   ] = await Promise.all([
     request<LocalDive[]>(transaction.objectStore(DIVES_STORE).getAll()),
     request<SourceRecord[]>(transaction.objectStore(SOURCES_STORE).getAll()),
@@ -475,6 +510,9 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     request<LocalBrandingAsset[]>(
       transaction.objectStore(BRANDING_ASSETS_STORE).getAll(),
     ),
+    request<LocalAppPreferences[]>(
+      transaction.objectStore(APP_PREFERENCES_STORE).getAll(),
+    ),
   ]);
   return {
     dives: dives.map(hydrateDive),
@@ -484,6 +522,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     composerSettings,
     backgrounds,
     brandingAssets,
+    appPreferences,
   };
 }
 
@@ -498,6 +537,7 @@ export async function importLocalBackupSnapshot(snapshot: LocalBackupSnapshot) {
       COMPOSER_SETTINGS_STORE,
       BACKGROUNDS_STORE,
       BRANDING_ASSETS_STORE,
+      APP_PREFERENCES_STORE,
     ],
     "readwrite",
   );
@@ -509,6 +549,7 @@ export async function importLocalBackupSnapshot(snapshot: LocalBackupSnapshot) {
     [COMPOSER_SETTINGS_STORE, snapshot.composerSettings],
     [BACKGROUNDS_STORE, snapshot.backgrounds],
     [BRANDING_ASSETS_STORE, snapshot.brandingAssets],
+    [APP_PREFERENCES_STORE, snapshot.appPreferences],
   ];
   for (const [storeName, records] of recordsByStore) {
     const store = transaction.objectStore(storeName);
@@ -674,6 +715,9 @@ function openDatabase() {
       }
       if (!database.objectStoreNames.contains(BRANDING_ASSETS_STORE)) {
         database.createObjectStore(BRANDING_ASSETS_STORE, { keyPath: "id" });
+      }
+      if (!database.objectStoreNames.contains(APP_PREFERENCES_STORE)) {
+        database.createObjectStore(APP_PREFERENCES_STORE, { keyPath: "id" });
       }
     };
     operation.onsuccess = () => resolve(operation.result);

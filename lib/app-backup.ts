@@ -42,6 +42,7 @@ export async function createLocalAppBackup() {
       brandingAssets: await Promise.all(
         snapshot.brandingAssets.map(encodeBlobRecord),
       ),
+      appPreferences: snapshot.appPreferences,
     },
   };
   return {
@@ -78,6 +79,7 @@ export async function restoreLocalAppBackup(file: File) {
     brandingAssets: await Promise.all(
       document.stores.brandingAssets.map(decodeBlobRecord),
     ),
+    appPreferences: document.stores.appPreferences ?? [],
   };
   return importLocalBackupSnapshot(snapshot);
 }
@@ -148,6 +150,7 @@ function validateBackupDocument(value: unknown): BackupDocument {
     ...document.stores.composerSettings,
     ...document.stores.backgrounds,
     ...document.stores.brandingAssets,
+    ...(document.stores.appPreferences ?? []),
   ];
   if (
     !records.every(
@@ -185,6 +188,7 @@ function arraysPresent(stores: Partial<BackupDocument["stores"]>) {
     Array.isArray(stores.siteContributions) &&
     Array.isArray(stores.composerSettings) &&
     Array.isArray(stores.backgrounds) &&
-    Array.isArray(stores.brandingAssets)
+    Array.isArray(stores.brandingAssets) &&
+    (stores.appPreferences === undefined || Array.isArray(stores.appPreferences))
   );
 }

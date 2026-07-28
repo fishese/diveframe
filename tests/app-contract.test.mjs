@@ -44,23 +44,23 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(backup, /diveframe-local-backup/);
   assert.match(backup, /blobBase64/);
   assert.match(app, /createShareCard/);
-  assert.match(app, /Add photos/);
-  assert.match(app, /Create share image/);
+  assert.match(app, /t\("addPhotos"\)/);
+  assert.match(app, /t\("createShareImage"\)/);
   assert.match(app, /\/compose\?dive=/);
   assert.match(app, /openstreetmap\.org/);
   assert.match(app, /api\/geocode/);
   assert.match(app, /api\/nearby-sites/);
-  assert.match(app, /Site Named/);
-  assert.match(app, /GPS Data/);
-  assert.match(app, /Set in App/);
+  assert.match(app, /t\("siteNamed"\)/);
+  assert.match(app, /t\("gpsData"\)/);
+  assert.match(app, /t\("setInApp"\)/);
   assert.match(app, /sitePickerOpen/);
   assert.match(app, /saveSiteAndCollapse/);
   assert.match(app, /sourceDiveNumber/);
-  assert.match(app, /dive\.computerModel \|\| "Unknown"/);
+  assert.match(app, /dive\.computerModel \|\| t\("unknown"\)/);
   assert.match(settings, /diveframe-added-sites\.json/);
-  assert.match(settings, /Download merged dive-sites\.json/);
+  assert.match(settings, /t\("downloadMergedCatalog"\)/);
   assert.match(settings, /mergeContributions/);
-  assert.match(settings, /Reusable diving backgrounds/);
+  assert.match(settings, /t\("reusableBackgrounds"\)/);
   assert.match(composer, /TEMPLATES/);
   assert.match(composer, /exportComposition/);
   assert.match(composer, /depth-pressure-temperature/);
@@ -73,20 +73,17 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(chart, /depthFillMode === "fade"/);
   assert.match(composerSettings, /showAxisLabels: true/);
   assert.match(composerSettings, /depthFillMode: "fade"/);
-  assert.match(settings, /Overlay logo/);
-  assert.match(settings, /Export app data/);
-  assert.match(settings, /Import app data/);
-  assert.match(settings, /Review sites to add/);
+  assert.match(settings, /useAppI18n/);
+  assert.match(settings, /setLanguage/);
+  assert.match(settings, /getLocalAppPreferences/);
   assert.match(settings, /aliasesText/);
   assert.match(fonts, /Noto Sans HK/);
   assert.match(fonts, /Noto Serif TC/);
   assert.match(fonts, /LXGW WenKai TC/);
   assert.match(i18n, /Manage reusable backgrounds/);
   assert.match(settings, /distanceKm/);
-  assert.match(app, /Save site/);
-  assert.match(app, /DiveFrame catalog/);
-  assert.match(app, /Newest first/);
-  assert.match(app, /Oldest first/);
+  assert.match(app, /useAppI18n/);
+  assert.match(app, /catalogNotesForDive/);
   assert.match(app, /compareDivesByDate/);
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
 
@@ -108,7 +105,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.equal(bindings.r2, null);
 
   const pwa = JSON.parse(manifest);
-  assert.equal(pwa.name, "DiveFrame — Shearwater companion");
+  assert.equal(pwa.name, "DiveFrame — Dive log companion");
   assert.equal(pwa.display, "standalone");
 
 });
