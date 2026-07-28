@@ -141,6 +141,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /compareDivesByDate/);
   assert.match(app, /duration-desc/);
   assert.match(app, /depth-desc/);
+  assert.match(app, /dive\.durationSeconds \?\? dive\.lengthText/);
   assert.match(app, /namedDives/);
   assert.match(app, /underwaterSeconds/);
   assert.match(app, /averageSac/);

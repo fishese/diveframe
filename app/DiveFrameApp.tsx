@@ -6,6 +6,7 @@ import {
   Camera,
   ChevronDown,
   ChevronLeft,
+  Clock3,
   Compass,
   Database as DatabaseIcon,
   Droplets,
@@ -656,7 +657,11 @@ export function DiveFrameApp() {
                     </span>
                     <span className="dive-meta">
                       <strong>{formatDepth(dive.depth)}</strong>
-                      <span>
+                      <span title={t("diveTime")}>
+                        <Clock3 size={12} />
+                        {formatDuration(
+                          dive.durationSeconds ?? dive.lengthText,
+                        )}
                         {dive.photoCount > 0 && <Camera size={13} />}
                         {dive.photoCount || ""}
                       </span>
@@ -1819,7 +1824,7 @@ function formatDepth(value: string | null) {
   return Number.isFinite(number) ? `${number.toFixed(number % 1 ? 1 : 0)} m` : "—";
 }
 
-function formatDuration(value: string | null) {
+function formatDuration(value: string | number | null) {
   const seconds = Number(value);
   if (!Number.isFinite(seconds)) return "—";
   const minutes = Math.floor(seconds / 60);

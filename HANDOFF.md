@@ -246,6 +246,9 @@ The logbook search parser recognizes `source:shearwater-only` and
 filters on the canonical record's `sources` array. The About page documents
 both operators without adding more filter buttons.
 
+Each compact dive-list row shows both maximum depth and formatted duration, so
+duration sorting remains visually verifiable without opening the dive.
+
 Dive details can persist an edited broad `location` directly on the canonical
 record and a specific site through the existing `userSite` override path.
 HTML datalists offer unique names already present in local dives. GPS records
