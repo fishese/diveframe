@@ -57,8 +57,16 @@ export function renderDiveChart(
     width: Math.max(1, rect.width - axisPadding.left),
     height: Math.max(1, rect.height - axisPadding.bottom),
   };
-  const xFor = (time: number) => plot.x + (time / maximumTime) * plot.width;
-  const yForDepth = (depth: number) => plot.y + (depth / maximumDepth) * plot.height;
+  // Keep the centre of every stroke inside the plot. Without this inset, a
+  // surface point or the final sample lands exactly on the clip boundary and
+  // half of the line (including a round cap) is cut away.
+  const strokeInset = Math.max(1.5, settings.lineThickness / 2 + 1);
+  const dataPlot = insetRect(plot, strokeInset);
+  const xFor = (time: number) =>
+    dataPlot.x + (clamp(time, 0, maximumTime) / maximumTime) * dataPlot.width;
+  const yForDepth = (depth: number) =>
+    dataPlot.y +
+    (clamp(depth, 0, maximumDepth) / maximumDepth) * dataPlot.height;
 
   context.save();
   if (settings.showAxisLabels) {
@@ -80,12 +88,20 @@ export function renderDiveChart(
   });
   if (settings.fillOpacity > 0) {
     const fill = new Path2D(depthPath);
-    fill.lineTo(xFor(samples[samples.length - 1].elapsedSeconds), plot.y);
-    fill.lineTo(xFor(samples[0].elapsedSeconds), plot.y);
+    fill.lineTo(
+      xFor(samples[samples.length - 1].elapsedSeconds),
+      dataPlot.y,
+    );
+    fill.lineTo(xFor(samples[0].elapsedSeconds), dataPlot.y);
     fill.closePath();
     context.globalAlpha = settings.fillOpacity;
     if (settings.depthFillMode === "fade") {
-      const gradient = context.createLinearGradient(0, plot.y, 0, plot.y + plot.height);
+      const gradient = context.createLinearGradient(
+        0,
+        dataPlot.y,
+        0,
+        dataPlot.y + dataPlot.height,
+      );
       gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
       gradient.addColorStop(1, settings.depthColor);
       context.fillStyle = gradient;
@@ -107,7 +123,7 @@ export function renderDiveChart(
       renderSparseLine(
         context,
         samples,
-        plot,
+        dataPlot,
         maximumTime,
         (sample) => sample.pressuresBar[cylinder],
         settings.pressureColor,
@@ -120,7 +136,7 @@ export function renderDiveChart(
     renderSparseLine(
       context,
       samples,
-      plot,
+      dataPlot,
       maximumTime,
       (sample) => sample.temperatureC,
       settings.temperatureColor,
@@ -142,6 +158,21 @@ export function renderDiveChart(
   }
   context.restore();
   return true;
+}
+
+function insetRect(rect: ChartRect, inset: number): ChartRect {
+  const horizontal = Math.min(inset, Math.max(0, rect.width / 2 - 0.5));
+  const vertical = Math.min(inset, Math.max(0, rect.height / 2 - 0.5));
+  return {
+    x: rect.x + horizontal,
+    y: rect.y + vertical,
+    width: Math.max(1, rect.width - horizontal * 2),
+    height: Math.max(1, rect.height - vertical * 2),
+  };
+}
+
+function clamp(value: number, minimum: number, maximum: number) {
+  return Math.min(maximum, Math.max(minimum, value));
 }
 
 function drawAxisGrid(

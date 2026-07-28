@@ -82,6 +82,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /showLogo/);
   assert.match(composer, /repairLegacyTemplatePositions/);
   assert.match(chart, /drawAxisLabels/);
+  assert.match(chart, /strokeInset/);
   assert.match(chart, /depthFillMode === "fade"/);
   assert.match(composerSettings, /showAxisLabels: true/);
   assert.match(composerSettings, /depthFillMode: "fade"/);
