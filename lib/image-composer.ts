@@ -90,7 +90,7 @@ export function renderComposition(
   if (siteName && settings.blockPositions.site !== "hidden") {
     const siteAnchor = blockAnchor(settings.blockPositions.site, panel, width, height, margin);
     context.font = `700 ${titleSize}px system-ui, sans-serif`;
-    drawAlignedText(context, siteName, siteAnchor.x, siteAnchor.y, siteAnchor.width, siteAnchor.align);
+    drawAlignedText(context, siteName, siteAnchor.x, siteAnchor.y, siteAnchor.width, siteAnchor.align, settings);
   }
 
   const metaAnchor = blockAnchor(settings.blockPositions.category, panel, width, height, margin);
@@ -109,20 +109,27 @@ export function renderComposition(
   if (dateText && settings.blockPositions.date !== "hidden") {
     const dateAnchor = blockAnchor(settings.blockPositions.date, panel, width, height, margin);
     context.fillStyle = "#fff";
-    drawAlignedText(context, dateText, dateAnchor.x, dateAnchor.y + titleSize * 0.58, dateAnchor.width, dateAnchor.align);
+    drawAlignedText(context, dateText, dateAnchor.x, dateAnchor.y + titleSize * 0.58, dateAnchor.width, dateAnchor.align, settings);
   }
 
-  const chartTop = template.layout === "right"
-    ? height * 0.42
-    : panel.y + panel.height * 0.08;
-  const chartLeft = template.layout === "right" ? panel.x + margin : margin;
-  const chartWidth = template.layout === "right" ? panel.width - margin * 2 : width - margin * 2;
   const chartHeight = Math.min(height * settings.chartHeight, panel.height * 0.5);
+  const chartBox = blockRect(
+    settings.blockPositions.chart,
+    panel,
+    width,
+    height,
+    margin,
+    template.layout === "right" ? panel.width - margin * 2 : width - margin * 2,
+    chartHeight,
+  );
+  if (settings.blockPositions.chart === "inside-panel") {
+    chartBox.y = panel.y + panel.height * 0.3;
+  }
   let renderedChart = false;
   if (settings.blockPositions.chart !== "hidden") {
     renderedChart = renderDiveChart(
       context,
-      { x: chartLeft, y: chartTop, width: chartWidth, height: chartHeight },
+      chartBox,
       dive,
       settings,
     );
@@ -137,24 +144,47 @@ export function renderComposition(
       legend.push({ label: translate(settings.language, "waterTemperature"), color: settings.temperatureColor });
     }
     context.font = `600 ${Math.round(titleSize * 0.22)}px system-ui, sans-serif`;
-    let legendX = chartLeft;
+    let legendX = chartBox.x;
     for (const item of legend) {
       context.fillStyle = item.color;
-      context.fillRect(legendX, chartTop - titleSize * 0.28, titleSize * 0.3, Math.max(2, settings.lineThickness));
+      context.fillRect(legendX, chartBox.y - titleSize * 0.28, titleSize * 0.3, Math.max(2, settings.lineThickness));
       context.fillStyle = "#fff";
-      context.fillText(item.label, legendX + titleSize * 0.4, chartTop - titleSize * 0.38);
+      context.fillText(item.label, legendX + titleSize * 0.4, chartBox.y - titleSize * 0.38);
       legendX += context.measureText(item.label).width + titleSize * 0.85;
     }
   }
 
   const stats = buildStatistics(dive, settings);
-  const statY = Math.min(height - margin - titleSize * 1.15, chartTop + chartHeight + titleSize * 0.34);
-  drawStatistics(context, stats, template.layout === "right" ? panel.x + margin : margin, statY, chartWidth, titleSize);
+  const statHeight = titleSize * (stats.length > 4 ? 2.8 : 1.35);
+  const statsBox = blockRect(
+    settings.blockPositions.statistics,
+    panel,
+    width,
+    height,
+    margin,
+    template.layout === "right" ? panel.width - margin * 2 : width - margin * 2,
+    statHeight,
+  );
+  if (settings.blockPositions.statistics === "inside-panel") {
+    statsBox.y = panel.y + panel.height - margin - statHeight;
+  }
+  if (settings.blockPositions.statistics !== "hidden") {
+    drawStatistics(context, stats, statsBox.x, statsBox.y, statsBox.width, titleSize, settings);
+  }
 
   if (logo && settings.blockPositions.logo !== "hidden") {
     const maxWidth = width * 0.16;
     const scale = Math.min(maxWidth / logo.width, (height * 0.09) / logo.height, 1);
-    context.drawImage(logo, width - margin - logo.width * scale, margin, logo.width * scale, logo.height * scale);
+    const logoBox = blockRect(
+      settings.blockPositions.logo,
+      panel,
+      width,
+      height,
+      margin,
+      logo.width * scale,
+      logo.height * scale,
+    );
+    context.drawImage(logo, logoBox.x, logoBox.y, logoBox.width, logoBox.height);
   }
   return { hasChart: chartAvailability(dive).depth, siteName, stats };
 }
@@ -199,7 +229,7 @@ function buildStatistics(dive: Dive, settings: ComposerSettings) {
   return result;
 }
 
-function drawStatistics(context: CanvasRenderingContext2D, stats: Array<{ label: string; value: string }>, x: number, y: number, width: number, base: number) {
+function drawStatistics(context: CanvasRenderingContext2D, stats: Array<{ label: string; value: string }>, x: number, y: number, width: number, base: number, settings: ComposerSettings) {
   if (!stats.length) return;
   const columns = Math.min(4, stats.length);
   stats.slice(0, 8).forEach((stat, index) => {
@@ -209,6 +239,11 @@ function drawStatistics(context: CanvasRenderingContext2D, stats: Array<{ label:
     const top = y + row * base * 1.35;
     context.fillStyle = "#fff";
     context.font = `700 ${Math.round(base * 0.55)}px system-ui, sans-serif`;
+    if (settings.textTreatment === "outline") {
+      context.strokeStyle = "rgba(0,0,0,.85)";
+      context.lineWidth = Math.max(2, base * 0.055);
+      context.strokeText(stat.value, x + column * cellWidth, top);
+    }
     context.fillText(stat.value, x + column * cellWidth, top);
     context.fillStyle = "rgba(255,255,255,.78)";
     context.font = `500 ${Math.round(base * 0.25)}px system-ui, sans-serif`;
@@ -242,9 +277,16 @@ function applyTextTreatment(context: CanvasRenderingContext2D, settings: Compose
   context.shadowOffsetY = settings.textTreatment === "shadow" ? 3 : 0;
 }
 
-function drawAlignedText(context: CanvasRenderingContext2D, text: string, x: number, y: number, width: number, align: ComposerSettings["textAlign"]) {
+function drawAlignedText(context: CanvasRenderingContext2D, text: string, x: number, y: number, width: number, align: ComposerSettings["textAlign"], settings: ComposerSettings) {
   context.textAlign = align === "centre" ? "center" : align;
-  context.fillText(text, align === "centre" ? x + width / 2 : align === "right" ? x + width : x, y, width);
+  const drawX = align === "centre" ? x + width / 2 : align === "right" ? x + width : x;
+  if (settings.textTreatment === "outline") {
+    context.strokeStyle = "rgba(0,0,0,.9)";
+    const fontPixels = Number(context.font.match(/(\d+(?:\.\d+)?)px/)?.[1] ?? 16);
+    context.lineWidth = Math.max(2, fontPixels * 0.055);
+    context.strokeText(text, drawX, y, width);
+  }
+  context.fillText(text, drawX, y, width);
   context.textAlign = "left";
 }
 
@@ -266,5 +308,40 @@ function blockAnchor(
     y: bottom ? height - margin * 2.4 : margin,
     width: width - margin * 2,
     align: centre ? "centre" as const : right ? "right" as const : "left" as const,
+  };
+}
+
+function blockRect(
+  position: ComposerSettings["blockPositions"]["chart"],
+  panel: { x: number; y: number; width: number; height: number },
+  width: number,
+  height: number,
+  margin: number,
+  desiredWidth: number,
+  desiredHeight: number,
+) {
+  if (position === "inside-panel" || position === "above-graph") {
+    return {
+      x: panel.x + margin,
+      y: position === "above-graph"
+        ? panel.y + panel.height * 0.08
+        : panel.y + (panel.height - desiredHeight) / 2,
+      width: Math.min(desiredWidth, panel.width - margin * 2),
+      height: desiredHeight,
+    };
+  }
+  const centre = position.endsWith("centre");
+  const right = position.endsWith("right");
+  const bottom = position.startsWith("bottom");
+  const actualWidth = Math.min(desiredWidth, width - margin * 2);
+  return {
+    x: centre
+      ? (width - actualWidth) / 2
+      : right
+        ? width - margin - actualWidth
+        : margin,
+    y: bottom ? height - margin - desiredHeight : margin + height * 0.16,
+    width: actualWidth,
+    height: desiredHeight,
   };
 }

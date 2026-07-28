@@ -167,7 +167,7 @@ export function ComposerApp() {
           <span><strong>DiveFrame</strong><small>{t("composer")}</small></span>
         </Link>
         <div className="composer-top-actions">
-          <Link href="/settings" className="button button-quiet"><SettingsIcon size={16} /> Settings</Link>
+          <Link href="/settings" className="button button-quiet"><SettingsIcon size={16} /> {t("settings")}</Link>
           <button className="button button-primary" onClick={exportImage} disabled={!bitmap || exporting}>
             {exporting ? <LoaderCircle size={16} className="spin" /> : <Download size={16} />} {t("exportImage")}
           </button>
@@ -191,14 +191,14 @@ export function ComposerApp() {
           <Link href={`/?dive=${encodeURIComponent(dive.id)}`} className="composer-back"><ArrowLeft size={15} /> {t("backToDive")}</Link>
           <ControlSection title={t("photo")}>
             <select value={settings.selectedPhotoId ?? ""} onChange={(event) => update("selectedPhotoId", event.target.value)}>
-              {photos.map((photo) => <option key={photo.id} value={photo.id}>{photo.source === "library" ? "Library · " : "Dive · "}{photo.label}</option>)}
+              {photos.map((photo) => <option key={photo.id} value={photo.id}>{photo.source === "library" ? `${t("libraryPhoto")} · ` : `${t("divePhoto")} · `}{photo.label}</option>)}
             </select>
-            <p className="control-hint"><Link href="/settings">Manage reusable backgrounds</Link></p>
-            <Control label="Fit"><select value={settings.photoFit} onChange={(event) => update("photoFit", event.target.value as ComposerSettings["photoFit"])}><option value="fill">Fill</option><option value="fit">Fit</option></select></Control>
-            <Range label="Zoom" value={settings.photoZoom} min={0.5} max={3} step={0.05} onChange={(value) => update("photoZoom", value)} />
-            <Range label="Horizontal position" value={settings.photoOffsetX} min={-0.5} max={0.5} step={0.01} onChange={(value) => update("photoOffsetX", value)} />
-            <Range label="Vertical position" value={settings.photoOffsetY} min={-0.5} max={0.5} step={0.01} onChange={(value) => update("photoOffsetY", value)} />
-            <Range label="Rotate" value={settings.photoRotation} min={-180} max={180} step={1} onChange={(value) => update("photoRotation", value)} />
+            <p className="control-hint"><Link href="/settings">{t("manageBackgrounds")}</Link></p>
+            <Control label={t("fitMode")}><select value={settings.photoFit} onChange={(event) => update("photoFit", event.target.value as ComposerSettings["photoFit"])}><option value="fill">{t("fill")}</option><option value="fit">{t("fit")}</option></select></Control>
+            <Range label={t("zoom")} value={settings.photoZoom} min={0.5} max={3} step={0.05} onChange={(value) => update("photoZoom", value)} />
+            <Range label={t("horizontalPosition")} value={settings.photoOffsetX} min={-0.5} max={0.5} step={0.01} onChange={(value) => update("photoOffsetX", value)} />
+            <Range label={t("verticalPosition")} value={settings.photoOffsetY} min={-0.5} max={0.5} step={0.01} onChange={(value) => update("photoOffsetY", value)} />
+            <Range label={t("rotate")} value={settings.photoRotation} min={-180} max={180} step={1} onChange={(value) => update("photoRotation", value)} />
           </ControlSection>
 
           <ControlSection title={t("template")}>
@@ -220,7 +220,7 @@ export function ComposerApp() {
           </ControlSection>
 
           <ControlSection title={t("content")}>
-            <Control label={t("diveSite")}><input value={settings.siteNameOverride} placeholder="Use log / app / GPS name" onChange={(event) => update("siteNameOverride", event.target.value)} /></Control>
+            <Control label={t("diveSite")}><input value={settings.siteNameOverride} placeholder={t("useLogSite")} onChange={(event) => update("siteNameOverride", event.target.value)} /></Control>
             <Control label={t("category")}><select value={settings.categoryOverride} onChange={async (event) => { const category = event.target.value as ComposerSettings["categoryOverride"]; update("categoryOverride", category); setDive(await updateLocalDiveCategory(dive.id, category)); }}><option value="scuba">{t("scuba")}</option><option value="freediving">{t("freediving")}</option><option value="snorkelling">{t("snorkelling")}</option></select></Control>
             <div className="field-grid">
               {fieldLabels.map(([field, key]) => (
@@ -230,29 +230,29 @@ export function ComposerApp() {
               ))}
             </div>
             {(["site", "category", "date", "chart", "statistics", "logo"] as const).map((block) => (
-              <Control key={block} label={`${block[0].toUpperCase()}${block.slice(1)} position`}>
+              <Control key={block} label={`${blockLabel(block, t)} ${t("position")}`}>
                 <select value={settings.blockPositions[block]} onChange={(event) => update("blockPositions", { ...settings.blockPositions, [block]: event.target.value as BlockPosition })}>
-                  {positions.map((position) => <option value={position} key={position}>{position.replaceAll("-", " ")}</option>)}
+                  {positions.map((position) => <option value={position} key={position}>{positionLabel(position, t)}</option>)}
                 </select>
               </Control>
             ))}
-            <label className="button button-secondary"><ImagePlus size={15} /> Optional logo<input type="file" accept="image/*" className="visually-hidden" onChange={chooseLogo} /></label>
+            <label className="button button-secondary"><ImagePlus size={15} /> {t("optionalLogo")}<input type="file" accept="image/*" className="visually-hidden" onChange={chooseLogo} /></label>
           </ControlSection>
 
           <ControlSection title={t("chart")}>
-            <Control label="Mode"><select value={settings.chartMode} onChange={(event) => update("chartMode", event.target.value as ComposerSettings["chartMode"])}>
-              <option value="depth" disabled={!availability.depth}>Depth only</option>
-              <option value="depth-pressure" disabled={!availability.pressure}>Depth and tank pressure</option>
-              <option value="depth-temperature" disabled={!availability.temperature}>Depth and temperature</option>
-              <option value="depth-pressure-temperature" disabled={!availability.pressure || !availability.temperature}>Depth, pressure and temperature</option>
-              <option value="hidden">Hidden</option>
+            <Control label={t("mode")}><select value={settings.chartMode} onChange={(event) => update("chartMode", event.target.value as ComposerSettings["chartMode"])}>
+              <option value="depth" disabled={!availability.depth}>{t("depthOnly")}</option>
+              <option value="depth-pressure" disabled={!availability.pressure}>{t("depthPressure")}</option>
+              <option value="depth-temperature" disabled={!availability.temperature}>{t("depthTemperature")}</option>
+              <option value="depth-pressure-temperature" disabled={!availability.pressure || !availability.temperature}>{t("depthPressureTemperature")}</option>
+              <option value="hidden">{t("hidden")}</option>
             </select></Control>
-            <Color label="Depth line" value={settings.depthColor} onChange={(value) => update("depthColor", value)} />
-            <Color label="Tank pressure line" value={settings.pressureColor} onChange={(value) => update("pressureColor", value)} />
-            <Color label="Temperature line" value={settings.temperatureColor} onChange={(value) => update("temperatureColor", value)} />
-            <Range label="Line thickness" value={settings.lineThickness} min={1} max={10} step={0.5} onChange={(value) => update("lineThickness", value)} />
-            <Range label="Fill opacity" value={settings.fillOpacity} min={0} max={0.8} step={0.05} onChange={(value) => update("fillOpacity", value)} />
-            <Range label="Chart height" value={settings.chartHeight} min={0.12} max={0.48} step={0.01} onChange={(value) => update("chartHeight", value)} />
+            <Color label={t("depthLine")} value={settings.depthColor} onChange={(value) => update("depthColor", value)} />
+            <Color label={t("pressureLine")} value={settings.pressureColor} onChange={(value) => update("pressureColor", value)} />
+            <Color label={t("temperatureLine")} value={settings.temperatureColor} onChange={(value) => update("temperatureColor", value)} />
+            <Range label={t("lineThickness")} value={settings.lineThickness} min={1} max={10} step={0.5} onChange={(value) => update("lineThickness", value)} />
+            <Range label={t("fillOpacity")} value={settings.fillOpacity} min={0} max={0.8} step={0.05} onChange={(value) => update("fillOpacity", value)} />
+            <Range label={t("chartHeight")} value={settings.chartHeight} min={0.12} max={0.48} step={0.01} onChange={(value) => update("chartHeight", value)} />
             {(availability.pressure ||
               dive.tankPressuresStartBar.some((value) => value !== null)) && (
               <p className="control-hint">{t("cannotCalculateGas")}</p>
@@ -261,22 +261,24 @@ export function ComposerApp() {
 
           <ControlSection title={t("appearance")}>
             <Control label={t("language")}><select value={settings.language} onChange={(event) => update("language", event.target.value as ComposerSettings["language"])}><option value="en">English</option><option value="zh-Hant">繁體中文</option></select></Control>
-            <Control label={t("units")}><select value={settings.units} onChange={(event) => update("units", event.target.value as ComposerSettings["units"])}><option value="metric">Metric</option><option value="imperial">Imperial</option></select></Control>
-            <Control label="Date format"><select value={settings.dateFormat} onChange={(event) => update("dateFormat", event.target.value as ComposerSettings["dateFormat"])}><option value="medium">Medium</option><option value="numeric">Numeric</option><option value="iso">ISO</option></select></Control>
-            <Control label="Time"><select value={settings.hourCycle} onChange={(event) => update("hourCycle", event.target.value as ComposerSettings["hourCycle"])}><option value="24">24 hour</option><option value="12">12 hour</option></select></Control>
-            <Control label="Decimals"><select value={settings.decimals} onChange={(event) => update("decimals", Number(event.target.value) as ComposerSettings["decimals"])}><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></Control>
-            <Range label="Font size" value={settings.fontSize} min={0.65} max={1.6} step={0.05} onChange={(value) => update("fontSize", value)} />
-            <Range label="Panel opacity" value={settings.panelOpacity} min={0} max={1} step={0.05} onChange={(value) => update("panelOpacity", value)} />
-            <Range label="Background dimming" value={settings.backgroundDimming} min={0} max={0.8} step={0.05} onChange={(value) => update("backgroundDimming", value)} />
-            <Range label="Safe margins" value={settings.safeMargin} min={0.02} max={0.14} step={0.005} onChange={(value) => update("safeMargin", value)} />
-            <label className="composer-check"><input type="checkbox" checked={settings.blurBehindText} onChange={(event) => update("blurBehindText", event.target.checked)} /> Blur behind information</label>
-            <label className="composer-check"><input type="checkbox" checked={settings.graphGradient} onChange={(event) => update("graphGradient", event.target.checked)} /> Gradient behind graph</label>
+            <Control label={t("units")}><select value={settings.units} onChange={(event) => update("units", event.target.value as ComposerSettings["units"])}><option value="metric">{t("metric")}</option><option value="imperial">{t("imperial")}</option></select></Control>
+            <Control label={t("dateFormat")}><select value={settings.dateFormat} onChange={(event) => update("dateFormat", event.target.value as ComposerSettings["dateFormat"])}><option value="medium">Medium</option><option value="numeric">Numeric</option><option value="iso">ISO</option></select></Control>
+            <Control label={t("timeFormat")}><select value={settings.hourCycle} onChange={(event) => update("hourCycle", event.target.value as ComposerSettings["hourCycle"])}><option value="24">24 hour</option><option value="12">12 hour</option></select></Control>
+            <Control label={t("decimals")}><select value={settings.decimals} onChange={(event) => update("decimals", Number(event.target.value) as ComposerSettings["decimals"])}><option value="0">0</option><option value="1">1</option><option value="2">2</option></select></Control>
+            <Control label={t("textAlignment")}><select value={settings.textAlign} onChange={(event) => update("textAlign", event.target.value as ComposerSettings["textAlign"])}><option value="left">{t("left")}</option><option value="centre">{t("centre")}</option><option value="right">{t("right")}</option></select></Control>
+            <Control label={t("textContrast")}><select value={settings.textTreatment} onChange={(event) => update("textTreatment", event.target.value as ComposerSettings["textTreatment"])}><option value="shadow">{t("shadow")}</option><option value="outline">{t("outline")}</option><option value="none">{t("none")}</option></select></Control>
+            <Range label={t("fontSize")} value={settings.fontSize} min={0.65} max={1.6} step={0.05} onChange={(value) => update("fontSize", value)} />
+            <Range label={t("panelOpacity")} value={settings.panelOpacity} min={0} max={1} step={0.05} onChange={(value) => update("panelOpacity", value)} />
+            <Range label={t("backgroundDimming")} value={settings.backgroundDimming} min={0} max={0.8} step={0.05} onChange={(value) => update("backgroundDimming", value)} />
+            <Range label={t("safeMargins")} value={settings.safeMargin} min={0.02} max={0.14} step={0.005} onChange={(value) => update("safeMargin", value)} />
+            <label className="composer-check"><input type="checkbox" checked={settings.blurBehindText} onChange={(event) => update("blurBehindText", event.target.checked)} /> {t("blurBehind")}</label>
+            <label className="composer-check"><input type="checkbox" checked={settings.graphGradient} onChange={(event) => update("graphGradient", event.target.checked)} /> {t("gradientBehind")}</label>
           </ControlSection>
 
           <ControlSection title={t("output")}>
-            <Control label="Canvas ratio"><select value={settings.ratio} onChange={(event) => update("ratio", event.target.value as ComposerSettings["ratio"])}>{["original", "1:1", "4:5", "9:16", "16:9"].map((ratio) => <option key={ratio}>{ratio}</option>)}</select></Control>
-            <Control label="Resolution"><select value={settings.outputSize} onChange={(event) => update("outputSize", event.target.value as ComposerSettings["outputSize"])}><option value="social">Social media</option><option value="high">High resolution</option><option value="source">Source-photo area</option></select></Control>
-            <Control label="Format"><select value={settings.format} onChange={(event) => update("format", event.target.value as ComposerSettings["format"])}><option value="png">PNG</option><option value="jpeg">JPEG</option></select></Control>
+            <Control label={t("canvasRatio")}><select value={settings.ratio} onChange={(event) => update("ratio", event.target.value as ComposerSettings["ratio"])}>{["original", "1:1", "4:5", "9:16", "16:9"].map((ratio) => <option key={ratio}>{ratio}</option>)}</select></Control>
+            <Control label={t("resolution")}><select value={settings.outputSize} onChange={(event) => update("outputSize", event.target.value as ComposerSettings["outputSize"])}><option value="social">{t("socialMedia")}</option><option value="high">{t("highResolution")}</option><option value="source">{t("sourcePhoto")}</option></select></Control>
+            <Control label={t("format")}><select value={settings.format} onChange={(event) => update("format", event.target.value as ComposerSettings["format"])}><option value="png">PNG</option><option value="jpeg">JPEG</option></select></Control>
             {settings.format === "jpeg" && <Range label="JPEG quality" value={settings.jpegQuality} min={0.5} max={1} step={0.01} onChange={(value) => update("jpegQuality", value)} />}
             <button className="button button-primary composer-export" onClick={exportImage} disabled={!bitmap || exporting}><Download size={16} /> {t("exportImage")}</button>
           </ControlSection>
@@ -317,4 +319,37 @@ function fieldAvailable(field: DisplayField, dive: LocalDive) {
     diveNumber: dive.diveNumber !== null, computerModel: Boolean(dive.computerModel),
   };
   return checks[field] ?? true;
+}
+
+function blockLabel(
+  block: keyof ComposerSettings["blockPositions"],
+  t: (key: Parameters<typeof translate>[1]) => string,
+) {
+  const keys = {
+    site: "diveSite",
+    category: "category",
+    date: "date",
+    chart: "chart",
+    statistics: "statistics",
+    logo: "logo",
+  } as const;
+  return t(keys[block]);
+}
+
+function positionLabel(
+  position: BlockPosition,
+  t: (key: Parameters<typeof translate>[1]) => string,
+) {
+  const keys = {
+    "top-left": "topLeft",
+    "top-centre": "topCentre",
+    "top-right": "topRight",
+    "above-graph": "aboveGraph",
+    "inside-panel": "insidePanel",
+    "bottom-left": "bottomLeft",
+    "bottom-centre": "bottomCentre",
+    "bottom-right": "bottomRight",
+    hidden: "hidden",
+  } as const;
+  return t(keys[position]);
 }

@@ -241,8 +241,8 @@ Google Drive, iCloud Drive, or a small private API.
 - Add draggable custom block positions (preset positions are implemented).
 - Persist reusable logo assets and named composer presets globally; logo
   selection is currently session-only.
-- Expand Traditional Chinese coverage from overlay labels to every composer
-  control label.
+- Translate template descriptions and transient status/error messages; overlay
+  labels and composer controls are already available in Traditional Chinese.
 - Show whether persistent browser storage was granted.
 - Add an IndexedDB integration test using a browser test runner.
 - Consider image downscaling or optional originals for large phone photos.
