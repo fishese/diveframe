@@ -11,7 +11,6 @@ import {
   Droplets,
   Gauge,
   ImagePlus,
-  Images,
   Info,
   LoaderCircle,
   MapPin,
@@ -65,7 +64,7 @@ import { readShearwaterDatabase } from "@/lib/parsers/shearwater";
 import { readSubsurfaceLog } from "@/lib/parsers/subsurface";
 import { readUddfLog } from "@/lib/parsers/uddf";
 import { readFitDive } from "@/lib/parsers/fit";
-import type { AppLanguage } from "@/lib/app-i18n";
+import type { AppLanguage, AppTranslate } from "@/lib/app-i18n";
 import { useAppI18n } from "./AppI18nProvider";
 
 type Dive = LocalDive;
@@ -106,6 +105,9 @@ export function DiveFrameApp() {
   const [namedOnly, setNamedOnly] = useState(false);
   const [gpsOnly, setGpsOnly] = useState(false);
   const [appSiteOnly, setAppSiteOnly] = useState(false);
+  const [defaultCylinderPresetId, setDefaultCylinderPresetId] = useState(
+    DEFAULT_CYLINDER_PRESET_ID,
+  );
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(false);
@@ -142,6 +144,16 @@ export function DiveFrameApp() {
       active = false;
     };
   }, [t]);
+
+  useEffect(() => {
+    getLocalAppPreferences()
+      .then((preferences) =>
+        setDefaultCylinderPresetId(
+          preferences?.defaultCylinderPresetId ?? DEFAULT_CYLINDER_PRESET_ID,
+        ),
+      )
+      .catch(() => undefined);
+  }, []);
 
   const selected = useMemo(
     () => dives.find((dive) => dive.id === selectedId) ?? null,
@@ -249,11 +261,33 @@ export function DiveFrameApp() {
       .sort((a, b) => compareDivesByDate(a, b, sortDirection));
   }, [appSiteOnly, dives, gpsOnly, namedOnly, query, sortDirection]);
 
-  const stats = useMemo(
-    () => ({
+  const stats = useMemo(() => {
+    const sacRates = dives
+      .map((dive) => sacRateForDive(dive, defaultCylinderPresetId))
+      .filter((rate): rate is number => rate !== null);
+    return {
       dives: dives.length,
-      photos: dives.reduce((sum, dive) => sum + dive.photoCount, 0),
-      gps: dives.filter((dive) => dive.gpsEntryLat !== null).length,
+      namedDives: dives.filter((dive) => Boolean(dive.userSite || dive.site))
+        .length,
+      locations: new Set(
+        dives
+          .map((dive) => normalizeLocation(dive.location))
+          .filter((location): location is string => Boolean(location)),
+      ).size,
+      underwaterSeconds: dives.reduce(
+        (total, dive) =>
+          total +
+          (dive.durationSeconds !== null &&
+          Number.isFinite(dive.durationSeconds) &&
+          dive.durationSeconds > 0
+            ? dive.durationSeconds
+            : 0),
+        0,
+      ),
+      averageSac:
+        sacRates.length > 0
+          ? sacRates.reduce((total, rate) => total + rate, 0) / sacRates.length
+          : null,
       buddies: new Set(
         dives.flatMap((dive) =>
           dive.buddy
@@ -264,9 +298,8 @@ export function DiveFrameApp() {
             : [],
         ),
       ).size,
-    }),
-    [dives],
-  );
+    };
+  }, [defaultCylinderPresetId, dives]);
 
   async function importDatabase(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -459,8 +492,18 @@ export function DiveFrameApp() {
             </div>
             <div className="stat-grid">
               <Stat icon={<Compass size={19} />} value={stats.dives} label={t("dives")} />
-              <Stat icon={<MapPin size={19} />} value={stats.gps} label={t("mapped")} />
-              <Stat icon={<Images size={19} />} value={stats.photos} label={t("photos")} />
+              <Stat icon={<Sparkles size={19} />} value={stats.namedDives} label={t("divesAtNamedSites")} />
+              <Stat icon={<MapPin size={19} />} value={stats.locations} label={t("diveLocations")} />
+              <Stat
+                icon={<Waves size={19} />}
+                value={formatUnderwaterTime(stats.underwaterSeconds, t)}
+                label={t("underwater")}
+              />
+              <Stat
+                icon={<Gauge size={19} />}
+                value={stats.averageSac === null ? "—" : `${stats.averageSac.toFixed(1)} L/min`}
+                label={t("averageSac")}
+              />
               <Stat icon={<Users size={19} />} value={stats.buddies} label={t("buddies")} />
             </div>
           </section>
@@ -645,7 +688,15 @@ function EmptyState({
   );
 }
 
-function Stat({ icon, value, label }: { icon: ReactNode; value: number; label: string }) {
+function Stat({
+  icon,
+  value,
+  label,
+}: {
+  icon: ReactNode;
+  value: number | string;
+  label: string;
+}) {
   return (
     <div className="stat">
       <span>{icon}</span>
@@ -683,10 +734,7 @@ function DiveDetail({
 }) {
   const { language, t } = useAppI18n();
   const calculated = safeJson(dive.calculatedJson);
-  const averageDepth =
-    numberFrom(calculated?.AverageDepth) ??
-    positiveNumber(dive.averageDepth) ??
-    averageSampleDepthM(dive.samples);
+  const averageDepth = averageDepthForDive(dive);
   const minTemp = numberFrom(calculated?.MinTemp) ?? positiveNumber(dive.minTemp);
   const averageTemperature = averageSampleTemperatureC(dive.samples);
   const pressurePair = firstCompletePressurePair(
@@ -1555,6 +1603,49 @@ function formatDate(value: string | null, language: AppLanguage, fallback: strin
     month: "short",
     year: "numeric",
   }).format(date);
+}
+
+function averageDepthForDive(dive: Dive) {
+  const calculated = safeJson(dive.calculatedJson);
+  return (
+    numberFrom(calculated?.AverageDepth) ??
+    positiveNumber(dive.averageDepth) ??
+    averageSampleDepthM(dive.samples)
+  );
+}
+
+function sacRateForDive(dive: Dive, defaultCylinderPresetId: string) {
+  const pressurePair = firstCompletePressurePair(
+    dive.tankPressuresStartBar,
+    dive.tankPressuresEndBar,
+  );
+  const preset = cylinderPreset(
+    dive.cylinderPresetId ?? defaultCylinderPresetId,
+  );
+  return calculateSacLitresPerMinute({
+    startPressureBar: pressurePair?.start ?? null,
+    endPressureBar: pressurePair?.end ?? null,
+    cylinderVolumeL: dive.cylinderVolumeL ?? preset.volumeL,
+    durationSeconds: dive.durationSeconds,
+    averageDepthM: averageDepthForDive(dive),
+  });
+}
+
+function normalizeLocation(value: string | null) {
+  const normalized = value?.trim().replace(/\s+/g, " ");
+  return normalized ? normalized.toLocaleLowerCase("en") : null;
+}
+
+function formatUnderwaterTime(seconds: number, t: AppTranslate) {
+  const hours = seconds / 3_600;
+  if (hours < 48) return `${compactNumber(hours)} ${t("hoursShort")}`;
+  const days = hours / 24;
+  if (days < 60) return `${compactNumber(days)} ${t("daysShort")}`;
+  return `${compactNumber(days / 30.4375)} ${t("monthsShort")}`;
+}
+
+function compactNumber(value: number) {
+  return value < 10 ? value.toFixed(1) : Math.round(value).toString();
 }
 
 function formatDepth(value: string | null) {

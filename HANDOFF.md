@@ -220,6 +220,23 @@ IndexedDB is scoped to the exact web origin and browser profile:
 Changing domains therefore requires an explicit export/import or sync feature;
 copying the repository does not copy user data.
 
+## Logbook overview statistics
+
+The overview derives six statistics from canonical local dives:
+
+- total dive count
+- dives with either an imported or DiveFrame-assigned site name
+- case-insensitive unique non-empty `location` strings from source logs
+- summed positive dive durations, displayed in hours, days, or 30.4375-day
+  months according to magnitude
+- arithmetic mean of per-dive SAC values that meet the conservative calculation
+  requirements
+- unique comma-separated buddy names
+
+The SAC average respects per-dive cylinder choices and otherwise uses the
+device default. Dives with insufficient data are excluded rather than counted
+as zero.
+
 ## Image composer
 
 The composer route is `/compose?dive=<canonical-id>&photo=<attachment-id>`.

@@ -128,7 +128,19 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(app, /catalogNotesForDive/);
   assert.match(app, /photo-gallery-actions/);
   assert.match(app, /compareDivesByDate/);
+  assert.match(app, /namedDives/);
+  assert.match(app, /underwaterSeconds/);
+  assert.match(app, /averageSac/);
+  assert.match(app, /normalizeLocation/);
+  assert.match(app, /sacRateForDive/);
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
+
+  const globalStyles = await readFile(
+    new URL("../app/globals.css", import.meta.url),
+    "utf8",
+  );
+  assert.match(globalStyles, /select option/);
+  assert.match(globalStyles, /color-scheme: dark/);
 
   const nearbyRoute = await readFile(
     new URL("../app/api/nearby-sites/route.ts", import.meta.url),

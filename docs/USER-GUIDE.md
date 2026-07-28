@@ -23,6 +23,12 @@ fields without allowing an empty field from a later import to erase useful
 existing data. Ambiguous records remain separate rather than being merged
 silently.
 
+The logbook overview counts total dives, dives at named sites, unique non-empty
+location names from imported logs, accumulated underwater time, average
+calculable SAC, and unique buddies. Locations are compared as written after
+case and whitespace normalization; DiveFrame does not attempt to decide whether
+they represent countries, regions, or towns.
+
 ## Dive profiles and gas use
 
 When a source log contains samples, each dive page shows a compact depth

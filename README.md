@@ -35,6 +35,9 @@ site corrections back to a source log.
 - Reads newer `GnssEntryLocation` and `GnssExitLocation` values that older
   Shearwater export views can omit.
 - Responsive dive list and detail views.
+- A compact six-stat logbook overview covering total dives, dives at named
+  sites, unique imported locations, accumulated underwater time, average
+  calculable SAC, and unique buddies.
 - OpenStreetMap entry-location maps.
 - Mutually exclusive Site Named, GPS Data, and Set in App filters with an
   explicit clear action.
