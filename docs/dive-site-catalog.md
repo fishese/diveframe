@@ -7,9 +7,9 @@ DiveFrame uses a catalog-first lookup:
 3. If none are found, query the existing OpenStreetMap suggestion providers.
 4. Manual site entry is always available.
 
-The application stores the catalog in the D1 `dive_site_catalog` table. The
-portable source format is JSON, illustrated by
-`data/dive-sites.example.json`.
+The application bundles the catalog as `data/dive-sites.json`. It is loaded by
+the stateless nearby-site route and can be replaced through the review workflow
+in Settings.
 
 ## JSON format
 
@@ -25,16 +25,11 @@ portable source format is JSON, illustrated by
 - `source.kind`: Provenance category such as `manual`, `government`,
   `dive_operator`, or `community`.
 - `source.reference`: Optional URL, document id, or dataset record id.
-- `notes`: Optional curator notes; not intended as the dive description.
 - `status`: `active`, `review`, or `retired`. Only active entries are suggested.
 - `updatedAt`: ISO 8601 timestamp for the latest catalog edit.
 
-## Database mapping
-
-Nested JSON values are flattened into `dive_site_catalog`. Aliases are stored
-as `aliases_json`; coordinates have a combined index; and status has a separate
-index. The lookup first applies a latitude/longitude bounding box, then an exact
-Haversine-distance check and distance sort.
+The lookup calculates exact Haversine distance and sorts nearby active entries
+by proximity.
 
 Future catalog imports should upsert by `id`. A changed coordinate or preferred
 name should update the existing record without changing the id. Retired sites

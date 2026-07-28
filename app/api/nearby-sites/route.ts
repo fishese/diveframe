@@ -22,7 +22,6 @@ const LOCAL_DIVE_SITES = diveSiteCatalog.sites
     id: site.id,
     name: site.name,
     aliases: site.aliases,
-    notes: site.notes,
     latitude: site.coordinates.latitude,
     longitude: site.coordinates.longitude,
   }));
@@ -59,7 +58,6 @@ export async function GET(request: Request) {
         id: `catalog-${site.id}`,
         name: site.name,
         aliases: site.aliases,
-        notes: site.notes,
         latitude: site.latitude,
         longitude: site.longitude,
         distanceKm: site.distanceKm,

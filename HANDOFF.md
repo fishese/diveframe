@@ -181,11 +181,18 @@ Buddy and notes can be edited on the dive detail page. They use the existing
 nullable fields on the `dives` store, so this feature requires no IndexedDB
 version or schema migration.
 
+Named dives without GPS use one rate-limited broader Nominatim retry by
+dropping the first comma-separated site component; maps from this path remain
+labelled approximate.
+
 ## Dive-site catalog and contribution log
 
 `data/dive-sites.json` is the primary nearby-site source. Active entries within
 30 km are returned nearest-first; OpenStreetMap is queried only when the local
 catalog has no nearby match.
+
+Catalog entries deliberately do not contain or display curator/reliability
+notes.
 
 Selecting a catalog or map suggestion stores the assignment on the local dive.
 Typing a new name additionally creates or updates a `siteContributions` record

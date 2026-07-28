@@ -25,20 +25,24 @@ export async function GET(request: Request) {
     });
   }
 
-  const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("q", query);
-  url.searchParams.set("format", "jsonv2");
-  url.searchParams.set("limit", "1");
-
-  const response = await fetch(url, { headers: nominatimHeaders() });
-  if (!response.ok) {
-    return Response.json(
-      { error: "Map lookup is temporarily unavailable." },
-      { status: 502 },
-    );
+  const queries = locationQueries(query);
+  let match: NominatimSearchResult | undefined;
+  let matchedQuery = query;
+  for (let index = 0; index < queries.length; index += 1) {
+    if (index > 0) await delay(1_050);
+    const result = await searchLocation(queries[index]);
+    if (result === "unavailable") {
+      return Response.json(
+        { error: "Map lookup is temporarily unavailable." },
+        { status: 502 },
+      );
+    }
+    if (result) {
+      match = result;
+      matchedQuery = queries[index];
+      break;
+    }
   }
-
-  const match = ((await response.json()) as NominatimSearchResult[])[0];
   const matchLatitude = Number(match?.lat);
   const matchLongitude = Number(match?.lon);
   if (
@@ -53,9 +57,31 @@ export async function GET(request: Request) {
     location: {
       latitude: matchLatitude,
       longitude: matchLongitude,
-      displayName: match.display_name || query,
+      displayName: match.display_name || matchedQuery,
+      matchedQuery,
+      broadened: matchedQuery !== query,
     },
   });
+}
+
+async function searchLocation(query: string) {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("q", query);
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("limit", "1");
+  const response = await fetch(url, { headers: nominatimHeaders() });
+  if (!response.ok) return "unavailable" as const;
+  return ((await response.json()) as NominatimSearchResult[])[0] ?? null;
+}
+
+export function locationQueries(query: string) {
+  const parts = query
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const normalized = parts.join(", ");
+  const broader = parts.length > 1 ? parts.slice(1).join(", ") : null;
+  return broader && broader !== normalized ? [normalized, broader] : [normalized];
 }
 
 async function reverseGeocode(latitude: number, longitude: number) {
@@ -108,4 +134,8 @@ function nominatimHeaders() {
     "Accept-Language": "en",
     "User-Agent": "DiveFrame/1.0 (device-local dive logbook)",
   };
+}
+
+function delay(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }

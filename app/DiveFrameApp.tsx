@@ -65,7 +65,6 @@ import { readShearwaterDatabase } from "@/lib/parsers/shearwater";
 import { readSubsurfaceLog } from "@/lib/parsers/subsurface";
 import { readUddfLog } from "@/lib/parsers/uddf";
 import { readFitDive } from "@/lib/parsers/fit";
-import diveSiteCatalog from "@/data/dive-sites.json";
 import type { AppLanguage } from "@/lib/app-i18n";
 import { useAppI18n } from "./AppI18nProvider";
 
@@ -88,7 +87,6 @@ type NearbySite = {
   longitude: number;
   distanceKm: number;
   source: "catalog" | "openstreetmap";
-  notes?: string;
 };
 
 type SiteSelection = {
@@ -219,7 +217,17 @@ export function DiveFrameApp() {
     const needle = query.trim().toLowerCase();
     return dives
       .filter((dive) => {
-        if (namedOnly && !displayLocation(dive)) return false;
+        if (
+          namedOnly &&
+          !(
+            dive.userSite ||
+            dive.site ||
+            dive.location ||
+            dive.resolvedLocation
+          )
+        ) {
+          return false;
+        }
         if (gpsOnly && (dive.gpsEntryLat === null || dive.gpsEntryLng === null)) {
           return false;
         }
@@ -499,7 +507,11 @@ export function DiveFrameApp() {
                   <button
                     type="button"
                     className={namedOnly ? "active" : ""}
-                    onClick={() => setNamedOnly((value) => !value)}
+                    onClick={() => {
+                      setNamedOnly((value) => !value);
+                      setGpsOnly(false);
+                      setAppSiteOnly(false);
+                    }}
                     aria-pressed={namedOnly}
                   >
                     <MapPin size={14} /> {t("siteNamed")}
@@ -507,7 +519,11 @@ export function DiveFrameApp() {
                   <button
                     type="button"
                     className={gpsOnly ? "active" : ""}
-                    onClick={() => setGpsOnly((value) => !value)}
+                    onClick={() => {
+                      setGpsOnly((value) => !value);
+                      setNamedOnly(false);
+                      setAppSiteOnly(false);
+                    }}
                     aria-pressed={gpsOnly}
                   >
                     <Compass size={14} /> {t("gpsData")}
@@ -515,10 +531,26 @@ export function DiveFrameApp() {
                   <button
                     type="button"
                     className={appSiteOnly ? "active" : ""}
-                    onClick={() => setAppSiteOnly((value) => !value)}
+                    onClick={() => {
+                      setAppSiteOnly((value) => !value);
+                      setNamedOnly(false);
+                      setGpsOnly(false);
+                    }}
                     aria-pressed={appSiteOnly}
                   >
                     <Sparkles size={14} /> {t("setInApp")}
+                  </button>
+                  <button
+                    type="button"
+                    className="filter-clear"
+                    onClick={() => {
+                      setNamedOnly(false);
+                      setGpsOnly(false);
+                      setAppSiteOnly(false);
+                    }}
+                    disabled={!namedOnly && !gpsOnly && !appSiteOnly}
+                  >
+                    <X size={14} /> {t("clearFilter")}
                   </button>
                 </div>
                 {visibleDives.map((dive) => (
@@ -730,7 +762,6 @@ function DiveDetail({
   const mapLatitude = hasGps ? dive.gpsEntryLat : resolvedLocation?.latitude ?? null;
   const mapLongitude = hasGps ? dive.gpsEntryLng : resolvedLocation?.longitude ?? null;
   const hasMap = mapLatitude !== null && mapLongitude !== null;
-  const siteNotes = catalogNotesForDive(dive);
   const selectedCylinder = cylinderPreset(
     dive.cylinderPresetId ?? defaultCylinderPresetId,
   );
@@ -904,7 +935,6 @@ function DiveDetail({
           <div className="card-heading">
             <div>
               <p className="eyebrow">{t("logNotes")}</p>
-              <h3>{t("peopleAndMemory")}</h3>
             </div>
             <button
               type="button"
@@ -1042,12 +1072,6 @@ function DiveDetail({
               <dt><Sparkles size={16} /> {t("notes")}</dt>
               <dd>{dive.notes || t("noDiveNotes")}</dd>
             </div>
-            {siteNotes && (
-              <div className="notes-row">
-                <dt><MapPin size={16} /> {t("siteNotes")}</dt>
-                <dd>{siteNotes}</dd>
-              </div>
-            )}
           </dl>
         </section>
       </div>
@@ -1213,6 +1237,14 @@ function DiveDetail({
             />
           </label>
         )}
+        <div className="photo-gallery-actions">
+          <Link
+            href={`/compose?dive=${encodeURIComponent(dive.id)}`}
+            className="button button-primary"
+          >
+            <Sparkles size={17} /> {t("createShareImage")}
+          </Link>
+        </div>
       </section>
     </div>
   );
@@ -1523,29 +1555,6 @@ function formatDate(value: string | null, language: AppLanguage, fallback: strin
     month: "short",
     year: "numeric",
   }).format(date);
-}
-
-function catalogNotesForDive(dive: Dive) {
-  const catalogId = dive.userSiteCatalogId;
-  if (catalogId) {
-    const direct = diveSiteCatalog.sites.find((site) => site.id === catalogId);
-    if (direct?.notes) return direct.notes;
-  }
-  const names = [dive.userSite, dive.site].filter(
-    (value): value is string => Boolean(value),
-  );
-  if (!names.length) return null;
-  const normalized = new Set(names.map(normalizeSiteName));
-  const match = diveSiteCatalog.sites.find((site) =>
-    [site.name, ...(site.aliases ?? [])]
-      .map(normalizeSiteName)
-      .some((name) => normalized.has(name)),
-  );
-  return match?.notes ?? null;
-}
-
-function normalizeSiteName(value: string) {
-  return value.trim().toLocaleLowerCase("en").replace(/\s+/g, " ");
 }
 
 function formatDepth(value: string | null) {

@@ -77,6 +77,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /t\("siteNamed"\)/);
   assert.match(app, /t\("gpsData"\)/);
   assert.match(app, /t\("setInApp"\)/);
+  assert.match(app, /t\("clearFilter"\)/);
   assert.match(app, /sitePickerOpen/);
   assert.match(app, /saveSiteAndCollapse/);
   assert.match(app, /sourceDiveNumber/);
@@ -124,7 +125,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(subsurfaceExport, /"notes"/);
   assert.match(storage, /listLocalSourceRecords/);
   assert.match(app, /useAppI18n/);
-  assert.match(app, /catalogNotesForDive/);
+  assert.doesNotMatch(app, /catalogNotesForDive/);
+  assert.match(app, /photo-gallery-actions/);
   assert.match(app, /compareDivesByDate/);
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
 
@@ -136,10 +138,18 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(nearbyRoute, /dive-sites\.json/);
   assert.match(nearbyRoute, /source: "openstreetmap"/);
 
+  const geocodeRoute = await readFile(
+    new URL("../app/api/geocode/route.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(geocodeRoute, /locationQueries/);
+  assert.match(geocodeRoute, /parts\.slice\(1\)/);
+
   const sites = JSON.parse(catalog);
   assert.equal(sites.schemaVersion, 1);
   assert.ok(sites.sites.length > 300);
   assert.ok(sites.sites.every((site) => site.coordinates));
+  assert.ok(sites.sites.every((site) => !("notes" in site)));
 
   const bindings = JSON.parse(hosting);
   assert.equal(bindings.d1, null);

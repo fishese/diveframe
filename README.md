@@ -36,6 +36,11 @@ site corrections back to a source log.
   Shearwater export views can omit.
 - Responsive dive list and detail views.
 - OpenStreetMap entry-location maps.
+- Mutually exclusive Site Named, GPS Data, and Set in App filters with an
+  explicit clear action.
+- A single broader geocoding retry for named dives without GPS, so a failed
+  site-level query can still resolve its city/region (for example,
+  `Mikomotojima, Shizuoka, Japan` → `Shizuoka, Japan`).
 - A curated local dive-site catalog with proximity-ranked suggestions and an
   OpenStreetMap fallback.
 - Separate source-specific dive numbers on merged records.
@@ -54,6 +59,8 @@ site corrections back to a source log.
   with a separately configurable overlay language for exported images.
 - Multiple photos per dive plus a device-local library of reusable diving
   backgrounds.
+- Share-image entry points at both the top of the dive and the bottom of its
+  photo gallery.
 - A live image composer with five original layouts, high-resolution PNG/JPEG
   output, common aspect ratios, metric/imperial units, and English/Traditional
   Chinese overlays.

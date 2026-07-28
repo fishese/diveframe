@@ -50,6 +50,12 @@ DiveFrame does not store the logbook on its server. Map-name and nearby-site
 lookups use network services. Public webfonts may also be downloaded by the
 browser.
 
+For a named dive without GPS, DiveFrame first searches the complete location
+text. If that fails and the name contains comma-separated place levels, it
+tries once more without the most specific first part. The resulting map is
+labelled approximate because it may represent a city or region rather than the
+exact entry point.
+
 Browser data is not a durable cloud backup. It can be lost when site data is
 cleared, a private-browsing session ends, the browser profile is removed, or
 the app moves to a different web address. Use **Settings → Export app data**

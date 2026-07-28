@@ -65,7 +65,6 @@ type CatalogSite = {
     locality: string | null;
   };
   source: { kind: string; reference: string | null };
-  notes?: string;
   status: string;
   updatedAt: string;
 };
@@ -776,7 +775,11 @@ function mergeContributions(
   base: DiveSiteCatalog,
   contributions: SiteContributionDraft[],
 ) {
-  const sites = base.sites.map((site) => structuredClone(site));
+  const sites = base.sites.map((site) => {
+    const clean = structuredClone(site) as CatalogSite & { notes?: unknown };
+    delete clean.notes;
+    return clean;
+  });
   const usedIds = new Set(sites.map((site) => site.id));
   let added = 0;
   let skipped = 0;
@@ -824,7 +827,6 @@ function mergeContributions(
         kind: "diveframe_manual",
         reference: `diveframe-dive:${contribution.diveId}`,
       },
-      notes: `Added from DiveFrame${contribution.diveDate ? ` for a dive on ${contribution.diveDate}` : ""}. Review place metadata before publishing.`,
       status: "active",
       updatedAt: contribution.updatedAt,
     });

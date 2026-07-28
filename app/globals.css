@@ -412,8 +412,12 @@ button {
 }
 
 .filter-row button:disabled {
-  cursor: wait;
-  opacity: 0.55;
+  cursor: default;
+  opacity: 0.38;
+}
+
+.filter-row .filter-clear {
+  margin-left: auto;
 }
 
 .dive-list::-webkit-scrollbar {
@@ -1045,6 +1049,14 @@ button {
   gap: 5px;
   padding: 8px 10px;
   text-decoration: none;
+}
+
+.photo-gallery-actions {
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding: 16px 20px 20px;
 }
 
 .background-library {
