@@ -6,6 +6,8 @@ import type {
 import type { ComposerSettings } from "./composer-settings";
 import { findMatchingDive } from "./dive-matching";
 
+export type DiveSource = "shearwater" | "subsurface" | "uddf" | "fit";
+
 export type LocalDive = {
   id: string;
   diveNumber: number | null;
@@ -46,8 +48,8 @@ export type LocalDive = {
   importedAt: string;
   photoCount: number;
   sources: string[];
-  sourceDiveNumbers: Partial<Record<LocalImportedDive["source"], number | null>>;
-  sourceSiteNames: Partial<Record<LocalImportedDive["source"], string | null>>;
+  sourceDiveNumbers: Partial<Record<DiveSource, number | null>>;
+  sourceSiteNames: Partial<Record<DiveSource, string | null>>;
 };
 
 export type LocalImportedDive = Omit<
@@ -65,7 +67,7 @@ export type LocalImportedDive = Omit<
   | "sourceDiveNumbers"
   | "sourceSiteNames"
 > & {
-  source: "shearwater" | "subsurface";
+  source: DiveSource;
   sourceId: string;
 };
 
@@ -188,7 +190,7 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
         : findMatchingDive(incoming, [...divesById.values()])) ??
       (incoming.source === "shearwater"
         ? incoming.id
-        : `subsurface:${incoming.sourceId}`);
+        : `${incoming.source}:${incoming.sourceId}`);
     const merged = mergeDive(canonicalId, divesById.get(canonicalId), incoming, now);
 
     divesById.set(canonicalId, merged);
@@ -651,8 +653,7 @@ function mergeDive(
         ? incoming.gasMixes
         : (existing?.gasMixes ?? []),
     computerModel: core(incoming.computerModel, existing?.computerModel),
-    samples:
-      incoming.samples.length > 0 ? incoming.samples : (existing?.samples ?? []),
+    samples: preferRicherSamples(existing?.samples, incoming.samples),
     tankPressuresStartBar: preferPopulatedArray(
       existing?.tankPressuresStartBar,
       incoming.tankPressuresStartBar,
@@ -785,6 +786,24 @@ function preferPopulatedArray(
   current: Array<number | null> | undefined,
   incoming: Array<number | null>,
 ) {
-  if (incoming.some((value) => value !== null)) return incoming;
-  return current ?? incoming;
+  const currentCount = current?.filter((value) => value !== null).length ?? 0;
+  const incomingCount = incoming.filter((value) => value !== null).length;
+  return incomingCount > currentCount ? incoming : (current ?? incoming);
+}
+
+function preferRicherSamples(
+  current: DiveSample[] | undefined,
+  incoming: DiveSample[],
+) {
+  if (!current?.length) return incoming;
+  if (!incoming.length) return current;
+  const score = (samples: DiveSample[]) =>
+    samples.length +
+    samples.filter((sample) => sample.temperatureC !== undefined).length +
+    samples.reduce(
+      (total, sample) =>
+        total + sample.pressuresBar.filter(Number.isFinite).length * 2,
+      0,
+    );
+  return score(incoming) > score(current) ? incoming : current;
 }

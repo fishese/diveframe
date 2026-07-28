@@ -24,8 +24,12 @@ export type DiveSite = {
 
 export type SourceMetadata = {
   sources: string[];
-  sourceDiveNumbers: Partial<Record<"shearwater" | "subsurface", number | null>>;
-  sourceSiteNames: Partial<Record<"shearwater" | "subsurface", string | null>>;
+  sourceDiveNumbers: Partial<
+    Record<"shearwater" | "subsurface" | "uddf" | "fit", number | null>
+  >;
+  sourceSiteNames: Partial<
+    Record<"shearwater" | "subsurface" | "uddf" | "fit", string | null>
+  >;
   serialNumber: string | null;
 };
 

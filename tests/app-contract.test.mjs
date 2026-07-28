@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and composer workflow", async () => {
-  const [app, settings, composer, chart, composerSettings, backup, fonts, i18n, shearwater, subsurface, matching, storage, hosting, manifest, catalog] = await Promise.all([
+  const [app, settings, composer, chart, composerSettings, backup, fonts, i18n, shearwater, subsurface, uddf, fit, matching, storage, hosting, manifest, catalog] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("app/settings/SettingsApp.tsx", "utf8"),
     readFile("app/compose/ComposerApp.tsx", "utf8"),
@@ -14,6 +14,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     readFile("lib/i18n.ts", "utf8"),
     readFile("lib/parsers/shearwater.ts", "utf8"),
     readFile("lib/parsers/subsurface.ts", "utf8"),
+    readFile("lib/parsers/uddf.ts", "utf8"),
+    readFile("lib/parsers/fit.ts", "utf8"),
     readFile("lib/dive-matching.ts", "utf8"),
     readFile("lib/indexed-db.ts", "utf8"),
     readFile(".openai/hosting.json", "utf8"),
@@ -27,12 +29,22 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(shearwater, /serialLookupKeys/);
   assert.match(app, /readShearwaterDatabase/);
   assert.match(app, /readSubsurfaceLog/);
+  assert.match(app, /readUddfLog/);
+  assert.match(app, /readFitDive/);
+  assert.match(app, /\.uddf/);
+  assert.match(app, /\.fit/);
+  assert.match(uddf, /source: "uddf"/);
+  assert.match(uddf, /kelvinToCelsius/);
+  assert.match(fit, /source: "fit"/);
+  assert.match(fit, /fitDepth/);
   assert.match(subsurface, /querySelectorAll\("sample"\)/);
   assert.match(app, /\.ssrf/);
   assert.match(subsurface, /sourceId/);
   assert.match(storage, /sourceMappings/);
   assert.match(matching, /normalizeSerial/);
   assert.match(matching, /secondsApart > 300/);
+  assert.match(matching, /sameOrAdjacentCalendarDay/);
+  assert.match(storage, /preferRicherSamples/);
   assert.match(storage, /indexedDB\.open/);
   assert.match(storage, /attachmentStore\.createIndex\("diveId"/);
   assert.match(storage, /blob: file\.slice/);

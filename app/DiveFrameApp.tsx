@@ -40,12 +40,15 @@ import {
   type LocalAttachment,
   type LocalDive,
   type LocalImportedDive,
+  type DiveSource,
   updateLocalDiveLocation,
   updateLocalDiveSite,
   upsertLocalDives,
 } from "@/lib/indexed-db";
 import { readShearwaterDatabase } from "@/lib/parsers/shearwater";
 import { readSubsurfaceLog } from "@/lib/parsers/subsurface";
+import { readUddfLog } from "@/lib/parsers/uddf";
+import { readFitDive } from "@/lib/parsers/fit";
 import diveSiteCatalog from "@/data/dive-sites.json";
 import type { AppLanguage } from "@/lib/app-i18n";
 import { useAppI18n } from "./AppI18nProvider";
@@ -208,8 +211,7 @@ export function DiveFrameApp() {
         if (!needle) return true;
         return [
           dive.diveNumber,
-          dive.sourceDiveNumbers?.shearwater,
-          dive.sourceDiveNumbers?.subsurface,
+          ...Object.values(dive.sourceDiveNumbers ?? {}),
           dive.userSite,
           dive.site,
           displayLocation(dive),
@@ -243,13 +245,15 @@ export function DiveFrameApp() {
   );
 
   async function importDatabase(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const files = Array.from(event.target.files ?? []);
     event.target.value = "";
-    if (!file) return;
+    if (!files.length) return;
     setBusy(true);
     setStatus(t("readingExtract"));
     try {
-      const imported = await readDiveImport(file);
+      const imported = (
+        await Promise.all(files.map((file) => readDiveImport(file)))
+      ).flat();
       setStatus(t("foundDives", { count: imported.length }));
       await upsertLocalDives(imported);
       await refreshDives();
@@ -375,7 +379,8 @@ export function DiveFrameApp() {
           <input
             ref={importInput}
             type="file"
-            accept=".db,.sqlite,.sqlite3,.ssrf,.xml,application/x-sqlite3,application/xml,text/xml"
+            accept=".db,.sqlite,.sqlite3,.ssrf,.xml,.uddf,.fit,application/x-sqlite3,application/xml,text/xml,application/octet-stream"
+            multiple
             className="visually-hidden"
             onChange={importDatabase}
           />
@@ -1021,10 +1026,19 @@ function Metric({ label, value, icon }: { label: string; value: string; icon: Re
 
 async function readDiveImport(file: File): Promise<ImportedDive[]> {
   const extension = file.name.split(".").pop()?.toLowerCase();
-  if (extension === "ssrf" || extension === "xml") {
-    return readSubsurfaceLog(await file.text());
+  if (extension === "fit") return readFitDive(file);
+  if (extension === "uddf") return readUddfLog(await file.text());
+  if (extension === "ssrf") return readSubsurfaceLog(await file.text());
+  if (extension === "xml") {
+    const xml = await file.text();
+    return /<\s*(?:\w+:)?uddf(?:\s|>)/i.test(xml)
+      ? readUddfLog(xml)
+      : readSubsurfaceLog(xml);
   }
-  return readShearwaterDatabase(file);
+  if (["db", "sqlite", "sqlite3"].includes(extension ?? "")) {
+    return readShearwaterDatabase(file);
+  }
+  throw new Error(`Unsupported dive-log format: ${file.name}`);
 }
 
 async function createShareCard(
@@ -1155,12 +1169,13 @@ function displayLocation(
 function formatSourceName(source: string) {
   if (source === "shearwater") return "Shearwater";
   if (source === "subsurface") return "Subsurface";
+  if (source === "uddf") return "UDDF";
+  if (source === "fit") return "FIT";
   return source;
 }
 
 function sourceDiveNumber(dive: Dive, source: string) {
-  if (source !== "shearwater" && source !== "subsurface") return null;
-  const number = dive.sourceDiveNumbers?.[source];
+  const number = dive.sourceDiveNumbers?.[source as DiveSource];
   if (number !== undefined && number !== null) return number;
   if (source === "shearwater" && dive.sources.includes("shearwater")) {
     return dive.diveNumber;

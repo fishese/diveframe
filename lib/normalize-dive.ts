@@ -14,6 +14,8 @@ export function toNormalizedDive(dive: LocalDive): Dive {
       originalName:
         dive.sourceSiteNames.shearwater ??
         dive.sourceSiteNames.subsurface ??
+        dive.sourceSiteNames.uddf ??
+        dive.sourceSiteNames.fit ??
         dive.site ??
         dive.location,
       userName: dive.userSite,

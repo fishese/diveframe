@@ -6,13 +6,16 @@ data, then adds maps, photos, site details, and shareable image overlays.
 
 ## Current workflow
 
-1. Export a `.db` file from Shearwater Cloud Desktop.
+1. Export a supported log: Shearwater Cloud Desktop `.db`, Subsurface
+   `.ssrf`/XML, Oceanic+ UDDF, or a dive `.fit` from Garmin Dive or the current
+   Suunto app.
 2. Open DiveFrame on Android, iPhone, or Windows.
-3. Choose **Import extract** and select the database.
-4. Re-import newer extracts at any time. Stable Shearwater `DiveId` values update
+3. Choose **Import log** and select one or more files.
+4. Re-import newer exports at any time. Stable source identities update
    existing dives without detaching photos.
-5. Import a Subsurface `.ssrf` export as well to merge GPS or other fields that
-   are missing from the Shearwater extract.
+5. Import other supported sources as well. DiveFrame conservatively matches
+   the same dive across sources, then retains the richer profile, GPS, site,
+   notes, and source-specific dive numbers.
 
 The original files are parsed in the browser and are never modified. DiveFrame
 stores normalized display fields, source mappings, site choices, and selected
@@ -21,6 +24,8 @@ photo blobs in IndexedDB on the current device.
 ## Features
 
 - Reads `dive_details`, calculated summaries, manual sites, buddies, and notes.
+- Reads open UDDF dive logs and FIT dive activities, including available
+  profiles, temperatures, gases, tank pressures, GPS, and computer metadata.
 - Resolves Shearwater device names such as Peregrine and Perdix 2 from
   `StoredDiveComputer` while retaining the original serial number.
 - Reads newer `GnssEntryLocation` and `GnssExitLocation` values that older
@@ -29,7 +34,7 @@ photo blobs in IndexedDB on the current device.
 - OpenStreetMap entry-location maps.
 - A curated local dive-site catalog with proximity-ranked suggestions and an
   OpenStreetMap fallback.
-- Separate Shearwater and Subsurface dive numbers on merged records.
+- Separate source-specific dive numbers on merged records.
 - A filter for site names assigned in DiveFrame and a JSON export of manually
   typed site candidates.
 - A settings page that can merge device-added sites into the bundled catalog
@@ -69,10 +74,28 @@ The deployed Worker is stateless. Dive and photo data stay in the browser;
 server routes only proxy map lookups. Use **Settings â†’ Export app data** to
 back up or transfer that local data.
 
-For full depth-profile charts, re-import a Subsurface `.ssrf` after upgrading.
-Shearwater Cloud exports provide summaries and tank start/end values, but the
-sample stream in the tested export is stored in a proprietary blob that
-DiveFrame does not currently decode.
+For full depth-profile charts, import Subsurface, UDDF, or FIT data when
+available. Shearwater Cloud exports provide summaries and tank start/end
+values, but the sample stream in the tested export is stored in a proprietary
+blob that DiveFrame does not currently decode.
+
+### Import format policy
+
+DiveFrame implements formats whose structure is public rather than guessing at
+proprietary files:
+
+- Oceanic+ documents its downloadable dives as
+  [UDDF](https://www.oceanicworldwide.com/blog/faq/what-format-will-my-dives-be-downloaded-to/);
+  DiveFrame follows the open [UDDF 3.2.3 specification](https://www.streit.cc/resources/UDDF/v3.2.3/en/).
+- Garmin documents FIT export from
+  [Garmin Dive](https://support.garmin.com/et-EE/?faq=NxZWyZYGqL17VNBMKDUjb5),
+  and Suunto documents FIT export for
+  [dives from the Suunto app](https://www.suunto.com/en-im/Support/faq-articles/suunto-app/what-type-of-files-can-i-export-from-the-suunto-app/).
+  DiveFrame uses the public [Garmin FIT protocol](https://developer.garmin.com/fit/protocol/)
+  through the MIT-licensed `fit-file-parser` package.
+- Older Suunto DM5 SDE/SML files and SCUBAPRO TravelTRAK `.asd` files are not
+  parsed because their current official documentation does not publish enough
+  of their structure to implement a reliable importer.
 
 Run the checks with:
 

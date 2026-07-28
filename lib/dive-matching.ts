@@ -31,7 +31,46 @@ export function findMatchingDive(
     const score = (sameSerial ? 10_000 : 0) - secondsApart - depthApart * 20;
     if (!best || score > best.score) best = { id: candidate.id, score };
   }
-  return best?.id ?? null;
+  if (best) return best.id;
+
+  // FIT/UDDF timestamps are commonly UTC while XML/database exports may store
+  // local wall-clock time. Use a conservative profile fingerprint only when
+  // one side is a portable exchange format and the best result is unambiguous.
+  const mayNeedTimezoneFallback =
+    incoming.source === "fit" ||
+    incoming.source === "uddf" ||
+    candidates.some((candidate) =>
+      candidate.sources.some((source) => source === "fit" || source === "uddf"),
+    );
+  if (!mayNeedTimezoneFallback) return null;
+  const incomingDuration = nullableNumber(incoming.durationSeconds);
+  if (incomingDepth === null || incomingDuration === null) return null;
+  const fingerprintMatches: Array<{ id: string; score: number }> = [];
+  for (const candidate of candidates) {
+    if (!sameOrAdjacentCalendarDay(incoming.diveDate, candidate.diveDate)) continue;
+    const candidateDepth = nullableNumber(candidate.maxDepthM ?? candidate.depth);
+    const candidateDuration = nullableNumber(candidate.durationSeconds);
+    if (candidateDepth === null || candidateDuration === null) continue;
+    const depthApart = Math.abs(incomingDepth - candidateDepth);
+    const durationApart = Math.abs(incomingDuration - candidateDuration);
+    if (depthApart > 0.75 || durationApart > 90) continue;
+    const sameNumber =
+      incoming.diveNumber !== null &&
+      candidate.diveNumber !== null &&
+      incoming.diveNumber === candidate.diveNumber;
+    fingerprintMatches.push({
+      id: candidate.id,
+      score: depthApart * 100 + durationApart - (sameNumber ? 20 : 0),
+    });
+  }
+  fingerprintMatches.sort((a, b) => a.score - b.score);
+  if (
+    fingerprintMatches.length > 1 &&
+    fingerprintMatches[1].score - fingerprintMatches[0].score < 15
+  ) {
+    return null;
+  }
+  return fingerprintMatches[0]?.id ?? null;
 }
 
 function normalizeSerial(value: string | null) {
@@ -48,4 +87,12 @@ function nullableNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function sameOrAdjacentCalendarDay(left: string | null, right: string | null) {
+  if (!left || !right) return false;
+  const leftDate = new Date(`${left.slice(0, 10)}T00:00:00Z`).getTime();
+  const rightDate = new Date(`${right.slice(0, 10)}T00:00:00Z`).getTime();
+  if (Number.isNaN(leftDate) || Number.isNaN(rightDate)) return false;
+  return Math.abs(leftDate - rightDate) <= 86_400_000;
 }

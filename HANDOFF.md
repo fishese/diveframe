@@ -2,8 +2,9 @@
 
 ## Product summary
 
-DiveFrame is a private, mobile-friendly dive log viewer for Shearwater and
-Subsurface exports. It merges matching records from both sources, displays
+DiveFrame is a private, mobile-friendly dive log viewer for Shearwater,
+Subsurface, UDDF, and FIT exports. It merges matching records from those
+sources, displays
 maps and nearby dive-site suggestions, stores dive photos and reusable
 backgrounds, and creates customizable high-resolution share images.
 
@@ -24,7 +25,7 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `app/compose/ComposerApp.tsx` — live preview and composer controls.
 - `app/settings/SettingsApp.tsx` — device-local settings and catalog maintenance
   tools, including the reusable background library.
-- `lib/parsers/` — separate Shearwater and Subsurface importers.
+- `lib/parsers/` — separate Shearwater, Subsurface, UDDF, and FIT importers.
 - `lib/dive-model.ts` and `lib/normalize-dive.ts` — normalized internal model.
 - `lib/dive-matching.ts` — cross-source record matching.
 - `lib/chart-renderer.ts` — profile downsampling and vector-like canvas paths.
@@ -116,17 +117,25 @@ Source identity is stored separately from the canonical dive ID:
 
 - Shearwater source ID: Shearwater `DiveId`
 - Subsurface source ID: `deviceid:diveid`
+- UDDF source ID: the dive element ID, with a stable profile fallback
+- FIT source ID: manufacturer/device/file-or-dive identity
 
 Matching order:
 
 1. Reuse an existing source mapping.
 2. Reuse the canonical Shearwater ID when present.
 3. Match records by start time, normalized computer serial, and maximum depth.
-4. Create a new canonical record when no safe match exists.
+4. For FIT/UDDF timezone mismatches only, try an unambiguous same-day
+   depth-and-duration fingerprint.
+5. Create a new canonical record when no safe match exists.
 
 The start-time window is five minutes. Same-serial matches tolerate up to
 three metres of maximum-depth variance. Matches without a shared serial use a
 stricter 90-second and one-metre threshold.
+
+The timezone fallback requires maximum depth within 0.75 m and duration within
+90 seconds. It refuses the match when the two best candidates are too close,
+preferring a visible duplicate over silently combining different dives.
 
 Merge rules:
 
@@ -136,15 +145,17 @@ Merge rules:
   by `dive_details`. The original serial remains on the canonical dive record.
 - Existing location, site, buddy, notes, and GPS values are never erased by an
   empty re-import.
-- Subsurface can fill GPS and other fields missing from Shearwater.
-- Subsurface sample data fills normalized depth, temperature, and multi-cylinder
-  pressure telemetry used by the composer chart.
+- Subsurface, UDDF, and FIT can fill GPS and other fields missing from another
+  source. The richest available sample stream is retained instead of whichever
+  file happened to be imported last.
+- Imported samples normalize depth to metres, temperature to Celsius, pressure
+  to bar, and elapsed time to seconds.
 - User-selected site names and photos survive empty re-import fields.
 - A non-empty site from a later source import clears the app-level site
   override, so the “Set in DiveFrame” filter tracks records still needing
   correction in the source log.
-- Each canonical dive stores the separate Shearwater and Subsurface dive
-  numbers captured during import. Existing browser data needs one re-import to
+- Each canonical dive stores separate source-specific dive numbers captured
+  during import. Existing browser data needs one re-import to
   populate numbers that were not retained by the version-1 schema.
 
 ## Dive-site catalog and contribution log

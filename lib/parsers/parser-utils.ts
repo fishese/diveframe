@@ -46,5 +46,14 @@ export function inferCategory(value: string | null | undefined): {
   if (normalized.includes("snork")) {
     return { category: "snorkelling", source: "import" };
   }
+  if (
+    normalized.includes("scuba") ||
+    normalized.includes("diving") ||
+    normalized === "oc" ||
+    normalized.includes("closed circuit") ||
+    normalized.includes("rebreather")
+  ) {
+    return { category: "scuba", source: "import" };
+  }
   return { category: "scuba", source: "default" };
 }
