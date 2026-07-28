@@ -43,3 +43,16 @@ test("calculates SAC only with one complete pressure pair", () => {
     null,
   );
 });
+
+test("normalizes Shearwater unitless PSI pressure pairs to bar", () => {
+  const normalized = calculations.normalizeShearwaterPressurePair(
+    2900.75,
+    580.15,
+  );
+  assert.ok(Math.abs(normalized.start - 200) < 0.1);
+  assert.ok(Math.abs(normalized.end - 40) < 0.1);
+  assert.deepEqual(
+    calculations.normalizeShearwaterPressurePair(200, 50),
+    { start: 200, end: 50 },
+  );
+});

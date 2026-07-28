@@ -235,7 +235,9 @@ The overview derives six statistics from canonical local dives:
 
 The SAC average respects per-dive cylinder choices and otherwise uses the
 device default. Dives with insufficient data are excluded rather than counted
-as zero.
+as zero. Shearwater Cloud air-integration values above 500 are treated as
+unitless PSI and the entire start/end pair is normalized to bar. Hydration also
+repairs already stored pre-fix values, so users do not have to clear IndexedDB.
 
 ## Image composer
 
@@ -248,6 +250,14 @@ high-resolution renderer rather than duplicating fixed component coordinates.
 The preview is rendered at a smaller working size; export rerenders the same
 geometry at social, 3000-pixel, or source-photo-area dimensions.
 
+Crop mode is transient UI over the existing persisted photo-fit, zoom, and
+offset settings. Pointer dragging updates normalized offsets and wheel input
+updates zoom; touch dragging is enabled with pointer capture. The
+rule-of-thirds guide is drawn after the preview composition only, so export
+never includes it. Bottom Profile uses a compact lower-third chart while
+Full-width Graph begins its panel higher and uses a larger template-default
+chart height.
+
 Overlay fonts are loaded from the public Google Fonts stylesheet imported by
 `app/globals.css`. The renderer waits for all requested weights before preview
 or export and falls back to platform Traditional Chinese fonts when offline.
@@ -258,12 +268,12 @@ data are disabled in the controls and are never shown as zero.
 
 The Subsurface parser retains depth samples and sparse temperature and
 `pressure0`, `pressure1`, etc. telemetry. The renderer labels pressure as
-“Tank pressure.” Gas consumed, SAC, and RMV are deliberately not calculated:
-cylinder size/volume is not yet normalized reliably. Shearwater-only records
-can render summary statistics but, for the tested export, cannot render the
-true profile because its sample stream is proprietary. A one-time re-import of
-the Subsurface log populates samples for browser records created before schema
-version 4.
+“Tank pressure.” DiveFrame calculates SAC only when duration, average depth,
+one complete pressure pair, and cylinder volume are available. Shearwater-only
+records can render summary statistics but, for the tested export, cannot
+render the true profile because its sample stream is proprietary. A one-time
+re-import of the Subsurface log populates samples for browser records created
+before schema version 4.
 
 Chart depth and elapsed-time axis labels are enabled by default and can be
 hidden per dive. The depth fill supports solid and upward transparent-fade

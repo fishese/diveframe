@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Download, ImagePlus, LoaderCircle, Settings as SettingsIcon, Waves } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Crop, Download, ImagePlus, LoaderCircle, RotateCcw, Settings as SettingsIcon, Waves } from "lucide-react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type WheelEvent as ReactWheelEvent,
+} from "react";
 import {
   defaultComposerSettings,
   type BlockPosition,
@@ -64,6 +71,13 @@ const templateTranslationKeys = {
 export function ComposerApp() {
   const { t } = useAppI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cropDrag = useRef<{
+    pointerId: number;
+    x: number;
+    y: number;
+    offsetX: number;
+    offsetY: number;
+  } | null>(null);
   const [dive, setDive] = useState<LocalDive | null>(null);
   const [photos, setPhotos] = useState<PhotoChoice[]>([]);
   const [settings, setSettings] = useState<ComposerSettings | null>(null);
@@ -71,6 +85,7 @@ export function ComposerApp() {
   const [logo, setLogo] = useState<(CanvasImageSource & { width: number; height: number }) | null>(null);
   const [status, setStatus] = useState(t("loadingComposer"));
   const [exporting, setExporting] = useState(false);
+  const [cropMode, setCropMode] = useState(false);
 
   useEffect(() => {
     const parameters = new URLSearchParams(window.location.search);
@@ -134,10 +149,11 @@ export function ComposerApp() {
     void ensureOverlayFont(settings.fontFamily).finally(() => {
       if (!cancelled && canvasRef.current) {
         renderComposition(canvasRef.current, bitmap, normalized, settings, Math.round(height * previewRatio), height, logo ?? undefined);
+        if (cropMode) drawCropGuide(canvasRef.current);
       }
     });
     return () => { cancelled = true; };
-  }, [bitmap, normalized, settings, logo]);
+  }, [bitmap, normalized, settings, logo, cropMode]);
 
   useEffect(() => {
     if (!settings) return;
@@ -154,6 +170,116 @@ export function ComposerApp() {
       ...current,
       visibleFields: { ...current.visibleFields, [field]: !current.visibleFields[field] },
     } : current);
+  }
+
+  function startCrop() {
+    setCropMode(true);
+    setSettings((current) => {
+      if (!current) return current;
+      const photoZoom = Math.max(1, current.photoZoom);
+      const offset = constrainCropOffsets(
+        current.photoOffsetX,
+        current.photoOffsetY,
+        bitmap,
+        canvasRef.current,
+        photoZoom,
+      );
+      return {
+        ...current,
+        photoFit: "fill",
+        photoZoom,
+        photoOffsetX: offset.x,
+        photoOffsetY: offset.y,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+  }
+
+  function resetCrop() {
+    setSettings((current) =>
+      current
+        ? {
+            ...current,
+            photoFit: "fill",
+            photoZoom: 1,
+            photoOffsetX: 0,
+            photoOffsetY: 0,
+            updatedAt: new Date().toISOString(),
+          }
+        : current,
+    );
+  }
+
+  function beginCropDrag(event: ReactPointerEvent<HTMLCanvasElement>) {
+    if (!cropMode || !settings) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    cropDrag.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      offsetX: settings.photoOffsetX,
+      offsetY: settings.photoOffsetY,
+    };
+  }
+
+  function moveCrop(event: ReactPointerEvent<HTMLCanvasElement>) {
+    const drag = cropDrag.current;
+    if (!cropMode || !settings || !drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const offset = constrainCropOffsets(
+      drag.offsetX + (event.clientX - drag.x) / Math.max(1, bounds.width),
+      drag.offsetY + (event.clientY - drag.y) / Math.max(1, bounds.height),
+      bitmap,
+      event.currentTarget,
+      settings.photoZoom,
+    );
+    setSettings((current) =>
+      current
+        ? {
+            ...current,
+            photoOffsetX: offset.x,
+            photoOffsetY: offset.y,
+            updatedAt: new Date().toISOString(),
+          }
+        : current,
+    );
+  }
+
+  function endCropDrag(event: ReactPointerEvent<HTMLCanvasElement>) {
+    if (cropDrag.current?.pointerId !== event.pointerId) return;
+    cropDrag.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  function zoomCrop(event: ReactWheelEvent<HTMLCanvasElement>) {
+    if (!cropMode) return;
+    event.preventDefault();
+    const direction = event.deltaY < 0 ? 0.08 : -0.08;
+    setSettings((current) => {
+      if (!current) return current;
+      const photoZoom = Math.min(
+        3,
+        Math.max(1, current.photoZoom + direction),
+      );
+      const offset = constrainCropOffsets(
+        current.photoOffsetX,
+        current.photoOffsetY,
+        bitmap,
+        canvasRef.current,
+        photoZoom,
+      );
+      return {
+        ...current,
+        photoZoom,
+        photoOffsetX: offset.x,
+        photoOffsetY: offset.y,
+        updatedAt: new Date().toISOString(),
+      };
+    });
   }
 
   async function exportImage() {
@@ -193,11 +319,23 @@ export function ComposerApp() {
       <div className="composer-shell">
         <section className="composer-preview-pane">
           <div className="composer-preview-frame">
-            {bitmap ? <canvas ref={canvasRef} aria-label={t("composer")} /> : (
+            {bitmap ? (
+              <canvas
+                ref={canvasRef}
+                aria-label={cropMode ? t("cropPhoto") : t("composer")}
+                className={cropMode ? "crop-mode" : ""}
+                onPointerDown={beginCropDrag}
+                onPointerMove={moveCrop}
+                onPointerUp={endCropDrag}
+                onPointerCancel={endCropDrag}
+                onWheel={zoomCrop}
+              />
+            ) : (
               <div className="composer-empty-photo"><ImagePlus size={34} /><p>{status}</p><Link href={`/?dive=${encodeURIComponent(dive.id)}`}>{t("addDivePhoto")}</Link></div>
             )}
           </div>
           <p className="composer-status" role="status">{status}</p>
+          {cropMode ? <p className="crop-instructions">{t("cropInstructions")}</p> : null}
           {!availability.depth && (
             <p className="composer-warning">{t("noProfile")}. {t("olderProfileHint")}</p>
           )}
@@ -210,8 +348,26 @@ export function ComposerApp() {
               {photos.map((photo) => <option key={photo.id} value={photo.id}>{photo.source === "library" ? `${t("libraryPhoto")} · ` : `${t("divePhoto")} · `}{photo.label}</option>)}
             </select>
             <p className="control-hint"><Link href="/settings">{t("manageBackgrounds")}</Link></p>
+            <div className="crop-actions">
+              <button
+                type="button"
+                className={cropMode ? "button button-primary" : "button button-secondary"}
+                onClick={() => (cropMode ? setCropMode(false) : startCrop())}
+                disabled={!bitmap}
+              >
+                <Crop size={16} /> {cropMode ? t("finishCrop") : t("cropPhoto")}
+              </button>
+              <button
+                type="button"
+                className="button button-quiet"
+                onClick={resetCrop}
+                disabled={!bitmap}
+              >
+                <RotateCcw size={15} /> {t("resetCrop")}
+              </button>
+            </div>
             <Control label={t("fitMode")}><select value={settings.photoFit} onChange={(event) => update("photoFit", event.target.value as ComposerSettings["photoFit"])}><option value="fill">{t("fill")}</option><option value="fit">{t("fit")}</option></select></Control>
-            <Range label={t("zoom")} value={settings.photoZoom} min={0.5} max={3} step={0.05} onChange={(value) => update("photoZoom", value)} />
+            <Range label={t("zoom")} value={settings.photoZoom} min={cropMode ? 1 : 0.5} max={3} step={0.05} onChange={(value) => update("photoZoom", value)} />
             <Range label={t("horizontalPosition")} value={settings.photoOffsetX} min={-0.5} max={0.5} step={0.01} onChange={(value) => update("photoOffsetX", value)} />
             <Range label={t("verticalPosition")} value={settings.photoOffsetY} min={-0.5} max={0.5} step={0.01} onChange={(value) => update("photoOffsetY", value)} />
             <Range label={t("rotate")} value={settings.photoRotation} min={-180} max={180} step={1} onChange={(value) => update("photoRotation", value)} />
@@ -226,6 +382,7 @@ export function ComposerApp() {
                   onClick={() => setSettings((current) => current ? {
                     ...current,
                     templateId: template.id,
+                    chartHeight: template.defaultChartHeight,
                     blockPositions: { ...template.defaultPositions },
                   } : current)}
                 >
@@ -352,6 +509,60 @@ function photoChoice(photo: LocalAttachment): PhotoChoice {
 function backgroundChoice(photo: LocalBackground): PhotoChoice {
   return { id: `background:${photo.id}`, label: photo.fileName, source: "library", blob: photo.blob };
 }
+
+function constrainCropOffsets(
+  x: number,
+  y: number,
+  image: (CanvasImageSource & { width: number; height: number }) | null,
+  canvas: HTMLCanvasElement | null,
+  zoom: number,
+) {
+  if (!image || !canvas || !canvas.width || !canvas.height) {
+    return { x: 0, y: 0 };
+  }
+  const baseScale = Math.max(
+    canvas.width / image.width,
+    canvas.height / image.height,
+  );
+  const drawnWidth = image.width * baseScale * zoom;
+  const drawnHeight = image.height * baseScale * zoom;
+  const limitX = Math.max(0, (drawnWidth - canvas.width) / (2 * canvas.width));
+  const limitY = Math.max(0, (drawnHeight - canvas.height) / (2 * canvas.height));
+  return {
+    x: Math.min(limitX, Math.max(-limitX, x)),
+    y: Math.min(limitY, Math.max(-limitY, y)),
+  };
+}
+
+function drawCropGuide(canvas: HTMLCanvasElement) {
+  const context = canvas.getContext("2d");
+  if (!context) return;
+  const { width, height } = canvas;
+  const inset = Math.max(3, Math.round(Math.min(width, height) * 0.015));
+  const dash = Math.max(5, width * 0.008);
+
+  context.save();
+  context.strokeStyle = "rgba(255, 255, 255, 0.82)";
+  context.lineWidth = Math.max(2, Math.min(width, height) * 0.003);
+  context.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
+  context.strokeStyle = "rgba(255, 255, 255, 0.46)";
+  context.lineWidth = Math.max(1, Math.min(width, height) * 0.0015);
+  context.setLineDash([dash, dash]);
+  for (const fraction of [1 / 3, 2 / 3]) {
+    const x = inset + (width - inset * 2) * fraction;
+    const y = inset + (height - inset * 2) * fraction;
+    context.beginPath();
+    context.moveTo(x, inset);
+    context.lineTo(x, height - inset);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(inset, y);
+    context.lineTo(width - inset, y);
+    context.stroke();
+  }
+  context.restore();
+}
+
 function repairLegacyTemplatePositions(settings: ComposerSettings) {
   if (
     ["bottom-profile", "minimal", "full-width-graph"].includes(settings.templateId) &&

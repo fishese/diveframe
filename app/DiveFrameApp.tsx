@@ -108,7 +108,7 @@ export function DiveFrameApp() {
   const [defaultCylinderPresetId, setDefaultCylinderPresetId] = useState(
     DEFAULT_CYLINDER_PRESET_ID,
   );
-  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
+  const [sortOption, setSortOption] = useState<DiveSortOption>("date-desc");
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(false);
   const [mobileDetail, setMobileDetail] = useState(false);
@@ -258,8 +258,8 @@ export function DiveFrameApp() {
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(needle));
       })
-      .sort((a, b) => compareDivesByDate(a, b, sortDirection));
-  }, [appSiteOnly, dives, gpsOnly, namedOnly, query, sortDirection]);
+      .sort((a, b) => compareDives(a, b, sortOption));
+  }, [appSiteOnly, dives, gpsOnly, namedOnly, query, sortOption]);
 
   const stats = useMemo(() => {
     const sacRates = dives
@@ -517,16 +517,20 @@ export function DiveFrameApp() {
                     <h2>{visibleDives.length} {t("dives")}</h2>
                   </div>
                   <label className="sort-control">
-                    <span>{t("orderByDate")}</span>
+                    <span>{t("sortBy")}</span>
                     <select
-                      value={sortDirection}
+                      value={sortOption}
                       onChange={(event) =>
-                        setSortDirection(event.target.value as "desc" | "asc")
+                        setSortOption(event.target.value as DiveSortOption)
                       }
-                      aria-label={t("orderByDate")}
+                      aria-label={t("sortBy")}
                     >
-                      <option value="desc">{t("newestFirst")}</option>
-                      <option value="asc">{t("oldestFirst")}</option>
+                      <option value="date-desc">{t("newestFirst")}</option>
+                      <option value="date-asc">{t("oldestFirst")}</option>
+                      <option value="duration-desc">{t("longestFirst")}</option>
+                      <option value="duration-asc">{t("shortestFirst")}</option>
+                      <option value="depth-desc">{t("deepestFirst")}</option>
+                      <option value="depth-asc">{t("shallowestFirst")}</option>
                     </select>
                   </label>
                 </div>
@@ -1558,6 +1562,47 @@ function sourceDiveNumber(dive: Dive, source: string) {
     return dive.diveNumber;
   }
   return null;
+}
+
+type DiveSortOption =
+  | "date-desc"
+  | "date-asc"
+  | "duration-desc"
+  | "duration-asc"
+  | "depth-desc"
+  | "depth-asc";
+
+function compareDives(a: Dive, b: Dive, option: DiveSortOption) {
+  if (option.startsWith("duration")) {
+    return compareNullableNumbers(
+      a.durationSeconds,
+      b.durationSeconds,
+      option.endsWith("desc") ? "desc" : "asc",
+    ) || compareDivesByDate(a, b, "desc");
+  }
+  if (option.startsWith("depth")) {
+    return compareNullableNumbers(
+      a.maxDepthM ?? numberFrom(a.depth),
+      b.maxDepthM ?? numberFrom(b.depth),
+      option.endsWith("desc") ? "desc" : "asc",
+    ) || compareDivesByDate(a, b, "desc");
+  }
+  return compareDivesByDate(
+    a,
+    b,
+    option === "date-desc" ? "desc" : "asc",
+  );
+}
+
+function compareNullableNumbers(
+  a: number | null,
+  b: number | null,
+  direction: "desc" | "asc",
+) {
+  if (a === null && b !== null) return 1;
+  if (a !== null && b === null) return -1;
+  if (a === null || b === null || a === b) return 0;
+  return (a - b) * (direction === "desc" ? -1 : 1);
 }
 
 function compareDivesByDate(

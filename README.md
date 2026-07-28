@@ -35,6 +35,7 @@ site corrections back to a source log.
 - Reads newer `GnssEntryLocation` and `GnssExitLocation` values that older
   Shearwater export views can omit.
 - Responsive dive list and detail views.
+- Dive-list sorting by date, duration, or maximum depth in either direction.
 - A compact six-stat logbook overview covering total dives, dives at named
   sites, unique imported locations, accumulated underwater time, average
   calculable SAC, and unique buddies.
@@ -66,7 +67,8 @@ site corrections back to a source log.
   photo gallery.
 - A live image composer with five original layouts, high-resolution PNG/JPEG
   output, common aspect ratios, metric/imperial units, and English/Traditional
-  Chinese overlays.
+  Chinese overlays. Its interactive crop mode supports drag-to-reposition,
+  wheel or slider zoom, touch input, and reset.
 - A curated overlay-font menu with public Traditional Chinese/Latin webfonts:
   Noto Sans HK, Noto Sans TC, Noto Serif TC, and LXGW WenKai TC.
 - Depth-profile charts from Subsurface samples, with optional sparse tank
@@ -80,7 +82,8 @@ site corrections back to a source log.
   SAC is shown only when duration, average depth, one valid pressure pair, and
   a cylinder volume are available. Standard aluminium and steel cylinder
   presets are available per dive; the device default starts at Aluminium 80
-  (11.1 L).
+  (11.1 L). Unitless Shearwater air-integration values are normalized from PSI
+  to bar before the calculation.
 - One device-local transparent PNG or SVG overlay logo configured in Settings,
   with per-dive visibility and placement controls in the composer.
 - Installable web-app metadata for mobile and desktop browsers.

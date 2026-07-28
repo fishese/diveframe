@@ -3,12 +3,14 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and composer workflow", async () => {
-  const [app, settings, about, composer, chart, composerSettings, backup, fonts, i18n, gasCalculations, shearwater, subsurface, subsurfaceExport, uddf, fit, matching, storage, hosting, manifest, catalog, userGuide, license] = await Promise.all([
+  const [app, settings, about, composer, chart, imageComposer, templates, composerSettings, backup, fonts, i18n, gasCalculations, shearwater, subsurface, subsurfaceExport, uddf, fit, matching, storage, hosting, manifest, catalog, userGuide, license] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("app/settings/SettingsApp.tsx", "utf8"),
     readFile("app/about/AboutApp.tsx", "utf8"),
     readFile("app/compose/ComposerApp.tsx", "utf8"),
     readFile("lib/chart-renderer.ts", "utf8"),
+    readFile("lib/image-composer.ts", "utf8"),
+    readFile("lib/templates.ts", "utf8"),
     readFile("lib/composer-settings.ts", "utf8"),
     readFile("lib/app-backup.ts", "utf8"),
     readFile("lib/composer-fonts.ts", "utf8"),
@@ -100,6 +102,12 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /getLocalOverlayLogo/);
   assert.match(composer, /showLogo/);
   assert.match(composer, /repairLegacyTemplatePositions/);
+  assert.match(composer, /cropMode/);
+  assert.match(composer, /onPointerMove/);
+  assert.match(composer, /drawCropGuide/);
+  assert.match(composer, /resetCrop/);
+  assert.match(templates, /defaultChartHeight/);
+  assert.match(imageComposer, /template\.layout === "graph"/);
   assert.match(chart, /drawAxisLabels/);
   assert.match(chart, /strokeInset/);
   assert.match(chart, /depthFillMode === "fade"/);
@@ -117,6 +125,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(settings, /defaultCylinderPresetId/);
   assert.match(gasCalculations, /DEFAULT_CYLINDER_PRESET_ID = "al80"/);
   assert.match(gasCalculations, /averageAmbientPressureBar/);
+  assert.match(gasCalculations, /normalizeShearwaterPressurePair/);
   assert.match(settings, /addDiveFrameSitesToSubsurface/);
   assert.match(settings, /-diveframe-updated\.ssrf/);
   assert.match(subsurfaceExport, /XMLSerializer/);
@@ -128,6 +137,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(app, /catalogNotesForDive/);
   assert.match(app, /photo-gallery-actions/);
   assert.match(app, /compareDivesByDate/);
+  assert.match(app, /duration-desc/);
+  assert.match(app, /depth-desc/);
   assert.match(app, /namedDives/);
   assert.match(app, /underwaterSeconds/);
   assert.match(app, /averageSac/);

@@ -6,6 +6,7 @@ export type TemplateDefinition = {
   description: string;
   layout: "bottom" | "right" | "minimal" | "poster" | "graph";
   accent: string;
+  defaultChartHeight: number;
   panelSide?: "left" | "right";
   defaultPositions: {
     site: BlockPosition;
@@ -24,6 +25,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     description: "Profile and statistics anchored across the lower third.",
     layout: "bottom",
     accent: "#8debd7",
+    defaultChartHeight: 0.27,
     defaultPositions: {
       site: "top-left",
       category: "top-left",
@@ -39,6 +41,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     description: "A structured vertical panel with a compact profile.",
     layout: "right",
     accent: "#73d7ff",
+    defaultChartHeight: 0.22,
     panelSide: "right",
     defaultPositions: {
       site: "inside-panel",
@@ -55,6 +58,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     description: "Small type and a fine profile with maximum photo area.",
     layout: "minimal",
     accent: "#ffffff",
+    defaultChartHeight: 0.2,
     defaultPositions: {
       site: "top-left",
       category: "hidden",
@@ -70,6 +74,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     description: "Large site typography and editorial statistics.",
     layout: "poster",
     accent: "#ffd36b",
+    defaultChartHeight: 0.24,
     defaultPositions: {
       site: "top-centre",
       category: "top-centre",
@@ -85,6 +90,7 @@ export const TEMPLATES: TemplateDefinition[] = [
     description: "A strong wide profile dividing image and statistics.",
     layout: "graph",
     accent: "#a8f2df",
+    defaultChartHeight: 0.36,
     defaultPositions: {
       site: "top-left",
       category: "top-left",

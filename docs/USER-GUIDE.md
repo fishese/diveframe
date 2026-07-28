@@ -29,6 +29,9 @@ calculable SAC, and unique buddies. Locations are compared as written after
 case and whitespace normalization; DiveFrame does not attempt to decide whether
 they represent countries, regions, or towns.
 
+Use the logbook sort menu to order dives by date, dive duration, or maximum
+depth in either direction. Dives missing the selected value appear last.
+
 ## Dive profiles and gas use
 
 When a source log contains samples, each dive page shows a compact depth
@@ -40,6 +43,9 @@ Average water temperature is calculated from available temperature samples.
 DiveFrame shows a SAC estimate only when it has dive duration, average depth,
 one valid starting/ending pressure pair, and a cylinder volume. Missing inputs
 remain unavailable rather than being replaced with invented values.
+Shearwater Cloud's unitless air-integration fields may contain PSI; DiveFrame
+detects those values and converts the pressure pair to bar before calculating
+SAC.
 
 Use **Settings → Default tank size** to choose the device default. A new
 installation uses Aluminium 80 (11.1 L). Open a dive's **People & memory**
@@ -95,6 +101,19 @@ filter.
 - A merged `dive-sites.json` catalog for review and updating the app repository
 - An updated copy of a freshly supplied Subsurface `.ssrf`/XML export, with
   matched site names, buddy, and notes added
+
+## Cropping a share image
+
+In the image composer, choose **Crop photo** to switch the preview into crop
+mode. Drag the photograph to reposition it. Use the mouse wheel or the
+**Zoom** control to scale it; touch dragging works on mobile. **Reset crop**
+returns to a centred fill. The rule-of-thirds guide is only an editing aid and
+does not appear in the exported PNG or JPEG.
+
+**Bottom Profile** keeps a compact chart and statistics band in the lower
+third. **Full-width Graph** starts its information band higher and gives the
+profile substantially more height, so the two presets remain visually
+distinct regardless of the selected photograph.
 
 ### Updating a Subsurface copy
 

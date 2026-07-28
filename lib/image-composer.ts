@@ -60,7 +60,13 @@ export function renderComposition(
     template.layout === "right"
       ? { x: width * 0.61, y: 0, width: width * 0.39, height }
       : (() => {
-          const y = height * (template.layout === "minimal" ? 0.62 : 0.58);
+          const y =
+            height *
+            (template.layout === "graph"
+              ? 0.46
+              : template.layout === "minimal"
+                ? 0.62
+                : 0.58);
           return { x: 0, y, width, height: height - y };
         })();
   drawPhoto(context, image, width, height, settings);
@@ -87,6 +93,12 @@ export function renderComposition(
       context.fillStyle = `rgba(3, 20, 29, ${settings.panelOpacity})`;
     }
     context.fillRect(panel.x, panel.y, panel.width, panel.height);
+    if (template.layout === "graph") {
+      context.fillStyle = template.accent;
+      context.globalAlpha = 0.7;
+      context.fillRect(panel.x, panel.y, panel.width, Math.max(2, height * 0.003));
+      context.globalAlpha = 1;
+    }
   }
 
   context.fillStyle = "#fff";
@@ -157,7 +169,10 @@ export function renderComposition(
     statsBox.y = panel.y + panel.height - margin - statHeight;
   }
 
-  const chartHeight = Math.min(height * settings.chartHeight, panel.height * 0.5);
+  const chartHeight = Math.min(
+    height * settings.chartHeight,
+    panel.height * (template.layout === "graph" ? 0.62 : 0.5),
+  );
   const chartBox = blockRect(
     settings.blockPositions.chart,
     panel,

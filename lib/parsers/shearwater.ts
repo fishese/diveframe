@@ -10,6 +10,7 @@ import {
   numberFrom,
   safeJson,
 } from "./parser-utils";
+import { normalizeShearwaterPressurePair } from "../gas-calculations";
 
 export async function readShearwaterDatabase(
   file: File,
@@ -94,12 +95,7 @@ export async function readShearwaterDatabase(
               ],
         computerModel: findComputerName(computerNames, row.SerialNumber),
         samples: [],
-        tankPressuresStartBar: [1, 2, 3, 4].map((index) =>
-          parsePressureBar(asString(row[`Tank${index}PressureStart`])),
-        ),
-        tankPressuresEndBar: [1, 2, 3, 4].map((index) =>
-          parsePressureBar(asString(row[`Tank${index}PressureEnd`])),
-        ),
+        ...readTankPressures(row),
       };
     });
   } finally {
@@ -180,4 +176,22 @@ function asNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function readTankPressures(row: Record<string, unknown>) {
+  const start: Array<number | null> = [];
+  const end: Array<number | null> = [];
+  for (let index = 1; index <= 4; index += 1) {
+    const rawStart = parsePressureBar(
+      asString(row[`Tank${index}PressureStart`]),
+    );
+    const rawEnd = parsePressureBar(asString(row[`Tank${index}PressureEnd`]));
+    const normalized = normalizeShearwaterPressurePair(rawStart, rawEnd);
+    start.push(normalized.start);
+    end.push(normalized.end);
+  }
+  return {
+    tankPressuresStartBar: start,
+    tankPressuresEndBar: end,
+  };
 }

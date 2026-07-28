@@ -86,6 +86,17 @@ export function firstCompletePressurePair(
   return pairs.length === 1 ? pairs[0] : null;
 }
 
+export function normalizeShearwaterPressurePair(
+  start: number | null,
+  end: number | null,
+) {
+  const storedAsPsi = Math.max(start ?? 0, end ?? 0) > 500;
+  return {
+    start: storedAsPsi && start !== null ? start / 14.5037738 : start,
+    end: storedAsPsi && end !== null ? end / 14.5037738 : end,
+  };
+}
+
 export function calculateSacLitresPerMinute(input: {
   startPressureBar: number | null;
   endPressureBar: number | null;

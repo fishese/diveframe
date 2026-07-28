@@ -5,6 +5,7 @@ import type {
 } from "./dive-model";
 import type { ComposerSettings } from "./composer-settings";
 import { findMatchingDive } from "./dive-matching";
+import { normalizeShearwaterPressurePair } from "./gas-calculations";
 
 export type DiveSource = "shearwater" | "subsurface" | "uddf" | "fit";
 
@@ -823,6 +824,10 @@ function hydrateDive(dive: LocalDive): LocalDive {
       ? Number(dive.lengthText)
       : null);
   const maxDepthM = dive.maxDepthM ?? nullableNumber(dive.depth);
+  const pressures = normalizeStoredPressurePairs(
+    dive.tankPressuresStartBar ?? [],
+    dive.tankPressuresEndBar ?? [],
+  );
   return {
     ...dive,
     durationSeconds,
@@ -834,11 +839,29 @@ function hydrateDive(dive: LocalDive): LocalDive {
     gasMixes: dive.gasMixes ?? [],
     computerModel: dive.computerModel ?? null,
     samples: dive.samples ?? [],
-    tankPressuresStartBar: dive.tankPressuresStartBar ?? [],
-    tankPressuresEndBar: dive.tankPressuresEndBar ?? [],
+    tankPressuresStartBar: pressures.start,
+    tankPressuresEndBar: pressures.end,
     sourceDiveNumbers: dive.sourceDiveNumbers ?? {},
     sourceSiteNames: dive.sourceSiteNames ?? {},
   };
+}
+
+function normalizeStoredPressurePairs(
+  start: Array<number | null>,
+  end: Array<number | null>,
+) {
+  const normalizedStart = [...start];
+  const normalizedEnd = [...end];
+  const count = Math.max(start.length, end.length);
+  for (let index = 0; index < count; index += 1) {
+    const normalized = normalizeShearwaterPressurePair(
+      start[index] ?? null,
+      end[index] ?? null,
+    );
+    normalizedStart[index] = normalized.start;
+    normalizedEnd[index] = normalized.end;
+  }
+  return { start: normalizedStart, end: normalizedEnd };
 }
 
 function preferPopulatedArray(
