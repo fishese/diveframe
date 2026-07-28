@@ -1,3 +1,5 @@
+import diveSiteCatalog from "@/data/dive-sites.json";
+
 type OverpassElement = {
   id: number;
   lat?: number;
@@ -14,22 +16,15 @@ type NominatimPlace = {
   name?: string;
 };
 
-const LOCAL_DIVE_SITES = [
-  {
-    id: "sharp-island",
-    name: "Sharp Island",
-    aliases: ["Kiu Tsui Chau"],
-    latitude: 22.3636,
-    longitude: 114.2928,
-  },
-  {
-    id: "basalt-island",
-    name: "Basalt Island",
-    aliases: ["Fo Siu Pai", "Shek Chau"],
-    latitude: 22.3158,
-    longitude: 114.3656,
-  },
-];
+const LOCAL_DIVE_SITES = diveSiteCatalog.sites
+  .filter((site) => site.status === "active")
+  .map((site) => ({
+    id: site.id,
+    name: site.name,
+    aliases: site.aliases,
+    latitude: site.coordinates.latitude,
+    longitude: site.coordinates.longitude,
+  }));
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;

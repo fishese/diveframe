@@ -19,12 +19,16 @@ export type LocalDive = {
   gpsExitLng: number | null;
   calculatedJson: string | null;
   userSite: string | null;
+  userSiteSource: "catalog" | "suggestion" | "manual" | null;
+  userSiteCatalogId: string | null;
+  userSiteUpdatedAt: string | null;
   resolvedLocation: string | null;
   resolvedCity: string | null;
   resolvedCountry: string | null;
   importedAt: string;
   photoCount: number;
   sources: string[];
+  sourceDiveNumbers: Partial<Record<LocalImportedDive["source"], number | null>>;
 };
 
 export type LocalImportedDive = Omit<
@@ -32,6 +36,9 @@ export type LocalImportedDive = Omit<
   | "importedAt"
   | "photoCount"
   | "userSite"
+  | "userSiteSource"
+  | "userSiteCatalogId"
+  | "userSiteUpdatedAt"
   | "resolvedLocation"
   | "resolvedCity"
   | "resolvedCountry"
@@ -53,6 +60,19 @@ export type LocalAttachment = {
   blob: Blob;
 };
 
+export type LocalSiteContribution = {
+  id: string;
+  diveId: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  diveDate: string | null;
+  shearwaterDiveNumber: number | null;
+  subsurfaceDiveNumber: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 type SourceRecord = {
   key: string;
   source: LocalImportedDive["source"];
@@ -62,10 +82,11 @@ type SourceRecord = {
 };
 
 const DATABASE_NAME = "diveframe-local";
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 const DIVES_STORE = "dives";
 const SOURCES_STORE = "sourceRecords";
 const ATTACHMENTS_STORE = "attachments";
+const SITE_CONTRIBUTIONS_STORE = "siteContributions";
 
 export async function listLocalDives() {
   const database = await openDatabase();
@@ -81,11 +102,12 @@ export async function listLocalDives() {
 export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
   const database = await openDatabase();
   const transaction = database.transaction(
-    [DIVES_STORE, SOURCES_STORE],
+    [DIVES_STORE, SOURCES_STORE, SITE_CONTRIBUTIONS_STORE],
     "readwrite",
   );
   const divesStore = transaction.objectStore(DIVES_STORE);
   const sourcesStore = transaction.objectStore(SOURCES_STORE);
+  const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
   const [storedDives, storedSources] = await Promise.all([
     request<LocalDive[]>(divesStore.getAll()),
     request<SourceRecord[]>(sourcesStore.getAll()),
@@ -119,6 +141,7 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
       diveId: canonicalId,
       importedAt: now,
     } satisfies SourceRecord);
+    if (incoming.site) contributionsStore.delete(canonicalId);
   }
 
   await transactionComplete(transaction);
@@ -173,8 +196,72 @@ export async function addLocalPhotos(diveId: string, files: File[]) {
   return additions;
 }
 
-export async function updateLocalDiveSite(id: string, site: string) {
-  return updateDive(id, (dive) => ({ ...dive, userSite: site }));
+export async function updateLocalDiveSite(
+  id: string,
+  selection: {
+    name: string;
+    source: "catalog" | "suggestion" | "manual";
+    catalogId?: string;
+    latitude: number;
+    longitude: number;
+  },
+) {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [DIVES_STORE, SITE_CONTRIBUTIONS_STORE],
+    "readwrite",
+  );
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
+  const dive = await request<LocalDive | undefined>(divesStore.get(id));
+  if (!dive) {
+    transaction.abort();
+    throw new Error("Dive not found in this browser.");
+  }
+
+  const now = new Date().toISOString();
+  const updated: LocalDive = {
+    ...dive,
+    userSite: selection.name,
+    userSiteSource: selection.source,
+    userSiteCatalogId: selection.catalogId ?? null,
+    userSiteUpdatedAt: now,
+  };
+  divesStore.put(updated);
+
+  if (selection.source === "manual") {
+    const existing = await request<LocalSiteContribution | undefined>(
+      contributionsStore.get(id),
+    );
+    contributionsStore.put({
+      id,
+      diveId: id,
+      name: selection.name,
+      latitude: selection.latitude,
+      longitude: selection.longitude,
+      diveDate: dive.diveDate,
+      shearwaterDiveNumber: dive.sourceDiveNumbers?.shearwater ?? null,
+      subsurfaceDiveNumber: dive.sourceDiveNumbers?.subsurface ?? null,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    } satisfies LocalSiteContribution);
+  } else {
+    contributionsStore.delete(id);
+  }
+
+  await transactionComplete(transaction);
+  return updated;
+}
+
+export async function listLocalSiteContributions() {
+  const database = await openDatabase();
+  const contributions = await request<LocalSiteContribution[]>(
+    database
+      .transaction(SITE_CONTRIBUTIONS_STORE)
+      .objectStore(SITE_CONTRIBUTIONS_STORE)
+      .getAll(),
+  );
+  return contributions.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export async function updateLocalDiveLocation(
@@ -220,6 +307,17 @@ function mergeDive(
     preferIncoming && next !== null ? next : (current ?? next);
   const sources = new Set(existing?.sources ?? []);
   sources.add(incoming.source);
+  const sourceDiveNumbers = {
+    ...(existing?.sourceDiveNumbers ?? {}),
+    [incoming.source]: incoming.diveNumber,
+  };
+  if (
+    sourceDiveNumbers.shearwater === undefined &&
+    existing?.sources.includes("shearwater")
+  ) {
+    sourceDiveNumbers.shearwater = existing.diveNumber;
+  }
+  const sourceSuppliesSite = Boolean(incoming.site);
 
   return {
     id,
@@ -241,13 +339,21 @@ function mergeDive(
     gpsExitLat: existing?.gpsExitLat ?? incoming.gpsExitLat,
     gpsExitLng: existing?.gpsExitLng ?? incoming.gpsExitLng,
     calculatedJson: core(incoming.calculatedJson, existing?.calculatedJson),
-    userSite: existing?.userSite ?? null,
+    userSite: sourceSuppliesSite ? null : (existing?.userSite ?? null),
+    userSiteSource: sourceSuppliesSite ? null : (existing?.userSiteSource ?? null),
+    userSiteCatalogId: sourceSuppliesSite
+      ? null
+      : (existing?.userSiteCatalogId ?? null),
+    userSiteUpdatedAt: sourceSuppliesSite
+      ? null
+      : (existing?.userSiteUpdatedAt ?? null),
     resolvedLocation: existing?.resolvedLocation ?? null,
     resolvedCity: existing?.resolvedCity ?? null,
     resolvedCountry: existing?.resolvedCountry ?? null,
     importedAt,
     photoCount: existing?.photoCount ?? 0,
     sources: [...sources],
+    sourceDiveNumbers,
   };
 }
 
@@ -302,6 +408,11 @@ function openDatabase() {
           keyPath: "id",
         });
         attachmentStore.createIndex("diveId", "diveId");
+      }
+      if (!database.objectStoreNames.contains(SITE_CONTRIBUTIONS_STORE)) {
+        database.createObjectStore(SITE_CONTRIBUTIONS_STORE, {
+          keyPath: "id",
+        });
       }
     };
     operation.onsuccess = () => resolve(operation.result);

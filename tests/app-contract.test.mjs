@@ -3,11 +3,12 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and share-card workflow", async () => {
-  const [app, storage, hosting, manifest] = await Promise.all([
+  const [app, storage, hosting, manifest, catalog] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("lib/indexed-db.ts", "utf8"),
     readFile(".openai/hosting.json", "utf8"),
     readFile("public/manifest.webmanifest", "utf8"),
+    readFile("data/dive-sites.json", "utf8"),
   ]);
 
   assert.match(app, /GnssEntryLocation/);
@@ -28,6 +29,10 @@ test("ships the DiveFrame import, map, photo, and share-card workflow", async ()
   assert.match(app, /api\/nearby-sites/);
   assert.match(app, /Named location/);
   assert.match(app, /GPS recorded/);
+  assert.match(app, /Set in DiveFrame/);
+  assert.match(app, /Export added sites/);
+  assert.match(app, /sourceDiveNumber/);
+  assert.match(app, /diveframe-added-sites\.json/);
   assert.match(app, /Save site/);
   assert.match(app, /DiveFrame catalog/);
   assert.match(app, /Newest first/);
@@ -40,7 +45,13 @@ test("ships the DiveFrame import, map, photo, and share-card workflow", async ()
     "utf8",
   );
   assert.match(nearbyRoute, /LOCAL_DIVE_SITES/);
+  assert.match(nearbyRoute, /dive-sites\.json/);
   assert.match(nearbyRoute, /source: "openstreetmap"/);
+
+  const sites = JSON.parse(catalog);
+  assert.equal(sites.schemaVersion, 1);
+  assert.ok(sites.sites.length > 300);
+  assert.ok(sites.sites.every((site) => site.coordinates));
 
   const bindings = JSON.parse(hosting);
   assert.equal(bindings.d1, null);

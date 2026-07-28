@@ -371,6 +371,7 @@ button {
   background: rgba(4, 18, 24, 0.88);
   border-bottom: 1px solid var(--line);
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 12px 16px;
   position: sticky;
@@ -396,6 +397,11 @@ button {
   background: rgba(141, 235, 215, 0.14);
   border-color: rgba(141, 235, 215, 0.42);
   color: var(--teal);
+}
+
+.filter-row button:disabled {
+  cursor: wait;
+  opacity: 0.55;
 }
 
 .dive-list::-webkit-scrollbar {
@@ -667,6 +673,15 @@ button {
   margin: 8px 0 0;
 }
 
+.source-references {
+  display: grid;
+  gap: 5px;
+}
+
+.source-references > span {
+  display: block;
+}
+
 .notes-row dd {
   color: var(--mist);
   max-height: 150px;
@@ -718,6 +733,11 @@ button {
 .site-suggestions button:hover {
   background: rgba(141, 235, 215, 0.12);
   border-color: rgba(141, 235, 215, 0.32);
+}
+
+.site-suggestions button[aria-pressed="true"] {
+  background: rgba(141, 235, 215, 0.17);
+  border-color: rgba(141, 235, 215, 0.5);
 }
 
 .site-suggestions button:disabled {

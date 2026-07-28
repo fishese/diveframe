@@ -24,6 +24,7 @@ https://diveframe-logbook.fishese.chatgpt.site
 - `lib/indexed-db.ts` — device-local persistence and import merge logic.
 - `app/api/geocode/route.ts` — stateless OpenStreetMap/Nominatim lookup proxy.
 - `app/api/nearby-sites/route.ts` — local catalog and OpenStreetMap fallback.
+- `data/dive-sites.json` — curated source-controlled dive-site catalog.
 - `app/globals.css` — responsive application styling.
 - `public/manifest.webmanifest` and `public/sw.js` — installable-web-app shell.
 - `tests/` — product contract and optional real Shearwater fixture test.
@@ -70,7 +71,7 @@ real dive exports, photos, or generated share cards to the repository.
 
 Database: `diveframe-local`
 
-Version: `1`
+Version: `2`
 
 Object stores:
 
@@ -79,6 +80,7 @@ Object stores:
 | `dives` | `id` | Canonical merged dive records and user-selected site names |
 | `sourceRecords` | `key` | Maps a source record to its canonical dive ID |
 | `attachments` | `id` | Photo metadata and the original image `Blob` |
+| `siteContributions` | `id` | Sites manually typed for a dive and available for JSON export |
 
 `attachments` and `sourceRecords` each have a `diveId` index.
 
@@ -109,7 +111,25 @@ Merge rules:
 - Existing location, site, buddy, notes, and GPS values are never erased by an
   empty re-import.
 - Subsurface can fill GPS and other fields missing from Shearwater.
-- User-selected site names and photos survive all re-imports.
+- User-selected site names and photos survive empty re-import fields.
+- A non-empty site from a later source import clears the app-level site
+  override, so the “Set in DiveFrame” filter tracks records still needing
+  correction in the source log.
+- Each canonical dive stores the separate Shearwater and Subsurface dive
+  numbers captured during import. Existing browser data needs one re-import to
+  populate numbers that were not retained by the version-1 schema.
+
+## Dive-site catalog and contribution log
+
+`data/dive-sites.json` is the primary nearby-site source. Active entries within
+30 km are returned nearest-first; OpenStreetMap is queried only when the local
+catalog has no nearby match.
+
+Selecting a catalog or map suggestion stores the assignment on the local dive.
+Typing a new name additionally creates or updates a `siteContributions` record
+using the dive's GPS position. **Export added sites** downloads these records as
+`diveframe-added-sites.json` for review and later curation into the catalog.
+The deployed browser cannot directly commit changes to the repository.
 
 The supplied full test data produced 168 cross-source matches and 19
 Subsurface-only records. Perdix dives 17, 18, and 19 received their Subsurface
@@ -131,8 +151,9 @@ copying the repository does not copy user data.
 
 ## Current hosting
 
-The project currently uses the bundled Vinext/Cloudflare-compatible build and
-the private Sites deployment referenced in `.openai/hosting.json`.
+The project uses the bundled Vinext/Cloudflare-compatible build. It is deployed
+to both the private Sites project referenced in `.openai/hosting.json` and a
+user-managed Cloudflare Worker connected to GitHub.
 
 The data layer no longer needs D1 or R2. Two stateless server routes remain for
 OpenStreetMap lookups. If the project moves to Cloudflare Workers, those routes
@@ -179,7 +200,8 @@ Google Drive, iCloud Drive, or a small private API.
 - Show whether persistent browser storage was granted.
 - Add an IndexedDB integration test using a browser test runner.
 - Consider image downscaling or optional originals for large phone photos.
-- Decide whether the final deployment is Cloudflare Workers or fully static.
+- Add a catalog-maintenance script that validates and imports reviewed entries
+  from `diveframe-added-sites.json`.
 
 ## Recovery and rollback
 

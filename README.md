@@ -11,10 +11,12 @@ more visual logbook for maps, photos, and shareable image overlays.
 3. Choose **Import extract** and select the database.
 4. Re-import newer extracts at any time. Stable Shearwater `DiveId` values update
    existing dives without detaching photos.
+5. Import a Subsurface `.ssrf` export as well to merge GPS or other fields that
+   are missing from the Shearwater extract.
 
-The original database is parsed in the browser and is never modified. DiveFrame
-stores normalized display fields in its private database and stores selected
-photos separately.
+The original files are parsed in the browser and are never modified. DiveFrame
+stores normalized display fields, source mappings, site choices, and selected
+photo blobs in IndexedDB on the current device.
 
 ## Features
 
@@ -23,6 +25,11 @@ photos separately.
   Shearwater export views can omit.
 - Responsive dive list and detail views.
 - OpenStreetMap entry-location maps.
+- A curated local dive-site catalog with proximity-ranked suggestions and an
+  OpenStreetMap fallback.
+- Separate Shearwater and Subsurface dive numbers on merged records.
+- A filter for site names assigned in DiveFrame and a JSON export of manually
+  typed site candidates.
 - Multiple photos per dive.
 - Canvas-rendered portrait share cards with site, date, depth, duration, and
   buddy.
@@ -37,8 +44,8 @@ npm install
 npm run dev
 ```
 
-The app uses Cloudflare D1 for structured records and R2 for uploaded photos.
-Local development uses the bindings configured by the starter runtime.
+The deployed Worker is stateless. Dive and photo data stay in the browser;
+server routes only proxy map lookups.
 
 Run the checks with:
 

@@ -34,6 +34,7 @@ import {
   addLocalPhotos,
   listLocalAttachments,
   listLocalDives,
+  listLocalSiteContributions,
   requestPersistentLocalStorage,
   type LocalAttachment,
   type LocalDive,
@@ -64,6 +65,14 @@ type NearbySite = {
   source: "catalog" | "openstreetmap";
 };
 
+type SiteSelection = {
+  name: string;
+  source: "catalog" | "suggestion" | "manual";
+  catalogId?: string;
+  latitude: number;
+  longitude: number;
+};
+
 export function DiveFrameApp() {
   const [dives, setDives] = useState<Dive[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -71,6 +80,7 @@ export function DiveFrameApp() {
   const [query, setQuery] = useState("");
   const [namedOnly, setNamedOnly] = useState(false);
   const [gpsOnly, setGpsOnly] = useState(false);
+  const [appSiteOnly, setAppSiteOnly] = useState(false);
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
   const [status, setStatus] = useState("Loading your private logbook…");
   const [busy, setBusy] = useState(false);
@@ -186,9 +196,12 @@ export function DiveFrameApp() {
         if (gpsOnly && (dive.gpsEntryLat === null || dive.gpsEntryLng === null)) {
           return false;
         }
+        if (appSiteOnly && !dive.userSite) return false;
         if (!needle) return true;
         return [
           dive.diveNumber,
+          dive.sourceDiveNumbers?.shearwater,
+          dive.sourceDiveNumbers?.subsurface,
           dive.userSite,
           dive.site,
           displayLocation(dive),
@@ -200,7 +213,7 @@ export function DiveFrameApp() {
           .some((value) => String(value).toLowerCase().includes(needle));
       })
       .sort((a, b) => compareDivesByDate(a, b, sortDirection));
-  }, [dives, gpsOnly, namedOnly, query, sortDirection]);
+  }, [appSiteOnly, dives, gpsOnly, namedOnly, query, sortDirection]);
 
   const stats = useMemo(
     () => ({
@@ -284,18 +297,71 @@ export function DiveFrameApp() {
     }
   }
 
-  async function saveDiveSite(site: string) {
+  async function saveDiveSite(selection: SiteSelection) {
     if (!selected) return;
     setBusy(true);
     setStatus("Saving dive site…");
     try {
-      const updated = await updateLocalDiveSite(selected.id, site);
+      const updated = await updateLocalDiveSite(selected.id, selection);
       setDives((current) =>
         current.map((dive) => (dive.id === updated.id ? updated : dive)),
       );
-      setStatus(`Dive site saved as ${site}`);
+      setStatus(
+        selection.source === "manual"
+          ? `${selection.name} saved and added to your local site log`
+          : `Dive site saved as ${selection.name}`,
+      );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not save dive site.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function exportManualSites() {
+    setBusy(true);
+    setStatus("Preparing your added-site log…");
+    try {
+      const contributions = await listLocalSiteContributions();
+      const payload = {
+        schemaVersion: 1,
+        generatedAt: new Date().toISOString(),
+        description:
+          "Dive sites typed into DiveFrame. Review before adding them to data/dive-sites.json.",
+        sites: contributions.map((site) => ({
+          name: site.name,
+          coordinates: {
+            latitude: site.latitude,
+            longitude: site.longitude,
+          },
+          linkedDive: {
+            diveId: site.diveId,
+            diveDate: site.diveDate,
+            shearwaterDiveNumber: site.shearwaterDiveNumber,
+            subsurfaceDiveNumber: site.subsurfaceDiveNumber,
+          },
+          source: {
+            kind: "diveframe_manual",
+            reference: `diveframe-dive:${site.diveId}`,
+          },
+          status: "candidate",
+          createdAt: site.createdAt,
+          updatedAt: site.updatedAt,
+        })),
+      };
+      downloadBlob(
+        new Blob([JSON.stringify(payload, null, 2)], {
+          type: "application/json",
+        }),
+        "diveframe-added-sites.json",
+      );
+      setStatus(
+        contributions.length
+          ? `Exported ${contributions.length} added site${contributions.length === 1 ? "" : "s"}`
+          : "No manually typed sites to export",
+      );
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not export site log.");
     } finally {
       setBusy(false);
     }
@@ -427,6 +493,22 @@ export function DiveFrameApp() {
                   >
                     <Compass size={14} /> GPS recorded
                   </button>
+                  <button
+                    type="button"
+                    className={appSiteOnly ? "active" : ""}
+                    onClick={() => setAppSiteOnly((value) => !value)}
+                    aria-pressed={appSiteOnly}
+                  >
+                    <Sparkles size={14} /> Set in DiveFrame
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void exportManualSites()}
+                    disabled={busy}
+                    title="Export sites typed into DiveFrame"
+                  >
+                    <ArrowDownToLine size={14} /> Export added sites
+                  </button>
                 </div>
                 {visibleDives.map((dive) => (
                   <button
@@ -546,7 +628,7 @@ function DiveDetail({
   onBack: () => void;
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onShare: (attachment: Attachment) => void;
-  onSaveSite: (site: string) => Promise<void>;
+  onSaveSite: (site: SiteSelection) => Promise<void>;
 }) {
   const calculated = safeJson(dive.calculatedJson);
   const averageDepth =
@@ -621,7 +703,9 @@ function DiveDetail({
         if (!response.ok) throw new Error(payload.error ?? "Nearby sites unavailable.");
         return payload.sites ?? [];
       })
-      .then(setNearbySites)
+      .then((sites) =>
+        setNearbySites([...sites].sort((a, b) => a.distanceKm - b.distanceKm)),
+      )
       .catch((error) => {
         if ((error as DOMException)?.name !== "AbortError") setNearbySites([]);
       });
@@ -738,9 +822,20 @@ function DiveDetail({
             <div>
               <dt><ArrowDownToLine size={16} /> Imported from</dt>
               <dd>
-                {dive.sources.length
-                  ? dive.sources.map(formatSourceName).join(" + ")
-                  : "Legacy import"}
+                {dive.sources.length ? (
+                  <span className="source-references">
+                    {dive.sources.map((source) => (
+                      <span key={source}>
+                        {formatSourceName(source)}
+                        {sourceDiveNumber(dive, source) !== null
+                          ? ` #${sourceDiveNumber(dive, source)}`
+                          : " · number available after reimport"}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  "Legacy import"
+                )}
               </dd>
             </div>
             <div className="notes-row">
@@ -751,12 +846,12 @@ function DiveDetail({
         </section>
       </div>
 
-      {hasGps && (
+      {hasGps && !dive.site && (
         <section className="card site-picker-card">
           <div className="card-heading">
             <div>
               <p className="eyebrow">Name this dive</p>
-              <h3>Nearby dive sites</h3>
+              <h3>{dive.userSite ? "Change DiveFrame site" : "Nearby dive sites"}</h3>
             </div>
             <span>Within 30 km</span>
           </div>
@@ -770,8 +865,20 @@ function DiveDetail({
                 <button
                   type="button"
                   key={site.id}
-                  onClick={() => void onSaveSite(site.name)}
+                  onClick={() =>
+                    void onSaveSite({
+                      name: site.name,
+                      source: site.source === "catalog" ? "catalog" : "suggestion",
+                      catalogId:
+                        site.source === "catalog"
+                          ? site.id.replace(/^catalog-/, "")
+                          : undefined,
+                      latitude: site.latitude,
+                      longitude: site.longitude,
+                    })
+                  }
                   disabled={busy}
+                  aria-pressed={dive.userSiteCatalogId === site.id.replace(/^catalog-/, "")}
                 >
                   <span>{site.name}</span>
                   {site.aliases?.length ? (
@@ -794,7 +901,18 @@ function DiveDetail({
             className="manual-site"
             onSubmit={(event) => {
               event.preventDefault();
-              if (manualSite.trim()) void onSaveSite(manualSite.trim());
+              if (
+                manualSite.trim() &&
+                dive.gpsEntryLat !== null &&
+                dive.gpsEntryLng !== null
+              ) {
+                void onSaveSite({
+                  name: manualSite.trim(),
+                  source: "manual",
+                  latitude: dive.gpsEntryLat,
+                  longitude: dive.gpsEntryLng,
+                });
+              }
             }}
           >
             <label htmlFor={`site-${dive.id}`}>Dive-site name</label>
@@ -1221,6 +1339,16 @@ function formatSourceName(source: string) {
   if (source === "shearwater") return "Shearwater";
   if (source === "subsurface") return "Subsurface";
   return source;
+}
+
+function sourceDiveNumber(dive: Dive, source: string) {
+  if (source !== "shearwater" && source !== "subsurface") return null;
+  const number = dive.sourceDiveNumbers?.[source];
+  if (number !== undefined && number !== null) return number;
+  if (source === "shearwater" && dive.sources.includes("shearwater")) {
+    return dive.diveNumber;
+  }
+  return null;
 }
 
 function compareDivesByDate(
