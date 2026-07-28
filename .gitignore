@@ -21,6 +21,8 @@
 # misc
 .DS_Store
 *.pem
+/web/data/dive-sites.bak*
+/data/dive-sites.bak*
 
 # debug
 npm-debug.log*
