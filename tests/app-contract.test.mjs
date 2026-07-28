@@ -105,6 +105,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /showLogo/);
   assert.match(composer, /logoOffsetX/);
   assert.match(composer, /logoOffsetY/);
+  assert.match(composer, /composer-back-to-dives/);
+  assert.doesNotMatch(composer, /className="composer-back"/);
   assert.match(composerSettings, /logoOffsetX: 0/);
   assert.match(composerSettings, /logoOffsetY: 0/);
   assert.match(composer, /repairLegacyTemplatePositions/);

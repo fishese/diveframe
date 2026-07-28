@@ -309,7 +309,13 @@ export function ComposerApp() {
           <span><strong>DiveFrame</strong><small>{t("composer")}</small></span>
         </Link>
         <div className="composer-top-actions">
-          <Link href="/settings" className="button button-quiet"><SettingsIcon size={16} /> {t("settings")}</Link>
+          <Link
+            href={`/?dive=${encodeURIComponent(dive.id)}`}
+            className="button button-quiet composer-back-to-dives"
+          >
+            <ArrowLeft size={16} /> {t("backToDives")}
+          </Link>
+          <Link href="/settings" className="button button-quiet composer-settings-link"><SettingsIcon size={16} /> {t("settings")}</Link>
           <button className="button button-primary" onClick={exportImage} disabled={!bitmap || exporting}>
             {exporting ? <LoaderCircle size={16} className="spin" /> : <Download size={16} />} {t("exportImage")}
           </button>
@@ -342,7 +348,6 @@ export function ComposerApp() {
         </section>
 
         <aside className="composer-controls">
-          <Link href={`/?dive=${encodeURIComponent(dive.id)}`} className="composer-back"><ArrowLeft size={15} /> {t("backToDive")}</Link>
           <ControlSection title={t("photo")}>
             <select value={settings.selectedPhotoId ?? ""} onChange={(event) => update("selectedPhotoId", event.target.value)}>
               {photos.map((photo) => <option key={photo.id} value={photo.id}>{photo.source === "library" ? `${t("libraryPhoto")} · ` : `${t("divePhoto")} · `}{photo.label}</option>)}

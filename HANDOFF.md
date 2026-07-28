@@ -262,6 +262,8 @@ locations feed the existing geocoder/map flow.
 
 The composer route is `/compose?dive=<canonical-id>&photo=<attachment-id>`.
 Each photo tile links to it. It also lists reusable backgrounds from Settings.
+The sticky composer top bar contains the return-to-dives shortcut, Settings,
+and Export; the controls column begins directly with the photo selector.
 
 Five original data-driven templates are currently exposed: Bottom Profile,
 Right Information Panel, Minimal, Poster, and Full-width Graph. They share one

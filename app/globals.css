@@ -1254,16 +1254,6 @@ button {
   padding: 18px;
 }
 
-.composer-back {
-  align-items: center;
-  color: var(--muted);
-  display: flex;
-  font-size: 12px;
-  gap: 6px;
-  margin: 3px 0 18px;
-  text-decoration: none;
-}
-
 .composer-control-section {
   border-top: 1px solid var(--line);
   padding: 18px 0;
@@ -1430,7 +1420,7 @@ button {
     padding: 0 10px;
   }
 
-  .composer-top-actions .button-quiet {
+  .composer-top-actions .composer-settings-link {
     display: none;
   }
 
