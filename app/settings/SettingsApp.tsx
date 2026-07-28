@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   ArrowLeft,
+  Camera,
   Database,
   Download,
   FileJson,
@@ -10,6 +11,7 @@ import {
   Languages,
   LoaderCircle,
   Palette,
+  Trash2,
   Upload,
   Waves,
 } from "lucide-react";
@@ -22,7 +24,11 @@ import {
 } from "react";
 import bundledCatalog from "@/data/dive-sites.json";
 import {
+  addLocalBackgrounds,
+  deleteLocalBackground,
+  listLocalBackgrounds,
   listLocalSiteContributions,
+  type LocalBackground,
   type LocalSiteContribution,
 } from "@/lib/indexed-db";
 
@@ -54,13 +60,15 @@ export function SettingsApp() {
   const [contributions, setContributions] = useState<LocalSiteContribution[]>([]);
   const [catalog, setCatalog] = useState<DiveSiteCatalog>(BUILT_IN_CATALOG);
   const [catalogLabel, setCatalogLabel] = useState("Catalog included with this app");
+  const [backgrounds, setBackgrounds] = useState<LocalBackground[]>([]);
   const [status, setStatus] = useState("Loading device-local settings…");
   const [busy, setBusy] = useState(true);
 
   useEffect(() => {
-    listLocalSiteContributions()
-      .then((items) => {
+    Promise.all([listLocalSiteContributions(), listLocalBackgrounds()])
+      .then(([items, savedBackgrounds]) => {
         setContributions(items);
+        setBackgrounds(savedBackgrounds);
         setStatus(
           items.length
             ? `${items.length} manually added site${items.length === 1 ? "" : "s"} ready`
@@ -72,6 +80,35 @@ export function SettingsApp() {
       })
       .finally(() => setBusy(false));
   }, []);
+
+  async function chooseBackgrounds(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (!files.length) return;
+    setBusy(true);
+    try {
+      await addLocalBackgrounds(files);
+      setBackgrounds(await listLocalBackgrounds());
+      setStatus(`Saved ${files.length} reusable background${files.length === 1 ? "" : "s"} on this device`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not save these backgrounds.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeBackground(id: string) {
+    setBusy(true);
+    try {
+      await deleteLocalBackground(id);
+      setBackgrounds((items) => items.filter((item) => item.id !== id));
+      setStatus("Removed reusable background");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not remove this background.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const mergePreview = useMemo(
     () => mergeContributions(catalog, contributions),
@@ -216,6 +253,44 @@ export function SettingsApp() {
           </p>
         </section>
 
+        <section className="settings-card">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><Camera size={21} /></span>
+            <div>
+              <p className="eyebrow">Image composer</p>
+              <h2>Reusable diving backgrounds</h2>
+            </div>
+          </div>
+          <p className="settings-note">
+            These photos stay in this browser and can be used with any dive. They
+            are separate from photos attached to an individual log entry.
+          </p>
+          <label className="button button-primary">
+            <Upload size={16} /> Add backgrounds
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={chooseBackgrounds}
+              className="visually-hidden"
+              disabled={busy}
+            />
+          </label>
+          {backgrounds.length > 0 ? (
+            <div className="background-library">
+              {backgrounds.map((background) => (
+                <BackgroundTile
+                  key={background.id}
+                  background={background}
+                  onRemove={() => removeBackground(background.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="empty-compact">No reusable backgrounds saved yet.</p>
+          )}
+        </section>
+
         <section className="future-settings" aria-label="Planned settings">
           <FutureSetting
             icon={<ImageIcon size={20} />}
@@ -240,6 +315,27 @@ export function SettingsApp() {
         </div>
       </div>
     </main>
+  );
+}
+
+function BackgroundTile({
+  background,
+  onRemove,
+}: {
+  background: LocalBackground;
+  onRemove: () => void;
+}) {
+  const source = useMemo(() => URL.createObjectURL(background.blob), [background.blob]);
+  useEffect(() => () => URL.revokeObjectURL(source), [source]);
+  return (
+    <article className="background-tile">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={source} alt={background.fileName} />
+      <span title={background.fileName}>{background.fileName}</span>
+      <button type="button" onClick={onRemove} aria-label={`Remove ${background.fileName}`}>
+        <Trash2 size={15} />
+      </button>
+    </article>
   );
 }
 

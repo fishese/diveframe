@@ -1,6 +1,5 @@
 "use client";
 
-import initSqlJs, { type QueryExecResult } from "sql.js";
 import Link from "next/link";
 import {
   ArrowDownToLine,
@@ -45,6 +44,8 @@ import {
   updateLocalDiveSite,
   upsertLocalDives,
 } from "@/lib/indexed-db";
+import { readShearwaterDatabase } from "@/lib/parsers/shearwater";
+import { readSubsurfaceLog } from "@/lib/parsers/subsurface";
 
 type Dive = LocalDive;
 type Attachment = LocalAttachment;
@@ -931,6 +932,12 @@ function DiveDetail({
                 />
                 <div className="photo-overlay">
                   <span>{attachment.fileName}</span>
+                  <Link
+                    href={`/compose?dive=${encodeURIComponent(dive.id)}&photo=${encodeURIComponent(attachment.id)}`}
+                    className="photo-compose-link"
+                  >
+                    <Sparkles size={16} /> Compose
+                  </Link>
                   <button
                     type="button"
                     onClick={() => onShare(attachment)}
@@ -995,191 +1002,6 @@ async function readDiveImport(file: File): Promise<ImportedDive[]> {
     return readSubsurfaceLog(await file.text());
   }
   return readShearwaterDatabase(file);
-}
-
-async function readShearwaterDatabase(file: File): Promise<ImportedDive[]> {
-  const SQL = await initSqlJs({ locateFile: () => "/sql-wasm.wasm" });
-  const database = new SQL.Database(new Uint8Array(await file.arrayBuffer()));
-  try {
-    const tables = database.exec(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='dive_details'",
-    );
-    if (!tables[0]?.values.length) {
-      throw new Error("This does not look like a Shearwater Cloud database.");
-    }
-    const result = database.exec(`
-      SELECT d.DiveId, d.DiveNumber, d.DiveDate, d.LastModified,
-             d.Depth, d.AverageDepth, d.MinTemp, d.MaxTemp,
-             d.DiveLengthTime, d.Location, d.Site, d.Buddy, d.Notes,
-             d.SerialNumber, d.GnssEntryLocation, d.GnssExitLocation,
-             l.calculated_values_from_samples
-      FROM dive_details d
-      LEFT JOIN log_data l ON l.log_id = d.DiveId
-      ORDER BY d.DiveDate DESC
-    `);
-    if (!result[0]) return [];
-    return rowsFrom(result[0]).map((row) => {
-      const entry = locationFrom(row.GnssEntryLocation);
-      const exit = locationFrom(row.GnssExitLocation);
-      const calculated = safeJson(asString(row.calculated_values_from_samples));
-      return {
-        id: String(row.DiveId),
-        source: "shearwater",
-        sourceId: String(row.DiveId),
-        diveNumber: asNumber(row.DiveNumber),
-        diveDate: asString(row.DiveDate),
-        lastModified: asString(row.LastModified),
-        depth: asString(row.Depth),
-        averageDepth:
-          numberFrom(calculated?.AverageDepth) ?? asNumber(row.AverageDepth),
-        minTemp: numberFrom(calculated?.MinTemp) ?? asNumber(row.MinTemp),
-        maxTemp: numberFrom(calculated?.MaxTemp) ?? asNumber(row.MaxTemp),
-        lengthText: asString(row.DiveLengthTime),
-        location: asString(row.Location),
-        site: asString(row.Site),
-        buddy: asString(row.Buddy),
-        notes: asString(row.Notes),
-        serialNumber: asString(row.SerialNumber),
-        gpsEntryLat: entry?.latitude ?? null,
-        gpsEntryLng: entry?.longitude ?? null,
-        gpsExitLat: exit?.latitude ?? null,
-        gpsExitLng: exit?.longitude ?? null,
-        calculatedJson: asString(row.calculated_values_from_samples),
-      };
-    });
-  } finally {
-    database.close();
-  }
-}
-
-function readSubsurfaceLog(xmlText: string): ImportedDive[] {
-  const document = new DOMParser().parseFromString(xmlText, "application/xml");
-  if (document.querySelector("parsererror") || document.documentElement.tagName !== "divelog") {
-    throw new Error("This does not look like a valid Subsurface log.");
-  }
-
-  const sites = new Map(
-    Array.from(document.querySelectorAll("divesites > site")).map((site) => [
-      site.getAttribute("uuid") ?? "",
-      {
-        name: site.getAttribute("name"),
-        gps: parseGpsPair(site.getAttribute("gps")),
-      },
-    ]),
-  );
-
-  return Array.from(document.querySelectorAll("dives > dive")).map((dive) => {
-    const computer = dive.querySelector("divecomputer");
-    const depth = computer?.querySelector("depth");
-    const temperature = computer?.querySelector("temperature");
-    const extras = new Map(
-      Array.from(computer?.querySelectorAll("extradata") ?? []).map((extra) => [
-        extra.getAttribute("key")?.toLowerCase() ?? "",
-        extra.getAttribute("value"),
-      ]),
-    );
-    const site = sites.get(dive.getAttribute("divesiteid") ?? "");
-    const entryGps =
-      site?.gps ?? parseGpsPair(extras.get("start location") ?? null);
-    const serial = extras.get("serial")?.trim() || null;
-    const deviceId = computer?.getAttribute("deviceid") ?? "unknown-device";
-    const computerDiveId =
-      computer?.getAttribute("diveid") ??
-      `${dive.getAttribute("date") ?? "unknown"}-${dive.getAttribute("time") ?? "unknown"}`;
-    const sourceId = `${deviceId}:${computerDiveId}`;
-    const date = dive.getAttribute("date");
-    const time = dive.getAttribute("time");
-    const maximumDepth = parseUnitNumber(depth?.getAttribute("max"));
-    const averageDepth = parseUnitNumber(depth?.getAttribute("mean"));
-    const waterTemperature = parseUnitNumber(temperature?.getAttribute("water"));
-    const siteName =
-      site?.name && !looksLikeCoordinates(site.name) ? site.name.trim() : null;
-
-    return {
-      id: `subsurface:${sourceId}`,
-      source: "subsurface",
-      sourceId,
-      diveNumber: asNumber(dive.getAttribute("number")),
-      diveDate: date ? `${date} ${time || "00:00:00"}` : null,
-      lastModified: null,
-      depth: maximumDepth === null ? null : String(maximumDepth),
-      averageDepth,
-      minTemp: waterTemperature,
-      maxTemp: waterTemperature,
-      lengthText: parseSubsurfaceDuration(dive.getAttribute("duration")),
-      location: null,
-      site: siteName,
-      buddy: null,
-      notes: directChildText(dive, "notes"),
-      serialNumber: serial,
-      gpsEntryLat: entryGps?.latitude ?? null,
-      gpsEntryLng: entryGps?.longitude ?? null,
-      gpsExitLat: null,
-      gpsExitLng: null,
-      calculatedJson:
-        averageDepth === null && waterTemperature === null
-          ? null
-          : JSON.stringify({
-              AverageDepth: averageDepth,
-              MinTemp: waterTemperature,
-              MaxTemp: waterTemperature,
-            }),
-    };
-  });
-}
-
-function rowsFrom(result: QueryExecResult) {
-  return result.values.map((values) =>
-    Object.fromEntries(result.columns.map((column, index) => [column, values[index]])),
-  );
-}
-
-function parseGpsPair(value: string | null | undefined) {
-  if (!value) return null;
-  const numbers = value
-    .replace(",", " ")
-    .trim()
-    .split(/\s+/)
-    .map(Number);
-  if (
-    numbers.length < 2 ||
-    !Number.isFinite(numbers[0]) ||
-    !Number.isFinite(numbers[1])
-  ) {
-    return null;
-  }
-  return { latitude: numbers[0], longitude: numbers[1] };
-}
-
-function parseUnitNumber(value: string | null | undefined) {
-  if (!value) return null;
-  const number = Number.parseFloat(value);
-  return Number.isFinite(number) ? number : null;
-}
-
-function parseSubsurfaceDuration(value: string | null) {
-  if (!value) return null;
-  const match = value.match(/^(\d+):(\d+)\s*min$/i);
-  if (!match) return null;
-  return String(Number(match[1]) * 60 + Number(match[2]));
-}
-
-function looksLikeCoordinates(value: string) {
-  return /^-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?$/.test(value.trim());
-}
-
-function directChildText(parent: Element, tagName: string) {
-  const child = Array.from(parent.children).find(
-    (element) => element.tagName.toLowerCase() === tagName,
-  );
-  return child?.textContent?.trim() || null;
-}
-
-function locationFrom(value: unknown) {
-  const parsed = safeJson(asString(value));
-  const latitude = numberFrom(parsed?.Latitude);
-  const longitude = numberFrom(parsed?.Longitude);
-  return latitude !== null && longitude !== null ? { latitude, longitude } : null;
 }
 
 async function createShareCard(dive: Dive, attachment: Attachment) {
@@ -1397,11 +1219,6 @@ function safeJson(value: string | null | undefined): Record<string, unknown> | n
   } catch {
     return null;
   }
-}
-
-function asString(value: unknown) {
-  if (value === null || value === undefined || value === "") return null;
-  return String(value);
 }
 
 function asNumber(value: unknown) {

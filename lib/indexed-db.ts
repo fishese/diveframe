@@ -1,3 +1,11 @@
+import type {
+  DiveCategory,
+  DiveSample,
+  GasMix,
+} from "./dive-model";
+import type { ComposerSettings } from "./composer-settings";
+import { findMatchingDive } from "./dive-matching";
+
 export type LocalDive = {
   id: string;
   diveNumber: number | null;
@@ -8,6 +16,7 @@ export type LocalDive = {
   minTemp: number | null;
   maxTemp: number | null;
   lengthText: string | null;
+  durationSeconds: number | null;
   location: string | null;
   site: string | null;
   buddy: string | null;
@@ -18,6 +27,15 @@ export type LocalDive = {
   gpsExitLat: number | null;
   gpsExitLng: number | null;
   calculatedJson: string | null;
+  category: DiveCategory;
+  categorySource: "default" | "import" | "user";
+  maxDepthM: number | null;
+  waterTemperatureC: number | null;
+  gasMixes: GasMix[];
+  computerModel: string | null;
+  samples: DiveSample[];
+  tankPressuresStartBar: Array<number | null>;
+  tankPressuresEndBar: Array<number | null>;
   userSite: string | null;
   userSiteSource: "catalog" | "suggestion" | "manual" | null;
   userSiteCatalogId: string | null;
@@ -29,6 +47,7 @@ export type LocalDive = {
   photoCount: number;
   sources: string[];
   sourceDiveNumbers: Partial<Record<LocalImportedDive["source"], number | null>>;
+  sourceSiteNames: Partial<Record<LocalImportedDive["source"], string | null>>;
 };
 
 export type LocalImportedDive = Omit<
@@ -43,6 +62,8 @@ export type LocalImportedDive = Omit<
   | "resolvedCity"
   | "resolvedCountry"
   | "sources"
+  | "sourceDiveNumbers"
+  | "sourceSiteNames"
 > & {
   source: "shearwater" | "subsurface";
   sourceId: string;
@@ -56,6 +77,15 @@ export type LocalAttachment = {
   size: number;
   caption: string | null;
   sortOrder: number;
+  createdAt: string;
+  blob: Blob;
+};
+
+export type LocalBackground = {
+  id: string;
+  fileName: string;
+  contentType: string;
+  size: number;
   createdAt: string;
   blob: Blob;
 };
@@ -82,18 +112,20 @@ type SourceRecord = {
 };
 
 const DATABASE_NAME = "diveframe-local";
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 4;
 const DIVES_STORE = "dives";
 const SOURCES_STORE = "sourceRecords";
 const ATTACHMENTS_STORE = "attachments";
 const SITE_CONTRIBUTIONS_STORE = "siteContributions";
+const COMPOSER_SETTINGS_STORE = "composerSettings";
+const BACKGROUNDS_STORE = "backgrounds";
 
 export async function listLocalDives() {
   const database = await openDatabase();
   const dives = await request<LocalDive[]>(
     database.transaction(DIVES_STORE).objectStore(DIVES_STORE).getAll(),
   );
-  return dives.sort((a, b) => {
+  return dives.map(hydrateDive).sort((a, b) => {
     const dateOrder = String(b.diveDate ?? "").localeCompare(String(a.diveDate ?? ""));
     return dateOrder || (b.diveNumber ?? 0) - (a.diveNumber ?? 0);
   });
@@ -196,6 +228,39 @@ export async function addLocalPhotos(diveId: string, files: File[]) {
   return additions;
 }
 
+export async function listLocalBackgrounds() {
+  const database = await openDatabase();
+  const backgrounds = await request<LocalBackground[]>(
+    database.transaction(BACKGROUNDS_STORE).objectStore(BACKGROUNDS_STORE).getAll(),
+  );
+  return backgrounds.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function addLocalBackgrounds(files: File[]) {
+  const database = await openDatabase();
+  const transaction = database.transaction(BACKGROUNDS_STORE, "readwrite");
+  const store = transaction.objectStore(BACKGROUNDS_STORE);
+  const createdAt = new Date().toISOString();
+  const additions = files.map((file, index) => ({
+    id: crypto.randomUUID(),
+    fileName: file.name || `diving-background-${index + 1}.jpg`,
+    contentType: file.type || "application/octet-stream",
+    size: file.size,
+    createdAt,
+    blob: file.slice(0, file.size, file.type),
+  } satisfies LocalBackground));
+  additions.forEach((background) => store.put(background));
+  await transactionComplete(transaction);
+  return additions;
+}
+
+export async function deleteLocalBackground(id: string) {
+  const database = await openDatabase();
+  const transaction = database.transaction(BACKGROUNDS_STORE, "readwrite");
+  transaction.objectStore(BACKGROUNDS_STORE).delete(id);
+  await transactionComplete(transaction);
+}
+
 export async function updateLocalDiveSite(
   id: string,
   selection: {
@@ -276,6 +341,36 @@ export async function updateLocalDiveLocation(
   }));
 }
 
+export async function updateLocalDiveCategory(
+  id: string,
+  category: DiveCategory,
+) {
+  return updateDive(id, (dive) => ({
+    ...dive,
+    category,
+    categorySource: "user",
+  }));
+}
+
+export async function getLocalComposerSettings(diveId: string) {
+  const database = await openDatabase();
+  return request<ComposerSettings | undefined>(
+    database
+      .transaction(COMPOSER_SETTINGS_STORE)
+      .objectStore(COMPOSER_SETTINGS_STORE)
+      .get(diveId),
+  );
+}
+
+export async function saveLocalComposerSettings(settings: ComposerSettings) {
+  const database = await openDatabase();
+  const transaction = database.transaction(COMPOSER_SETTINGS_STORE, "readwrite");
+  transaction
+    .objectStore(COMPOSER_SETTINGS_STORE)
+    .put({ ...settings, updatedAt: new Date().toISOString() });
+  await transactionComplete(transaction);
+}
+
 export async function requestPersistentLocalStorage() {
   if (!navigator.storage?.persist) return null;
   return navigator.storage.persist();
@@ -290,7 +385,7 @@ async function updateDive(id: string, change: (dive: LocalDive) => LocalDive) {
     transaction.abort();
     throw new Error("Dive not found in this browser.");
   }
-  const updated = change(dive);
+  const updated = change(hydrateDive(dive));
   store.put(updated);
   await transactionComplete(transaction);
   return updated;
@@ -302,6 +397,7 @@ function mergeDive(
   incoming: LocalImportedDive,
   importedAt: string,
 ): LocalDive {
+  existing = existing ? hydrateDive(existing) : undefined;
   const preferIncoming = incoming.source === "shearwater";
   const core = <T>(next: T | null, current: T | null | undefined) =>
     preferIncoming && next !== null ? next : (current ?? next);
@@ -310,6 +406,11 @@ function mergeDive(
   const sourceDiveNumbers = {
     ...(existing?.sourceDiveNumbers ?? {}),
     [incoming.source]: incoming.diveNumber,
+  };
+  const sourceSiteNames = {
+    ...(existing?.sourceSiteNames ?? {}),
+    [incoming.source]:
+      incoming.site ?? existing?.sourceSiteNames?.[incoming.source] ?? null,
   };
   if (
     sourceDiveNumbers.shearwater === undefined &&
@@ -329,6 +430,7 @@ function mergeDive(
     minTemp: core(incoming.minTemp, existing?.minTemp),
     maxTemp: core(incoming.maxTemp, existing?.maxTemp),
     lengthText: core(incoming.lengthText, existing?.lengthText),
+    durationSeconds: core(incoming.durationSeconds, existing?.durationSeconds),
     location: existing?.location ?? incoming.location,
     site: existing?.site ?? incoming.site,
     buddy: existing?.buddy ?? incoming.buddy,
@@ -339,6 +441,38 @@ function mergeDive(
     gpsExitLat: existing?.gpsExitLat ?? incoming.gpsExitLat,
     gpsExitLng: existing?.gpsExitLng ?? incoming.gpsExitLng,
     calculatedJson: core(incoming.calculatedJson, existing?.calculatedJson),
+    category:
+      existing?.categorySource === "user"
+        ? existing.category
+        : preferIncoming
+          ? incoming.category
+          : (existing?.category ?? incoming.category),
+    categorySource:
+      existing?.categorySource === "user"
+        ? "user"
+        : preferIncoming
+          ? incoming.categorySource
+          : (existing?.categorySource ?? incoming.categorySource),
+    maxDepthM: core(incoming.maxDepthM, existing?.maxDepthM),
+    waterTemperatureC: core(
+      incoming.waterTemperatureC,
+      existing?.waterTemperatureC,
+    ),
+    gasMixes:
+      incoming.gasMixes.length > 0
+        ? incoming.gasMixes
+        : (existing?.gasMixes ?? []),
+    computerModel: core(incoming.computerModel, existing?.computerModel),
+    samples:
+      incoming.samples.length > 0 ? incoming.samples : (existing?.samples ?? []),
+    tankPressuresStartBar: preferPopulatedArray(
+      existing?.tankPressuresStartBar,
+      incoming.tankPressuresStartBar,
+    ),
+    tankPressuresEndBar: preferPopulatedArray(
+      existing?.tankPressuresEndBar,
+      incoming.tankPressuresEndBar,
+    ),
     userSite: sourceSuppliesSite ? null : (existing?.userSite ?? null),
     userSiteSource: sourceSuppliesSite ? null : (existing?.userSiteSource ?? null),
     userSiteCatalogId: sourceSuppliesSite
@@ -354,39 +488,8 @@ function mergeDive(
     photoCount: existing?.photoCount ?? 0,
     sources: [...sources],
     sourceDiveNumbers,
+    sourceSiteNames,
   };
-}
-
-function findMatchingDive(incoming: LocalImportedDive, candidates: LocalDive[]) {
-  if (!incoming.diveDate) return null;
-  const incomingTime = parseDiveDate(incoming.diveDate);
-  const incomingSerial = normalizeSerial(incoming.serialNumber);
-  const incomingDepth = nullableNumber(incoming.depth);
-  let best: { id: string; score: number } | null = null;
-
-  for (const candidate of candidates) {
-    const candidateTime = parseDiveDate(candidate.diveDate);
-    if (incomingTime === null || candidateTime === null) continue;
-    const secondsApart = Math.abs(incomingTime - candidateTime) / 1000;
-    if (secondsApart > 300) continue;
-    const candidateSerial = normalizeSerial(candidate.serialNumber);
-    const sameSerial =
-      Boolean(incomingSerial) &&
-      Boolean(candidateSerial) &&
-      incomingSerial === candidateSerial;
-    const candidateDepth = nullableNumber(candidate.depth);
-    const depthApart =
-      incomingDepth === null || candidateDepth === null
-        ? 0
-        : Math.abs(incomingDepth - candidateDepth);
-
-    if (!sameSerial && (secondsApart > 90 || depthApart > 1)) continue;
-    if (sameSerial && depthApart > 3) continue;
-    const score = (sameSerial ? 10_000 : 0) - secondsApart - depthApart * 20;
-    if (!best || score > best.score) best = { id: candidate.id, score };
-  }
-
-  return best?.id ?? null;
 }
 
 function openDatabase() {
@@ -413,6 +516,14 @@ function openDatabase() {
         database.createObjectStore(SITE_CONTRIBUTIONS_STORE, {
           keyPath: "id",
         });
+      }
+      if (!database.objectStoreNames.contains(COMPOSER_SETTINGS_STORE)) {
+        database.createObjectStore(COMPOSER_SETTINGS_STORE, {
+          keyPath: "id",
+        });
+      }
+      if (!database.objectStoreNames.contains(BACKGROUNDS_STORE)) {
+        database.createObjectStore(BACKGROUNDS_STORE, { keyPath: "id" });
       }
     };
     operation.onsuccess = () => resolve(operation.result);
@@ -445,18 +556,41 @@ function sourceKey(source: string, sourceId: string) {
   return `${source}\u0000${sourceId}`;
 }
 
-function normalizeSerial(value: string | null) {
-  return value?.replace(/[^a-z0-9]/gi, "").toUpperCase() || null;
-}
-
-function parseDiveDate(value: string | null) {
-  if (!value) return null;
-  const timestamp = new Date(value.replace(" ", "T")).getTime();
-  return Number.isNaN(timestamp) ? null : timestamp;
-}
-
 function nullableNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function hydrateDive(dive: LocalDive): LocalDive {
+  const durationSeconds =
+    dive.durationSeconds ??
+    (dive.lengthText !== null && Number.isFinite(Number(dive.lengthText))
+      ? Number(dive.lengthText)
+      : null);
+  const maxDepthM = dive.maxDepthM ?? nullableNumber(dive.depth);
+  return {
+    ...dive,
+    durationSeconds,
+    category: dive.category ?? "scuba",
+    categorySource: dive.categorySource ?? "default",
+    maxDepthM,
+    waterTemperatureC:
+      dive.waterTemperatureC ?? dive.minTemp ?? dive.maxTemp ?? null,
+    gasMixes: dive.gasMixes ?? [],
+    computerModel: dive.computerModel ?? null,
+    samples: dive.samples ?? [],
+    tankPressuresStartBar: dive.tankPressuresStartBar ?? [],
+    tankPressuresEndBar: dive.tankPressuresEndBar ?? [],
+    sourceDiveNumbers: dive.sourceDiveNumbers ?? {},
+    sourceSiteNames: dive.sourceSiteNames ?? {},
+  };
+}
+
+function preferPopulatedArray(
+  current: Array<number | null> | undefined,
+  incoming: Array<number | null>,
+) {
+  if (incoming.some((value) => value !== null)) return incoming;
+  return current ?? incoming;
 }

@@ -4,13 +4,13 @@
 
 DiveFrame is a private, mobile-friendly dive log viewer for Shearwater and
 Subsurface exports. It merges matching records from both sources, displays
-maps and nearby dive-site suggestions, stores dive photos, and creates
-share-ready image cards.
+maps and nearby dive-site suggestions, stores dive photos and reusable
+backgrounds, and creates customizable high-resolution share images.
 
 The current product is deliberately device-local:
 
 - Dive records and import-source mappings are stored in IndexedDB.
-- Original photo blobs and photo metadata are stored in IndexedDB.
+- Original dive-photo and reusable-background blobs are stored in IndexedDB.
 - Nothing in an imported database or SSRF file is persisted on the server.
 - Map search and nearby-site endpoints are stateless network helpers.
 - There is no cross-device synchronization yet.
@@ -20,10 +20,19 @@ https://diveframe-logbook.fishese.chatgpt.site
 
 ## Repository map
 
-- `app/DiveFrameApp.tsx` — main UI, file parsers, maps, gallery, and share cards.
+- `app/DiveFrameApp.tsx` — main logbook UI, imports, maps, gallery, and entry
+  point to the composer.
+- `app/compose/ComposerApp.tsx` — live preview and composer controls.
 - `app/settings/SettingsApp.tsx` — device-local settings and catalog maintenance
-  tools, with reserved product areas for overlay and language settings.
-- `lib/indexed-db.ts` — device-local persistence and import merge logic.
+  tools, including the reusable background library.
+- `lib/parsers/` — separate Shearwater and Subsurface importers.
+- `lib/dive-model.ts` and `lib/normalize-dive.ts` — normalized internal model.
+- `lib/dive-matching.ts` — cross-source record matching.
+- `lib/chart-renderer.ts` — profile downsampling and vector-like canvas paths.
+- `lib/image-composer.ts`, `lib/templates.ts`, and `lib/exporter.ts` — data-driven
+  layouts, rendering, and PNG/JPEG export.
+- `lib/i18n.ts` and `lib/unit-conversion.ts` — overlay translations and units.
+- `lib/indexed-db.ts` — device-local persistence and merge orchestration.
 - `app/api/geocode/route.ts` — stateless OpenStreetMap/Nominatim lookup proxy.
 - `app/api/nearby-sites/route.ts` — local catalog and OpenStreetMap fallback.
 - `data/dive-sites.json` — curated source-controlled dive-site catalog.
@@ -73,7 +82,7 @@ real dive exports, photos, or generated share cards to the repository.
 
 Database: `diveframe-local`
 
-Version: `2`
+Version: `4`
 
 Object stores:
 
@@ -83,6 +92,8 @@ Object stores:
 | `sourceRecords` | `key` | Maps a source record to its canonical dive ID |
 | `attachments` | `id` | Photo metadata and the original image `Blob` |
 | `siteContributions` | `id` | Sites manually typed for a dive and available for JSON export |
+| `composerSettings` | `id` | Per-dive composer state and selected image |
+| `backgrounds` | `id` | Reusable generic diving background image blobs |
 
 `attachments` and `sourceRecords` each have a `diveId` index.
 
@@ -113,6 +124,8 @@ Merge rules:
 - Existing location, site, buddy, notes, and GPS values are never erased by an
   empty re-import.
 - Subsurface can fill GPS and other fields missing from Shearwater.
+- Subsurface sample data fills normalized depth, temperature, and multi-cylinder
+  pressure telemetry used by the composer chart.
 - User-selected site names and photos survive empty re-import fields.
 - A non-empty site from a later source import clears the app-level site
   override, so the “Set in DiveFrame” filter tracks records still needing
@@ -152,6 +165,30 @@ IndexedDB is scoped to the exact web origin and browser profile:
 
 Changing domains therefore requires an explicit export/import or sync feature;
 copying the repository does not copy user data.
+
+## Image composer
+
+The composer route is `/compose?dive=<canonical-id>&photo=<attachment-id>`.
+Each photo tile links to it. It also lists reusable backgrounds from Settings.
+
+Five original data-driven templates are currently exposed: Bottom Profile,
+Right Information Panel, Minimal, Poster, and Full-width Graph. They share one
+high-resolution renderer rather than duplicating fixed component coordinates.
+The preview is rendered at a smaller working size; export rerenders the same
+geometry at social, 3000-pixel, or source-photo-area dimensions.
+
+Site display priority is user override, linked source name, app catalog/OSM
+assignment, formatted GPS coordinates, then omission. Fields with no source
+data are disabled in the controls and are never shown as zero.
+
+The Subsurface parser retains depth samples and sparse temperature and
+`pressure0`, `pressure1`, etc. telemetry. The renderer labels pressure as
+“Tank pressure.” Gas consumed, SAC, and RMV are deliberately not calculated:
+cylinder size/volume is not yet normalized reliably. Shearwater-only records
+can render summary statistics but, for the tested export, cannot render the
+true profile because its sample stream is proprietary. A one-time re-import of
+the Subsurface log populates samples for browser records created before schema
+version 4.
 
 ## Current hosting
 
@@ -200,7 +237,12 @@ Google Drive, iCloud Drive, or a small private API.
 ## Known follow-ups
 
 - Add backup export/import before users build large photo libraries.
-- Add photo deletion, captions, and storage-usage reporting.
+- Add dive-photo deletion, captions, and storage-usage reporting.
+- Add draggable custom block positions (preset positions are implemented).
+- Persist reusable logo assets and named composer presets globally; logo
+  selection is currently session-only.
+- Expand Traditional Chinese coverage from overlay labels to every composer
+  control label.
 - Show whether persistent browser storage was granted.
 - Add an IndexedDB integration test using a browser test runner.
 - Consider image downscaling or optional originals for large phone photos.

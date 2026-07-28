@@ -32,9 +32,14 @@ photo blobs in IndexedDB on the current device.
   typed site candidates.
 - A settings page that can merge device-added sites into the bundled catalog
   and download a replacement `dive-sites.json` for repository updates.
-- Multiple photos per dive.
-- Canvas-rendered portrait share cards with site, date, depth, duration, and
-  buddy.
+- Multiple photos per dive plus a device-local library of reusable diving
+  backgrounds.
+- A live image composer with five original layouts, high-resolution PNG/JPEG
+  output, common aspect ratios, metric/imperial units, and English/Traditional
+  Chinese overlays.
+- Depth-profile charts from Subsurface samples, with optional sparse tank
+  pressure and temperature telemetry. Missing fields are omitted rather than
+  replaced with fabricated values.
 - Installable web-app metadata for mobile and desktop browsers.
 
 ## Development
@@ -48,6 +53,11 @@ npm run dev
 
 The deployed Worker is stateless. Dive and photo data stay in the browser;
 server routes only proxy map lookups.
+
+For full depth-profile charts, re-import a Subsurface `.ssrf` after upgrading.
+Shearwater Cloud exports provide summaries and tank start/end values, but the
+sample stream in the tested export is stored in a proprietary blob that
+DiveFrame does not currently decode.
 
 Run the checks with:
 

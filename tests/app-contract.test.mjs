@@ -2,27 +2,33 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("ships the DiveFrame import, map, photo, and share-card workflow", async () => {
-  const [app, settings, storage, hosting, manifest, catalog] = await Promise.all([
+test("ships the DiveFrame import, map, photo, and composer workflow", async () => {
+  const [app, settings, composer, shearwater, subsurface, matching, storage, hosting, manifest, catalog] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("app/settings/SettingsApp.tsx", "utf8"),
+    readFile("app/compose/ComposerApp.tsx", "utf8"),
+    readFile("lib/parsers/shearwater.ts", "utf8"),
+    readFile("lib/parsers/subsurface.ts", "utf8"),
+    readFile("lib/dive-matching.ts", "utf8"),
     readFile("lib/indexed-db.ts", "utf8"),
     readFile(".openai/hosting.json", "utf8"),
     readFile("public/manifest.webmanifest", "utf8"),
     readFile("data/dive-sites.json", "utf8"),
   ]);
 
-  assert.match(app, /GnssEntryLocation/);
+  assert.match(shearwater, /GnssEntryLocation/);
   assert.match(app, /readShearwaterDatabase/);
   assert.match(app, /readSubsurfaceLog/);
+  assert.match(subsurface, /querySelectorAll\("sample"\)/);
   assert.match(app, /\.ssrf/);
-  assert.match(app, /sourceId/);
+  assert.match(subsurface, /sourceId/);
   assert.match(storage, /sourceMappings/);
-  assert.match(storage, /normalizeSerial/);
-  assert.match(storage, /secondsApart > 300/);
+  assert.match(matching, /normalizeSerial/);
+  assert.match(matching, /secondsApart > 300/);
   assert.match(storage, /indexedDB\.open/);
   assert.match(storage, /attachmentStore\.createIndex\("diveId"/);
   assert.match(storage, /blob: file\.slice/);
+  assert.match(storage, /BACKGROUNDS_STORE/);
   assert.match(app, /createShareCard/);
   assert.match(app, /Add photos/);
   assert.match(app, /openstreetmap\.org/);
@@ -37,6 +43,12 @@ test("ships the DiveFrame import, map, photo, and share-card workflow", async ()
   assert.match(settings, /diveframe-added-sites\.json/);
   assert.match(settings, /Download merged dive-sites\.json/);
   assert.match(settings, /mergeContributions/);
+  assert.match(settings, /Reusable diving backgrounds/);
+  assert.match(composer, /TEMPLATES/);
+  assert.match(composer, /exportComposition/);
+  assert.match(composer, /depth-pressure-temperature/);
+  assert.match(composer, /zh-Hant/);
+  assert.match(composer, /Manage reusable backgrounds/);
   assert.match(settings, /distanceKm/);
   assert.match(app, /Save site/);
   assert.match(app, /DiveFrame catalog/);

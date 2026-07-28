@@ -1,0 +1,132 @@
+import initSqlJs, { type QueryExecResult } from "sql.js";
+import type { LocalImportedDive } from "../indexed-db";
+import { gasMixLabel } from "../dive-model";
+import {
+  parseDurationSeconds,
+  parsePressureBar,
+} from "../unit-conversion";
+import {
+  inferCategory,
+  numberFrom,
+  safeJson,
+} from "./parser-utils";
+
+export async function readShearwaterDatabase(
+  file: File,
+): Promise<LocalImportedDive[]> {
+  const SQL = await initSqlJs({ locateFile: () => "/sql-wasm.wasm" });
+  const database = new SQL.Database(new Uint8Array(await file.arrayBuffer()));
+  try {
+    const tables = database.exec(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='dive_details'",
+    );
+    if (!tables[0]?.values.length) {
+      throw new Error("This does not look like a Shearwater Cloud database.");
+    }
+    const result = database.exec(`
+      SELECT d.DiveId, d.DiveNumber, d.DiveDate, d.LastModified,
+             d.Depth, d.AverageDepth, d.MinTemp, d.MaxTemp,
+             d.DiveLengthTime, d.Location, d.Site, d.Buddy, d.Notes,
+             d.SerialNumber, d.GnssEntryLocation, d.GnssExitLocation,
+             d.Tank1PressureStart, d.Tank1PressureEnd,
+             d.Tank2PressureStart, d.Tank2PressureEnd,
+             d.Tank3PressureStart, d.Tank3PressureEnd,
+             d.Tank4PressureStart, d.Tank4PressureEnd,
+             d.Apparatus, d.GasNotes,
+             l.calculated_values_from_samples
+      FROM dive_details d
+      LEFT JOIN log_data l ON l.log_id = d.DiveId
+      ORDER BY d.DiveDate DESC
+    `);
+    if (!result[0]) return [];
+    return rowsFrom(result[0]).map((row) => {
+      const entry = locationFrom(row.GnssEntryLocation);
+      const exit = locationFrom(row.GnssExitLocation);
+      const calculated = safeJson(asString(row.calculated_values_from_samples));
+      const category = inferCategory(asString(row.Apparatus));
+      const maxDepthM = asNumber(row.Depth);
+      const waterTemperatureC =
+        numberFrom(calculated?.MinTemp) ??
+        asNumber(row.MinTemp) ??
+        asNumber(row.MaxTemp);
+      const gasNotes = asString(row.GasNotes);
+      const gasOxygen = gasNotes?.match(/(?:O2|O₂|oxygen)\D*(\d+(?:\.\d+)?)/i);
+      const oxygenPercent = gasOxygen ? Number(gasOxygen[1]) : null;
+
+      return {
+        id: String(row.DiveId),
+        source: "shearwater",
+        sourceId: String(row.DiveId),
+        diveNumber: asNumber(row.DiveNumber),
+        diveDate: asString(row.DiveDate),
+        lastModified: asString(row.LastModified),
+        depth: asString(row.Depth),
+        averageDepth:
+          numberFrom(calculated?.AverageDepth) ?? asNumber(row.AverageDepth),
+        minTemp: numberFrom(calculated?.MinTemp) ?? asNumber(row.MinTemp),
+        maxTemp: numberFrom(calculated?.MaxTemp) ?? asNumber(row.MaxTemp),
+        lengthText: asString(row.DiveLengthTime),
+        durationSeconds: parseDurationSeconds(asString(row.DiveLengthTime)),
+        location: asString(row.Location),
+        site: asString(row.Site),
+        buddy: asString(row.Buddy),
+        notes: asString(row.Notes),
+        serialNumber: asString(row.SerialNumber),
+        gpsEntryLat: entry?.latitude ?? null,
+        gpsEntryLng: entry?.longitude ?? null,
+        gpsExitLat: exit?.latitude ?? null,
+        gpsExitLng: exit?.longitude ?? null,
+        calculatedJson: asString(row.calculated_values_from_samples),
+        category: category.category,
+        categorySource: category.source,
+        maxDepthM,
+        waterTemperatureC,
+        gasMixes:
+          oxygenPercent === null
+            ? []
+            : [
+                {
+                  oxygenPercent,
+                  heliumPercent: null,
+                  label: gasMixLabel(oxygenPercent, null),
+                },
+              ],
+        computerModel: null,
+        samples: [],
+        tankPressuresStartBar: [1, 2, 3, 4].map((index) =>
+          parsePressureBar(asString(row[`Tank${index}PressureStart`])),
+        ),
+        tankPressuresEndBar: [1, 2, 3, 4].map((index) =>
+          parsePressureBar(asString(row[`Tank${index}PressureEnd`])),
+        ),
+      };
+    });
+  } finally {
+    database.close();
+  }
+}
+
+function rowsFrom(result: QueryExecResult) {
+  return result.values.map((values) =>
+    Object.fromEntries(result.columns.map((column, index) => [column, values[index]])),
+  );
+}
+
+function locationFrom(value: unknown) {
+  const parsed = safeJson(asString(value));
+  const latitude = numberFrom(parsed?.Latitude ?? parsed?.latitude);
+  const longitude = numberFrom(parsed?.Longitude ?? parsed?.longitude);
+  return latitude === null || longitude === null ? null : { latitude, longitude };
+}
+
+function asString(value: unknown) {
+  if (value === null || value === undefined) return null;
+  const string = String(value).trim();
+  return string || null;
+}
+
+function asNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
