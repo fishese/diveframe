@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ChevronDown, Crop, Download, ImagePlus, LoaderCircle, RotateCcw, Settings as SettingsIcon, Waves } from "lucide-react";
+import { ArrowLeft, BookmarkPlus, ChevronDown, Crop, Download, ImagePlus, LoaderCircle, RotateCcw, Settings as SettingsIcon, Trash2, Waves } from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -18,19 +18,27 @@ import {
 } from "@/lib/composer-settings";
 import { chartAvailability } from "@/lib/chart-renderer";
 import { ensureOverlayFont, getOverlayFont, OVERLAY_FONTS } from "@/lib/composer-fonts";
+import {
+  applyComposerPreset,
+  reusableComposerSettings,
+} from "@/lib/composer-presets";
 import { exportComposition } from "@/lib/exporter";
 import { loadPhoto, renderComposition } from "@/lib/image-composer";
 import type { AppTranslate, AppTranslationKey } from "@/lib/app-i18n";
 import {
   getLocalComposerSettings,
   getLocalOverlayLogo,
+  deleteLocalComposerPreset,
   listLocalAttachments,
   listLocalBackgrounds,
+  listLocalComposerPresets,
   listLocalDives,
+  saveLocalComposerPreset,
   saveLocalComposerSettings,
   updateLocalDiveCategory,
   type LocalAttachment,
   type LocalBackground,
+  type LocalComposerPreset,
   type LocalDive,
 } from "@/lib/indexed-db";
 import { toNormalizedDive } from "@/lib/normalize-dive";
@@ -81,6 +89,9 @@ export function ComposerApp() {
   const [dive, setDive] = useState<LocalDive | null>(null);
   const [photos, setPhotos] = useState<PhotoChoice[]>([]);
   const [settings, setSettings] = useState<ComposerSettings | null>(null);
+  const [presets, setPresets] = useState<LocalComposerPreset[]>([]);
+  const [presetName, setPresetName] = useState("");
+  const [selectedPresetId, setSelectedPresetId] = useState("");
   const [bitmap, setBitmap] = useState<(CanvasImageSource & { width: number; height: number }) | null>(null);
   const [logo, setLogo] = useState<(CanvasImageSource & { width: number; height: number }) | null>(null);
   const [status, setStatus] = useState(t("loadingComposer"));
@@ -94,11 +105,12 @@ export function ComposerApp() {
     listLocalDives().then(async (dives) => {
       const selectedDive = dives.find((item) => item.id === requestedDive) ?? dives[0];
       if (!selectedDive) throw new Error(t("importBeforeComposer"));
-      const [attachments, backgrounds, saved, savedLogo] = await Promise.all([
+      const [attachments, backgrounds, saved, savedLogo, savedPresets] = await Promise.all([
         listLocalAttachments(selectedDive.id),
         listLocalBackgrounds(),
         getLocalComposerSettings(selectedDive.id),
         getLocalOverlayLogo(),
+        listLocalComposerPresets(),
       ]);
       const choices = [
         ...attachments.map(photoChoice),
@@ -120,6 +132,7 @@ export function ComposerApp() {
             : choices[0]?.id ?? null;
       setDive(selectedDive);
       setPhotos(choices);
+      setPresets(savedPresets);
       setSettings(initial);
       if (savedLogo) setLogo(await loadPhoto(savedLogo.blob));
       setStatus(choices.length ? t("ready") : t("addPhotoFirst"));
@@ -171,6 +184,49 @@ export function ComposerApp() {
       ...current,
       visibleFields: { ...current.visibleFields, [field]: !current.visibleFields[field] },
     } : current);
+  }
+
+  async function savePreset() {
+    if (!settings || !presetName.trim()) {
+      setStatus(t("enterPresetName"));
+      return;
+    }
+    try {
+      const saved = await saveLocalComposerPreset(
+        presetName,
+        reusableComposerSettings(settings),
+      );
+      setPresets(await listLocalComposerPresets());
+      setSelectedPresetId(saved.id);
+      setPresetName(saved.name);
+      setStatus(t("composerPresetSaved", { name: saved.name }));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("composerPresetSaveFailed"));
+    }
+  }
+
+  function applySelectedPreset() {
+    const preset = presets.find((item) => item.id === selectedPresetId);
+    if (!preset) return;
+    setSettings((current) =>
+      current ? applyComposerPreset(current, preset.settings) : current,
+    );
+    setStatus(t("composerPresetApplied", { name: preset.name }));
+  }
+
+  async function removeSelectedPreset() {
+    const preset = presets.find((item) => item.id === selectedPresetId);
+    if (!preset || !window.confirm(t("deleteComposerPresetConfirm", { name: preset.name }))) {
+      return;
+    }
+    try {
+      await deleteLocalComposerPreset(preset.id);
+      setPresets((items) => items.filter((item) => item.id !== preset.id));
+      setSelectedPresetId("");
+      setStatus(t("composerPresetRemoved", { name: preset.name }));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("composerPresetRemoveFailed"));
+    }
   }
 
   function startCrop() {
@@ -349,6 +405,61 @@ export function ComposerApp() {
         </section>
 
         <aside className="composer-controls">
+          <ControlSection title={t("savedComposerPresets")} initialOpen>
+            <p className="control-hint preset-hint">{t("composerPresetDescription")}</p>
+            <div className="preset-save-row">
+              <input
+                value={presetName}
+                aria-label={t("composerPresetName")}
+                placeholder={t("composerPresetName")}
+                onChange={(event) => setPresetName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void savePreset();
+                }}
+              />
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => void savePreset()}
+              >
+                <BookmarkPlus size={15} /> {t("savePreset")}
+              </button>
+            </div>
+            <Control label={t("savedPresets")}>
+              <select
+                value={selectedPresetId}
+                onChange={(event) => {
+                  setSelectedPresetId(event.target.value);
+                  const preset = presets.find((item) => item.id === event.target.value);
+                  if (preset) setPresetName(preset.name);
+                }}
+              >
+                <option value="">{t("choosePreset")}</option>
+                {presets.map((preset) => (
+                  <option key={preset.id} value={preset.id}>{preset.name}</option>
+                ))}
+              </select>
+            </Control>
+            <div className="preset-actions">
+              <button
+                type="button"
+                className="button button-secondary"
+                disabled={!selectedPresetId}
+                onClick={applySelectedPreset}
+              >
+                {t("applyPreset")}
+              </button>
+              <button
+                type="button"
+                className="button button-quiet"
+                disabled={!selectedPresetId}
+                onClick={() => void removeSelectedPreset()}
+              >
+                <Trash2 size={14} /> {t("deletePreset")}
+              </button>
+            </div>
+          </ControlSection>
+
           <ControlSection title={t("photo")} initialOpen>
             <select value={settings.selectedPhotoId ?? ""} onChange={(event) => update("selectedPhotoId", event.target.value)}>
               {photos.map((photo) => <option key={photo.id} value={photo.id}>{photo.source === "library" ? `${t("libraryPhoto")} · ` : `${t("divePhoto")} · `}{photo.label}</option>)}

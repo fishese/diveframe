@@ -4,6 +4,7 @@ import type {
   GasMix,
 } from "./dive-model";
 import type { ComposerSettings } from "./composer-settings";
+import type { ComposerPresetSettings } from "./composer-presets";
 import { findMatchingDive } from "./dive-matching";
 import {
   canonicalDiveId,
@@ -116,6 +117,14 @@ export type LocalAppPreferences = {
   updatedAt: string;
 };
 
+export type LocalComposerPreset = {
+  id: string;
+  name: string;
+  settings: ComposerPresetSettings;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LocalSiteContribution = {
   id: string;
   diveId: string;
@@ -143,18 +152,20 @@ export type LocalBackupSnapshot = {
   attachments: LocalAttachment[];
   siteContributions: LocalSiteContribution[];
   composerSettings: ComposerSettings[];
+  composerPresets: LocalComposerPreset[];
   backgrounds: LocalBackground[];
   brandingAssets: LocalBrandingAsset[];
   appPreferences: LocalAppPreferences[];
 };
 
 const DATABASE_NAME = "diveframe-local";
-const DATABASE_VERSION = 6;
+const DATABASE_VERSION = 7;
 const DIVES_STORE = "dives";
 const SOURCES_STORE = "sourceRecords";
 const ATTACHMENTS_STORE = "attachments";
 const SITE_CONTRIBUTIONS_STORE = "siteContributions";
 const COMPOSER_SETTINGS_STORE = "composerSettings";
+const COMPOSER_PRESETS_STORE = "composerPresets";
 const BACKGROUNDS_STORE = "backgrounds";
 const BRANDING_ASSETS_STORE = "brandingAssets";
 const APP_PREFERENCES_STORE = "appPreferences";
@@ -646,6 +657,50 @@ export async function saveLocalComposerSettings(settings: ComposerSettings) {
   await transactionComplete(transaction);
 }
 
+export async function listLocalComposerPresets() {
+  const database = await openDatabase();
+  const presets = await request<LocalComposerPreset[]>(
+    database
+      .transaction(COMPOSER_PRESETS_STORE)
+      .objectStore(COMPOSER_PRESETS_STORE)
+      .getAll(),
+  );
+  return presets.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function saveLocalComposerPreset(
+  name: string,
+  settings: ComposerPresetSettings,
+) {
+  const normalizedName = name.trim();
+  if (!normalizedName) throw new Error("Enter a name for this preset.");
+  const id = `composer-preset:${encodeURIComponent(
+    normalizedName.normalize("NFKC").toLowerCase(),
+  )}`;
+  const database = await openDatabase();
+  const transaction = database.transaction(COMPOSER_PRESETS_STORE, "readwrite");
+  const store = transaction.objectStore(COMPOSER_PRESETS_STORE);
+  const existing = await request<LocalComposerPreset | undefined>(store.get(id));
+  const timestamp = new Date().toISOString();
+  const preset: LocalComposerPreset = {
+    id,
+    name: normalizedName,
+    settings,
+    createdAt: existing?.createdAt ?? timestamp,
+    updatedAt: timestamp,
+  };
+  store.put(preset);
+  await transactionComplete(transaction);
+  return preset;
+}
+
+export async function deleteLocalComposerPreset(id: string) {
+  const database = await openDatabase();
+  const transaction = database.transaction(COMPOSER_PRESETS_STORE, "readwrite");
+  transaction.objectStore(COMPOSER_PRESETS_STORE).delete(id);
+  await transactionComplete(transaction);
+}
+
 export async function requestPersistentLocalStorage() {
   if (!navigator.storage?.persist) return null;
   return navigator.storage.persist();
@@ -659,6 +714,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     ATTACHMENTS_STORE,
     SITE_CONTRIBUTIONS_STORE,
     COMPOSER_SETTINGS_STORE,
+    COMPOSER_PRESETS_STORE,
     BACKGROUNDS_STORE,
     BRANDING_ASSETS_STORE,
     APP_PREFERENCES_STORE,
@@ -669,6 +725,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     attachments,
     siteContributions,
     composerSettings,
+    composerPresets,
     backgrounds,
     brandingAssets,
     appPreferences,
@@ -681,6 +738,9 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     ),
     request<ComposerSettings[]>(
       transaction.objectStore(COMPOSER_SETTINGS_STORE).getAll(),
+    ),
+    request<LocalComposerPreset[]>(
+      transaction.objectStore(COMPOSER_PRESETS_STORE).getAll(),
     ),
     request<LocalBackground[]>(transaction.objectStore(BACKGROUNDS_STORE).getAll()),
     request<LocalBrandingAsset[]>(
@@ -696,6 +756,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     attachments,
     siteContributions,
     composerSettings,
+    composerPresets,
     backgrounds,
     brandingAssets,
     appPreferences,
@@ -711,6 +772,7 @@ export async function importLocalBackupSnapshot(snapshot: LocalBackupSnapshot) {
       ATTACHMENTS_STORE,
       SITE_CONTRIBUTIONS_STORE,
       COMPOSER_SETTINGS_STORE,
+      COMPOSER_PRESETS_STORE,
       BACKGROUNDS_STORE,
       BRANDING_ASSETS_STORE,
       APP_PREFERENCES_STORE,
@@ -723,6 +785,7 @@ export async function importLocalBackupSnapshot(snapshot: LocalBackupSnapshot) {
     [ATTACHMENTS_STORE, snapshot.attachments],
     [SITE_CONTRIBUTIONS_STORE, snapshot.siteContributions],
     [COMPOSER_SETTINGS_STORE, snapshot.composerSettings],
+    [COMPOSER_PRESETS_STORE, snapshot.composerPresets],
     [BACKGROUNDS_STORE, snapshot.backgrounds],
     [BRANDING_ASSETS_STORE, snapshot.brandingAssets],
     [APP_PREFERENCES_STORE, snapshot.appPreferences],
@@ -748,6 +811,7 @@ export async function clearAllLocalData() {
     ATTACHMENTS_STORE,
     SITE_CONTRIBUTIONS_STORE,
     COMPOSER_SETTINGS_STORE,
+    COMPOSER_PRESETS_STORE,
     BACKGROUNDS_STORE,
     BRANDING_ASSETS_STORE,
     APP_PREFERENCES_STORE,
@@ -919,6 +983,11 @@ function openDatabase() {
       }
       if (!database.objectStoreNames.contains(COMPOSER_SETTINGS_STORE)) {
         database.createObjectStore(COMPOSER_SETTINGS_STORE, {
+          keyPath: "id",
+        });
+      }
+      if (!database.objectStoreNames.contains(COMPOSER_PRESETS_STORE)) {
+        database.createObjectStore(COMPOSER_PRESETS_STORE, {
           keyPath: "id",
         });
       }

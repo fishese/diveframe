@@ -37,6 +37,7 @@ export async function createLocalAppBackup() {
       sourceRecords: snapshot.sourceRecords,
       siteContributions: snapshot.siteContributions,
       composerSettings: snapshot.composerSettings,
+      composerPresets: snapshot.composerPresets,
       attachments: await Promise.all(snapshot.attachments.map(encodeBlobRecord)),
       backgrounds: await Promise.all(snapshot.backgrounds.map(encodeBlobRecord)),
       brandingAssets: await Promise.all(
@@ -70,6 +71,7 @@ export async function restoreLocalAppBackup(file: File) {
     sourceRecords: document.stores.sourceRecords,
     siteContributions: document.stores.siteContributions,
     composerSettings: document.stores.composerSettings,
+    composerPresets: document.stores.composerPresets ?? [],
     attachments: await Promise.all(
       document.stores.attachments.map(decodeBlobRecord),
     ),
@@ -148,6 +150,7 @@ function validateBackupDocument(value: unknown): BackupDocument {
     ...document.stores.attachments,
     ...document.stores.siteContributions,
     ...document.stores.composerSettings,
+    ...(document.stores.composerPresets ?? []),
     ...document.stores.backgrounds,
     ...document.stores.brandingAssets,
     ...(document.stores.appPreferences ?? []),
@@ -187,6 +190,8 @@ function arraysPresent(stores: Partial<BackupDocument["stores"]>) {
     Array.isArray(stores.attachments) &&
     Array.isArray(stores.siteContributions) &&
     Array.isArray(stores.composerSettings) &&
+    (stores.composerPresets === undefined ||
+      Array.isArray(stores.composerPresets)) &&
     Array.isArray(stores.backgrounds) &&
     Array.isArray(stores.brandingAssets) &&
     (stores.appPreferences === undefined || Array.isArray(stores.appPreferences))

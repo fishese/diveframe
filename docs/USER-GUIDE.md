@@ -102,9 +102,10 @@ dive.
 
 ## Local data and privacy
 
-Imported records, edits, photos, reusable backgrounds, the overlay logo, and
-settings are stored in IndexedDB for the current browser profile and web
-address. The source files are read in the browser and never modified.
+Imported records, edits, photos, reusable backgrounds, the overlay logo,
+per-dive settings, and named composer presets are stored in IndexedDB for the
+current browser profile and web address. The source files are read in the
+browser and never modified.
 
 DiveFrame does not store the logbook on its server. Map-name and nearby-site
 lookups use network services. Public webfonts may also be downloaded by the
@@ -126,9 +127,9 @@ The Settings danger zone has two reset choices:
 
 - **Erase dive data only** removes imported dives, source mappings, and
   app-added site records. It keeps dive photos, reusable backgrounds, the
-  global logo, per-dive composer settings, and app preferences. Re-import the
-  same source logs so their deterministic IDs reconnect the retained per-dive
-  photos and composer settings.
+  global logo, per-dive composer settings, named composer presets, and app
+  preferences. Re-import the same source logs so their deterministic IDs
+  reconnect the retained per-dive photos and composer settings.
 - **Erase all data** removes every DiveFrame record and image from the current
   browser.
 
@@ -178,6 +179,13 @@ does not appear in the exported PNG or JPEG.
 Reusable backgrounds can be given a friendly name in Settings. That name is
 shown in the composer and travels with an app backup; individual dive photos
 continue to be identified by their original filename.
+
+Use **Composer presets** to name and save the current reusable design choices,
+then apply them to another dive. A preset includes the template, visible
+fields, block positions, chart, logo, typography, colour, units, and output
+settings. It does not replace the destination dive's site override, category,
+selected photo, zoom, crop position, or rotation. Saving the same normalized
+name updates that preset. Presets are included in app-data backup and restore.
 
 On a mobile screen, the smaller live preview remains pinned below the top bar
 while the composer controls scroll. Changes to templates, fields, colours, and

@@ -111,6 +111,7 @@ Object stores:
 | `attachments` | `id` | Photo metadata and the original image `Blob` |
 | `siteContributions` | `id` | Sites manually typed for a dive and available for JSON export |
 | `composerSettings` | `id` | Per-dive composer state and selected image |
+| `composerPresets` | `id` | Named reusable composer layout and styling choices |
 | `backgrounds` | `id` | Reusable generic diving background image blobs |
 | `brandingAssets` | `id` | Device-local transparent PNG/SVG overlay logo |
 | `appPreferences` | `id` | Device-local interface language and future global preferences |
@@ -121,16 +122,18 @@ The app requests persistent browser storage when available. This reduces
 eviction risk but does not replace a backup.
 
 Settings can export a versioned `diveframe-local-backup` JSON document covering
-all eight stores, including base64-encoded photo, reusable-background, and logo
+all nine stores, including named composer presets and base64-encoded photo,
+reusable-background, and logo
 blobs. Import is additive by primary key: backup records replace matching local
 records while destination-only records remain. The file is not encrypted and
 the UI warns the user to keep it private.
 
 The danger zone exposes two deletion scopes. `clearLocalDiveData()` clears
 `dives`, `sourceRecords`, and `siteContributions`, retaining attachments,
-composer settings, backgrounds, branding, and app preferences. Retained
+composer settings, named composer presets, backgrounds, branding, and app
+preferences. Retained
 per-dive attachments/settings reconnect after the same source logs recreate
-their deterministic canonical IDs. `clearAllLocalData()` clears all eight
+their deterministic canonical IDs. `clearAllLocalData()` clears all nine
 stores.
 
 On mobile, an open dive shows a compact home control in the global top bar.
@@ -304,6 +307,15 @@ record and included automatically in app backup/restore; the composer falls
 back to the original filename for older records. Per-dive photos are unchanged.
 The sticky composer top bar contains the return-to-dives shortcut, Settings,
 and Export; the controls column begins directly with the photo selector.
+
+Named composer presets live in the `composerPresets` store. Preset IDs are
+derived from normalized names, so restoring the same named preset replaces it
+instead of creating a duplicate. Presets retain reusable layout, visible-field,
+chart, logo, appearance, and output choices. Applying one deliberately leaves
+the current dive ID, site override, category, selected photo, crop offsets,
+zoom, and rotation untouched. Presets are included in app backup/restore; older
+version-1 backups without the optional array still import as an empty preset
+collection.
 
 Five original data-driven templates are currently exposed: Bottom Profile,
 Right Information Panel, Full-width Graph, Landscape Dashboard, and Cinematic

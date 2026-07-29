@@ -1333,6 +1333,37 @@ button {
   padding: 4px 0 10px;
 }
 
+.preset-hint {
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+
+.preset-save-row {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 12px;
+}
+
+.preset-save-row input {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #fff;
+  min-width: 0;
+  padding: 7px 9px;
+}
+
+.preset-actions {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.preset-actions .button {
+  justify-content: center;
+}
+
 .composer-control,
 .composer-section-body > select {
   display: block;
@@ -1994,8 +2025,7 @@ button {
   gap: 14px;
 }
 
-.settings-card-heading h2,
-.future-card h2 {
+.settings-card-heading h2 {
   font-size: 20px;
   letter-spacing: -0.035em;
   margin: 0;
@@ -2233,36 +2263,6 @@ button {
 
 .logo-settings-details .settings-actions {
   margin-top: 14px;
-}
-
-.future-settings {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(2, 1fr);
-  margin-top: 14px;
-  order: 5;
-}
-
-.future-card {
-  min-height: 185px;
-  padding: 20px;
-}
-
-.future-card > small {
-  color: var(--teal);
-  display: block;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  margin: 20px 0 7px;
-  text-transform: uppercase;
-}
-
-.future-card p {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.55;
-  margin: 10px 0 0;
 }
 
 .settings-status {
@@ -2579,13 +2579,6 @@ button {
     width: 100%;
   }
 
-  .future-settings {
-    grid-template-columns: 1fr;
-  }
-
-  .future-card {
-    min-height: 0;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

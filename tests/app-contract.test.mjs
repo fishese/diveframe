@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and composer workflow", async () => {
-  const [app, settings, about, composer, chart, imageComposer, templates, composerSettings, backup, fonts, i18n, gasCalculations, shearwater, subsurface, subsurfaceExport, uddf, fit, matching, storage, hosting, manifest, serviceWorker, pwaInstall, catalog, userGuide, license] = await Promise.all([
+  const [app, settings, about, composer, chart, imageComposer, templates, composerSettings, composerPresets, backup, fonts, i18n, gasCalculations, shearwater, subsurface, subsurfaceExport, uddf, fit, matching, storage, hosting, manifest, serviceWorker, pwaInstall, catalog, userGuide, license] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("app/settings/SettingsApp.tsx", "utf8"),
     readFile("app/about/AboutApp.tsx", "utf8"),
@@ -12,6 +12,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     readFile("lib/image-composer.ts", "utf8"),
     readFile("lib/templates.ts", "utf8"),
     readFile("lib/composer-settings.ts", "utf8"),
+    readFile("lib/composer-presets.ts", "utf8"),
     readFile("lib/app-backup.ts", "utf8"),
     readFile("lib/composer-fonts.ts", "utf8"),
     readFile("lib/i18n.ts", "utf8"),
@@ -166,6 +167,16 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /template\.defaultRatio/);
   assert.match(composer, /composer-section-toggle/);
   assert.match(composer, /photo\.displayName \|\| photo\.fileName/);
+  assert.match(composer, /saveLocalComposerPreset/);
+  assert.match(composer, /applyComposerPreset/);
+  assert.match(composer, /deleteLocalComposerPreset/);
+  assert.match(composerPresets, /DIVE_SPECIFIC_KEYS/);
+  assert.match(composerPresets, /selectedPhotoId/);
+  assert.match(composerPresets, /photoOffsetX/);
+  assert.match(storage, /composerPresets/);
+  assert.match(storage, /DATABASE_VERSION = 7/);
+  assert.match(backup, /composerPresets/);
+  assert.doesNotMatch(settings, /overlayStyles/);
   assert.match(i18n, /Manage reusable backgrounds/);
   assert.match(settings, /distanceKm/);
   assert.match(settings, /defaultCylinderPresetId/);

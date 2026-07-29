@@ -59,8 +59,8 @@ site corrections back to a source log.
   and download a replacement `dive-sites.json` for repository updates. The
   pending additions can be reviewed, renamed, given aliases, or excluded first.
 - A complete device-to-device backup file containing IndexedDB records, dive
-  photos, reusable backgrounds, the overlay logo, composer settings, and the
-  app-language preference.
+  photos, reusable backgrounds, the overlay logo, per-dive composer settings,
+  named composer presets, and the app-language preference.
 - Separate reset actions: erase all browser data, or clear only imported dives,
   source matching, and app-added site records while retaining photos,
   backgrounds, logo, composer settings, and app preferences.
@@ -80,6 +80,9 @@ site corrections back to a source log.
   Chinese overlays. Its interactive crop mode supports drag-to-reposition,
   wheel or slider zoom, touch input, and reset. On mobile, the reduced preview
   stays pinned below the top bar while controls scroll.
+- Named composer presets for reusing layout, visible fields, chart, logo,
+  typography, colour, and output choices across dives without copying a
+  dive-specific site name, category, selected photo, or crop.
 - A curated overlay-font menu with public Traditional Chinese/Latin webfonts:
   Noto Sans TC, Inter, Outfit, Space Mono, and Huninn, plus Device Sans.
   One font-colour control applies consistently to all text content.

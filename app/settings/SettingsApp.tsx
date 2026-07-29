@@ -12,7 +12,6 @@ import {
   Image as ImageIcon,
   Languages,
   LoaderCircle,
-  Palette,
   RefreshCw,
   Trash2,
   Upload,
@@ -20,7 +19,6 @@ import {
 } from "lucide-react";
 import {
   type ChangeEvent,
-  type ReactNode,
   useEffect,
   useMemo,
   useState,
@@ -736,14 +734,6 @@ export function SettingsApp() {
           )}
         </section>
 
-        <section className="future-settings" aria-label={t("plannedSettings")}>
-          <FutureSetting
-            icon={<Palette size={20} />}
-            title={t("overlayStyles")}
-            description={t("overlayStylesDescription")}
-          />
-        </section>
-
         <section className="settings-card danger-settings">
           <div className="settings-card-heading">
             <span className="settings-icon settings-icon-danger"><Trash2 size={21} /></span>
@@ -842,26 +832,6 @@ function LogoPreview({ logo }: { logo: LocalBrandingAsset }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={source} alt={`${logo.fileName} preview`} />
     </div>
-  );
-}
-
-function FutureSetting({
-  icon,
-  title,
-  description,
-}: {
-  icon: ReactNode;
-  title: string;
-  description: string;
-}) {
-  const { t } = useAppI18n();
-  return (
-    <article className="settings-card future-card">
-      <span className="settings-icon">{icon}</span>
-      <small>{t("planned")}</small>
-      <h2>{title}</h2>
-      <p>{description}</p>
-    </article>
   );
 }
 
