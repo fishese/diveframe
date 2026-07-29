@@ -194,6 +194,15 @@ const en = {
   restoringBackup: "Restoring app data and images…",
   importComplete: "Imported {dives} dives, {photos} dive photos, and {backgrounds} reusable backgrounds. Existing unrelated records were kept.",
   importBackupFailed: "Could not import this backup.",
+  dangerZone: "Danger zone",
+  eraseAllDataTitle: "Erase all data",
+  eraseAllDataDescription:
+    "Permanently delete every dive, photo, background, logo, site contribution, composer setting, and app preference stored in this browser. Use this before importing a backup if you want a clean restore.",
+  eraseAllData: "Erase all data",
+  eraseAllDataConfirm:
+    "Erase all DiveFrame data on this device? This removes dives, photos, backgrounds, logo, site contributions, composer settings, and app preferences. This cannot be undone.",
+  eraseAllDataComplete: "All local DiveFrame data erased",
+  eraseAllDataFailed: "Could not erase local data.",
   sourceLogTools: "Source log tools",
   updateSubsurfaceExport: "Update a Subsurface export",
   updateSubsurfaceDescription: "Choose a fresh Subsurface SSRF/XML export. DiveFrame will add site names selected here or imported from Shearwater, plus the current buddy and notes, then download an updated copy.",
@@ -472,6 +481,15 @@ const zhHant: Record<keyof typeof en, string> = {
   restoringBackup: "正在還原應用程式資料及圖片…",
   importComplete: "已匯入 {dives} 次潛水、{photos} 張潛水相片及 {backgrounds} 張共用背景。其他本機記錄已保留。",
   importBackupFailed: "無法匯入此備份。",
+  dangerZone: "危險區域",
+  eraseAllDataTitle: "清除所有資料",
+  eraseAllDataDescription:
+    "永久刪除此瀏覽器內的所有潛水記錄、相片、背景、標誌、潛點新增、圖片編輯設定及應用程式偏好設定。如需乾淨還原備份，可先使用此功能。",
+  eraseAllData: "清除所有資料",
+  eraseAllDataConfirm:
+    "確定要清除此裝置上的所有 DiveFrame 資料？這會移除潛水記錄、相片、背景、標誌、潛點新增、圖片編輯設定及應用程式偏好設定。此操作無法復原。",
+  eraseAllDataComplete: "已清除所有本機 DiveFrame 資料",
+  eraseAllDataFailed: "無法清除本機資料。",
   sourceLogTools: "來源日誌工具",
   updateSubsurfaceExport: "更新 Subsurface 匯出檔",
   updateSubsurfaceDescription: "選擇最新匯出的 Subsurface SSRF／XML 檔案。DiveFrame 會加入在此選擇或由 Shearwater 匯入的潛點名稱，以及目前的潛伴及備註，然後下載更新後的副本。",

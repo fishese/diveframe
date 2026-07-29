@@ -631,6 +631,25 @@ export async function importLocalBackupSnapshot(snapshot: LocalBackupSnapshot) {
   };
 }
 
+export async function clearAllLocalData() {
+  const database = await openDatabase();
+  const storeNames = [
+    DIVES_STORE,
+    SOURCES_STORE,
+    ATTACHMENTS_STORE,
+    SITE_CONTRIBUTIONS_STORE,
+    COMPOSER_SETTINGS_STORE,
+    BACKGROUNDS_STORE,
+    BRANDING_ASSETS_STORE,
+    APP_PREFERENCES_STORE,
+  ];
+  const transaction = database.transaction(storeNames, "readwrite");
+  for (const storeName of storeNames) {
+    transaction.objectStore(storeName).clear();
+  }
+  await transactionComplete(transaction);
+}
+
 async function updateDive(id: string, change: (dive: LocalDive) => LocalDive) {
   const database = await openDatabase();
   const transaction = database.transaction(DIVES_STORE, "readwrite");

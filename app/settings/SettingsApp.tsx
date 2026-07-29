@@ -32,6 +32,7 @@ import {
 } from "@/lib/app-backup";
 import {
   addLocalBackgrounds,
+  clearAllLocalData,
   deleteLocalBackground,
   deleteLocalOverlayLogo,
   getLocalAppPreferences,
@@ -225,9 +226,31 @@ export function SettingsApp() {
       if (restoredPreferences?.uiLanguage) {
         await setLanguage(restoredPreferences.uiLanguage);
       }
+      setDefaultCylinderPresetId(
+        restoredPreferences?.defaultCylinderPresetId ?? DEFAULT_CYLINDER_PRESET_ID,
+      );
       setStatus(t("importComplete", counts));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("importBackupFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function eraseAllData() {
+    if (!window.confirm(t("eraseAllDataConfirm"))) return;
+    setBusy(true);
+    try {
+      await clearAllLocalData();
+      setContributions([]);
+      setReviewedSites([]);
+      setBackgrounds([]);
+      setLogo(null);
+      setDefaultCylinderPresetId(DEFAULT_CYLINDER_PRESET_ID);
+      await setLanguage("en");
+      setStatus(t("eraseAllDataComplete"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("eraseAllDataFailed"));
     } finally {
       setBusy(false);
     }
@@ -683,6 +706,27 @@ export function SettingsApp() {
             title={t("overlayStyles")}
             description={t("overlayStylesDescription")}
           />
+        </section>
+
+        <section className="settings-card danger-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon settings-icon-danger"><Trash2 size={21} /></span>
+            <div>
+              <p className="eyebrow">{t("dangerZone")}</p>
+              <h2>{t("eraseAllDataTitle")}</h2>
+            </div>
+          </div>
+          <p className="settings-note">
+            {t("eraseAllDataDescription")}
+          </p>
+          <button
+            type="button"
+            className="button button-danger"
+            onClick={() => void eraseAllData()}
+            disabled={busy}
+          >
+            <Trash2 size={16} /> {t("eraseAllData")}
+          </button>
         </section>
 
         <div className="settings-status" role="status">
