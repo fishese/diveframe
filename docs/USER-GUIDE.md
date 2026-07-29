@@ -246,8 +246,10 @@ template selector.
 
 If a dive has no attached or reusable photo, the included **Bubbles**
 background is selected automatically so the image can be composed immediately.
-Use **Remove for this session** beside the background controls if it is not
-wanted; it returns the next time the composer is loaded.
+It is also shown explicitly in **Settings → Reusable diving backgrounds**.
+Removing it there or from the composer saves a device-local preference, so it
+stays out of the composer until **Restore included Bubbles background** is
+chosen in Settings. This preference is included in app backups.
 
 On a mobile screen, the smaller live preview remains pinned below the top bar
 while the composer controls scroll. Changes to templates, fields, colours, and

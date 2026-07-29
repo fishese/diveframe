@@ -119,6 +119,7 @@ export type LocalAppPreferences = {
   lastComposerFormat?: ComposerSettings["format"];
   lastComposerJpegQuality?: number;
   dismissedDuplicatePairs?: string[];
+  bundledBackgroundHidden?: boolean;
   updatedAt: string;
 };
 
@@ -495,6 +496,7 @@ export async function saveLocalAppPreferences(
       | "lastComposerFormat"
       | "lastComposerJpegQuality"
       | "dismissedDuplicatePairs"
+      | "bundledBackgroundHidden"
     >
   >,
 ) {
@@ -518,6 +520,10 @@ export async function saveLocalAppPreferences(
       preferences.dismissedDuplicatePairs ??
       existing?.dismissedDuplicatePairs ??
       [],
+    bundledBackgroundHidden:
+      preferences.bundledBackgroundHidden ??
+      existing?.bundledBackgroundHidden ??
+      false,
     updatedAt: new Date().toISOString(),
   };
   const database = await openDatabase();

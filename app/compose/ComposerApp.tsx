@@ -129,7 +129,9 @@ export function ComposerApp() {
       const choices = [
         ...attachments.map(photoChoice),
         ...backgrounds.map(backgroundChoice),
-        ...(bundledBackground ? [bundledBackground] : []),
+        ...(bundledBackground && !appPreferences?.bundledBackgroundHidden
+          ? [bundledBackground]
+          : []),
       ];
       const initial = { ...defaultComposerSettings(selectedDive.id), ...saved };
       if (!saved) {
@@ -266,14 +268,23 @@ export function ComposerApp() {
     }
   }
 
-  function removeBundledBackgroundForSession() {
+  async function removeBundledBackground() {
     const remaining = photos.filter((photo) => photo.id !== BUNDLED_BACKGROUND_ID);
     setPhotos(remaining);
     if (settings?.selectedPhotoId === BUNDLED_BACKGROUND_ID) {
       update("selectedPhotoId", remaining[0]?.id ?? null);
       if (!remaining.length) setBitmap(null);
     }
-    setStatus(remaining.length ? t("bundledBackgroundRemoved") : t("addPhotoFirst"));
+    try {
+      await saveLocalAppPreferences({ bundledBackgroundHidden: true });
+      setStatus(
+        remaining.length ? t("bundledBackgroundRemoved") : t("addPhotoFirst"),
+      );
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : t("settingsSaveFailed"),
+      );
+    }
   }
 
   function startCrop() {
@@ -473,7 +484,7 @@ export function ComposerApp() {
                   <button
                     type="button"
                     className="inline-control-button"
-                    onClick={removeBundledBackgroundForSession}
+                    onClick={() => void removeBundledBackground()}
                   >
                     {t("removeIncludedBackground")}
                   </button>

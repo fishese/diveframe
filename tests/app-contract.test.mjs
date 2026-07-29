@@ -78,6 +78,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /clearLocalDivePhotos/);
   assert.match(storage, /getLocalBackupSizeEstimate/);
   assert.match(storage, /optimizeLocalStoredPhotos/);
+  assert.match(storage, /bundledBackgroundHidden/);
   assert.match(storage, /mergeLocalDuplicateDives/);
   assert.match(backup, /SHA-256/);
   assert.match(backup, /previewLocalAppBackup/);
@@ -188,8 +189,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /template\.defaultRatio/);
   assert.match(composer, /composer-section-toggle/);
   assert.match(composer, /photo\.displayName \|\| photo\.fileName/);
+  assert.match(composer, /!appPreferences\?\.bundledBackgroundHidden/);
+  assert.match(settings, /BundledBackgroundTile/);
   assert.match(composer, /loadBundledBackground/);
-  assert.match(composer, /removeBundledBackgroundForSession/);
+  assert.match(composer, /removeBundledBackground/);
   assert.match(composer, /personalComposerPresets/);
   assert.match(composer, /<option value="ja">/);
   assert.match(composer, /lastComposerOutputSize/);

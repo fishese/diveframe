@@ -227,6 +227,11 @@ to retain copyright.
 
 ## Image composer
 
+The included Bubbles starter image appears as an explicit item in the Settings
+background library. Removing it stores an app preference, excludes it from
+future composer sessions, and is covered by backup/restore. Settings provides a
+restore action; the bundled asset itself is not copied into IndexedDB.
+
 The composer provides five original templates, including two horizontal 16:9
 layouts. Templates are data-driven. Available controls include:
 

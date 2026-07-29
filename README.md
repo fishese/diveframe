@@ -81,7 +81,8 @@ engineering reviewers.
   backgrounds. Reusable backgrounds have editable names for easier selection;
   per-dive photos continue to use their filenames.
 - A bundled Bubbles background lets a dive be composed before any personal
-  photo is added. It can be removed for the current composer session.
+  photo is added. It appears in the Settings background library and can be
+  removed or restored; that preference travels with app backups.
 - A compatible regional `dive-sites.json` can be loaded for the current tab.
   Its sites are added to the bundled catalog for nearby suggestions and merged
   catalog downloads without permanently changing app data; a downloadable AI

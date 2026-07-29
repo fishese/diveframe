@@ -103,6 +103,7 @@ export function SettingsApp() {
     DuplicateDiveCandidate[]
   >([]);
   const [dismissedDuplicates, setDismissedDuplicates] = useState<string[]>([]);
+  const [bundledBackgroundVisible, setBundledBackgroundVisible] = useState(true);
   const [storageEstimate, setStorageEstimate] = useState<Awaited<
     ReturnType<typeof getLocalBackupSizeEstimate>
   > | null>(null);
@@ -132,6 +133,7 @@ export function SettingsApp() {
           preferences?.defaultCylinderPresetId ?? DEFAULT_CYLINDER_PRESET_ID,
         );
         setDismissedDuplicates(preferences?.dismissedDuplicatePairs ?? []);
+        setBundledBackgroundVisible(!preferences?.bundledBackgroundHidden);
         setDuplicateCandidates(findPotentialDuplicateDives(dives));
         setStorageEstimate(estimate);
         setStatus(
@@ -182,6 +184,32 @@ export function SettingsApp() {
       setStatus(t("removedBackground"));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("backgroundRemoveFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeBundledBackground() {
+    setBusy(true);
+    try {
+      await saveLocalAppPreferences({ bundledBackgroundHidden: true });
+      setBundledBackgroundVisible(false);
+      setStatus(t("bundledBackgroundRemoved"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("settingsSaveFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function restoreBundledBackground() {
+    setBusy(true);
+    try {
+      await saveLocalAppPreferences({ bundledBackgroundHidden: false });
+      setBundledBackgroundVisible(true);
+      setStatus(t("bundledBackgroundRestored"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("settingsSaveFailed"));
     } finally {
       setBusy(false);
     }
@@ -289,6 +317,9 @@ export function SettingsApp() {
       setDefaultCylinderPresetId(
         restoredPreferences?.defaultCylinderPresetId ?? DEFAULT_CYLINDER_PRESET_ID,
       );
+      setBundledBackgroundVisible(
+        !restoredPreferences?.bundledBackgroundHidden,
+      );
       const dives = await listLocalDives();
       setDuplicateCandidates(findPotentialDuplicateDives(dives));
       setDismissedDuplicates(
@@ -384,6 +415,7 @@ export function SettingsApp() {
       setDuplicateCandidates([]);
       setDismissedDuplicates([]);
       setBackgrounds([]);
+      setBundledBackgroundVisible(true);
       setLogo(null);
       setStorageEstimate(null);
       setDefaultCylinderPresetId(DEFAULT_CYLINDER_PRESET_ID);
@@ -1020,8 +1052,13 @@ export function SettingsApp() {
               disabled={busy}
             />
           </label>
-          {backgrounds.length > 0 ? (
+          {bundledBackgroundVisible || backgrounds.length > 0 ? (
             <div className="background-library">
+              {bundledBackgroundVisible && (
+                <BundledBackgroundTile
+                  onRemove={() => void removeBundledBackground()}
+                />
+              )}
               {backgrounds.map((background) => (
                 <BackgroundTile
                   key={background.id}
@@ -1033,6 +1070,16 @@ export function SettingsApp() {
             </div>
           ) : (
             <p className="empty-compact">{t("noBackgrounds")}</p>
+          )}
+          {!bundledBackgroundVisible && (
+            <button
+              type="button"
+              className="button button-quiet restore-bundled-background"
+              onClick={() => void restoreBundledBackground()}
+              disabled={busy}
+            >
+              <RefreshCw size={16} /> {t("restoreIncludedBackground")}
+            </button>
           )}
         </section>
 
@@ -1181,6 +1228,27 @@ function DuplicateDive({
         })}
       </small>
     </div>
+  );
+}
+
+function BundledBackgroundTile({ onRemove }: { onRemove: () => void }) {
+  const { t } = useAppI18n();
+  return (
+    <article className="background-tile bundled-background-tile">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/backgrounds/bubbles-bg.jpg" alt={t("bubblesBackground")} />
+      <div className="bundled-background-label">
+        <span>{t("includedBackground")}</span>
+        <strong>{t("bubblesBackground")}</strong>
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`${t("remove")} ${t("bubblesBackground")}`}
+      >
+        <Trash2 size={15} />
+      </button>
+    </article>
   );
 }
 
