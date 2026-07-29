@@ -8,6 +8,11 @@ profiles and statistics.
 It complements the original dive-computer or logbook application. It does not
 replace that application's cloud backup and does not write changes back to it.
 
+The full interface and exported-image controls support English, Traditional
+Chinese (Hong Kong), and Japanese. Change the interface language in **Settings**
+directly below the install card. Each share image can use a different overlay
+language.
+
 ## Installing DiveFrame
 
 Open **Settings → Install DiveFrame**. On Android and supported desktop
@@ -260,6 +265,10 @@ DiveFrame take priority, followed by a matched Shearwater site name.
 
 DiveFrame does not currently create modified Shearwater, UDDF, or FIT logs.
 
+Cylinder choice, manual pressure values, category, broader location, photos,
+and image-composer settings remain DiveFrame-local. They are not written by the
+Subsurface pass-through tool.
+
 ## Open-source license
 
 DiveFrame is free software under the GNU General Public License version 3 or
@@ -267,3 +276,12 @@ any later version (`GPL-3.0-or-later`). You may fork, study, modify, and
 redistribute it. Distributed modified versions must remain available under the
 same open-source license. See [LICENSE](../LICENSE) for the project notice and
 license link.
+
+## Product review and roadmap
+
+The [product specification](PRODUCT-SPEC.md) describes the implemented
+behavior, known limits, privacy model, pre-wrapper readiness gate, Bluetooth
+discovery scope, and questions for outside reviewers. It is the best single
+document to share when asking divers, accessibility/localization reviewers,
+privacy reviewers, or developers what should be addressed before native
+packaging and direct computer transfer.

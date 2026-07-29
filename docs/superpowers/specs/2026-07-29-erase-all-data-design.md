@@ -1,8 +1,19 @@
 # Erase all data (Settings)
 
+Status: implemented
+
+Historical implementation note; see
+[`docs/PRODUCT-SPEC.md`](../../PRODUCT-SPEC.md) for the current product
+specification.
+
 ## Goal
 
 Add an **Erase all data** control at the bottom of the Settings screen so the user can wipe all local IndexedDB data before importing an app backup. This is a temporary workflow aid while backup import still merges (and can duplicate) rather than replace.
+
+The original duplicate-dive cause was later addressed with deterministic
+canonical IDs. Backup import remains additive, so the full reset is still
+useful for a known-clean restore. A second **Erase dive data only** scope was
+also implemented so reusable images and preferences can be retained.
 
 ## Scope
 
@@ -11,12 +22,13 @@ In scope:
 - Danger-zone UI at the bottom of Settings
 - Browser `window.confirm` before wiping
 - Clear every DiveFrame local store
+- Clear only dive-related stores as a separate action
 - Reset Settings UI state and show status
-- EN + zh-Hant copy
+- English, Traditional Chinese (Hong Kong), and Japanese copy
 
-Out of scope:
+Out of scope for this implementation:
 
-- Fixing backup-import duplication / replace-on-import behavior
+- Backup import preview or replace-on-import behavior
 - Custom modal dialogs
 - Type-to-confirm guards
 - Deleting non-IndexedDB data (service worker caches, etc.)
@@ -48,11 +60,17 @@ Add `clearAllLocalData()` in `lib/indexed-db.ts` that opens a single readwrite t
 - `attachments`
 - `siteContributions`
 - `composerSettings`
+- `composerPresets`
 - `backgrounds`
 - `brandingAssets`
 - `appPreferences`
 
 Coverage matches what full app backup export includes.
+
+`clearLocalDiveData()` clears only `dives`, `sourceRecords`, and
+`siteContributions`. Deterministic canonical IDs allow retained attachments and
+per-dive composer settings to reconnect after the same logs are imported
+again.
 
 ## After wipe (Settings UI)
 
@@ -73,7 +91,7 @@ Add keys in `lib/app-i18n.ts` for:
 - Confirm dialog body
 - Success and failure status strings
 
-Provide English and Traditional Chinese (Hong Kong) strings.
+Provide English, Traditional Chinese (Hong Kong), and Japanese strings.
 
 ## Success criteria
 
@@ -81,3 +99,11 @@ Provide English and Traditional Chinese (Hong Kong) strings.
 - After wipe, Settings shows empty local assets and default preferences.
 - Importing a backup afterward onto a wiped device restores without leftover pre-wipe records.
 - No change to backup import merge semantics in this change.
+
+## Implemented follow-up
+
+The production UI now presents both deletion scopes at the bottom of Settings,
+with equal-width destructive controls and separate confirmation copy. The
+current readiness recommendation is to add backup import preview with explicit
+merge/replace choices rather than relying on deletion as the normal transfer
+workflow.

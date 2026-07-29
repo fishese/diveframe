@@ -31,7 +31,7 @@ distributed.
 - `app/compose/ComposerApp.tsx` — live preview and composer controls.
 - `app/settings/SettingsApp.tsx` — device-local settings and catalog maintenance
   tools, including the reusable background library.
-- `app/about/AboutApp.tsx` — bilingual user-facing explanation of imports,
+- `app/about/AboutApp.tsx` — trilingual user-facing explanation of imports,
   exports, local persistence, source-log reconciliation, and licensing.
 - `lib/parsers/` — separate Shearwater, Subsurface, UDDF, and FIT importers.
 - `lib/dive-model.ts` and `lib/normalize-dive.ts` — normalized internal model.
@@ -42,8 +42,10 @@ distributed.
   layouts, rendering, and PNG/JPEG export.
 - `lib/app-i18n.ts`, `lib/i18n.ts`, and `lib/unit-conversion.ts` — application
   translations, overlay translations, and units.
-- `lib/composer-fonts.ts` — curated bilingual overlay fonts and export-time
+- `lib/composer-fonts.ts` — curated multilingual overlay fonts and export-time
   font loading.
+- `lib/dive-site-catalog.ts` — validation, tab-session persistence, and
+  proximity ranking for user-supplied regional catalogs.
 - `lib/indexed-db.ts` — device-local persistence and merge orchestration.
 - `app/api/geocode/route.ts` — stateless OpenStreetMap/Nominatim lookup proxy.
 - `app/api/nearby-sites/route.ts` — local catalog and OpenStreetMap fallback.
@@ -53,8 +55,11 @@ distributed.
   browser/iOS-aware install control shown in Settings.
 - `public/manifest.webmanifest`, `public/sw.js`, and `public/icons/` —
   installable-web-app metadata, cached app shell, and header-mark app icons.
-- `tests/` — product contract and optional real Shearwater fixture test.
+- `tests/` — product contract, deterministic identity, catalog, composer, gas,
+  Subsurface pass-through, and optional real Shearwater fixture tests.
 - `docs/USER-GUIDE.md` — supported-format and device-local workflow guide.
+- `docs/PRODUCT-SPEC.md` — authoritative current-state product specification,
+  pre-wrapper readiness gate, Bluetooth discovery scope, and reviewer questions.
 - `LICENSE` — project notice for `GPL-3.0-or-later`.
 - `.openai/hosting.json` — retained project metadata; D1 and R2 are
   intentionally disabled. Production is deployed by Cloudflare Workers Builds
@@ -100,7 +105,7 @@ real dive exports, photos, or generated share cards to the repository.
 
 Database: `diveframe-local`
 
-Version: `6`
+Version: `7`
 
 Object stores:
 
@@ -117,9 +122,13 @@ Object stores:
 | `appPreferences` | `id` | Device-local interface language and future global preferences |
 
 The optional regional dive-site catalog is deliberately stored in
-`sessionStorage`, not IndexedDB. It is available across Settings and dive-page
+`sessionStorage`, not IndexedDB. `lib/dive-site-catalog.ts` validates it and
+adds active entries within 30 km to the same proximity-ranked dive picker used
+by the bundled catalog. It is available across Settings and dive-page
 navigation in the same tab, but is excluded from app backups and disappears
-when that tab session ends.
+when that tab session ends. Settings can remove it immediately. The
+downloadable prompt at `public/examples/dive-site-catalog-ai-prompt.md` helps
+users create regional catalogs for human review.
 
 `attachments` and `sourceRecords` each have a `diveId` index.
 
@@ -412,7 +421,13 @@ requests into the browser and configure a static Next/Vite export. Verify the
 public OpenStreetMap services' browser CORS and usage-policy requirements
 before doing so.
 
-## Recommended next milestone: backup hardening
+## Recommended next milestone: pre-wrapper hardening
+
+`docs/PRODUCT-SPEC.md` is the canonical review document. Its Priority A
+trust-and-recoverability items are the recommended gate before treating a
+native wrapper or Bluetooth transfer as the next production milestone.
+
+Backup hardening remains the highest-priority part of that gate.
 
 The first portable backup/import implementation is now complete. A future
 iteration should add encryption, checksums, streaming ZIP output for very large
@@ -446,14 +461,14 @@ Google Drive, iCloud Drive, or a small private API.
 ## Known follow-ups
 
 - Add streaming, encrypted backup export before photo libraries become very large.
+- Add import preview with explicit merge/replace behavior and a result report.
+- Add manual duplicate comparison, merge, and keep-separate controls.
 - Add dive-photo deletion, captions, and storage-usage reporting.
 - Add draggable custom positions for non-logo overlay blocks. Logo fine
   positioning already uses horizontal and vertical sliders.
-- Translate template descriptions and transient status/error messages; overlay
-  labels and composer controls are already available in Traditional Chinese
-  and Japanese.
 - Show whether persistent browser storage was granted.
-- Add an IndexedDB integration test using a browser test runner.
+- Add browser integration tests for IndexedDB, backup/restore, PWA updates, and
+  high-resolution image export.
 - Consider image downscaling or optional originals for large phone photos.
 - Add a catalog-maintenance script that validates and imports reviewed entries
   from `diveframe-added-sites.json`.

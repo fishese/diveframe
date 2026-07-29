@@ -25,6 +25,12 @@ See the [user guide](docs/USER-GUIDE.md) for supported files, local-storage
 boundaries, available exports, and the workflow for manually copying DiveFrame
 site corrections back to a source log.
 
+For product and engineering review, see the
+[current product specification](docs/PRODUCT-SPEC.md). It includes known
+limits, a pre-wrapper readiness gate, Bluetooth discovery questions, and a
+review checklist for divers, privacy, accessibility, localization, and
+engineering reviewers.
+
 ## Features
 
 - Reads `dive_details`, calculated summaries, manual sites, buddies, and notes.
