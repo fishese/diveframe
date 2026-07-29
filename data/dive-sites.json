@@ -1660,6 +1660,225 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "gb-farne-islands",
+      "name": "Farne Islands",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 55.62,
+        "longitude": -1.65
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "England",
+        "locality": "Farne Islands"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-isles-of-scilly",
+      "name": "Isles of Scilly",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 49.92,
+        "longitude": -6.33
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "England",
+        "locality": "Isles of Scilly"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-lundy-island",
+      "name": "Lundy Island",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 51.18,
+        "longitude": -4.67
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "England",
+        "locality": "Lundy Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-menai-strait",
+      "name": "Menai Strait",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 53.22,
+        "longitude": -4.17
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Wales",
+        "locality": "Menai Strait"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-pembrokeshire-martins-haven",
+      "name": "Martin's Haven",
+      "aliases": [
+        "Skomer Marine Nature Reserve"
+      ],
+      "coordinates": {
+        "latitude": 51.735,
+        "longitude": -5.28
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Wales",
+        "locality": "Pembrokeshire"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-plymouth-hms-scylla",
+      "name": "HMS Scylla",
+      "aliases": [
+        "Whitsand Bay Artificial Reef"
+      ],
+      "coordinates": {
+        "latitude": 50.33,
+        "longitude": -4.23
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "England",
+        "locality": "Plymouth"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-plymouth-james-eagan-layne",
+      "name": "James Eagan Layne",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 50.32,
+        "longitude": -4.2
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "England",
+        "locality": "Plymouth"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-portland-chesil-cove",
+      "name": "Chesil Cove",
+      "aliases": [
+        "Chesil Beach"
+      ],
+      "coordinates": {
+        "latitude": 50.555,
+        "longitude": -2.455
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "England",
+        "locality": "Portland"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-rathlin-island",
+      "name": "Rathlin Island",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 55.29,
+        "longitude": -6.2
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Northern Ireland",
+        "locality": "Rathlin Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-scapa-flow-general",
+      "name": "Scapa Flow",
+      "aliases": [
+        "German Fleet Wrecks",
+        "Orkney Wrecks"
+      ],
+      "coordinates": {
+        "latitude": 58.9,
+        "longitude": -3.15
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Scotland",
+        "locality": "Scapa Flow"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "gb-scapa-flow-sms-markgraf",
       "name": "SMS Markgraf Wreck",
       "aliases": [],
@@ -1679,6 +1898,156 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "gb-scapa-sms-dresden",
+      "name": "SMS Dresden",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 58.91,
+        "longitude": -3.18
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Scotland",
+        "locality": "Scapa Flow"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-scapa-sms-karlsruhe",
+      "name": "SMS Karlsruhe",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 58.895,
+        "longitude": -3.16
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Scotland",
+        "locality": "Scapa Flow"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-soundofmull-general",
+      "name": "Sound of Mull",
+      "aliases": [
+        "SS Hispania",
+        "SS Thesis"
+      ],
+      "coordinates": {
+        "latitude": 56.55,
+        "longitude": -5.9
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Scotland",
+        "locality": "Sound of Mull"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-stabbs-broad-craig",
+      "name": "Broad Craig",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 55.907,
+        "longitude": -2.137
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Scotland",
+        "locality": "St Abbs"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-stabbs-cathedral-rock",
+      "name": "Cathedral Rock",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 55.908,
+        "longitude": -2.135
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Scotland",
+        "locality": "St Abbs"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-stabbs-wuddy-rocks",
+      "name": "Wuddy Rocks",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 55.91,
+        "longitude": -2.13
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Scotland",
+        "locality": "St Abbs"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-stkilda",
+      "name": "St Kilda",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 57.815,
+        "longitude": -8.578
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Scotland",
+        "locality": "St Kilda"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "gu-blue-hole",
@@ -3985,6 +4354,30 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "ie-malin-head",
+      "name": "Malin Head",
+      "aliases": [
+        "HMS Audacious",
+        "RMS Justicia"
+      ],
+      "coordinates": {
+        "latitude": 55.37,
+        "longitude": -7.34
+      },
+      "place": {
+        "countryCode": "IE",
+        "country": "Ireland",
+        "region": "County Donegal",
+        "locality": "Malin Head"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "il-eilat-satil",
       "name": "Satil Wreck",
       "aliases": [],
@@ -6039,7 +6432,7 @@
       "name": "Father's Reef",
       "aliases": [],
       "coordinates": {
-        "latitude": 5.3,
+        "latitude": -5.3,
         "longitude": 149.9
       },
       "place": {
@@ -6060,7 +6453,7 @@
       "name": "Inglis Shoals",
       "aliases": [],
       "coordinates": {
-        "latitude": 5.35,
+        "latitude": -5.35,
         "longitude": 149.95
       },
       "place": {
@@ -6081,7 +6474,7 @@
       "name": "North Emma",
       "aliases": [],
       "coordinates": {
-        "latitude": 5.43,
+        "latitude": -5.43,
         "longitude": 150.2
       },
       "place": {
@@ -6104,7 +6497,7 @@
         "Rest Orf Island"
       ],
       "coordinates": {
-        "latitude": 5.48,
+        "latitude": -5.48,
         "longitude": 150.15
       },
       "place": {
@@ -6125,7 +6518,7 @@
       "name": "South Emma",
       "aliases": [],
       "coordinates": {
-        "latitude": 5.45,
+        "latitude": -5.45,
         "longitude": 150.2
       },
       "place": {
@@ -6146,7 +6539,7 @@
       "name": "Susan's Reef",
       "aliases": [],
       "coordinates": {
-        "latitude": 5.5,
+        "latitude": -5.5,
         "longitude": 150.1
       },
       "place": {
@@ -7131,6 +7524,313 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
+      "id": "ph-mactan-agus-reef",
+      "name": "Agus Reef",
+      "aliases": [
+        "Agus Blue Hole"
+      ],
+      "coordinates": {
+        "latitude": 10.265,
+        "longitude": 123.948
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-cordova-reef",
+      "name": "Cordova Reef",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 10.253,
+        "longitude": 123.955
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-hilutungan-sanctuary",
+      "name": "Hilutungan Marine Sanctuary",
+      "aliases": [
+        "Gilutongan Island",
+        "Hilotongan"
+      ],
+      "coordinates": {
+        "latitude": 10.198,
+        "longitude": 123.973
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-kontiki-reef",
+      "name": "Kontiki Reef",
+      "aliases": [
+        "Kon-Tiki"
+      ],
+      "coordinates": {
+        "latitude": 10.27,
+        "longitude": 123.952
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-marigondon-cave",
+      "name": "Marigondon Cave",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 10.268,
+        "longitude": 123.95
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-marine-station",
+      "name": "Marine Station Sanctuary",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 10.26,
+        "longitude": 123.945
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-nalusuan-island",
+      "name": "Nalusuan Island",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 10.22,
+        "longitude": 124.02
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-pawod-cave",
+      "name": "Pawod Underwater Cave",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 10.263,
+        "longitude": 123.946
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-punta-engano",
+      "name": "Punta Engaño",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 10.318,
+        "longitude": 124.03
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-santa-rosa",
+      "name": "Santa Rosa Reef",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 10.275,
+        "longitude": 123.952
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-shangrila-sanctuary",
+      "name": "Shangri-La Marine Sanctuary",
+      "aliases": [
+        "Shangri-La House Reef"
+      ],
+      "coordinates": {
+        "latitude": 10.298,
+        "longitude": 124.018
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-sulpa-wall",
+      "name": "Sulpa Wall",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 10.23,
+        "longitude": 123.96
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-talima-reef",
+      "name": "Talima Reef",
+      "aliases": [
+        "Talima Sanctuary"
+      ],
+      "coordinates": {
+        "latitude": 10.245,
+        "longitude": 123.949
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-mactan-tambuli-wreck",
+      "name": "Tambuli Plane Wreck",
+      "aliases": [
+        "Tambuli Reef"
+      ],
+      "coordinates": {
+        "latitude": 10.298,
+        "longitude": 124.015
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Cebu",
+        "locality": "Mactan"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "ph-malapascua-dona-marilyn",
       "name": "Doña Marilyn Wreck",
       "aliases": [
@@ -7263,6 +7963,71 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "ph-puerto-galera-alma-jane",
+      "name": "Alma Jane Wreck",
+      "aliases": [
+        "MV Alma Jane"
+      ],
+      "coordinates": {
+        "latitude": 13.519,
+        "longitude": 120.972
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-batangas-channel",
+      "name": "Batangas Channel",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.5,
+        "longitude": 121.02
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-big-lalaguna",
+      "name": "Big La Laguna",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.514,
+        "longitude": 120.955
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "ph-puerto-galera-canyons",
       "name": "The Canyons",
       "aliases": [],
@@ -7282,6 +8047,134 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "ph-puerto-galera-coral-garden",
+      "name": "Coral Garden",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.512,
+        "longitude": 120.95
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-dry-dock",
+      "name": "Dry Dock",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.517,
+        "longitude": 120.962
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-dungon-wall",
+      "name": "Dungon Wall",
+      "aliases": [
+        "Dungon Beach"
+      ],
+      "coordinates": {
+        "latitude": 13.53,
+        "longitude": 120.945
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-ernies-point",
+      "name": "Ernie's Point",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.527,
+        "longitude": 120.982
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-fish-bowl",
+      "name": "Fish Bowl",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.532,
+        "longitude": 120.943
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-giant-clams",
+      "name": "Giant Clams",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.513,
+        "longitude": 120.952
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "ph-puerto-galera-hole-in-wall",
@@ -7305,6 +8198,27 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "ph-puerto-galera-japanese-wreck",
+      "name": "Japanese Wreck",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.524,
+        "longitude": 120.981
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "ph-puerto-galera-kilima-steps",
       "name": "Kilima Steps",
       "aliases": [],
@@ -7326,6 +8240,134 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "ph-puerto-galera-lalaguna-point",
+      "name": "LaLaguna Point",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.516,
+        "longitude": 120.96
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-manila-channel",
+      "name": "Manila Channel",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.505,
+        "longitude": 121.0
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-monkey-beach",
+      "name": "Monkey Beach",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.525,
+        "longitude": 120.978
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-monkey-wreck",
+      "name": "Monkey Wreck",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.526,
+        "longitude": 120.98
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-odies-wall",
+      "name": "Odie's Wall",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.51,
+        "longitude": 120.99
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-sabang-junk",
+      "name": "Sabang Junk",
+      "aliases": [
+        "Vietnamese Wreck"
+      ],
+      "coordinates": {
+        "latitude": 13.5215,
+        "longitude": 120.974
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "ph-puerto-galera-sabang-wrecks",
       "name": "Sabang Wrecks",
       "aliases": [],
@@ -7345,6 +8387,197 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "ph-puerto-galera-shark-cave",
+      "name": "Shark Cave",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.51,
+        "longitude": 120.985
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-sinandigan-wall",
+      "name": "Sinandigan Wall",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.545,
+        "longitude": 120.93
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-small-lalaguna",
+      "name": "Small La Laguna",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.517,
+        "longitude": 120.961
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-speedboat-wreck",
+      "name": "The Speedboat Wreck",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.518,
+        "longitude": 120.964
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-st-christopher",
+      "name": "St. Christopher Wreck",
+      "aliases": [
+        "Anton's Wreck"
+      ],
+      "coordinates": {
+        "latitude": 13.518,
+        "longitude": 120.965
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-the-hill",
+      "name": "The Hill",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.508,
+        "longitude": 120.995
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-turtle-rock",
+      "name": "Turtle Rock",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.54,
+        "longitude": 120.935
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-verde-island-dropoff",
+      "name": "Verde Island Drop-off",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.5,
+        "longitude": 121.09
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "ph-puerto-galera-west-escarceo",
+      "name": "West Escarceo",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.535,
+        "longitude": 120.94
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "ph-siquijor-maite",
@@ -8886,6 +10119,29 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "tw-green-blue-cave",
+      "name": "Blue Cave",
+      "aliases": [
+        "藍洞"
+      ],
+      "coordinates": {
+        "latitude": 22.644,
+        "longitude": 121.519
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Taitung County",
+        "locality": "Green Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "tw-green-cathedral",
       "name": "Cathedral",
       "aliases": [
@@ -9003,6 +10259,29 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "tw-green-feima-wreck",
+      "name": "Feima Wreck",
+      "aliases": [
+        "飛馬沈船"
+      ],
+      "coordinates": {
+        "latitude": 22.68,
+        "longitude": 121.485
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Taitung County",
+        "locality": "Green Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "tw-green-general-rock",
       "name": "General Rock",
       "aliases": [
@@ -9095,6 +10374,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "tw-green-gunshuibi",
+      "name": "Gunshuibi",
+      "aliases": [
+        "滾水鼻"
+      ],
+      "coordinates": {
+        "latitude": 22.63,
+        "longitude": 121.51
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Taitung County",
+        "locality": "Green Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "tw-green-horseshoe-bridge",
@@ -9259,6 +10561,31 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "tw-green-seahorse-mailbox",
+      "name": "Seahorse Mailbox",
+      "aliases": [
+        "海馬郵筒",
+        "Underwater Postbox",
+        "世界上最深的郵筒"
+      ],
+      "coordinates": {
+        "latitude": 22.6535,
+        "longitude": 121.472
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Taitung County",
+        "locality": "Green Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "tw-green-shark-point",
       "name": "Shark Point",
       "aliases": [
@@ -9400,6 +10727,101 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "tw-green-tian-zhi-jing",
+      "name": "Tian Zhi Jing",
+      "aliases": [
+        "天之鏡",
+        "天之境",
+        "Sky Mirror Cave"
+      ],
+      "coordinates": {
+        "latitude": 22.685,
+        "longitude": 121.497
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Taitung County",
+        "locality": "Green Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "tw-green-yi-xian-tian",
+      "name": "Yi Xian Tian",
+      "aliases": [
+        "一線天",
+        "A Line of Sky"
+      ],
+      "coordinates": {
+        "latitude": 22.673,
+        "longitude": 121.51
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Taitung County",
+        "locality": "Green Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "tw-green-youzihu",
+      "name": "Youzihu",
+      "aliases": [
+        "柚子湖"
+      ],
+      "coordinates": {
+        "latitude": 22.645,
+        "longitude": 121.518
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Taitung County",
+        "locality": "Green Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "tw-green-ziping-reef",
+      "name": "Ziping Outer Reef",
+      "aliases": [
+        "紫坪外礁"
+      ],
+      "coordinates": {
+        "latitude": 22.66,
+        "longitude": 121.478
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Taitung County",
+        "locality": "Green Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:round2:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "tw-keelung-islet",
