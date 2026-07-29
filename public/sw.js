@@ -1,4 +1,4 @@
-const CACHE_NAME = "diveframe-shell-v2";
+const CACHE_NAME = "diveframe-shell-v3";
 const APP_SHELL = [
   "/",
   "/settings",
@@ -9,6 +9,7 @@ const APP_SHELL = [
   "/icons/diveframe-maskable-512.png",
   "/icons/diveframe-apple-touch.png",
   "/backgrounds/bubbles-bg.jpg",
+  "/examples/dive-site-catalog-ai-prompt.md",
 ];
 
 self.addEventListener("install", (event) => {

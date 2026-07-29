@@ -169,6 +169,18 @@ has no GPS.
 - An updated copy of a freshly supplied Subsurface `.ssrf`/XML export, with
   matched site names, buddy, and notes added
 
+## Using a regional dive-site catalog
+
+In **Settings**, choose a compatible `dive-sites.json` under **Dive-site
+catalog**. The selected catalog is used for nearby-site suggestions throughout
+the current browser tab and as the base for the existing merge/download tools.
+It is not added to backups or permanent app storage, and can be removed from
+the same card at any time.
+
+If you need a catalog for another region, download the AI catalog prompt from
+that card, replace the region placeholder, and give it to an AI assistant that
+can research public sources. Review the generated JSON before loading it.
+
 ## Cropping a share image
 
 In the image composer, choose **Crop photo** to switch the preview into crop

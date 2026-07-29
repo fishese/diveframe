@@ -61,6 +61,10 @@ import {
   firstCompletePressurePair,
 } from "@/lib/gas-calculations";
 import { toNormalizedDive } from "@/lib/normalize-dive";
+import {
+  loadSessionDiveSiteCatalog,
+  nearbySessionCatalogSites,
+} from "@/lib/dive-site-catalog";
 import { readShearwaterDatabase } from "@/lib/parsers/shearwater";
 import { readSubsurfaceLog } from "@/lib/parsers/subsurface";
 import { readUddfLog } from "@/lib/parsers/uddf";
@@ -81,6 +85,7 @@ type ImportedDive = LocalImportedDive;
 
 type NearbySite = {
   id: string;
+  catalogId?: string;
   name: string;
   aliases?: string[];
   latitude: number;
@@ -902,10 +907,17 @@ function DiveDetail({
   }
 
   useEffect(() => {
-    if (!hasGps) return;
+    const latitude = dive.gpsEntryLat;
+    const longitude = dive.gpsEntryLng;
+    if (latitude === null || longitude === null) return;
+    const sessionSites = nearbySessionCatalogSites(
+      loadSessionDiveSiteCatalog()?.catalog ?? null,
+      latitude,
+      longitude,
+    );
     const controller = new AbortController();
     fetch(
-      `/api/nearby-sites?lat=${encodeURIComponent(String(dive.gpsEntryLat))}&lng=${encodeURIComponent(String(dive.gpsEntryLng))}`,
+      `/api/nearby-sites?lat=${encodeURIComponent(String(latitude))}&lng=${encodeURIComponent(String(longitude))}`,
       { signal: controller.signal },
     )
       .then(async (response) => {
@@ -916,11 +928,11 @@ function DiveDetail({
         if (!response.ok) throw new Error(payload.error ?? "Nearby sites unavailable.");
         return payload.sites ?? [];
       })
-      .then((sites) =>
-        setNearbySites([...sites].sort((a, b) => a.distanceKm - b.distanceKm)),
-      )
+      .then((sites) => setNearbySites(mergeNearbySites(sessionSites, sites)))
       .catch((error) => {
-        if ((error as DOMException)?.name !== "AbortError") setNearbySites([]);
+        if ((error as DOMException)?.name !== "AbortError") {
+          setNearbySites(sessionSites);
+        }
       });
     return () => controller.abort();
   }, [dive.gpsEntryLat, dive.gpsEntryLng, hasGps]);
@@ -1259,14 +1271,17 @@ function DiveDetail({
                         source: site.source === "catalog" ? "catalog" : "suggestion",
                         catalogId:
                           site.source === "catalog"
-                            ? site.id.replace(/^catalog-/, "")
+                            ? site.catalogId ?? site.id.replace(/^(?:session-)?catalog-/, "")
                             : undefined,
                         latitude: site.latitude,
                         longitude: site.longitude,
                       })
                     }
                     disabled={busy}
-                    aria-pressed={dive.userSiteCatalogId === site.id.replace(/^catalog-/, "")}
+                    aria-pressed={
+                      dive.userSiteCatalogId ===
+                      (site.catalogId ?? site.id.replace(/^(?:session-)?catalog-/, ""))
+                    }
                   >
                     <span>{site.name}</span>
                     {site.aliases?.length ? (
@@ -1645,6 +1660,19 @@ function displayLocation(
   return dive.location || dive.resolvedLocation || null;
 }
 
+function mergeNearbySites(sessionSites: NearbySite[], fetchedSites: NearbySite[]) {
+  const seen = new Set<string>();
+  return [...sessionSites, ...fetchedSites]
+    .filter((site) => {
+      const key = `${site.name.trim().toLocaleLowerCase("en")}\u0000${site.latitude.toFixed(4)}\u0000${site.longitude.toFixed(4)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .slice(0, 20);
+}
+
 function formatSourceName(source: string) {
   if (source === "shearwater") return "Shearwater";
   if (source === "subsurface") return "Subsurface";
@@ -1741,11 +1769,14 @@ function formatDate(value: string | null, language: AppLanguage, fallback: strin
   if (!value) return fallback;
   const date = new Date(value.replace(" ", "T"));
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(language === "zh-Hant" ? "zh-HK" : "en", {
+  return new Intl.DateTimeFormat(
+    language === "zh-Hant" ? "zh-HK" : language === "ja" ? "ja-JP" : "en",
+    {
     day: "numeric",
     month: "short",
     year: "numeric",
-  }).format(date);
+    },
+  ).format(date);
 }
 
 function averageDepthForDive(dive: Dive) {

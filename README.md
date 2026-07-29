@@ -67,13 +67,16 @@ site corrections back to a source log.
 - A pass-through Subsurface export tool that adds matched site names, buddy,
   and notes to a freshly supplied SSRF/XML copy without rebuilding or dropping
   the source log's profiles, events, cylinders, or other fields.
-- Full interface localisation in English and Traditional Chinese (Hong Kong),
-  with a separately configurable overlay language for exported images.
+- Full interface localisation in English, Traditional Chinese (Hong Kong), and
+  Japanese, with a separately configurable overlay language for exported images.
 - Multiple photos per dive plus a device-local library of reusable diving
   backgrounds. Reusable backgrounds have editable names for easier selection;
   per-dive photos continue to use their filenames.
 - A bundled Bubbles background lets a dive be composed before any personal
   photo is added. It can be removed for the current composer session.
+- A compatible regional `dive-sites.json` can be loaded for the current tab.
+  Its sites join nearby suggestions without permanently changing app data; a
+  downloadable AI prompt helps users prepare catalogs for their own regions.
 - Share-image entry points at both the top of the dive and the bottom of its
   photo gallery.
 - A live image composer with five original layouts, including two purpose-built

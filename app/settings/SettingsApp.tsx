@@ -51,30 +51,17 @@ import {
   CYLINDER_PRESETS,
   DEFAULT_CYLINDER_PRESET_ID,
 } from "@/lib/gas-calculations";
+import {
+  clearSessionDiveSiteCatalog,
+  loadSessionDiveSiteCatalog,
+  saveSessionDiveSiteCatalog,
+  validateDiveSiteCatalog,
+  type CatalogSite,
+  type DiveSiteCatalog,
+} from "@/lib/dive-site-catalog";
 import { addDiveFrameSitesToSubsurface } from "@/lib/subsurface-site-export";
 import { useAppI18n } from "../AppI18nProvider";
 import { PwaInstallCard } from "../PwaInstall";
-
-type CatalogSite = {
-  id: string;
-  name: string;
-  aliases: string[];
-  coordinates: { latitude: number; longitude: number };
-  place: {
-    countryCode: string | null;
-    country: string | null;
-    region: string | null;
-    locality: string | null;
-  };
-  source: { kind: string; reference: string | null };
-  status: string;
-  updatedAt: string;
-};
-
-type DiveSiteCatalog = {
-  schemaVersion: number;
-  sites: CatalogSite[];
-};
 
 type SiteContributionDraft = LocalSiteContribution & {
   aliasesText: string;
@@ -104,8 +91,13 @@ export function SettingsApp() {
       getLocalAppPreferences(),
     ])
       .then(([items, savedBackgrounds, savedLogo, preferences]) => {
+        const sessionCatalog = loadSessionDiveSiteCatalog();
         setContributions(items);
         setReviewedSites(items.map(toSiteDraft));
+        if (sessionCatalog) {
+          setCatalog(sessionCatalog.catalog);
+          setCatalogLabel(sessionCatalog.label);
+        }
         setBackgrounds(savedBackgrounds);
         setLogo(savedLogo ?? null);
         setDefaultCylinderPresetId(
@@ -367,7 +359,8 @@ export function SettingsApp() {
     setBusy(true);
     try {
       const parsed = JSON.parse(await file.text()) as unknown;
-      const validated = validateCatalog(parsed);
+      const validated = validateDiveSiteCatalog(parsed);
+      saveSessionDiveSiteCatalog(validated, file.name);
       setCatalog(validated);
       setCatalogLabel(file.name);
       setStatus(t("usingCatalog", { name: file.name, count: validated.sites.length }));
@@ -376,6 +369,13 @@ export function SettingsApp() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function removeSessionCatalog() {
+    clearSessionDiveSiteCatalog();
+    setCatalog(BUILT_IN_CATALOG);
+    setCatalogLabel(null);
+    setStatus(t("sessionCatalogRemoved"));
   }
 
   return (
@@ -403,6 +403,30 @@ export function SettingsApp() {
         </section>
 
         <PwaInstallCard />
+
+        <section className="settings-card language-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><Languages size={21} /></span>
+            <div>
+              <p className="eyebrow">{t("settings")}</p>
+              <h2>{t("appLanguage")}</h2>
+            </div>
+          </div>
+          <p className="settings-note">{t("appLanguageDescription")}</p>
+          <label className="language-select">
+            <span>{t("appLanguage")}</span>
+            <select
+              value={language}
+              onChange={(event) =>
+                void setLanguage(event.target.value as "en" | "zh-Hant" | "ja")
+              }
+            >
+              <option value="en">{t("english")}</option>
+              <option value="zh-Hant">{t("traditionalChineseHK")}</option>
+              <option value="ja">{t("japanese")}</option>
+            </select>
+          </label>
+        </section>
 
         <section className="settings-card catalog-settings">
           <div className="settings-card-heading">
@@ -502,21 +526,44 @@ export function SettingsApp() {
               <span>
                 <strong>{catalogLabel ?? t("bundledCatalog")}</strong>
                 <small>
-                  {t("chooseCatalogDescription")}
+                  {t("sessionCatalogDescription")}
                 </small>
               </span>
             </div>
-            <label className="button button-secondary">
-              <Upload size={16} /> {t("chooseCatalog")}
-              <input
-                type="file"
-                accept=".json,application/json"
-                onChange={chooseCatalog}
-                className="visually-hidden"
-                disabled={busy}
-              />
-            </label>
+            <div className="catalog-source-actions">
+              <label className="button button-secondary">
+                <Upload size={16} /> {t("chooseCatalog")}
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={chooseCatalog}
+                  className="visually-hidden"
+                  disabled={busy}
+                />
+              </label>
+              {catalogLabel && (
+                <button
+                  type="button"
+                  className="button button-quiet"
+                  onClick={removeSessionCatalog}
+                  disabled={busy}
+                >
+                  <Trash2 size={16} /> {t("removeSessionCatalog")}
+                </button>
+              )}
+            </div>
           </div>
+
+          <p className="settings-note">
+            {t("catalogPromptDescription")}{" "}
+            <a
+              href="/examples/dive-site-catalog-ai-prompt.md"
+              download
+              className="settings-inline-link"
+            >
+              {t("downloadCatalogPrompt")}
+            </a>
+          </p>
 
           <div className="settings-actions">
             <button
@@ -597,29 +644,6 @@ export function SettingsApp() {
           <p className="settings-note">
             {t("subsurfacePassThroughNote")}
           </p>
-        </section>
-
-        <section className="settings-card language-settings">
-          <div className="settings-card-heading">
-            <span className="settings-icon"><Languages size={21} /></span>
-            <div>
-              <p className="eyebrow">{t("settings")}</p>
-              <h2>{t("appLanguage")}</h2>
-            </div>
-          </div>
-          <p className="settings-note">{t("appLanguageDescription")}</p>
-          <label className="language-select">
-            <span>{t("appLanguage")}</span>
-            <select
-              value={language}
-              onChange={(event) =>
-                void setLanguage(event.target.value as "en" | "zh-Hant")
-              }
-            >
-              <option value="en">{t("english")}</option>
-              <option value="zh-Hant">{t("traditionalChineseHK")}</option>
-            </select>
-          </label>
         </section>
 
         <section className="settings-card dive-defaults-settings">
@@ -929,34 +953,6 @@ function mergeContributions(
     added,
     skipped,
   };
-}
-
-function validateCatalog(value: unknown): DiveSiteCatalog {
-  if (!value || typeof value !== "object") {
-    throw new Error("This is not a dive-site catalog.");
-  }
-  const candidate = value as { schemaVersion?: unknown; sites?: unknown };
-  if (
-    typeof candidate.schemaVersion !== "number" ||
-    !Array.isArray(candidate.sites) ||
-    !candidate.sites.every(isCatalogSite)
-  ) {
-    throw new Error("The catalog must contain schemaVersion and a valid sites array.");
-  }
-  return candidate as DiveSiteCatalog;
-}
-
-function isCatalogSite(value: unknown): value is CatalogSite {
-  if (!value || typeof value !== "object") return false;
-  const site = value as Partial<CatalogSite>;
-  return (
-    typeof site.id === "string" &&
-    typeof site.name === "string" &&
-    Array.isArray(site.aliases) &&
-    Boolean(site.coordinates) &&
-    Number.isFinite(site.coordinates?.latitude) &&
-    Number.isFinite(site.coordinates?.longitude)
-  );
 }
 
 function uniqueCatalogId(

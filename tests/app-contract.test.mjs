@@ -32,6 +32,11 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     readFile("docs/USER-GUIDE.md", "utf8"),
     readFile("LICENSE", "utf8"),
   ]);
+  const [appI18n, catalogTools, catalogPrompt] = await Promise.all([
+    readFile("lib/app-i18n.ts", "utf8"),
+    readFile("lib/dive-site-catalog.ts", "utf8"),
+    readFile("public/examples/dive-site-catalog-ai-prompt.md", "utf8"),
+  ]);
 
   assert.match(shearwater, /GnssEntryLocation/);
   assert.match(shearwater, /StoredDiveComputer/);
@@ -152,6 +157,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composerSettings, /depthFillMode: "fade"/);
   assert.match(settings, /useAppI18n/);
   assert.match(settings, /setLanguage/);
+  assert.match(settings, /<option value="ja">/);
+  assert.match(appI18n, /const ja: Record<keyof typeof en, string>/);
   assert.match(settings, /getLocalAppPreferences/);
   assert.match(settings, /aliasesText/);
   assert.match(fonts, /Noto Sans TC/);
@@ -198,6 +205,14 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(subsurfaceExport, /"buddy"/);
   assert.match(subsurfaceExport, /"notes"/);
   assert.match(storage, /listLocalSourceRecords/);
+  assert.match(storage, /"en" \| "zh-Hant" \| "ja"/);
+  assert.match(settings, /saveSessionDiveSiteCatalog/);
+  assert.match(settings, /removeSessionCatalog/);
+  assert.match(settings, /dive-site-catalog-ai-prompt\.md/);
+  assert.match(app, /nearbySessionCatalogSites/);
+  assert.match(catalogTools, /sessionStorage/);
+  assert.match(catalogTools, /nearbySessionCatalogSites/);
+  assert.match(catalogPrompt, /Return only the final UTF-8 JSON object/);
   assert.match(app, /useAppI18n/);
   assert.doesNotMatch(app, /catalogNotesForDive/);
   assert.match(app, /photo-gallery-actions/);
@@ -220,8 +235,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v2/);
+  assert.match(serviceWorker, /diveframe-shell-v3/);
   assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);
+  assert.match(serviceWorker, /examples\/dive-site-catalog-ai-prompt\.md/);
   assert.match(serviceWorker, /request\.mode === "navigate"/);
   assert.match(pwaInstall, /beforeinstallprompt/);
   assert.match(pwaInstall, /navigator\.serviceWorker\.register/);

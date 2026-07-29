@@ -36,7 +36,8 @@ export function AppI18nProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    document.documentElement.lang = language === "zh-Hant" ? "zh-HK" : "en";
+    document.documentElement.lang =
+      language === "zh-Hant" ? "zh-HK" : language === "ja" ? "ja" : "en";
   }, [language]);
 
   const setLanguage = useCallback(async (next: AppLanguage) => {

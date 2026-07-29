@@ -2203,6 +2203,23 @@ button {
   margin-top: 3px;
 }
 
+.catalog-source-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.settings-inline-link {
+  color: var(--teal);
+  font-weight: 650;
+  text-underline-offset: 3px;
+}
+
+.settings-inline-link:hover {
+  color: #c8fff3;
+}
+
 .settings-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2569,6 +2586,16 @@ button {
   .catalog-source {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .catalog-source-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .catalog-source-actions > .button {
+    justify-content: center;
+    width: 100%;
   }
 
   .site-review-fields {

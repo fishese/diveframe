@@ -10,7 +10,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/app-contract.test.mjs tests/composer-output.test.mjs tests/composer-presets.test.mjs tests/dive-identity.test.mjs tests/gas-calculations.test.mjs tests/geocode-query.test.mjs tests/import-shearwater.test.mjs",
+    "test": "npm run build && node --test tests/app-contract.test.mjs tests/composer-output.test.mjs tests/composer-presets.test.mjs tests/dive-identity.test.mjs tests/dive-site-catalog.test.mjs tests/gas-calculations.test.mjs tests/geocode-query.test.mjs tests/import-shearwater.test.mjs tests/subsurface-export.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {
@@ -33,6 +33,7 @@
     "@vitejs/plugin-rsc": "0.5.26",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
+    "linkedom": "^0.18.13",
     "react-server-dom-webpack": "19.2.6",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",

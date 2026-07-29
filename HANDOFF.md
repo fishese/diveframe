@@ -116,6 +116,11 @@ Object stores:
 | `brandingAssets` | `id` | Device-local transparent PNG/SVG overlay logo |
 | `appPreferences` | `id` | Device-local interface language and future global preferences |
 
+The optional regional dive-site catalog is deliberately stored in
+`sessionStorage`, not IndexedDB. It is available across Settings and dive-page
+navigation in the same tab, but is excluded from app backups and disappears
+when that tab session ends.
+
 `attachments` and `sourceRecords` each have a `diveId` index.
 
 The app requests persistent browser storage when available. This reduces

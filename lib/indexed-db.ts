@@ -112,7 +112,7 @@ export type LocalBrandingAsset = {
 
 export type LocalAppPreferences = {
   id: "app";
-  uiLanguage: "en" | "zh-Hant";
+  uiLanguage: "en" | "zh-Hant" | "ja";
   defaultCylinderPresetId?: string;
   lastComposerOutputSize?: ComposerSettings["outputSize"];
   lastComposerFormat?: ComposerSettings["format"];

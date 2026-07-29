@@ -1,0 +1,134 @@
+export type CatalogSite = {
+  id: string;
+  name: string;
+  aliases: string[];
+  coordinates: { latitude: number; longitude: number };
+  place: {
+    countryCode: string | null;
+    country: string | null;
+    region: string | null;
+    locality: string | null;
+  };
+  source: { kind: string; reference: string | null };
+  status: string;
+  updatedAt: string;
+};
+
+export type DiveSiteCatalog = {
+  schemaVersion: number;
+  sites: CatalogSite[];
+};
+
+export type NearbyCatalogSite = {
+  id: string;
+  catalogId: string;
+  name: string;
+  aliases: string[];
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+  source: "catalog";
+};
+
+const SESSION_CATALOG_KEY = "diveframe-session-dive-site-catalog";
+const SESSION_CATALOG_LABEL_KEY = "diveframe-session-dive-site-catalog-label";
+
+export function validateDiveSiteCatalog(value: unknown): DiveSiteCatalog {
+  if (!value || typeof value !== "object") {
+    throw new Error("This is not a dive-site catalog.");
+  }
+  const candidate = value as { schemaVersion?: unknown; sites?: unknown };
+  if (
+    typeof candidate.schemaVersion !== "number" ||
+    !Array.isArray(candidate.sites) ||
+    !candidate.sites.every(isCatalogSite)
+  ) {
+    throw new Error("The catalog must contain schemaVersion and a valid sites array.");
+  }
+  return candidate as DiveSiteCatalog;
+}
+
+export function saveSessionDiveSiteCatalog(
+  catalog: DiveSiteCatalog,
+  label: string,
+) {
+  if (typeof sessionStorage === "undefined") return;
+  sessionStorage.setItem(SESSION_CATALOG_KEY, JSON.stringify(catalog));
+  sessionStorage.setItem(SESSION_CATALOG_LABEL_KEY, label);
+}
+
+export function loadSessionDiveSiteCatalog() {
+  if (typeof sessionStorage === "undefined") return null;
+  const serialized = sessionStorage.getItem(SESSION_CATALOG_KEY);
+  if (!serialized) return null;
+  try {
+    return {
+      catalog: validateDiveSiteCatalog(JSON.parse(serialized)),
+      label:
+        sessionStorage.getItem(SESSION_CATALOG_LABEL_KEY) ??
+        "Session dive-site catalog",
+    };
+  } catch {
+    clearSessionDiveSiteCatalog();
+    return null;
+  }
+}
+
+export function clearSessionDiveSiteCatalog() {
+  if (typeof sessionStorage === "undefined") return;
+  sessionStorage.removeItem(SESSION_CATALOG_KEY);
+  sessionStorage.removeItem(SESSION_CATALOG_LABEL_KEY);
+}
+
+export function nearbySessionCatalogSites(
+  catalog: DiveSiteCatalog | null,
+  latitude: number,
+  longitude: number,
+  radiusKm = 30,
+) {
+  if (!catalog) return [];
+  return catalog.sites
+    .filter((site) => site.status === "active")
+    .map((site): NearbyCatalogSite => ({
+      id: `session-catalog-${site.id}`,
+      catalogId: site.id,
+      name: site.name,
+      aliases: site.aliases,
+      latitude: site.coordinates.latitude,
+      longitude: site.coordinates.longitude,
+      distanceKm: distanceKm(
+        latitude,
+        longitude,
+        site.coordinates.latitude,
+        site.coordinates.longitude,
+      ),
+      source: "catalog",
+    }))
+    .filter((site) => site.distanceKm <= radiusKm)
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+}
+
+function isCatalogSite(value: unknown): value is CatalogSite {
+  if (!value || typeof value !== "object") return false;
+  const site = value as Partial<CatalogSite>;
+  return (
+    typeof site.id === "string" &&
+    typeof site.name === "string" &&
+    Array.isArray(site.aliases) &&
+    Boolean(site.coordinates) &&
+    Number.isFinite(site.coordinates?.latitude) &&
+    Number.isFinite(site.coordinates?.longitude)
+  );
+}
+
+function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const radians = (degrees: number) => (degrees * Math.PI) / 180;
+  const deltaLat = radians(lat2 - lat1);
+  const deltaLng = radians(lng2 - lng1);
+  const a =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(radians(lat1)) *
+      Math.cos(radians(lat2)) *
+      Math.sin(deltaLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
