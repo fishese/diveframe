@@ -72,17 +72,22 @@ site corrections back to a source log.
 - Multiple photos per dive plus a device-local library of reusable diving
   backgrounds. Reusable backgrounds have editable names for easier selection;
   per-dive photos continue to use their filenames.
+- A bundled Bubbles background lets a dive be composed before any personal
+  photo is added. It can be removed for the current composer session.
 - Share-image entry points at both the top of the dive and the bottom of its
   photo gallery.
 - A live image composer with five original layouts, including two purpose-built
   16:9 landscape designs, high-resolution PNG/JPEG
-  output, common aspect ratios, metric/imperial units, and English/Traditional
-  Chinese overlays. Its interactive crop mode supports drag-to-reposition,
+  output, common aspect ratios, metric/imperial units, and English, Traditional
+  Chinese, or Japanese overlays. Its interactive crop mode supports drag-to-reposition,
   wheel or slider zoom, touch input, and reset. On mobile, the reduced preview
   stays pinned below the top bar while controls scroll.
 - Named composer presets for reusing layout, visible fields, chart, logo,
   typography, colour, and output choices across dives without copying a
   dive-specific site name, category, selected photo, or crop.
+- New composers default to social-media JPEG output. The last selected output
+  size, format, and JPEG quality are reused on new dives, and exported files
+  use the dive date/time in a Windows-safe filename.
 - A curated overlay-font menu with public Traditional Chinese/Latin webfonts:
   Noto Sans TC, Inter, Outfit, Space Mono, and Huninn, plus Device Sans.
   One font-colour control applies consistently to all text content.

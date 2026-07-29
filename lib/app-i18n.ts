@@ -12,6 +12,7 @@ const en = {
   appLanguageDescription: "Choose the language used throughout DiveFrame. Image-overlay language remains configurable for each dive.",
   english: "English",
   traditionalChineseHK: "繁體中文（香港）",
+  japanese: "Japanese",
   home: "DiveFrame home",
   about: "About",
   aboutEyebrow: "A private dive log companion",
@@ -284,10 +285,10 @@ const en = {
   hour24: "24 hour",
   hour12: "12 hour",
   overlayLanguage: "Overlay language",
-  savedComposerPresets: "Composer presets",
+  personalComposerPresets: "Personal presets",
   composerPresetDescription: "Save reusable layout, content, chart, logo, appearance, and output choices. Dive-specific text, category, photo selection, and crop are left unchanged when a preset is applied.",
   composerPresetName: "Preset name",
-  savePreset: "Save",
+  savePersonalPreset: "Save personal preset",
   savedPresets: "Saved presets",
   choosePreset: "Choose a preset",
   applyPreset: "Apply preset",
@@ -299,6 +300,9 @@ const en = {
   deleteComposerPresetConfirm: "Delete the preset “{name}”? This cannot be undone.",
   composerPresetRemoved: "Deleted preset “{name}”",
   composerPresetRemoveFailed: "Could not delete this preset.",
+  includedBackground: "Included background",
+  removeIncludedBackground: "Remove for this session",
+  bundledBackgroundRemoved: "Removed the included background for this session",
   ready: "Ready",
   loadingComposer: "Loading composer…",
   addPhotoFirst: "Add a dive photo or reusable background first.",
@@ -331,6 +335,7 @@ const zhHant: Record<keyof typeof en, string> = {
   appLanguageDescription: "選擇 DiveFrame 介面使用的語言。每次潛水的圖片疊加層語言可另行設定。",
   english: "English",
   traditionalChineseHK: "繁體中文（香港）",
+  japanese: "日文",
   home: "DiveFrame 首頁",
   about: "關於",
   aboutEyebrow: "保障私隱的潛水日誌夥伴",
@@ -603,10 +608,10 @@ const zhHant: Record<keyof typeof en, string> = {
   hour24: "24 小時制",
   hour12: "12 小時制",
   overlayLanguage: "疊加文字語言",
-  savedComposerPresets: "圖片編輯預設",
+  personalComposerPresets: "個人預設",
   composerPresetDescription: "儲存可重用的版面、內容、圖表、標誌、外觀及輸出選項。套用預設時不會更改個別潛水的文字、類別、相片選擇及裁切。",
   composerPresetName: "預設名稱",
-  savePreset: "儲存",
+  savePersonalPreset: "儲存個人預設",
   savedPresets: "已儲存預設",
   choosePreset: "選擇預設",
   applyPreset: "套用預設",
@@ -618,6 +623,9 @@ const zhHant: Record<keyof typeof en, string> = {
   deleteComposerPresetConfirm: "刪除預設「{name}」？此操作無法復原。",
   composerPresetRemoved: "已刪除預設「{name}」",
   composerPresetRemoveFailed: "無法刪除此預設。",
+  includedBackground: "內置背景",
+  removeIncludedBackground: "在本次工作階段移除",
+  bundledBackgroundRemoved: "已在本次工作階段移除內置背景",
   ready: "就緒",
   loadingComposer: "正在載入圖片編輯器…",
   addPhotoFirst: "請先加入潛水相片或共用背景。",
@@ -641,7 +649,7 @@ const zhHant: Record<keyof typeof en, string> = {
   cinematicSplitDescription: "以橫向相片配合獨立側欄顯示深度曲線及潛水資料。",
 };
 
-export type AppLanguage = ComposerLanguage;
+export type AppLanguage = Exclude<ComposerLanguage, "ja">;
 export type AppTranslationKey = keyof typeof en;
 export type AppTranslate = (key: AppTranslationKey, values?: Record<string, string | number>) => string;
 

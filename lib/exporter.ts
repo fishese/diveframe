@@ -2,6 +2,7 @@ import type { CanvasRatio, ComposerSettings } from "./composer-settings";
 import type { Dive } from "./dive-model";
 import { renderComposition } from "./image-composer";
 import { ensureOverlayFont } from "./composer-fonts";
+import { exportFileName } from "./export-file-name";
 
 export function outputDimensions(
   image: { width: number; height: number },
@@ -40,7 +41,7 @@ export async function exportComposition(
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `diveframe-${dive.number ?? dive.id}.${settings.format === "png" ? "png" : "jpg"}`;
+  anchor.download = `${exportFileName(dive.startDateTime)}.${settings.format === "png" ? "png" : "jpg"}`;
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }

@@ -1,4 +1,5 @@
 import { chartAvailability, renderDiveChart } from "./chart-renderer";
+import { lowerPanelY } from "./composer-layout";
 import { getOverlayFont } from "./composer-fonts";
 import type { ComposerSettings } from "./composer-settings";
 import { formattedCoordinates, gasMixLabel, type Dive } from "./dive-model";
@@ -66,13 +67,11 @@ export function renderComposition(
           height,
         }
       : (() => {
-          const y =
-            height *
-            (template.layout === "graph"
-              ? 0.46
-              : template.layout === "dashboard"
-                ? 0.56
-                : 0.58);
+          const y = lowerPanelY(
+            template.layout,
+            settings.chartHeight,
+            height,
+          );
           return { x: 0, y, width, height: height - y };
         })();
   drawPhoto(context, image, width, height, settings);
@@ -179,10 +178,7 @@ export function renderComposition(
     }
   }
 
-  const chartHeight = Math.min(
-    height * settings.chartHeight,
-    panel.height * (template.layout === "graph" ? 0.62 : template.layout === "dashboard" ? 0.78 : 0.5),
-  );
+  const chartHeight = height * settings.chartHeight;
   const chartWidth = template.layout === "dashboard"
     ? panel.width * 0.64 - margin * 1.5
     : sidePanel
@@ -365,12 +361,12 @@ function formatDateTime(dive: Dive, settings: ComposerSettings) {
   if (settings.visibleFields.date) {
     parts.push(settings.dateFormat === "iso"
       ? date.toISOString().slice(0, 10)
-      : new Intl.DateTimeFormat(settings.language === "zh-Hant" ? "zh-HK" : "en", {
+      : new Intl.DateTimeFormat(settings.language === "zh-Hant" ? "zh-HK" : settings.language === "ja" ? "ja-JP" : "en", {
         dateStyle: settings.dateFormat === "medium" ? "medium" : "short",
       }).format(date));
   }
   if (settings.visibleFields.startTime) {
-    parts.push(new Intl.DateTimeFormat(settings.language === "zh-Hant" ? "zh-HK" : "en", {
+    parts.push(new Intl.DateTimeFormat(settings.language === "zh-Hant" ? "zh-HK" : settings.language === "ja" ? "ja-JP" : "en", {
       hour: "numeric", minute: "2-digit", hour12: settings.hourCycle === "12",
     }).format(date));
   }

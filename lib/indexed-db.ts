@@ -114,6 +114,9 @@ export type LocalAppPreferences = {
   id: "app";
   uiLanguage: "en" | "zh-Hant";
   defaultCylinderPresetId?: string;
+  lastComposerOutputSize?: ComposerSettings["outputSize"];
+  lastComposerFormat?: ComposerSettings["format"];
+  lastComposerJpegQuality?: number;
   updatedAt: string;
 };
 
@@ -480,7 +483,14 @@ export async function getLocalAppPreferences() {
 
 export async function saveLocalAppPreferences(
   preferences: Partial<
-    Pick<LocalAppPreferences, "uiLanguage" | "defaultCylinderPresetId">
+    Pick<
+      LocalAppPreferences,
+      | "uiLanguage"
+      | "defaultCylinderPresetId"
+      | "lastComposerOutputSize"
+      | "lastComposerFormat"
+      | "lastComposerJpegQuality"
+    >
   >,
 ) {
   const existing = await getLocalAppPreferences();
@@ -492,6 +502,13 @@ export async function saveLocalAppPreferences(
       preferences.defaultCylinderPresetId ??
       existing?.defaultCylinderPresetId ??
       "al80",
+    lastComposerOutputSize:
+      preferences.lastComposerOutputSize ?? existing?.lastComposerOutputSize,
+    lastComposerFormat:
+      preferences.lastComposerFormat ?? existing?.lastComposerFormat,
+    lastComposerJpegQuality:
+      preferences.lastComposerJpegQuality ??
+      existing?.lastComposerJpegQuality,
     updatedAt: new Date().toISOString(),
   };
   const database = await openDatabase();

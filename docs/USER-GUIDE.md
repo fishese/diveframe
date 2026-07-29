@@ -161,7 +161,8 @@ has no GPS.
 ## Available exports
 
 - High-resolution PNG or JPEG share images, with selectable photo, profile,
-  statistics, units, language, styling, and optional logo
+  statistics, units, English/Traditional Chinese/Japanese overlay language,
+  styling, and optional logo
 - A complete DiveFrame app-data backup for transfer or recovery
 - A JSON log of manually added dive sites that have coordinates
 - A merged `dive-sites.json` catalog for review and updating the app repository
@@ -186,6 +187,13 @@ fields, block positions, chart, logo, typography, colour, units, and output
 settings. It does not replace the destination dive's site override, category,
 selected photo, zoom, crop position, or rotation. Saving the same normalized
 name updates that preset. Presets are included in app-data backup and restore.
+The collapsed **Personal presets** section appears immediately below the
+template selector.
+
+If a dive has no attached or reusable photo, the included **Bubbles**
+background is selected automatically so the image can be composed immediately.
+Use **Remove for this session** beside the background controls if it is not
+wanted; it returns the next time the composer is loaded.
 
 On a mobile screen, the smaller live preview remains pinned below the top bar
 while the composer controls scroll. Changes to templates, fields, colours, and
@@ -202,6 +210,12 @@ profile substantially more height, so the two presets remain visually
 distinct regardless of the selected photograph. **Landscape Dashboard** and
 **Cinematic Split** automatically switch the canvas to 16:9 and provide
 horizontal lower-band and sidecar arrangements respectively.
+
+New dives start with social-media resolution and JPEG output. DiveFrame
+remembers the last selected resolution, format, and JPEG quality for the next
+dive without saved composer settings. Downloads use the dive date and start
+time, for example `diveframe-20260517 14-03.jpg`. The time separator is a
+hyphen so the file remains valid on Windows.
 
 The overlay font menu includes Noto Sans TC, Inter, Outfit, Space Mono, Huninn,
 and Device Sans. The font-colour picker applies one colour consistently to the

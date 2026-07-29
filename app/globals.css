@@ -1364,6 +1364,17 @@ button {
   justify-content: center;
 }
 
+.inline-control-button {
+  background: transparent;
+  border: 0;
+  color: var(--teal);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .composer-control,
 .composer-section-body > select {
   display: block;

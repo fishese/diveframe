@@ -164,9 +164,17 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(fonts, /Noto Serif TC/);
   assert.doesNotMatch(fonts, /LXGW WenKai TC/);
   assert.match(composerSettings, /textColor: "#ffffff"/);
+  assert.match(composerSettings, /outputSize: "social"/);
+  assert.match(composerSettings, /format: "jpeg"/);
   assert.match(composer, /template\.defaultRatio/);
   assert.match(composer, /composer-section-toggle/);
   assert.match(composer, /photo\.displayName \|\| photo\.fileName/);
+  assert.match(composer, /loadBundledBackground/);
+  assert.match(composer, /removeBundledBackgroundForSession/);
+  assert.match(composer, /personalComposerPresets/);
+  assert.match(composer, /<option value="ja">/);
+  assert.match(composer, /lastComposerOutputSize/);
+  assert.match(storage, /lastComposerFormat/);
   assert.match(composer, /saveLocalComposerPreset/);
   assert.match(composer, /applyComposerPreset/);
   assert.match(composer, /deleteLocalComposerPreset/);
@@ -212,7 +220,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v1/);
+  assert.match(serviceWorker, /diveframe-shell-v2/);
+  assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);
   assert.match(serviceWorker, /request\.mode === "navigate"/);
   assert.match(pwaInstall, /beforeinstallprompt/);
   assert.match(pwaInstall, /navigator\.serviceWorker\.register/);

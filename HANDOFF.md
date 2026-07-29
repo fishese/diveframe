@@ -317,6 +317,17 @@ zoom, and rotation untouched. Presets are included in app backup/restore; older
 version-1 backups without the optional array still import as an empty preset
 collection.
 
+The collapsed Personal presets section sits directly below Templates. A bundled
+`public/backgrounds/bubbles-bg.jpg` choice is appended to the photo selector,
+so it becomes the automatic image only when no dive photo or saved reusable
+background is available. Removing it affects only the current composer session.
+
+Fresh dives default to social-media JPEG output. Output size, format, and JPEG
+quality are also stored in `appPreferences` and reused when another dive has no
+saved composer settings. Export filenames use the dive start time in
+`diveframe-YYYYMMDD HH-MM.jpg` form; the hyphen keeps the filename valid on
+Windows.
+
 Five original data-driven templates are currently exposed: Bottom Profile,
 Right Information Panel, Full-width Graph, Landscape Dashboard, and Cinematic
 Split. The latter two default to 16:9 and use genuinely horizontal
@@ -367,6 +378,10 @@ and branding zones. Removed Minimal and Poster settings migrate to Bottom
 Profile, while the earlier Full-width Graph overlap repair remains in place.
 Composer control groups are collapsible so the full control set remains
 available without requiring one continuously long sidebar.
+
+The chart-height value is measured against the full canvas. Lower information
+panels now expand upward when a taller chart is requested instead of silently
+capping the chart at the old fixed panel height.
 
 The dive detail page reuses `renderDiveChart` on a responsive canvas and only
 draws the currently selected record. Its pressure line is opt-in and appears
@@ -429,9 +444,9 @@ Google Drive, iCloud Drive, or a small private API.
 - Add dive-photo deletion, captions, and storage-usage reporting.
 - Add draggable custom positions for non-logo overlay blocks. Logo fine
   positioning already uses horizontal and vertical sliders.
-- Add named composer presets that can be reused across dives.
 - Translate template descriptions and transient status/error messages; overlay
-  labels and composer controls are already available in Traditional Chinese.
+  labels and composer controls are already available in Traditional Chinese
+  and Japanese.
 - Show whether persistent browser storage was granted.
 - Add an IndexedDB integration test using a browser test runner.
 - Consider image downscaling or optional originals for large phone photos.

@@ -27,6 +27,7 @@ import { loadPhoto, renderComposition } from "@/lib/image-composer";
 import type { AppTranslate, AppTranslationKey } from "@/lib/app-i18n";
 import {
   getLocalComposerSettings,
+  getLocalAppPreferences,
   getLocalOverlayLogo,
   deleteLocalComposerPreset,
   listLocalAttachments,
@@ -35,6 +36,7 @@ import {
   listLocalDives,
   saveLocalComposerPreset,
   saveLocalComposerSettings,
+  saveLocalAppPreferences,
   updateLocalDiveCategory,
   type LocalAttachment,
   type LocalBackground,
@@ -48,9 +50,11 @@ import { useAppI18n } from "../AppI18nProvider";
 type PhotoChoice = {
   id: string;
   label: string;
-  source: "dive" | "library";
+  source: "dive" | "library" | "bundled";
   blob: Blob;
 };
+
+const BUNDLED_BACKGROUND_ID = "bundled:bubbles";
 
 const positions: BlockPosition[] = [
   "top-left", "top-centre", "top-right", "above-graph", "inside-panel",
@@ -105,18 +109,36 @@ export function ComposerApp() {
     listLocalDives().then(async (dives) => {
       const selectedDive = dives.find((item) => item.id === requestedDive) ?? dives[0];
       if (!selectedDive) throw new Error(t("importBeforeComposer"));
-      const [attachments, backgrounds, saved, savedLogo, savedPresets] = await Promise.all([
+      const [
+        attachments,
+        backgrounds,
+        saved,
+        savedLogo,
+        savedPresets,
+        bundledBackground,
+        appPreferences,
+      ] = await Promise.all([
         listLocalAttachments(selectedDive.id),
         listLocalBackgrounds(),
         getLocalComposerSettings(selectedDive.id),
         getLocalOverlayLogo(),
         listLocalComposerPresets(),
+        loadBundledBackground(),
+        getLocalAppPreferences(),
       ]);
       const choices = [
         ...attachments.map(photoChoice),
         ...backgrounds.map(backgroundChoice),
+        ...(bundledBackground ? [bundledBackground] : []),
       ];
       const initial = { ...defaultComposerSettings(selectedDive.id), ...saved };
+      if (!saved) {
+        initial.outputSize =
+          appPreferences?.lastComposerOutputSize ?? initial.outputSize;
+        initial.format = appPreferences?.lastComposerFormat ?? initial.format;
+        initial.jpegQuality =
+          appPreferences?.lastComposerJpegQuality ?? initial.jpegQuality;
+      }
       repairLegacyTemplatePositions(initial);
       initial.fontFamily = getOverlayFont(initial.fontFamily).id;
       if (initial.blockPositions.logo === "hidden") {
@@ -144,6 +166,9 @@ export function ComposerApp() {
     [photos, settings?.selectedPhotoId],
   );
   const normalized = useMemo(() => dive ? toNormalizedDive(dive) : null, [dive]);
+  const lastOutputSize = settings?.outputSize;
+  const lastOutputFormat = settings?.format;
+  const lastJpegQuality = settings?.jpegQuality;
   useEffect(() => {
     if (!selectedPhoto) return;
     let cancelled = false;
@@ -174,6 +199,18 @@ export function ComposerApp() {
     const timeout = window.setTimeout(() => saveLocalComposerSettings(settings), 350);
     return () => window.clearTimeout(timeout);
   }, [settings]);
+
+  useEffect(() => {
+    if (!lastOutputSize || !lastOutputFormat || lastJpegQuality === undefined) return;
+    const timeout = window.setTimeout(() => {
+      void saveLocalAppPreferences({
+        lastComposerOutputSize: lastOutputSize,
+        lastComposerFormat: lastOutputFormat,
+        lastComposerJpegQuality: lastJpegQuality,
+      });
+    }, 350);
+    return () => window.clearTimeout(timeout);
+  }, [lastJpegQuality, lastOutputFormat, lastOutputSize]);
 
   function update<K extends keyof ComposerSettings>(key: K, value: ComposerSettings[K]) {
     setSettings((current) => current ? { ...current, [key]: value, updatedAt: new Date().toISOString() } : current);
@@ -227,6 +264,16 @@ export function ComposerApp() {
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("composerPresetRemoveFailed"));
     }
+  }
+
+  function removeBundledBackgroundForSession() {
+    const remaining = photos.filter((photo) => photo.id !== BUNDLED_BACKGROUND_ID);
+    setPhotos(remaining);
+    if (settings?.selectedPhotoId === BUNDLED_BACKGROUND_ID) {
+      update("selectedPhotoId", remaining[0]?.id ?? null);
+      if (!remaining.length) setBitmap(null);
+    }
+    setStatus(remaining.length ? t("bundledBackgroundRemoved") : t("addPhotoFirst"));
   }
 
   function startCrop() {
@@ -405,66 +452,34 @@ export function ComposerApp() {
         </section>
 
         <aside className="composer-controls">
-          <ControlSection title={t("savedComposerPresets")} initialOpen>
-            <p className="control-hint preset-hint">{t("composerPresetDescription")}</p>
-            <div className="preset-save-row">
-              <input
-                value={presetName}
-                aria-label={t("composerPresetName")}
-                placeholder={t("composerPresetName")}
-                onChange={(event) => setPresetName(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void savePreset();
-                }}
-              />
-              <button
-                type="button"
-                className="button button-primary"
-                onClick={() => void savePreset()}
-              >
-                <BookmarkPlus size={15} /> {t("savePreset")}
-              </button>
-            </div>
-            <Control label={t("savedPresets")}>
-              <select
-                value={selectedPresetId}
-                onChange={(event) => {
-                  setSelectedPresetId(event.target.value);
-                  const preset = presets.find((item) => item.id === event.target.value);
-                  if (preset) setPresetName(preset.name);
-                }}
-              >
-                <option value="">{t("choosePreset")}</option>
-                {presets.map((preset) => (
-                  <option key={preset.id} value={preset.id}>{preset.name}</option>
-                ))}
-              </select>
-            </Control>
-            <div className="preset-actions">
-              <button
-                type="button"
-                className="button button-secondary"
-                disabled={!selectedPresetId}
-                onClick={applySelectedPreset}
-              >
-                {t("applyPreset")}
-              </button>
-              <button
-                type="button"
-                className="button button-quiet"
-                disabled={!selectedPresetId}
-                onClick={() => void removeSelectedPreset()}
-              >
-                <Trash2 size={14} /> {t("deletePreset")}
-              </button>
-            </div>
-          </ControlSection>
-
           <ControlSection title={t("photo")} initialOpen>
             <select value={settings.selectedPhotoId ?? ""} onChange={(event) => update("selectedPhotoId", event.target.value)}>
-              {photos.map((photo) => <option key={photo.id} value={photo.id}>{photo.source === "library" ? `${t("libraryPhoto")} · ` : `${t("divePhoto")} · `}{photo.label}</option>)}
+              {photos.map((photo) => (
+                <option key={photo.id} value={photo.id}>
+                  {photo.source === "library"
+                    ? `${t("libraryPhoto")} · `
+                    : photo.source === "bundled"
+                      ? `${t("includedBackground")} · `
+                      : `${t("divePhoto")} · `}
+                  {photo.label}
+                </option>
+              ))}
             </select>
-            <p className="control-hint"><Link href="/settings">{t("manageBackgrounds")}</Link></p>
+            <p className="control-hint">
+              <Link href="/settings">{t("manageBackgrounds")}</Link>
+              {selectedPhoto?.source === "bundled" ? (
+                <>
+                  {" · "}
+                  <button
+                    type="button"
+                    className="inline-control-button"
+                    onClick={removeBundledBackgroundForSession}
+                  >
+                    {t("removeIncludedBackground")}
+                  </button>
+                </>
+              ) : null}
+            </p>
             <div className="crop-actions">
               <button
                 type="button"
@@ -507,6 +522,61 @@ export function ComposerApp() {
                   <strong>{t(templateTranslationKeys[template.id].name)}</strong><small>{t(templateTranslationKeys[template.id].description)}</small>
                 </button>
               ))}
+            </div>
+          </ControlSection>
+
+          <ControlSection title={t("personalComposerPresets")}>
+            <p className="control-hint preset-hint">{t("composerPresetDescription")}</p>
+            <div className="preset-save-row">
+              <input
+                value={presetName}
+                aria-label={t("composerPresetName")}
+                placeholder={t("composerPresetName")}
+                onChange={(event) => setPresetName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void savePreset();
+                }}
+              />
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => void savePreset()}
+              >
+                <BookmarkPlus size={15} /> {t("savePersonalPreset")}
+              </button>
+            </div>
+            <Control label={t("savedPresets")}>
+              <select
+                value={selectedPresetId}
+                onChange={(event) => {
+                  setSelectedPresetId(event.target.value);
+                  const preset = presets.find((item) => item.id === event.target.value);
+                  if (preset) setPresetName(preset.name);
+                }}
+              >
+                <option value="">{t("choosePreset")}</option>
+                {presets.map((preset) => (
+                  <option key={preset.id} value={preset.id}>{preset.name}</option>
+                ))}
+              </select>
+            </Control>
+            <div className="preset-actions">
+              <button
+                type="button"
+                className="button button-secondary"
+                disabled={!selectedPresetId}
+                onClick={applySelectedPreset}
+              >
+                {t("applyPreset")}
+              </button>
+              <button
+                type="button"
+                className="button button-quiet"
+                disabled={!selectedPresetId}
+                onClick={() => void removeSelectedPreset()}
+              >
+                <Trash2 size={14} /> {t("deletePreset")}
+              </button>
             </div>
           </ControlSection>
 
@@ -597,7 +667,7 @@ export function ComposerApp() {
           </ControlSection>
 
           <ControlSection title={t("appearance")}>
-            <Control label={t("overlayLanguage")}><select value={settings.language} onChange={(event) => update("language", event.target.value as ComposerSettings["language"])}><option value="en">{t("english")}</option><option value="zh-Hant">{t("traditionalChineseHK")}</option></select></Control>
+            <Control label={t("overlayLanguage")}><select value={settings.language} onChange={(event) => update("language", event.target.value as ComposerSettings["language"])}><option value="en">{t("english")}</option><option value="zh-Hant">{t("traditionalChineseHK")}</option><option value="ja">{t("japanese")}</option></select></Control>
             <Control label={t("fontFamily")}><select value={settings.fontFamily} onChange={(event) => update("fontFamily", event.target.value as ComposerSettings["fontFamily"])}>
               {OVERLAY_FONTS.map((font) => <option key={font.id} value={font.id}>{font.name}</option>)}
             </select></Control>
@@ -663,6 +733,20 @@ function Range({ label, value, min, max, step, onChange }: { label: string; valu
 }
 function Color({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return <label className="composer-control color-control"><span>{label}</span><input type="color" value={value} onChange={(event) => onChange(event.target.value)} /></label>;
+}
+async function loadBundledBackground(): Promise<PhotoChoice | null> {
+  try {
+    const response = await fetch("/backgrounds/bubbles-bg.jpg");
+    if (!response.ok) return null;
+    return {
+      id: BUNDLED_BACKGROUND_ID,
+      label: "Bubbles",
+      source: "bundled",
+      blob: await response.blob(),
+    };
+  } catch {
+    return null;
+  }
 }
 function photoChoice(photo: LocalAttachment): PhotoChoice {
   return { id: photo.id, label: photo.fileName, source: "dive", blob: photo.blob };
