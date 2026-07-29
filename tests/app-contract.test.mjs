@@ -53,8 +53,12 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /\.fit/);
   assert.match(uddf, /source: "uddf"/);
   assert.match(uddf, /kelvinToCelsius/);
+  assert.match(uddf, /stablePortableSourceId/);
+  assert.doesNotMatch(uddf, /index \+ 1/);
   assert.match(fit, /source: "fit"/);
   assert.match(fit, /fitDepth/);
+  assert.match(fit, /stablePortableSourceId/);
+  assert.doesNotMatch(fit, /file\.name/);
   assert.match(subsurface, /querySelectorAll\("sample"\)/);
   assert.match(app, /\.ssrf/);
   assert.match(subsurface, /sourceId/);

@@ -2,6 +2,7 @@ import FitParser from "fit-file-parser";
 import type { DiveSample, GasMix } from "../dive-model";
 import { gasMixLabel } from "../dive-model";
 import type { LocalImportedDive } from "../indexed-db";
+import { stablePortableSourceId } from "../dive-identity";
 import { inferCategory } from "./parser-utils";
 
 type FitValue = Record<string, unknown>;
@@ -126,11 +127,27 @@ export async function readFitDive(file: File): Promise<LocalImportedDive[]> {
   const category = inferCategory(
     subSport?.toLowerCase().includes("apnea") ? "freediving" : subSport ?? sport,
   );
-  const sourceId = [
+  const fileCreatedAt =
+    dateValue(fileId?.time_created) ?? dateValue(fileId?.timestamp);
+  const activityIdentityTime = fileCreatedAt ?? startDate;
+  const deviceIdentity = [
     manufacturer ?? "fit",
-    serialNumber ?? product ?? "unknown",
-    fileId?.number ?? diveNumber ?? startDate?.toISOString() ?? file.name,
+    serialNumber ?? scalarString(product) ?? "unknown-device",
   ].join(":");
+  const sourceId = stablePortableSourceId(
+    activityIdentityTime
+      ? `${deviceIdentity}:${activityIdentityTime.toISOString()}`
+      : serialNumber && fileId?.number !== undefined
+        ? `${deviceIdentity}:file-${String(fileId.number)}`
+        : null,
+    {
+      startDateTime: startDate,
+      serialNumber,
+      maxDepthM,
+      durationSeconds,
+      samples,
+    },
+  );
   const tankBounds = getTankBounds(parsed, samples);
 
   return [{

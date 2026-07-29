@@ -93,3 +93,36 @@ test("higher priority sources deterministically promote the canonical id", () =>
     true,
   );
 });
+
+test("portable export identity prefers an explicit immutable activity id", () => {
+  const sourceId = identity.stablePortableSourceId("activity-123", {
+    startDateTime: "2026-05-17T14:00:00Z",
+    serialNumber: "ABC123",
+    maxDepthM: 14,
+    durationSeconds: 3600,
+    samples: [],
+  });
+  assert.equal(sourceId, "id:activity-123");
+});
+
+test("portable export fallback ignores filenames and dive ordering", () => {
+  const details = {
+    startDateTime: "2026-05-17T14:00:00Z",
+    serialNumber: "ABC123",
+    maxDepthM: 14.04,
+    durationSeconds: 3600,
+    samples: [
+      { elapsedSeconds: 0, depthM: 0, pressuresBar: [] },
+      { elapsedSeconds: 1200, depthM: 12, pressuresBar: [] },
+      { elapsedSeconds: 3600, depthM: 0, pressuresBar: [] },
+    ],
+  };
+  assert.equal(
+    identity.stablePortableSourceId(null, details),
+    identity.stablePortableSourceId("", details),
+  );
+  assert.match(
+    identity.stablePortableSourceId(null, details),
+    /^fingerprint:/,
+  );
+});

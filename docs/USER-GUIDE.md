@@ -42,7 +42,12 @@ silently.
 
 DiveFrame now creates the same canonical IDs on every device from immutable
 source identifiers. Shearwater `DiveId` is preferred, followed by Subsurface
-`deviceid:diveid`, UDDF, and FIT identity. If a dive initially has only a
+`deviceid:diveid`, UDDF, and FIT identity. UDDF uses the export’s dive element
+ID when available, while Garmin/Suunto FIT uses device and activity/file
+creation identity. When those fields are absent, DiveFrame derives a
+deterministic fingerprint from start time, computer serial, depth, duration,
+and representative profile samples. A renamed file or reordered UDDF log
+therefore does not create a new identity. If a dive initially has only a
 Subsurface record and its matching Shearwater record is imported later,
 DiveFrame promotes the canonical ID and moves that dive’s photos, site
 contribution, source mappings, and composer settings with it. Date/time,

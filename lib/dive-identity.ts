@@ -1,4 +1,5 @@
 import type { DiveSource, LocalImportedDive } from "./indexed-db";
+import type { DiveSample } from "./dive-model";
 
 const SOURCE_PRIORITY: Record<DiveSource, number> = {
   shearwater: 0,
@@ -11,6 +12,38 @@ export function canonicalDiveId(dive: LocalImportedDive) {
   const sourceId = dive.sourceId.trim();
   const stablePart = sourceId || fallbackFingerprint(dive);
   return `dive:v1:${dive.source}:${encodeURIComponent(stablePart)}`;
+}
+
+export function stablePortableSourceId(
+  explicitId: string | null | undefined,
+  dive: {
+    startDateTime: string | Date | null;
+    serialNumber: string | null;
+    maxDepthM: number | null;
+    durationSeconds: number | null;
+    samples: DiveSample[];
+  },
+) {
+  const normalizedExplicitId = explicitId?.trim();
+  return normalizedExplicitId
+    ? `id:${normalizedExplicitId}`
+    : `fingerprint:${portableDiveFingerprint(dive)}`;
+}
+
+export function portableDiveFingerprint(dive: {
+  startDateTime: string | Date | null;
+  serialNumber: string | null;
+  maxDepthM: number | null;
+  durationSeconds: number | null;
+  samples: DiveSample[];
+}) {
+  return [
+    normalizeDate(dive.startDateTime),
+    normalizeSerial(dive.serialNumber),
+    rounded(dive.maxDepthM, 10),
+    rounded(dive.durationSeconds, 1),
+    profileSignature(dive.samples),
+  ].join("|");
 }
 
 export function shouldPromoteCanonicalSource(
@@ -29,19 +62,23 @@ export function shouldPromoteCanonicalSource(
 }
 
 function fallbackFingerprint(dive: LocalImportedDive) {
-  return [
-    normalizeDate(dive.diveDate),
-    normalizeSerial(dive.serialNumber),
-    rounded(dive.maxDepthM ?? numberOrNull(dive.depth), 10),
-    rounded(dive.durationSeconds, 1),
-  ].join("|");
+  return portableDiveFingerprint({
+    startDateTime: dive.diveDate,
+    serialNumber: dive.serialNumber,
+    maxDepthM: dive.maxDepthM ?? numberOrNull(dive.depth),
+    durationSeconds: dive.durationSeconds,
+    samples: dive.samples,
+  });
 }
 
-function normalizeDate(value: string | null) {
+function normalizeDate(value: string | Date | null) {
   if (!value) return "unknown-time";
-  const timestamp = new Date(value.replace(" ", "T")).getTime();
+  const timestamp =
+    value instanceof Date
+      ? value.getTime()
+      : new Date(value.replace(" ", "T")).getTime();
   return Number.isNaN(timestamp)
-    ? value.trim().toLowerCase()
+    ? String(value).trim().toLowerCase()
     : new Date(timestamp).toISOString();
 }
 
@@ -59,4 +96,20 @@ function rounded(value: number | null, multiplier: number) {
   return value === null
     ? "unknown"
     : String(Math.round(value * multiplier) / multiplier);
+}
+
+function profileSignature(samples: DiveSample[]) {
+  if (!samples.length) return "no-profile";
+  const indexes = [
+    0,
+    Math.floor((samples.length - 1) * 0.25),
+    Math.floor((samples.length - 1) * 0.5),
+    Math.floor((samples.length - 1) * 0.75),
+    samples.length - 1,
+  ];
+  const points = [...new Set(indexes)].map((index) => {
+    const sample = samples[index];
+    return `${rounded(sample.elapsedSeconds, 1)}@${rounded(sample.depthM, 10)}`;
+  });
+  return `${samples.length}:${points.join(",")}`;
 }

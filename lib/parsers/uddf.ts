@@ -1,6 +1,7 @@
 import type { DiveSample, GasMix } from "../dive-model";
 import { gasMixLabel } from "../dive-model";
 import type { LocalImportedDive } from "../indexed-db";
+import { stablePortableSourceId } from "../dive-identity";
 import { inferCategory } from "./parser-utils";
 
 // UDDF is an open, SI-unit XML format. Oceanic+ documents UDDF as its log
@@ -22,13 +23,12 @@ export function readUddfLog(xmlText: string): LocalImportedDive[] {
 
   const profileRoots = descendants(document.documentElement, "profiledata");
   const diveElements = profileRoots.flatMap((root) => descendants(root, "dive"));
-  return diveElements.map((dive, index) => parseDive(dive, idMap, index));
+  return diveElements.map((dive) => parseDive(dive, idMap));
 }
 
 function parseDive(
   dive: Element,
   idMap: Map<string, Element>,
-  index: number,
 ): LocalImportedDive {
   const information = first(dive, "informationbeforedive") ?? dive;
   const samples = parseSamples(dive);
@@ -79,9 +79,13 @@ function parseDive(
   );
   const diveNumber =
     numericText(information, "divenumber") ?? numericText(dive, "divenumber");
-  const sourceId =
-    dive.getAttribute("id") ||
-    `${dateTime ?? "undated"}:${diveNumber ?? index + 1}:${maximumDepth ?? "unknown"}`;
+  const sourceId = stablePortableSourceId(dive.getAttribute("id"), {
+    startDateTime: dateTime,
+    serialNumber,
+    maxDepthM: maximumDepth,
+    durationSeconds,
+    samples,
+  });
   const pressureBounds = getPressureBounds(samples);
 
   return {

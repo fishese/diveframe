@@ -150,6 +150,12 @@ contributions, composer settings, and all source mappings. This makes final IDs
 independent of source import order and consistent across devices that import
 the same logs. Editable fields are deliberately excluded from identity.
 
+UDDF prefers the dive element `id`; its fallback no longer uses the dive’s
+array index. FIT prefers manufacturer/device plus activity or file-creation
+time; its fallback no longer uses the uploaded filename. Both portable-format
+fallbacks use start time, normalized serial, depth, duration, and five
+representative profile points.
+
 There is no migration for the older import-order-dependent IDs. During this
 pre-release period, clear local data and re-import source logs before making a
 new portable backup.

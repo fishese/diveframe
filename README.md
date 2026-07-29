@@ -114,8 +114,12 @@ included yet.
 
 Canonical dive IDs are deterministic across devices. DiveFrame uses immutable
 source identifiers in this priority order: Shearwater `DiveId`, Subsurface
-`deviceid:diveid`, UDDF identity, then FIT identity. Date/time, computer serial,
-depth, and duration matching links records when a second source is imported.
+`deviceid:diveid`, UDDF identity, then FIT identity. UDDF uses its dive element
+ID when present; otherwise it derives a stable profile fingerprint. Garmin and
+Suunto FIT imports use the device plus activity/file creation timestamp when
+present, with the same profile-fingerprint fallback. File names and positions
+inside an export are never used as identity. Date/time, computer serial, depth,
+and duration matching links records when a second source is imported.
 If that source has a higher-priority immutable ID, the dive and its attached
 photos, site contribution, source mappings, and composer settings are re-keyed
 together.
