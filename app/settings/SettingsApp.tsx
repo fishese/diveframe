@@ -53,6 +53,7 @@ import {
 } from "@/lib/gas-calculations";
 import { addDiveFrameSitesToSubsurface } from "@/lib/subsurface-site-export";
 import { useAppI18n } from "../AppI18nProvider";
+import { PwaInstallCard } from "../PwaInstall";
 
 type CatalogSite = {
   id: string;
@@ -370,6 +371,8 @@ export function SettingsApp() {
           <h1>{t("settingsAndData")}</h1>
           <p>{t("settingsDescription")}</p>
         </section>
+
+        <PwaInstallCard />
 
         <section className="settings-card catalog-settings">
           <div className="settings-card-heading">

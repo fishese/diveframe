@@ -95,6 +95,21 @@ site corrections back to a source log.
   controls in the composer.
 - Installable web-app metadata for mobile and desktop browsers.
 
+## Install the app
+
+DiveFrame can be installed as a Progressive Web App (PWA) from **Settings →
+Install DiveFrame**. On Android and desktop Chromium browsers, use the install
+button when it appears. On iPhone or iPad, open DiveFrame in Safari, tap
+**Share**, then **Add to Home Screen**.
+
+The installed app uses the same IndexedDB data as the browser for the same web
+address. Removing the app or clearing site data can remove the local logbook,
+so export an app-data backup first.
+
+The PWA is also a suitable base for a future Android wrapper, such as a Trusted
+Web Activity or Capacitor package. No APK wrapper or app-store signing is
+included yet.
+
 ## Development
 
 Use Node.js 22 or newer.

@@ -8,6 +8,23 @@ profiles and statistics.
 It complements the original dive-computer or logbook application. It does not
 replace that application's cloud backup and does not write changes back to it.
 
+## Installing DiveFrame
+
+Open **Settings → Install DiveFrame**. On Android and supported desktop
+browsers, select **Install app** when offered. DiveFrame will open in its own
+app window and appear on the home screen or app launcher.
+
+On iPhone or iPad, open the site in Safari, tap **Share**, then choose **Add to
+Home Screen**. Apple devices do not show the same in-page install prompt used
+by Chromium browsers.
+
+The installed PWA and the browser site share local data only when they use the
+same web address and browser storage. Export an app-data backup before
+uninstalling, clearing site data, changing browsers, or moving to another
+deployment address. The service worker keeps the visited app shell available
+for faster launches and limited offline use; map searches and other network
+lookups still require a connection.
+
 ## Supported imports
 
 The **Import log** button accepts one or more of:

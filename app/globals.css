@@ -49,6 +49,20 @@ select option {
   color: #f2faf8;
 }
 
+.pwa-install-status {
+  align-items: center;
+  color: var(--teal);
+  display: flex;
+  gap: 8px;
+  margin: 18px 0 0;
+}
+
+.pwa-data-note {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 16px;
+}
+
 button,
 label,
 a {
@@ -1783,6 +1797,7 @@ button {
 .branding-settings,
 .backup-settings,
 .dive-defaults-settings,
+.pwa-settings,
 .subsurface-export-settings,
 .language-settings,
 .danger-settings {
@@ -1794,6 +1809,7 @@ button {
 .branding-settings > .settings-note,
 .backup-settings > .settings-note,
 .dive-defaults-settings > .settings-note,
+.pwa-settings > .settings-note,
 .subsurface-export-settings > .settings-note,
 .language-settings > .settings-note,
 .danger-settings > .settings-note {

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and composer workflow", async () => {
-  const [app, settings, about, composer, chart, imageComposer, templates, composerSettings, backup, fonts, i18n, gasCalculations, shearwater, subsurface, subsurfaceExport, uddf, fit, matching, storage, hosting, manifest, catalog, userGuide, license] = await Promise.all([
+  const [app, settings, about, composer, chart, imageComposer, templates, composerSettings, backup, fonts, i18n, gasCalculations, shearwater, subsurface, subsurfaceExport, uddf, fit, matching, storage, hosting, manifest, serviceWorker, pwaInstall, catalog, userGuide, license] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("app/settings/SettingsApp.tsx", "utf8"),
     readFile("app/about/AboutApp.tsx", "utf8"),
@@ -25,6 +25,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     readFile("lib/indexed-db.ts", "utf8"),
     readFile(".openai/hosting.json", "utf8"),
     readFile("public/manifest.webmanifest", "utf8"),
+    readFile("public/sw.js", "utf8"),
+    readFile("app/PwaInstall.tsx", "utf8"),
     readFile("data/dive-sites.json", "utf8"),
     readFile("docs/USER-GUIDE.md", "utf8"),
     readFile("LICENSE", "utf8"),
@@ -159,6 +161,13 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /locationDraft/);
   assert.match(storage, /details\.location/);
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
+  assert.match(manifest, /diveframe-maskable-512\.png/);
+  assert.match(manifest, /"display": "standalone"/);
+  assert.match(serviceWorker, /diveframe-shell-v1/);
+  assert.match(serviceWorker, /request\.mode === "navigate"/);
+  assert.match(pwaInstall, /beforeinstallprompt/);
+  assert.match(pwaInstall, /navigator\.serviceWorker\.register/);
+  assert.match(settings, /PwaInstallCard/);
 
   const globalStyles = await readFile(
     new URL("../app/globals.css", import.meta.url),

@@ -140,9 +140,6 @@ export function DiveFrameApp() {
           setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
         }
       });
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
-    }
     return () => {
       active = false;
     };

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
 import { AppI18nProvider } from "./AppI18nProvider";
+import { PwaManager } from "./PwaInstall";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,15 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "A private visual companion for merged dive logs, maps, photos, and share images.",
     manifest: "/manifest.webmanifest",
+    icons: {
+      icon: [
+        { url: "/icons/diveframe-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/icons/diveframe-512.png", sizes: "512x512", type: "image/png" },
+      ],
+      apple: [
+        { url: "/icons/diveframe-apple-touch.png", sizes: "180x180", type: "image/png" },
+      ],
+    },
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
@@ -61,7 +71,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppI18nProvider>{children}</AppI18nProvider>
+        <AppI18nProvider>
+          <PwaManager />
+          {children}
+        </AppI18nProvider>
       </body>
     </html>
   );

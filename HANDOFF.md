@@ -18,6 +18,12 @@ The current product is deliberately device-local:
 
 Deployment is managed by the repository's Cloudflare Worker integration.
 
+The current install surface is a PWA. It can later be wrapped for Android with
+a Trusted Web Activity or Capacitor without changing the normalized dive model
+or IndexedDB stores. Before packaging an APK, decide how the wrapper will keep
+the same production origin/storage partition and how signed-app updates will be
+distributed.
+
 ## Repository map
 
 - `app/DiveFrameApp.tsx` — main logbook UI, imports, maps, gallery, and entry
@@ -42,7 +48,10 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `app/api/nearby-sites/route.ts` — local catalog and OpenStreetMap fallback.
 - `data/dive-sites.json` — curated source-controlled dive-site catalog.
 - `app/globals.css` — responsive application styling.
-- `public/manifest.webmanifest` and `public/sw.js` — installable-web-app shell.
+- `app/PwaInstall.tsx` — global service-worker registration and the
+  browser/iOS-aware install control shown in Settings.
+- `public/manifest.webmanifest`, `public/sw.js`, and `public/icons/` —
+  installable-web-app metadata, cached app shell, and header-mark app icons.
 - `tests/` — product contract and optional real Shearwater fixture test.
 - `docs/USER-GUIDE.md` — supported-format and device-local workflow guide.
 - `LICENSE` — project notice for `GPL-3.0-or-later`.
