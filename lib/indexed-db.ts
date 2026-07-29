@@ -11,6 +11,7 @@ import {
   shouldPromoteCanonicalSource,
 } from "./dive-identity";
 import { normalizeShearwaterPressurePair } from "./gas-calculations";
+import { withOptimizedJpeg } from "./media-optimization";
 
 export type DiveSource = "shearwater" | "subsurface" | "uddf" | "fit";
 
@@ -914,13 +915,7 @@ export async function optimizeLocalStoredPhotos(
     );
     const updated =
       blob && blob.size < attachment.size
-        ? {
-            ...attachment,
-            fileName: jpegFileName(attachment.fileName),
-            contentType: "image/jpeg",
-            size: blob.size,
-            blob,
-          }
+        ? withOptimizedJpeg(attachment, blob)
         : attachment;
     afterBytes += updated.size;
     if (updated !== attachment) updatedAttachments.push(updated);
@@ -935,13 +930,7 @@ export async function optimizeLocalStoredPhotos(
     );
     const updated =
       blob && blob.size < background.size
-        ? {
-            ...background,
-            fileName: jpegFileName(background.fileName),
-            contentType: "image/jpeg",
-            size: blob.size,
-            blob,
-          }
+        ? withOptimizedJpeg(background, blob)
         : background;
     afterBytes += updated.size;
     if (updated !== background) updatedBackgrounds.push(updated);
@@ -1315,10 +1304,6 @@ async function optimizedJpeg(
   } finally {
     URL.revokeObjectURL(url);
   }
-}
-
-function jpegFileName(fileName: string) {
-  return `${fileName.replace(/\.[^.]+$/, "") || "dive-photo"}.jpg`;
 }
 
 function withoutBlob<T extends { blob: Blob }>(record: T): Omit<T, "blob"> {
