@@ -61,6 +61,8 @@ distributed.
 - `docs/PRODUCT-SPEC.md` — authoritative current-state product specification,
   pre-wrapper readiness gate, Bluetooth discovery scope, and reviewer questions.
 - `LICENSE` — project notice for `GPL-3.0-or-later`.
+- `ASSET-LICENSES.md` — separate copyright boundary for the non-GPL Bubbles
+  sample background.
 - `.openai/hosting.json` — retained project metadata; D1 and R2 are
   intentionally disabled. Production is deployed by Cloudflare Workers Builds
   from GitHub.
@@ -335,6 +337,8 @@ The collapsed Personal presets section sits directly below Templates. A bundled
 `public/backgrounds/bubbles-bg.jpg` choice is appended to the photo selector,
 so it becomes the automatic image only when no dive photo or saved reusable
 background is available. Removing it affects only the current composer session.
+The image is excluded from the GPL software license; redistributors must follow
+`ASSET-LICENSES.md` and remove, replace, or obtain permission for it.
 
 Fresh dives default to social-media JPEG output. Output size, format, and JPEG
 quality are also stored in `appPreferences` and reused when another dive has no

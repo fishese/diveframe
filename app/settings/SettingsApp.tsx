@@ -564,6 +564,9 @@ export function SettingsApp() {
               {t("downloadCatalogPrompt")}
             </a>
           </p>
+          <p className="settings-note">
+            {t("catalogSharingInvitation")}
+          </p>
 
           <div className="settings-actions">
             <button

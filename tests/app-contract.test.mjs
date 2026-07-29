@@ -32,10 +32,11 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     readFile("docs/USER-GUIDE.md", "utf8"),
     readFile("LICENSE", "utf8"),
   ]);
-  const [appI18n, catalogTools, catalogPrompt] = await Promise.all([
+  const [appI18n, catalogTools, catalogPrompt, assetLicenses] = await Promise.all([
     readFile("lib/app-i18n.ts", "utf8"),
     readFile("lib/dive-site-catalog.ts", "utf8"),
     readFile("public/examples/dive-site-catalog-ai-prompt.md", "utf8"),
+    readFile("ASSET-LICENSES.md", "utf8"),
   ]);
 
   assert.match(shearwater, /GnssEntryLocation/);
@@ -51,6 +52,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(about, /t\("aboutImportsTitle"\)/);
   assert.match(about, /t\("aboutSourceStepFilter"\)/);
   assert.match(about, /t\("aboutLicenseTitle"\)/);
+  assert.match(about, /t\("aboutCatalogTitle"\)/);
+  assert.match(about, /t\("aboutAssetLicense"\)/);
   assert.match(about, /source:shearwater-only/);
   assert.match(about, /source:subsurface-only/);
   assert.match(userGuide, /\*\*Set in App\*\*/);
@@ -209,10 +212,13 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(settings, /saveSessionDiveSiteCatalog/);
   assert.match(settings, /removeSessionCatalog/);
   assert.match(settings, /dive-site-catalog-ai-prompt\.md/);
+  assert.match(settings, /catalogSharingInvitation/);
   assert.match(app, /nearbySessionCatalogSites/);
   assert.match(catalogTools, /sessionStorage/);
   assert.match(catalogTools, /nearbySessionCatalogSites/);
   assert.match(catalogPrompt, /Return only the final UTF-8 JSON object/);
+  assert.match(assetLicenses, /public\/backgrounds\/bubbles-bg\.jpg/);
+  assert.match(assetLicenses, /excluded from the GNU General Public License/);
   assert.match(app, /useAppI18n/);
   assert.doesNotMatch(app, /catalogNotesForDive/);
   assert.match(app, /photo-gallery-actions/);

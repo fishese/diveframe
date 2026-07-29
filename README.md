@@ -215,3 +215,11 @@ node --test .\tests\import-shearwater.test.mjs
 DiveFrame is free software licensed under the
 [GNU General Public License v3.0 or later](LICENSE). Forks and modifications are
 welcome; redistributed versions must remain open source under the same license.
+
+The bundled
+[`public/backgrounds/bubbles-bg.jpg`](public/backgrounds/bubbles-bg.jpg)
+sample image is separately copyrighted and excluded from the GPL software
+license. A fork must remove, replace, or obtain permission to redistribute it.
+See [ASSET-LICENSES.md](ASSET-LICENSES.md). The software remains GPL-licensed,
+but the repository and official build are a mixed-license distribution rather
+than a collection in which every asset is open licensed.

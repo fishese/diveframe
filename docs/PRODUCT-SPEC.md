@@ -186,6 +186,19 @@ normalized model. Profiles, pressure samples, cylinders, events, extensions,
 and unknown fields remain in the supplied document. DiveFrame does not
 currently write modified Shearwater, UDDF, or FIT files.
 
+## Licensing boundary
+
+The DiveFrame software source is licensed under `GPL-3.0-or-later`. The
+included Bubbles sample background is separately copyrighted, explicitly
+excluded from the GPL grant, and documented in `ASSET-LICENSES.md`.
+
+This makes the repository and official build a mixed-license distribution:
+the software remains open-source GPL software, but not every bundled asset is
+open licensed. Redistributors must remove, replace, or obtain permission for
+the Bubbles image. A freely redistributable image license would reduce friction
+for package repositories and forks while still allowing the copyright holder
+to retain copyright.
+
 ## Image composer
 
 The composer provides five original templates, including two horizontal 16:9

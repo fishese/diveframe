@@ -61,6 +61,11 @@ export function AboutApp() {
             <p>{t("aboutMergeDescription")}</p>
           </AboutCard>
 
+          <AboutCard icon={<MapPinned size={23} />} title={t("aboutCatalogTitle")}>
+            <p>{t("aboutCatalogDescription")}</p>
+            <p className="about-emphasis">{t("aboutCatalogShare")}</p>
+          </AboutCard>
+
           <AboutCard icon={<ImageIcon size={23} />} title={t("aboutExportsTitle")}>
             <p>{t("aboutExportsDescription")}</p>
             <ul>
@@ -109,6 +114,7 @@ export function AboutApp() {
           <p className="eyebrow">{t("aboutLicenseEyebrow")}</p>
           <h2>{t("aboutLicenseTitle")}</h2>
           <p>{t("aboutLicenseDescription")}</p>
+          <p>{t("aboutAssetLicense")}</p>
         </section>
 
         <div className="about-actions">
