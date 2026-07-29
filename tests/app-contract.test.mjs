@@ -75,6 +75,13 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /canonicalDiveId/);
   assert.match(storage, /shouldPromoteCanonicalSource/);
   assert.match(storage, /rekeyDive/);
+  assert.match(storage, /clearLocalDivePhotos/);
+  assert.match(storage, /mergeLocalDuplicateDives/);
+  assert.match(backup, /SHA-256/);
+  assert.match(backup, /previewLocalAppBackup/);
+  assert.match(backup, /restorePreparedAppBackup/);
+  assert.match(settings, /restoreAppData\("merge"\)/);
+  assert.match(settings, /restoreAppData\("replace"\)/);
   assert.match(storage, /attachmentsStore\.put\(\{ \.\.\.attachment, diveId: nextId \}\)/);
   assert.match(matching, /normalizeSerial/);
   assert.match(matching, /secondsApart > 300/);

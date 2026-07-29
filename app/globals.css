@@ -1911,6 +1911,7 @@ button {
 .pwa-settings,
 .subsurface-export-settings,
 .language-settings,
+.duplicate-settings,
 .danger-settings {
   margin-top: 14px;
   padding: 24px;
@@ -1923,6 +1924,7 @@ button {
 .pwa-settings > .settings-note,
 .subsurface-export-settings > .settings-note,
 .language-settings > .settings-note,
+.duplicate-settings > .settings-note,
 .danger-settings > .settings-note {
   margin-top: 20px;
 }
@@ -1940,7 +1942,7 @@ button {
 }
 
 .subsurface-export-settings {
-  order: 2;
+  order: 3;
 }
 
 .dive-defaults-settings {
@@ -1961,6 +1963,111 @@ button {
 
 .danger-settings {
   order: 7;
+}
+
+.duplicate-settings {
+  order: 2;
+}
+
+.duplicate-review,
+.backup-preview {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin-top: 18px;
+  padding: 16px;
+}
+
+.backup-preview-heading {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.backup-preview-heading > div {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+
+.backup-preview-heading small,
+.backup-preview > p,
+.duplicate-candidate > p {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.integrity-badge {
+  border-radius: 999px;
+  font-size: 10px;
+  padding: 5px 8px;
+}
+
+.integrity-badge.verified {
+  background: rgba(141, 235, 215, 0.12);
+  color: var(--teal);
+}
+
+.integrity-badge.legacy {
+  background: rgba(255, 203, 107, 0.12);
+  color: #ffcb6b;
+}
+
+.backup-counts {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.backup-counts span {
+  background: rgba(255, 255, 255, 0.035);
+  border-radius: 10px;
+  display: grid;
+  font-size: 10px;
+  gap: 2px;
+  padding: 10px;
+}
+
+.backup-counts strong {
+  color: var(--teal);
+  font-size: 18px;
+}
+
+.duplicate-review summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.duplicate-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.duplicate-candidate {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.duplicate-comparison {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.duplicate-dive {
+  background: rgba(255, 255, 255, 0.035);
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.duplicate-dive span,
+.duplicate-dive small {
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .danger-actions {
@@ -2554,6 +2661,8 @@ button {
   .background-settings,
   .branding-settings,
   .backup-settings,
+  .duplicate-settings,
+  .danger-settings,
   .dive-defaults-settings,
   .subsurface-export-settings,
   .language-settings,
@@ -2615,6 +2724,16 @@ button {
   .catalog-source > .button,
   .settings-actions > .button {
     width: 100%;
+  }
+
+  .backup-counts,
+  .duplicate-comparison {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .backup-preview-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 
 }

@@ -66,10 +66,12 @@ engineering reviewers.
   pending additions can be reviewed, renamed, given aliases, or excluded first.
 - A complete device-to-device backup file containing IndexedDB records, dive
   photos, reusable backgrounds, the overlay logo, per-dive composer settings,
-  named composer presets, and the app-language preference.
-- Separate reset actions: erase all browser data, or clear only imported dives,
-  source matching, and app-added site records while retaining photos,
-  backgrounds, logo, composer settings, and app preferences.
+  named composer presets, and the app-language preference. Current backups use
+  a SHA-256 checksum and show a preview before an explicit merge or replace.
+- Manual review and user-directed merging of likely duplicate dive records.
+- Separate reset actions: erase all browser data, clear only imported dives,
+  or clear only per-dive photos while retaining reusable backgrounds and other
+  settings.
 - A pass-through Subsurface export tool that adds matched site names, buddy,
   and notes to a freshly supplied SSRF/XML copy without rebuilding or dropping
   the source log's profiles, events, cylinders, or other fields.

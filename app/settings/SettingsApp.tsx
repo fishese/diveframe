@@ -9,10 +9,12 @@ import {
   Download,
   FileJson,
   Gauge,
+  GitMerge,
   Image as ImageIcon,
   Languages,
   LoaderCircle,
   RefreshCw,
+  ShieldCheck,
   Trash2,
   Upload,
   Waves,
@@ -26,12 +28,15 @@ import {
 import bundledCatalog from "@/data/dive-sites.json";
 import {
   createLocalAppBackup,
-  restoreLocalAppBackup,
+  previewLocalAppBackup,
+  restorePreparedAppBackup,
+  type PreparedAppBackup,
 } from "@/lib/app-backup";
 import {
   addLocalBackgrounds,
   clearAllLocalData,
   clearLocalDiveData,
+  clearLocalDivePhotos,
   deleteLocalBackground,
   deleteLocalOverlayLogo,
   getLocalAppPreferences,
@@ -40,13 +45,20 @@ import {
   listLocalDives,
   listLocalSourceRecords,
   listLocalSiteContributions,
+  mergeLocalDuplicateDives,
   saveLocalAppPreferences,
   saveLocalOverlayLogo,
   updateLocalBackgroundName,
   type LocalBackground,
   type LocalBrandingAsset,
+  type LocalDive,
   type LocalSiteContribution,
 } from "@/lib/indexed-db";
+import type { AppTranslate } from "@/lib/app-i18n";
+import {
+  findPotentialDuplicateDives,
+  type DuplicateDiveCandidate,
+} from "@/lib/duplicate-dives";
 import {
   CYLINDER_PRESETS,
   DEFAULT_CYLINDER_PRESET_ID,
@@ -82,6 +94,12 @@ export function SettingsApp() {
   );
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(true);
+  const [backupPreview, setBackupPreview] =
+    useState<PreparedAppBackup | null>(null);
+  const [duplicateCandidates, setDuplicateCandidates] = useState<
+    DuplicateDiveCandidate[]
+  >([]);
+  const [dismissedDuplicates, setDismissedDuplicates] = useState<string[]>([]);
 
   useEffect(() => {
     Promise.all([
@@ -89,8 +107,9 @@ export function SettingsApp() {
       listLocalBackgrounds(),
       getLocalOverlayLogo(),
       getLocalAppPreferences(),
+      listLocalDives(),
     ])
-      .then(([items, savedBackgrounds, savedLogo, preferences]) => {
+      .then(([items, savedBackgrounds, savedLogo, preferences, dives]) => {
         const sessionCatalog = loadSessionDiveSiteCatalog();
         setContributions(items);
         setReviewedSites(items.map(toSiteDraft));
@@ -103,6 +122,8 @@ export function SettingsApp() {
         setDefaultCylinderPresetId(
           preferences?.defaultCylinderPresetId ?? DEFAULT_CYLINDER_PRESET_ID,
         );
+        setDismissedDuplicates(preferences?.dismissedDuplicatePairs ?? []);
+        setDuplicateCandidates(findPotentialDuplicateDives(dives));
         setStatus(
           items.length
             ? t("manualSitesReady", { count: items.length, suffix: items.length === 1 ? "" : "s" })
@@ -218,9 +239,26 @@ export function SettingsApp() {
     event.target.value = "";
     if (!file) return;
     setBusy(true);
+    setStatus(t("validatingBackup"));
+    try {
+      const preview = await previewLocalAppBackup(file);
+      setBackupPreview(preview);
+      setStatus(t("backupReadyForReview"));
+    } catch (error) {
+      setBackupPreview(null);
+      setStatus(error instanceof Error ? error.message : t("importBackupFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function restoreAppData(mode: "merge" | "replace") {
+    if (!backupPreview) return;
+    if (mode === "replace" && !window.confirm(t("replaceBackupConfirm"))) return;
+    setBusy(true);
     setStatus(t("restoringBackup"));
     try {
-      const counts = await restoreLocalAppBackup(file);
+      const result = await restorePreparedAppBackup(backupPreview, mode);
       const [items, savedBackgrounds, savedLogo, restoredPreferences] = await Promise.all([
         listLocalSiteContributions(),
         listLocalBackgrounds(),
@@ -237,11 +275,59 @@ export function SettingsApp() {
       setDefaultCylinderPresetId(
         restoredPreferences?.defaultCylinderPresetId ?? DEFAULT_CYLINDER_PRESET_ID,
       );
-      setStatus(t("importComplete", counts));
+      const dives = await listLocalDives();
+      setDuplicateCandidates(findPotentialDuplicateDives(dives));
+      setDismissedDuplicates(
+        restoredPreferences?.dismissedDuplicatePairs ?? [],
+      );
+      setBackupPreview(null);
+      setStatus(
+        mode === "merge"
+          ? t("importMergeComplete", result)
+          : t("importReplaceComplete", result),
+      );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("importBackupFailed"));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function eraseDivePhotos() {
+    if (!window.confirm(t("eraseDivePhotosConfirm"))) return;
+    setBusy(true);
+    try {
+      const count = await clearLocalDivePhotos();
+      setStatus(t("eraseDivePhotosComplete", { count }));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("eraseDivePhotosFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resolveDuplicate(keepId: string, removeId: string) {
+    setBusy(true);
+    try {
+      const result = await mergeLocalDuplicateDives(keepId, removeId);
+      const dives = await listLocalDives();
+      setDuplicateCandidates(findPotentialDuplicateDives(dives));
+      setStatus(t("duplicateMergeComplete", result));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("duplicateMergeFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function keepDuplicateSeparate(candidateId: string) {
+    const next = [...new Set([...dismissedDuplicates, candidateId])];
+    setDismissedDuplicates(next);
+    try {
+      await saveLocalAppPreferences({ dismissedDuplicatePairs: next });
+      setStatus(t("duplicateKeptSeparate"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("settingsSaveFailed"));
     }
   }
 
@@ -252,6 +338,8 @@ export function SettingsApp() {
       await clearAllLocalData();
       setContributions([]);
       setReviewedSites([]);
+      setDuplicateCandidates([]);
+      setDismissedDuplicates([]);
       setBackgrounds([]);
       setLogo(null);
       setDefaultCylinderPresetId(DEFAULT_CYLINDER_PRESET_ID);
@@ -271,6 +359,7 @@ export function SettingsApp() {
       await clearLocalDiveData();
       setContributions([]);
       setReviewedSites([]);
+      setDuplicateCandidates([]);
       setStatus(t("eraseDiveDataComplete"));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("eraseDiveDataFailed"));
@@ -377,6 +466,10 @@ export function SettingsApp() {
     setCatalogLabel(null);
     setStatus(t("sessionCatalogRemoved"));
   }
+
+  const visibleDuplicates = duplicateCandidates.filter(
+    (candidate) => !dismissedDuplicates.includes(candidate.id),
+  );
 
   return (
     <main className="settings-page">
@@ -621,6 +714,140 @@ export function SettingsApp() {
           <p className="settings-note">
             {t("importMergeNote")}
           </p>
+          {backupPreview && (
+            <div className="backup-preview" role="region" aria-label={t("backupPreview")}>
+              <div className="backup-preview-heading">
+                <ShieldCheck size={19} />
+                <div>
+                  <strong>{t("backupPreview")}</strong>
+                  <small>{backupPreview.fileName}</small>
+                </div>
+                <span
+                  className={
+                    backupPreview.integrity === "verified"
+                      ? "integrity-badge verified"
+                      : "integrity-badge legacy"
+                  }
+                >
+                  {backupPreview.integrity === "verified"
+                    ? t("checksumVerified")
+                    : t("legacyBackup")}
+                </span>
+              </div>
+              <p>
+                {t("backupExportedAt", {
+                  date: new Date(backupPreview.exportedAt).toLocaleString(),
+                })}
+              </p>
+              <div className="backup-counts">
+                <span><strong>{backupPreview.counts.dives}</strong>{t("backupDives")}</span>
+                <span><strong>{backupPreview.counts.photos}</strong>{t("backupPhotos")}</span>
+                <span><strong>{backupPreview.counts.backgrounds}</strong>{t("backupBackgrounds")}</span>
+                <span><strong>{backupPreview.counts.presets}</strong>{t("backupPresets")}</span>
+              </div>
+              <p className="settings-note">
+                {t("backupImpact", backupImpact(backupPreview))}
+              </p>
+              <div className="settings-actions">
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={() => void restoreAppData("merge")}
+                  disabled={busy}
+                >
+                  <GitMerge size={16} /> {t("mergeBackup")}
+                </button>
+                <button
+                  type="button"
+                  className="button button-danger-secondary"
+                  onClick={() => void restoreAppData("replace")}
+                  disabled={busy}
+                >
+                  <RefreshCw size={16} /> {t("replaceWithBackup")}
+                </button>
+                <button
+                  type="button"
+                  className="button button-quiet"
+                  onClick={() => setBackupPreview(null)}
+                  disabled={busy}
+                >
+                  {t("cancel")}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="settings-card duplicate-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><GitMerge size={21} /></span>
+            <div>
+              <p className="eyebrow">{t("dataQuality")}</p>
+              <h2>{t("duplicateReviewTitle")}</h2>
+            </div>
+          </div>
+          <p className="settings-note">{t("duplicateReviewDescription")}</p>
+          <details className="duplicate-review">
+            <summary>
+              {visibleDuplicates.length
+                ? t("duplicateCandidates", { count: visibleDuplicates.length })
+                : t("noDuplicateCandidates")}
+            </summary>
+            <div className="duplicate-list">
+              {visibleDuplicates.map((candidate) => (
+                <article className="duplicate-candidate" key={candidate.id}>
+                  <div className="duplicate-comparison">
+                    <DuplicateDive dive={candidate.first} label="1" t={t} />
+                    <DuplicateDive dive={candidate.second} label="2" t={t} />
+                  </div>
+                  <p>
+                    {t("duplicateDifference", {
+                      seconds: Math.round(candidate.timeDifferenceSeconds),
+                      depth:
+                        candidate.depthDifferenceM === null
+                          ? "—"
+                          : candidate.depthDifferenceM.toFixed(1),
+                    })}
+                  </p>
+                  <div className="settings-actions">
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      onClick={() =>
+                        void resolveDuplicate(
+                          candidate.first.id,
+                          candidate.second.id,
+                        )
+                      }
+                      disabled={busy}
+                    >
+                      {t("keepFirstDive")}
+                    </button>
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      onClick={() =>
+                        void resolveDuplicate(
+                          candidate.second.id,
+                          candidate.first.id,
+                        )
+                      }
+                      disabled={busy}
+                    >
+                      {t("keepSecondDive")}
+                    </button>
+                    <button
+                      type="button"
+                      className="button button-quiet"
+                      onClick={() => void keepDuplicateSeparate(candidate.id)}
+                    >
+                      {t("keepSeparate")}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </details>
         </section>
 
         <section className="settings-card subsurface-export-settings">
@@ -774,6 +1001,18 @@ export function SettingsApp() {
           </p>
           <div className="danger-actions">
             <div className="danger-option">
+              <strong>{t("eraseDivePhotos")}</strong>
+              <p>{t("eraseDivePhotosDescription")}</p>
+              <button
+                type="button"
+                className="button button-danger-secondary"
+                onClick={() => void eraseDivePhotos()}
+                disabled={busy}
+              >
+                <Trash2 size={16} /> {t("eraseDivePhotos")}
+              </button>
+            </div>
+            <div className="danger-option">
               <strong>{t("eraseDiveData")}</strong>
               <p>{t("eraseDiveDataDescription")}</p>
               <button
@@ -806,6 +1045,53 @@ export function SettingsApp() {
         </div>
       </div>
     </main>
+  );
+}
+
+function backupImpact(backup: PreparedAppBackup) {
+  return Object.values(backup.stores).reduce(
+    (totals, store) => ({
+      newRecords: totals.newRecords + store.newRecords,
+      matchingRecords: totals.matchingRecords + store.matchingRecords,
+      localOnlyRecords: totals.localOnlyRecords + store.localOnlyRecords,
+    }),
+    { newRecords: 0, matchingRecords: 0, localOnlyRecords: 0 },
+  );
+}
+
+function DuplicateDive({
+  dive,
+  label,
+  t,
+}: {
+  dive: LocalDive;
+  label: string;
+  t: AppTranslate;
+}) {
+  const title =
+    dive.userSite || dive.site || dive.location || t("unnamedDiveSite");
+  const duration =
+    dive.durationSeconds === null
+      ? "—"
+      : `${Math.floor(dive.durationSeconds / 60)}:${String(
+          dive.durationSeconds % 60,
+        ).padStart(2, "0")}`;
+  return (
+    <div className="duplicate-dive">
+      <small>#{label}</small>
+      <strong>{title}</strong>
+      <span>{dive.diveDate ? new Date(dive.diveDate).toLocaleString() : "—"}</span>
+      <span>
+        {dive.maxDepthM === null ? "—" : `${dive.maxDepthM.toFixed(1)} m`}
+        {" · "}
+        {duration}
+      </span>
+      <small>
+        {t("duplicateSources", {
+          sources: dive.sources.join(", ") || "—",
+        })}
+      </small>
+    </div>
   );
 }
 

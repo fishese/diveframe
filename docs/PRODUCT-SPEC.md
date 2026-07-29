@@ -156,13 +156,23 @@ IndexedDB stores canonical dives, source mappings, attachments, manual site
 contributions, per-dive composer settings, named presets, reusable backgrounds,
 the overlay logo, and app preferences.
 
-The complete app backup is a versioned JSON file with embedded image data. Its
-records merge by primary key on import. The file is not encrypted. Deterministic
-dive IDs prevent duplicate dives when two devices imported the same source
-logs, but destination-only records remain after a merge.
+The complete app backup is a versioned JSON file with embedded image data.
+Current backups include a SHA-256 integrity checksum. Import validates the
+structure, record keys, important dive references, encoded image data, and
+checksum before showing a non-destructive preview. The user then explicitly
+chooses **merge** (matching keys update, destination-only records remain) or
+**replace** (all local stores are atomically replaced). The file is not
+encrypted.
 
-Two destructive controls exist:
+Deterministic dive IDs prevent duplicate dives when two devices imported the
+same source logs. A collapsed manual review tool also identifies conservative
+time/depth/duration matches and lets the user merge either record into the
+other or keep them separate.
 
+Three destructive controls exist:
+
+- **Erase all dive photos** clears per-dive attachments while retaining dives,
+  reusable backgrounds, branding, and settings.
 - **Erase dive data only** clears dives, source mappings, and site
   contributions while retaining images and settings that can reconnect after
   deterministic re-import.
@@ -248,15 +258,17 @@ have not yet been completed.
 These items have higher leverage if completed while the app still has one
 browser-based implementation:
 
-### Priority A: trust and recoverability
+### Completed trust and recoverability work
 
-1. Add backup import preview with explicit **merge** and **replace** choices.
-2. Add backup checksums and clear validation/error reporting; consider optional
-   client-side encryption before photo libraries become large.
-3. Add an import result report showing added, updated, matched, ambiguous, and
-   rejected dives.
-4. Add manual duplicate resolution: compare, merge, or keep separate, with
-   provenance shown for conflicting fields.
+1. Backup import preview with explicit **merge** and **replace** choices.
+2. SHA-256 checksums, structural validation, and clear validation failures.
+3. Import reporting for added, matching, retained, and removed records.
+4. Manual duplicate comparison with user-directed merge or keep-separate
+   resolution.
+
+Import reporting is currently record-level rather than parser-level: ambiguous
+or rejected source dives are still reported by the original log-import flow,
+not by app-backup restore.
 
 ### Priority B: storage and media control
 

@@ -128,8 +128,26 @@ the app moves to a different web address. Use **Settings → Export app data**
 before changing devices, browsers, or addresses. The backup contains private
 log and photo data and should be kept securely.
 
-The Settings danger zone has two reset choices:
+When importing, DiveFrame validates the file and verifies the SHA-256 checksum
+on current-format backups before showing a preview. Older backups without a
+checksum are identified as legacy backups. Nothing is written until you choose:
 
+- **Merge backup** adds new records, updates records with matching IDs, and
+  keeps records that exist only on the current device.
+- **Replace with backup** atomically clears DiveFrame's current local stores
+  and restores exactly what is in the backup. Review the preview and
+  confirmation carefully because device-only records are removed.
+
+After import, the status message reports new, matching, retained, or removed
+record counts. Settings also contains a collapsed **Review possible
+duplicates** tool. It compares likely pairs and lets you choose which record
+keeps its ID and preferred values, or leave the pair separate.
+
+The Settings danger zone has three reset choices:
+
+- **Erase all dive photos** removes only images attached to dives. It keeps the
+  dives, reusable backgrounds, logo, and settings, and is useful when a backup
+  has grown too large.
 - **Erase dive data only** removes imported dives, source mappings, and
   app-added site records. It keeps dive photos, reusable backgrounds, the
   global logo, per-dive composer settings, named composer presets, and app
@@ -137,6 +155,11 @@ The Settings danger zone has two reset choices:
   reconnect the retained per-dive photos and composer settings.
 - **Erase all data** removes every DiveFrame record and image from the current
   browser.
+
+For a device-transfer acceptance test, export from one browser and import into
+a clean profile in a different browser, then compare counts, edits, photos,
+backgrounds, presets, logo, and language. A fuller checklist is in
+`docs/CROSS-BROWSER-TESTING.md`.
 
 ## Changes made in DiveFrame
 

@@ -117,6 +117,7 @@ export type LocalAppPreferences = {
   lastComposerOutputSize?: ComposerSettings["outputSize"];
   lastComposerFormat?: ComposerSettings["format"];
   lastComposerJpegQuality?: number;
+  dismissedDuplicatePairs?: string[];
   updatedAt: string;
 };
 
@@ -160,6 +161,8 @@ export type LocalBackupSnapshot = {
   brandingAssets: LocalBrandingAsset[];
   appPreferences: LocalAppPreferences[];
 };
+
+export type BackupImportMode = "merge" | "replace";
 
 const DATABASE_NAME = "diveframe-local";
 const DATABASE_VERSION = 7;
@@ -490,6 +493,7 @@ export async function saveLocalAppPreferences(
       | "lastComposerOutputSize"
       | "lastComposerFormat"
       | "lastComposerJpegQuality"
+      | "dismissedDuplicatePairs"
     >
   >,
 ) {
@@ -509,6 +513,10 @@ export async function saveLocalAppPreferences(
     lastComposerJpegQuality:
       preferences.lastComposerJpegQuality ??
       existing?.lastComposerJpegQuality,
+    dismissedDuplicatePairs:
+      preferences.dismissedDuplicatePairs ??
+      existing?.dismissedDuplicatePairs ??
+      [],
     updatedAt: new Date().toISOString(),
   };
   const database = await openDatabase();
@@ -780,7 +788,10 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
   };
 }
 
-export async function importLocalBackupSnapshot(snapshot: LocalBackupSnapshot) {
+export async function importLocalBackupSnapshot(
+  snapshot: LocalBackupSnapshot,
+  mode: BackupImportMode = "merge",
+) {
   const database = await openDatabase();
   const transaction = database.transaction(
     [
@@ -807,16 +818,118 @@ export async function importLocalBackupSnapshot(snapshot: LocalBackupSnapshot) {
     [BRANDING_ASSETS_STORE, snapshot.brandingAssets],
     [APP_PREFERENCES_STORE, snapshot.appPreferences],
   ];
+  if (mode === "replace") {
+    for (const [storeName] of recordsByStore) {
+      transaction.objectStore(storeName).clear();
+    }
+  }
   for (const [storeName, records] of recordsByStore) {
     const store = transaction.objectStore(storeName);
     records.forEach((record) => store.put(record));
   }
   await transactionComplete(transaction);
   return {
+    mode,
     dives: snapshot.dives.length,
     photos: snapshot.attachments.length,
     backgrounds: snapshot.backgrounds.length,
     siteContributions: snapshot.siteContributions.length,
+  };
+}
+
+export async function clearLocalDivePhotos() {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [ATTACHMENTS_STORE, DIVES_STORE],
+    "readwrite",
+  );
+  const attachmentsStore = transaction.objectStore(ATTACHMENTS_STORE);
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const [attachments, dives] = await Promise.all([
+    request<LocalAttachment[]>(attachmentsStore.getAll()),
+    request<LocalDive[]>(divesStore.getAll()),
+  ]);
+  attachmentsStore.clear();
+  dives.forEach((dive) => {
+    if (dive.photoCount) divesStore.put({ ...dive, photoCount: 0 });
+  });
+  await transactionComplete(transaction);
+  return attachments.length;
+}
+
+export async function mergeLocalDuplicateDives(
+  keepId: string,
+  removeId: string,
+) {
+  if (keepId === removeId) throw new Error("Choose two different dives.");
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [
+      DIVES_STORE,
+      SOURCES_STORE,
+      ATTACHMENTS_STORE,
+      SITE_CONTRIBUTIONS_STORE,
+      COMPOSER_SETTINGS_STORE,
+    ],
+    "readwrite",
+  );
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const sourcesStore = transaction.objectStore(SOURCES_STORE);
+  const attachmentsStore = transaction.objectStore(ATTACHMENTS_STORE);
+  const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
+  const composerSettingsStore = transaction.objectStore(COMPOSER_SETTINGS_STORE);
+  const [keepRaw, removeRaw, attachments, sources, keepContribution, removeContribution, keepSettings, removeSettings] =
+    await Promise.all([
+      request<LocalDive | undefined>(divesStore.get(keepId)),
+      request<LocalDive | undefined>(divesStore.get(removeId)),
+      request<LocalAttachment[]>(
+        attachmentsStore.index("diveId").getAll(removeId),
+      ),
+      request<SourceRecord[]>(sourcesStore.getAll()),
+      request<LocalSiteContribution | undefined>(contributionsStore.get(keepId)),
+      request<LocalSiteContribution | undefined>(contributionsStore.get(removeId)),
+      request<ComposerSettings | undefined>(composerSettingsStore.get(keepId)),
+      request<ComposerSettings | undefined>(composerSettingsStore.get(removeId)),
+    ]);
+  if (!keepRaw || !removeRaw) {
+    transaction.abort();
+    throw new Error("One of these dives no longer exists.");
+  }
+  const keep = hydrateDive(keepRaw);
+  const remove = hydrateDive(removeRaw);
+  const merged = mergeStoredDives(keep, remove, attachments.length);
+  divesStore.put(merged);
+  divesStore.delete(removeId);
+  attachments.forEach((attachment) =>
+    attachmentsStore.put({ ...attachment, diveId: keepId }),
+  );
+  sources.forEach((record) => {
+    if (record.diveId === removeId) {
+      sourcesStore.put({ ...record, diveId: keepId });
+    }
+  });
+  if (!keepContribution && removeContribution) {
+    contributionsStore.put({
+      ...removeContribution,
+      id: keepId,
+      diveId: keepId,
+    });
+  }
+  contributionsStore.delete(removeId);
+  if (!keepSettings && removeSettings) {
+    composerSettingsStore.put({
+      ...removeSettings,
+      id: keepId,
+      diveId: keepId,
+    });
+  }
+  composerSettingsStore.delete(removeId);
+  await transactionComplete(transaction);
+  return {
+    keptDiveId: keepId,
+    removedDiveId: removeId,
+    movedPhotos: attachments.length,
+    mergedSources: merged.sources.length,
   };
 }
 
@@ -970,6 +1083,82 @@ function mergeDive(
     sources: [...sources],
     sourceDiveNumbers,
     sourceSiteNames,
+  };
+}
+
+function mergeStoredDives(
+  keep: LocalDive,
+  remove: LocalDive,
+  movedPhotoCount: number,
+): LocalDive {
+  const value = <T>(preferred: T | null | undefined, fallback: T | null | undefined) =>
+    preferred ?? fallback ?? null;
+  const sources = [...new Set([...keep.sources, ...remove.sources])];
+  return {
+    ...remove,
+    ...keep,
+    diveNumber: value(keep.diveNumber, remove.diveNumber),
+    diveDate: value(keep.diveDate, remove.diveDate),
+    lastModified: value(keep.lastModified, remove.lastModified),
+    depth: value(keep.depth, remove.depth),
+    averageDepth: value(keep.averageDepth, remove.averageDepth),
+    minTemp: value(keep.minTemp, remove.minTemp),
+    maxTemp: value(keep.maxTemp, remove.maxTemp),
+    lengthText: value(keep.lengthText, remove.lengthText),
+    durationSeconds: value(keep.durationSeconds, remove.durationSeconds),
+    location: value(keep.location, remove.location),
+    site: value(keep.site, remove.site),
+    buddy: value(keep.buddy, remove.buddy),
+    notes: value(keep.notes, remove.notes),
+    serialNumber: value(keep.serialNumber, remove.serialNumber),
+    gpsEntryLat: value(keep.gpsEntryLat, remove.gpsEntryLat),
+    gpsEntryLng: value(keep.gpsEntryLng, remove.gpsEntryLng),
+    gpsExitLat: value(keep.gpsExitLat, remove.gpsExitLat),
+    gpsExitLng: value(keep.gpsExitLng, remove.gpsExitLng),
+    calculatedJson: value(keep.calculatedJson, remove.calculatedJson),
+    maxDepthM: value(keep.maxDepthM, remove.maxDepthM),
+    waterTemperatureC: value(
+      keep.waterTemperatureC,
+      remove.waterTemperatureC,
+    ),
+    gasMixes: keep.gasMixes.length ? keep.gasMixes : remove.gasMixes,
+    computerModel: value(keep.computerModel, remove.computerModel),
+    samples: preferRicherSamples(keep.samples, remove.samples),
+    tankPressuresStartBar: preferPopulatedArray(
+      keep.tankPressuresStartBar,
+      remove.tankPressuresStartBar,
+    ),
+    tankPressuresEndBar: preferPopulatedArray(
+      keep.tankPressuresEndBar,
+      remove.tankPressuresEndBar,
+    ),
+    cylinderPresetId: value(keep.cylinderPresetId, remove.cylinderPresetId),
+    cylinderVolumeL: value(keep.cylinderVolumeL, remove.cylinderVolumeL),
+    userSite: value(keep.userSite, remove.userSite),
+    userSiteSource: value(keep.userSiteSource, remove.userSiteSource),
+    userSiteCatalogId: value(
+      keep.userSiteCatalogId,
+      remove.userSiteCatalogId,
+    ),
+    userSiteUpdatedAt: value(
+      keep.userSiteUpdatedAt,
+      remove.userSiteUpdatedAt,
+    ),
+    resolvedLocation: value(keep.resolvedLocation, remove.resolvedLocation),
+    resolvedCity: value(keep.resolvedCity, remove.resolvedCity),
+    resolvedCountry: value(keep.resolvedCountry, remove.resolvedCountry),
+    importedAt:
+      keep.importedAt > remove.importedAt ? keep.importedAt : remove.importedAt,
+    photoCount: keep.photoCount + movedPhotoCount,
+    sources,
+    sourceDiveNumbers: {
+      ...remove.sourceDiveNumbers,
+      ...keep.sourceDiveNumbers,
+    },
+    sourceSiteNames: {
+      ...remove.sourceSiteNames,
+      ...keep.sourceSiteNames,
+    },
   };
 }
 
