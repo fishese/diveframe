@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Crop, Download, ImagePlus, LoaderCircle, RotateCcw, Settings as SettingsIcon, Waves } from "lucide-react";
+import { ArrowLeft, ChevronDown, Crop, Download, ImagePlus, LoaderCircle, RotateCcw, Settings as SettingsIcon, Waves } from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -60,9 +60,9 @@ const fieldLabels: Array<[DisplayField, AppTranslationKey]> = [
 const templateTranslationKeys = {
   "bottom-profile": { name: "bottomProfile", description: "bottomProfileDescription" },
   "right-panel": { name: "rightPanel", description: "rightPanelDescription" },
-  minimal: { name: "minimalTemplate", description: "minimalTemplateDescription" },
-  poster: { name: "posterTemplate", description: "posterTemplateDescription" },
   "full-width-graph": { name: "fullWidthGraph", description: "fullWidthGraphDescription" },
+  "landscape-dashboard": { name: "landscapeDashboard", description: "landscapeDashboardDescription" },
+  "cinematic-split": { name: "cinematicSplit", description: "cinematicSplitDescription" },
 } as const satisfies Record<
   (typeof TEMPLATES)[number]["id"],
   { name: AppTranslationKey; description: AppTranslationKey }
@@ -106,6 +106,7 @@ export function ComposerApp() {
       ];
       const initial = { ...defaultComposerSettings(selectedDive.id), ...saved };
       repairLegacyTemplatePositions(initial);
+      initial.fontFamily = getOverlayFont(initial.fontFamily).id;
       if (initial.blockPositions.logo === "hidden") {
         initial.blockPositions = { ...initial.blockPositions, logo: "top-right" };
         if (saved && !("showLogo" in saved)) initial.showLogo = false;
@@ -348,7 +349,7 @@ export function ComposerApp() {
         </section>
 
         <aside className="composer-controls">
-          <ControlSection title={t("photo")}>
+          <ControlSection title={t("photo")} initialOpen>
             <select value={settings.selectedPhotoId ?? ""} onChange={(event) => update("selectedPhotoId", event.target.value)}>
               {photos.map((photo) => <option key={photo.id} value={photo.id}>{photo.source === "library" ? `${t("libraryPhoto")} · ` : `${t("divePhoto")} · `}{photo.label}</option>)}
             </select>
@@ -378,7 +379,7 @@ export function ComposerApp() {
             <Range label={t("rotate")} value={settings.photoRotation} min={-180} max={180} step={1} onChange={(value) => update("photoRotation", value)} />
           </ControlSection>
 
-          <ControlSection title={t("template")}>
+          <ControlSection title={t("template")} initialOpen>
             <div className="template-picker">
               {TEMPLATES.map((template) => (
                 <button
@@ -387,6 +388,7 @@ export function ComposerApp() {
                   onClick={() => setSettings((current) => current ? {
                     ...current,
                     templateId: template.id,
+                    ratio: template.defaultRatio,
                     chartHeight: template.defaultChartHeight,
                     blockPositions: { ...template.defaultPositions },
                   } : current)}
@@ -489,6 +491,7 @@ export function ComposerApp() {
               {OVERLAY_FONTS.map((font) => <option key={font.id} value={font.id}>{font.name}</option>)}
             </select></Control>
             <p className="font-preview" style={{ fontFamily: getOverlayFont(settings.fontFamily).stack }}>{t("fontPreview")}</p>
+            <Color label={t("fontColor")} value={settings.textColor} onChange={(value) => update("textColor", value)} />
             <Control label={t("units")}><select value={settings.units} onChange={(event) => update("units", event.target.value as ComposerSettings["units"])}><option value="metric">{t("metric")}</option><option value="imperial">{t("imperial")}</option></select></Control>
             <Control label={t("dateFormat")}><select value={settings.dateFormat} onChange={(event) => update("dateFormat", event.target.value as ComposerSettings["dateFormat"])}><option value="medium">{t("mediumDate")}</option><option value="numeric">{t("numericDate")}</option><option value="iso">{t("isoDate")}</option></select></Control>
             <Control label={t("timeFormat")}><select value={settings.hourCycle} onChange={(event) => update("hourCycle", event.target.value as ComposerSettings["hourCycle"])}><option value="24">{t("hour24")}</option><option value="12">{t("hour12")}</option></select></Control>
@@ -516,8 +519,30 @@ export function ComposerApp() {
   );
 }
 
-function ControlSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="composer-control-section"><h2>{title}</h2>{children}</section>;
+function ControlSection({
+  title,
+  children,
+  initialOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  initialOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(initialOpen);
+  return (
+    <section className="composer-control-section">
+      <button
+        type="button"
+        className="composer-section-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <h2>{title}</h2>
+        <ChevronDown className={open ? "open" : ""} size={17} />
+      </button>
+      {open ? <div className="composer-section-body">{children}</div> : null}
+    </section>
+  );
 }
 function Control({ label, children }: { label: string; children: React.ReactNode }) {
   return <label className="composer-control"><span>{label}</span>{children}</label>;
@@ -532,7 +557,12 @@ function photoChoice(photo: LocalAttachment): PhotoChoice {
   return { id: photo.id, label: photo.fileName, source: "dive", blob: photo.blob };
 }
 function backgroundChoice(photo: LocalBackground): PhotoChoice {
-  return { id: `background:${photo.id}`, label: photo.fileName, source: "library", blob: photo.blob };
+  return {
+    id: `background:${photo.id}`,
+    label: photo.displayName || photo.fileName,
+    source: "library",
+    blob: photo.blob,
+  };
 }
 
 function constrainCropOffsets(
@@ -589,25 +619,20 @@ function drawCropGuide(canvas: HTMLCanvasElement) {
 }
 
 function repairLegacyTemplatePositions(settings: ComposerSettings) {
+  if (["minimal", "poster"].includes(settings.templateId as string)) {
+    const replacement = TEMPLATES[0];
+    settings.templateId = replacement.id;
+    settings.ratio = replacement.defaultRatio;
+    settings.chartHeight = replacement.defaultChartHeight;
+    settings.blockPositions = { ...replacement.defaultPositions };
+  }
   if (
-    ["bottom-profile", "minimal", "full-width-graph"].includes(settings.templateId) &&
+    ["bottom-profile", "full-width-graph"].includes(settings.templateId) &&
     settings.blockPositions.logo === "top-right"
   ) {
     settings.blockPositions = {
       ...settings.blockPositions,
       logo: "top-centre",
-    };
-  }
-  if (
-    settings.templateId === "minimal" &&
-    settings.blockPositions.chart === "bottom-centre" &&
-    settings.blockPositions.statistics === "bottom-right"
-  ) {
-    settings.blockPositions = {
-      ...settings.blockPositions,
-      date: settings.blockPositions.date === "bottom-left" ? "top-right" : settings.blockPositions.date,
-      chart: "above-graph",
-      statistics: "inside-panel",
     };
   }
   if (
@@ -619,17 +644,6 @@ function repairLegacyTemplatePositions(settings: ComposerSettings) {
       ...settings.blockPositions,
       chart: "above-graph",
       statistics: "inside-panel",
-    };
-  }
-  if (
-    settings.templateId === "poster" &&
-    settings.blockPositions.site === "top-centre" &&
-    settings.blockPositions.category === "top-centre" &&
-    settings.blockPositions.date === "inside-panel"
-  ) {
-    settings.blockPositions = {
-      ...settings.blockPositions,
-      date: "top-right",
     };
   }
 }

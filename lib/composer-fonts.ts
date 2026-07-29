@@ -1,8 +1,9 @@
 export type OverlayFontId =
-  | "noto-sans-hk"
   | "noto-sans-tc"
-  | "noto-serif-tc"
-  | "lxgw-wenkai-tc"
+  | "inter"
+  | "outfit"
+  | "space-mono"
+  | "huninn"
   | "system";
 
 export type OverlayFontDefinition = {
@@ -15,13 +16,6 @@ export type OverlayFontDefinition = {
 
 export const OVERLAY_FONTS: OverlayFontDefinition[] = [
   {
-    id: "noto-sans-hk",
-    name: "Noto Sans HK",
-    description: "Clean Hong Kong Traditional Chinese",
-    family: "Noto Sans HK",
-    stack: '"Noto Sans HK", "PingFang HK", "Microsoft JhengHei", sans-serif',
-  },
-  {
     id: "noto-sans-tc",
     name: "Noto Sans TC",
     description: "Modern Traditional Chinese sans serif",
@@ -29,18 +23,32 @@ export const OVERLAY_FONTS: OverlayFontDefinition[] = [
     stack: '"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif',
   },
   {
-    id: "noto-serif-tc",
-    name: "Noto Serif TC",
-    description: "Editorial Traditional Chinese serif",
-    family: "Noto Serif TC",
-    stack: '"Noto Serif TC", "Songti TC", "PMingLiU", serif',
+    id: "inter",
+    name: "Inter",
+    description: "Crisp contemporary sans serif",
+    family: "Inter",
+    stack: '"Inter", "Noto Sans TC", system-ui, sans-serif',
   },
   {
-    id: "lxgw-wenkai-tc",
-    name: "LXGW WenKai TC",
-    description: "Warm handwritten Traditional Chinese",
-    family: "LXGW WenKai TC",
-    stack: '"LXGW WenKai TC", "Kaiti TC", "DFKai-SB", cursive',
+    id: "outfit",
+    name: "Outfit",
+    description: "Geometric display sans serif",
+    family: "Outfit",
+    stack: '"Outfit", "Noto Sans TC", system-ui, sans-serif',
+  },
+  {
+    id: "space-mono",
+    name: "Space Mono",
+    description: "Technical monospaced display face",
+    family: "Space Mono",
+    stack: '"Space Mono", "Noto Sans TC", monospace',
+  },
+  {
+    id: "huninn",
+    name: "Huninn",
+    description: "Rounded Traditional Chinese and Latin",
+    family: "Huninn",
+    stack: '"Huninn", "Noto Sans TC", "PingFang TC", sans-serif',
   },
   {
     id: "system",

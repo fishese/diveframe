@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Sans+HK:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Huninn&family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -1125,12 +1125,28 @@ button {
   width: 100%;
 }
 
-.background-tile span {
+.background-tile label {
+  min-width: 0;
+  padding: 8px;
+}
+
+.background-tile label span {
+  color: var(--muted);
+  display: block;
+  font-size: 9px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.background-tile label input {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: #fff;
   font-size: 11px;
-  overflow: hidden;
-  padding: 9px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  padding: 6px 7px;
+  width: 100%;
 }
 
 .background-tile button {
@@ -1282,19 +1298,43 @@ button {
 
 .composer-control-section {
   border-top: 1px solid var(--line);
-  padding: 18px 0;
+  padding: 8px 0;
 }
 
-.composer-control-section h2 {
+.composer-section-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--teal);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  width: 100%;
+}
+
+.composer-section-toggle h2 {
   color: var(--teal);
   font-size: 12px;
   letter-spacing: 0.12em;
-  margin: 0 0 14px;
+  margin: 0;
   text-transform: uppercase;
 }
 
+.composer-section-toggle svg {
+  transition: transform 160ms ease;
+}
+
+.composer-section-toggle svg.open {
+  transform: rotate(180deg);
+}
+
+.composer-section-body {
+  padding: 4px 0 10px;
+}
+
 .composer-control,
-.composer-control-section > select {
+.composer-section-body > select {
   display: block;
   margin: 0 0 12px;
   width: 100%;
@@ -1310,7 +1350,7 @@ button {
 
 .composer-control select,
 .composer-control input:not([type="range"]):not([type="color"]),
-.composer-control-section > select {
+.composer-section-body > select {
   background: rgba(255, 255, 255, 0.045);
   border: 1px solid var(--line);
   border-radius: 9px;

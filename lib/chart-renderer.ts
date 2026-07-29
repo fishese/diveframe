@@ -211,7 +211,7 @@ function drawAxisLabels(
   settings: ComposerSettings,
 ) {
   context.save();
-  context.fillStyle = "rgba(255, 255, 255, 0.9)";
+  context.fillStyle = settings.textColor;
   context.font = `500 ${labelSize}px ${getOverlayFont(settings.fontFamily).stack}`;
   context.textBaseline = "top";
   context.shadowColor = "rgba(0, 0, 0, 0.75)";

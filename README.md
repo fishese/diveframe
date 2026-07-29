@@ -70,16 +70,19 @@ site corrections back to a source log.
 - Full interface localisation in English and Traditional Chinese (Hong Kong),
   with a separately configurable overlay language for exported images.
 - Multiple photos per dive plus a device-local library of reusable diving
-  backgrounds.
+  backgrounds. Reusable backgrounds have editable names for easier selection;
+  per-dive photos continue to use their filenames.
 - Share-image entry points at both the top of the dive and the bottom of its
   photo gallery.
-- A live image composer with five original layouts, high-resolution PNG/JPEG
+- A live image composer with five original layouts, including two purpose-built
+  16:9 landscape designs, high-resolution PNG/JPEG
   output, common aspect ratios, metric/imperial units, and English/Traditional
   Chinese overlays. Its interactive crop mode supports drag-to-reposition,
   wheel or slider zoom, touch input, and reset. On mobile, the reduced preview
   stays pinned below the top bar while controls scroll.
 - A curated overlay-font menu with public Traditional Chinese/Latin webfonts:
-  Noto Sans HK, Noto Sans TC, Noto Serif TC, and LXGW WenKai TC.
+  Noto Sans TC, Inter, Outfit, Space Mono, and Huninn, plus Device Sans.
+  One font-colour control applies consistently to all text content.
 - Depth-profile charts from Subsurface samples, with optional sparse tank
   pressure and temperature telemetry, plus optional elapsed-time and depth axes
   that are enabled by default. The depth-area fill can be solid or fade to

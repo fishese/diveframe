@@ -44,6 +44,7 @@ import {
   listLocalSiteContributions,
   saveLocalAppPreferences,
   saveLocalOverlayLogo,
+  updateLocalBackgroundName,
   type LocalBackground,
   type LocalBrandingAsset,
   type LocalSiteContribution,
@@ -158,6 +159,21 @@ export function SettingsApp() {
       setStatus(t("removedBackground"));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("backgroundRemoveFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function renameBackground(id: string, displayName: string) {
+    setBusy(true);
+    try {
+      const updated = await updateLocalBackgroundName(id, displayName);
+      setBackgrounds((items) =>
+        items.map((item) => (item.id === id ? updated : item)),
+      );
+      setStatus(t("renamedBackground"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("backgroundRenameFailed"));
     } finally {
       setBusy(false);
     }
@@ -711,6 +727,7 @@ export function SettingsApp() {
                   key={background.id}
                   background={background}
                   onRemove={() => removeBackground(background.id)}
+                  onRename={(name) => renameBackground(background.id, name)}
                 />
               ))}
             </div>
@@ -778,19 +795,39 @@ export function SettingsApp() {
 function BackgroundTile({
   background,
   onRemove,
+  onRename,
 }: {
   background: LocalBackground;
   onRemove: () => void;
+  onRename: (name: string) => void;
 }) {
   const { t } = useAppI18n();
+  const [name, setName] = useState(background.displayName || background.fileName);
   const source = useMemo(() => URL.createObjectURL(background.blob), [background.blob]);
   useEffect(() => () => URL.revokeObjectURL(source), [source]);
+  const saveName = () => {
+    const normalized = name.trim() || background.fileName;
+    setName(normalized);
+    if (normalized !== (background.displayName || background.fileName)) {
+      onRename(normalized);
+    }
+  };
   return (
     <article className="background-tile">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={source} alt={background.fileName} />
-      <span title={background.fileName}>{background.fileName}</span>
-      <button type="button" onClick={onRemove} aria-label={`${t("remove")} ${background.fileName}`}>
+      <img src={source} alt={background.displayName || background.fileName} />
+      <label>
+        <span>{t("backgroundName")}</span>
+        <input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          onBlur={saveName}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
+        />
+      </label>
+      <button type="button" onClick={onRemove} aria-label={`${t("remove")} ${background.displayName || background.fileName}`}>
         <Trash2 size={15} />
       </button>
     </article>

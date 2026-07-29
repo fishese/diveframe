@@ -299,12 +299,17 @@ locations feed the existing geocoder/map flow.
 
 The composer route is `/compose?dive=<canonical-id>&photo=<attachment-id>`.
 Each photo tile links to it. It also lists reusable backgrounds from Settings.
+Reusable backgrounds have an optional `displayName` stored with their IndexedDB
+record and included automatically in app backup/restore; the composer falls
+back to the original filename for older records. Per-dive photos are unchanged.
 The sticky composer top bar contains the return-to-dives shortcut, Settings,
 and Export; the controls column begins directly with the photo selector.
 
 Five original data-driven templates are currently exposed: Bottom Profile,
-Right Information Panel, Minimal, Poster, and Full-width Graph. They share one
-high-resolution renderer rather than duplicating fixed component coordinates.
+Right Information Panel, Full-width Graph, Landscape Dashboard, and Cinematic
+Split. The latter two default to 16:9 and use genuinely horizontal
+chart/statistics arrangements. They share one high-resolution renderer rather
+than duplicating fixed component coordinates.
 The preview is rendered at a smaller working size; export rerenders the same
 geometry at social, 3000-pixel, or source-photo-area dimensions.
 
@@ -322,8 +327,11 @@ fraction of canvas size, then clamps the logo within the canvas. Defaults are
 zero, so older saved composer settings retain their previous appearance.
 
 Overlay fonts are loaded from the public Google Fonts stylesheet imported by
-`app/globals.css`. The renderer waits for all requested weights before preview
-or export and falls back to platform Traditional Chinese fonts when offline.
+`app/globals.css`: Noto Sans TC, Inter, Outfit, Space Mono, and Huninn. Device
+Sans remains available without a download. The renderer waits for all requested
+weights before preview or export and falls back to platform Traditional Chinese
+fonts when offline. A single saved font-colour setting is used for all textual
+overlay content, including category, statistics, legends, and chart axes.
 
 Site display priority is user override, linked source name, app catalog/OSM
 assignment, formatted GPS coordinates, then omission. Fields with no source
@@ -343,8 +351,10 @@ hidden per dive. The depth fill supports solid and upward transparent-fade
 modes. One reusable transparent PNG or SVG logo is managed in Settings; the
 composer controls its visibility, preset anchor, and horizontal/vertical
 offsets. Template defaults reserve separate title, date, chart, statistics,
-and branding zones; the composer migrates the earlier overlapping Minimal,
-Poster, and Full-width Graph defaults when it loads them.
+and branding zones. Removed Minimal and Poster settings migrate to Bottom
+Profile, while the earlier Full-width Graph overlap repair remains in place.
+Composer control groups are collapsible so the full control set remains
+available without requiring one continuously long sidebar.
 
 The dive detail page reuses `renderDiveChart` on a responsive canvas and only
 draws the currently selected record. Its pressure line is opt-in and appears

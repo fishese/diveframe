@@ -56,16 +56,22 @@ export function renderComposition(
   const template = getTemplate(settings.templateId);
   const fontStack = getOverlayFont(settings.fontFamily).stack;
   const margin = Math.round(Math.min(width, height) * settings.safeMargin);
+  const sidePanel = template.layout === "right" || template.layout === "split";
   const panel =
-    template.layout === "right"
-      ? { x: width * 0.61, y: 0, width: width * 0.39, height }
+    sidePanel
+      ? {
+          x: width * (template.layout === "split" ? 0.58 : 0.61),
+          y: 0,
+          width: width * (template.layout === "split" ? 0.42 : 0.39),
+          height,
+        }
       : (() => {
           const y =
             height *
             (template.layout === "graph"
               ? 0.46
-              : template.layout === "minimal"
-                ? 0.62
+              : template.layout === "dashboard"
+                ? 0.56
                 : 0.58);
           return { x: 0, y, width, height: height - y };
         })();
@@ -83,25 +89,23 @@ export function renderComposition(
     context.fillStyle = `rgba(2, 14, 21, ${settings.backgroundDimming})`;
     context.fillRect(0, 0, width, height);
   }
-  if (template.layout !== "minimal") {
-    if (settings.graphGradient) {
-      const gradient = context.createLinearGradient(panel.x, panel.y, panel.x, panel.y + panel.height);
-      gradient.addColorStop(0, `rgba(3, 20, 29, ${settings.panelOpacity * 0.15})`);
-      gradient.addColorStop(1, `rgba(3, 20, 29, ${settings.panelOpacity})`);
-      context.fillStyle = gradient;
-    } else {
-      context.fillStyle = `rgba(3, 20, 29, ${settings.panelOpacity})`;
-    }
-    context.fillRect(panel.x, panel.y, panel.width, panel.height);
-    if (template.layout === "graph") {
-      context.fillStyle = template.accent;
-      context.globalAlpha = 0.7;
-      context.fillRect(panel.x, panel.y, panel.width, Math.max(2, height * 0.003));
-      context.globalAlpha = 1;
-    }
+  if (settings.graphGradient) {
+    const gradient = context.createLinearGradient(panel.x, panel.y, panel.x, panel.y + panel.height);
+    gradient.addColorStop(0, `rgba(3, 20, 29, ${settings.panelOpacity * 0.15})`);
+    gradient.addColorStop(1, `rgba(3, 20, 29, ${settings.panelOpacity})`);
+    context.fillStyle = gradient;
+  } else {
+    context.fillStyle = `rgba(3, 20, 29, ${settings.panelOpacity})`;
+  }
+  context.fillRect(panel.x, panel.y, panel.width, panel.height);
+  if (template.layout === "graph" || template.layout === "dashboard") {
+    context.fillStyle = template.accent;
+    context.globalAlpha = 0.7;
+    context.fillRect(panel.x, panel.y, panel.width, Math.max(2, height * 0.003));
+    context.globalAlpha = 1;
   }
 
-  context.fillStyle = "#fff";
+  context.fillStyle = settings.textColor;
   context.textBaseline = "top";
   applyTextTreatment(context, settings);
   const siteName = settings.visibleFields.site
@@ -120,7 +124,7 @@ export function renderComposition(
     settings.blockPositions.category === settings.blockPositions.site;
   let metaY = metaAnchor.y + (categorySharesSite ? titleSize * 1.18 : 0);
   context.font = `600 ${Math.round(titleSize * 0.38)}px ${fontStack}`;
-  context.fillStyle = template.accent;
+  context.fillStyle = settings.textColor;
   if (settings.visibleFields.category && settings.blockPositions.category !== "hidden") {
     drawAlignedText(
       context,
@@ -146,13 +150,14 @@ export function renderComposition(
     const dateOffset =
       (dateSharesSite ? titleSize * 1.18 : 0) +
       (dateSharesCategory ? titleSize * 0.55 : 0);
-    context.fillStyle = "#fff";
+    context.fillStyle = settings.textColor;
     drawAlignedText(context, dateText, dateAnchor.x, dateAnchor.y + dateOffset, dateAnchor.width, dateAnchor.align, settings);
   }
 
   const stats = buildStatistics(dive, settings);
-  const statsWidth =
-    template.layout === "right"
+  const statsWidth = template.layout === "dashboard"
+    ? panel.width * 0.3
+    : sidePanel
       ? panel.width - margin * 2
       : width - margin * 2;
   const statHeight = statisticsHeight(stats, statsWidth, titleSize);
@@ -166,31 +171,45 @@ export function renderComposition(
     statHeight,
   );
   if (settings.blockPositions.statistics === "inside-panel") {
-    statsBox.y = panel.y + panel.height - margin - statHeight;
+    if (template.layout === "dashboard") {
+      statsBox.x = panel.x + panel.width * 0.68;
+      statsBox.y = panel.y + margin;
+    } else {
+      statsBox.y = panel.y + panel.height - margin - statHeight;
+    }
   }
 
   const chartHeight = Math.min(
     height * settings.chartHeight,
-    panel.height * (template.layout === "graph" ? 0.62 : 0.5),
+    panel.height * (template.layout === "graph" ? 0.62 : template.layout === "dashboard" ? 0.78 : 0.5),
   );
+  const chartWidth = template.layout === "dashboard"
+    ? panel.width * 0.64 - margin * 1.5
+    : sidePanel
+      ? panel.width - margin * 2
+      : width - margin * 2;
   const chartBox = blockRect(
     settings.blockPositions.chart,
     panel,
     width,
     height,
     margin,
-    template.layout === "right" ? panel.width - margin * 2 : width - margin * 2,
+    chartWidth,
     chartHeight,
   );
   if (
     settings.blockPositions.chart === "inside-panel" ||
     settings.blockPositions.chart === "above-graph"
   ) {
-    if (template.layout === "right") {
+    if (sidePanel) {
       chartBox.y = panel.y + Math.max(panel.height * 0.25, margin + titleSize * 2.6);
+    } else if (template.layout === "dashboard") {
+      chartBox.x = panel.x + margin;
+      chartBox.y = panel.y + margin;
     }
     const chartBottom =
-      settings.blockPositions.statistics === "inside-panel"
+      settings.blockPositions.statistics === "inside-panel" &&
+      template.layout !== "dashboard"
         ? statsBox.y - Math.max(8, titleSize * 0.25)
         : panel.y + panel.height - margin;
     chartBox.height = Math.max(
@@ -221,7 +240,7 @@ export function renderComposition(
     for (const item of legend) {
       context.fillStyle = item.color;
       context.fillRect(legendX, chartBox.y - titleSize * 0.28, titleSize * 0.3, Math.max(2, settings.lineThickness));
-      context.fillStyle = "#fff";
+      context.fillStyle = settings.textColor;
       context.fillText(item.label, legendX + titleSize * 0.4, chartBox.y - titleSize * 0.38);
       legendX += context.measureText(item.label).width + titleSize * 0.85;
     }
@@ -302,7 +321,7 @@ function drawStatistics(context: CanvasRenderingContext2D, stats: Array<{ label:
     const row = Math.floor(index / columns);
     const cellWidth = width / columns;
     const top = y + row * base * 1.35;
-    context.fillStyle = "#fff";
+    context.fillStyle = settings.textColor;
     context.font = `700 ${Math.round(base * 0.55)}px ${fontStack}`;
     if (settings.textTreatment === "outline") {
       context.strokeStyle = "rgba(0,0,0,.85)";
@@ -310,7 +329,7 @@ function drawStatistics(context: CanvasRenderingContext2D, stats: Array<{ label:
       context.strokeText(stat.value, x + column * cellWidth, top, cellWidth * 0.9);
     }
     context.fillText(stat.value, x + column * cellWidth, top, cellWidth * 0.9);
-    context.fillStyle = "rgba(255,255,255,.78)";
+    context.fillStyle = settings.textColor;
     context.font = `500 ${Math.round(base * 0.25)}px ${fontStack}`;
     context.fillText(stat.label, x + column * cellWidth, top + base * 0.62, cellWidth * 0.9);
   });

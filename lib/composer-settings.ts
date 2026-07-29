@@ -6,9 +6,9 @@ import type { OverlayFontId } from "./composer-fonts";
 export type TemplateId =
   | "bottom-profile"
   | "right-panel"
-  | "minimal"
-  | "poster"
-  | "full-width-graph";
+  | "full-width-graph"
+  | "landscape-dashboard"
+  | "cinematic-split";
 export type CanvasRatio = "original" | "1:1" | "4:5" | "9:16" | "16:9";
 export type ChartMode =
   | "depth"
@@ -71,6 +71,7 @@ export type ComposerSettings = {
   graphGradient: boolean;
   fontSize: number;
   fontFamily: OverlayFontId;
+  textColor: string;
   textAlign: "left" | "centre" | "right";
   textTreatment: "shadow" | "outline" | "none";
   panelOpacity: number;
@@ -125,7 +126,8 @@ export function defaultComposerSettings(diveId: string): ComposerSettings {
     blurBehindText: false,
     graphGradient: true,
     fontSize: 1,
-    fontFamily: "noto-sans-hk",
+    fontFamily: "noto-sans-tc",
+    textColor: "#ffffff",
     textAlign: "left",
     textTreatment: "shadow",
     panelOpacity: 0.68,

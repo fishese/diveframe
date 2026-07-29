@@ -175,9 +175,15 @@ mode. Drag the photograph to reposition it. Use the mouse wheel or the
 returns to a centred fill. The rule-of-thirds guide is only an editing aid and
 does not appear in the exported PNG or JPEG.
 
+Reusable backgrounds can be given a friendly name in Settings. That name is
+shown in the composer and travels with an app backup; individual dive photos
+continue to be identified by their original filename.
+
 On a mobile screen, the smaller live preview remains pinned below the top bar
 while the composer controls scroll. Changes to templates, fields, colours, and
 positioning can therefore be checked without repeatedly returning to the top.
+The control groups can be expanded and collapsed to keep the editor compact
+without removing any options.
 
 When a dive is open on mobile, use the small home button in the top bar to
 return to the dive list.
@@ -185,7 +191,13 @@ return to the dive list.
 **Bottom Profile** keeps a compact chart and statistics band in the lower
 third. **Full-width Graph** starts its information band higher and gives the
 profile substantially more height, so the two presets remain visually
-distinct regardless of the selected photograph.
+distinct regardless of the selected photograph. **Landscape Dashboard** and
+**Cinematic Split** automatically switch the canvas to 16:9 and provide
+horizontal lower-band and sidecar arrangements respectively.
+
+The overlay font menu includes Noto Sans TC, Inter, Outfit, Space Mono, Huninn,
+and Device Sans. The font-colour picker applies one colour consistently to the
+site, category, date, statistics, chart legend, and axis labels.
 
 When a logo is enabled, choose its preset anchor and then use the horizontal
 and vertical position sliders for fine adjustment. The offsets are saved with

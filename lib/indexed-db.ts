@@ -93,6 +93,7 @@ export type LocalAttachment = {
 export type LocalBackground = {
   id: string;
   fileName: string;
+  displayName?: string;
   contentType: string;
   size: number;
   createdAt: string;
@@ -390,6 +391,24 @@ export async function deleteLocalBackground(id: string) {
   const transaction = database.transaction(BACKGROUNDS_STORE, "readwrite");
   transaction.objectStore(BACKGROUNDS_STORE).delete(id);
   await transactionComplete(transaction);
+}
+
+export async function updateLocalBackgroundName(id: string, displayName: string) {
+  const database = await openDatabase();
+  const transaction = database.transaction(BACKGROUNDS_STORE, "readwrite");
+  const store = transaction.objectStore(BACKGROUNDS_STORE);
+  const background = await request<LocalBackground | undefined>(store.get(id));
+  if (!background) {
+    await transactionComplete(transaction);
+    throw new Error("Reusable background not found.");
+  }
+  const updated = {
+    ...background,
+    displayName: displayName.trim() || background.fileName,
+  };
+  store.put(updated);
+  await transactionComplete(transaction);
+  return updated;
 }
 
 export async function getLocalOverlayLogo() {
