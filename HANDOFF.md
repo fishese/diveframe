@@ -126,6 +126,17 @@ blobs. Import is additive by primary key: backup records replace matching local
 records while destination-only records remain. The file is not encrypted and
 the UI warns the user to keep it private.
 
+The danger zone exposes two deletion scopes. `clearLocalDiveData()` clears
+`dives`, `sourceRecords`, and `siteContributions`, retaining attachments,
+composer settings, backgrounds, branding, and app preferences. Retained
+per-dive attachments/settings reconnect after the same source logs recreate
+their deterministic canonical IDs. `clearAllLocalData()` clears all eight
+stores.
+
+On mobile, an open dive shows a compact home control in the global top bar.
+The composer preview pane becomes a short sticky panel below its top bar so
+the same live canvas remains visible while its controls scroll.
+
 ### Import matching
 
 Source identity is stored separately from the canonical dive ID:

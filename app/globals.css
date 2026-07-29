@@ -135,6 +135,20 @@ button {
   gap: 8px;
 }
 
+.mobile-home-button {
+  align-items: center;
+  background: rgba(141, 235, 215, 0.08);
+  border: 1px solid rgba(141, 235, 215, 0.18);
+  border-radius: 9px;
+  color: var(--teal);
+  cursor: pointer;
+  display: none;
+  height: 34px;
+  justify-content: center;
+  padding: 0;
+  width: 34px;
+}
+
 .status-pill {
   align-items: center;
   color: var(--muted);
@@ -548,18 +562,6 @@ button {
 
 .detail-content {
   padding: 30px;
-}
-
-.mobile-back {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  color: var(--teal);
-  cursor: pointer;
-  display: none;
-  gap: 4px;
-  margin: 0 0 16px;
-  padding: 0;
 }
 
 .detail-hero {
@@ -1453,12 +1455,39 @@ button {
   }
 
   .composer-preview-pane {
-    min-height: 60vh;
-    padding: 16px 10px 22px;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4);
+    height: clamp(210px, 38vh, 320px);
+    min-height: 0;
+    padding: 9px 10px 8px;
+    position: sticky;
+    top: 58px;
+    z-index: 15;
   }
 
   .composer-preview-frame {
-    max-height: 68vh;
+    max-height: 100%;
+    min-height: 0;
+  }
+
+  .composer-preview-pane .composer-status {
+    background: rgba(2, 11, 16, 0.72);
+    border-radius: 999px;
+    bottom: 7px;
+    left: 50%;
+    margin: 0;
+    max-width: calc(100% - 28px);
+    overflow: hidden;
+    padding: 4px 9px;
+    position: absolute;
+    text-overflow: ellipsis;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 2;
+  }
+
+  .composer-preview-pane .crop-instructions,
+  .composer-preview-pane .composer-warning {
+    display: none;
   }
 
   .composer-controls {
@@ -1852,6 +1881,42 @@ button {
   order: 7;
 }
 
+.danger-actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.danger-option {
+  background: rgba(255, 143, 118, 0.035);
+  border: 1px solid rgba(255, 143, 118, 0.12);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.danger-option strong {
+  display: block;
+  font-size: 14px;
+}
+
+.danger-option p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 7px 0 13px;
+}
+
+.danger-option .button {
+  justify-content: center;
+  width: 100%;
+}
+
+.button-danger-secondary {
+  background: rgba(255, 143, 118, 0.1);
+  border: 1px solid rgba(255, 143, 118, 0.28);
+  color: #ffb29f;
+}
+
 .settings-icon-danger {
   background: rgba(255, 143, 118, 0.12);
   color: var(--coral);
@@ -2225,6 +2290,10 @@ button {
     padding: 8px;
   }
 
+  .mobile-home-button {
+    display: inline-flex;
+  }
+
   .about-shell {
     padding: 36px 16px 70px;
   }
@@ -2317,10 +2386,6 @@ button {
 
   .detail-content {
     padding: 20px 14px 45px;
-  }
-
-  .mobile-back {
-    display: flex;
   }
 
   .detail-hero {

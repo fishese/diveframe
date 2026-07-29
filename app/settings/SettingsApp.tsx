@@ -33,6 +33,7 @@ import {
 import {
   addLocalBackgrounds,
   clearAllLocalData,
+  clearLocalDiveData,
   deleteLocalBackground,
   deleteLocalOverlayLogo,
   getLocalAppPreferences,
@@ -252,6 +253,21 @@ export function SettingsApp() {
       setStatus(t("eraseAllDataComplete"));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("eraseAllDataFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function eraseDiveData() {
+    if (!window.confirm(t("eraseDiveDataConfirm"))) return;
+    setBusy(true);
+    try {
+      await clearLocalDiveData();
+      setContributions([]);
+      setReviewedSites([]);
+      setStatus(t("eraseDiveDataComplete"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("eraseDiveDataFailed"));
     } finally {
       setBusy(false);
     }
@@ -716,20 +732,38 @@ export function SettingsApp() {
             <span className="settings-icon settings-icon-danger"><Trash2 size={21} /></span>
             <div>
               <p className="eyebrow">{t("dangerZone")}</p>
-              <h2>{t("eraseAllDataTitle")}</h2>
+              <h2>{t("eraseLocalDataTitle")}</h2>
             </div>
           </div>
           <p className="settings-note">
-            {t("eraseAllDataDescription")}
+            {t("eraseLocalDataDescription")}
           </p>
-          <button
-            type="button"
-            className="button button-danger"
-            onClick={() => void eraseAllData()}
-            disabled={busy}
-          >
-            <Trash2 size={16} /> {t("eraseAllData")}
-          </button>
+          <div className="danger-actions">
+            <div className="danger-option">
+              <strong>{t("eraseDiveData")}</strong>
+              <p>{t("eraseDiveDataDescription")}</p>
+              <button
+                type="button"
+                className="button button-danger-secondary"
+                onClick={() => void eraseDiveData()}
+                disabled={busy}
+              >
+                <Trash2 size={16} /> {t("eraseDiveData")}
+              </button>
+            </div>
+            <div className="danger-option">
+              <strong>{t("eraseAllData")}</strong>
+              <p>{t("eraseAllDataWarning")}</p>
+              <button
+                type="button"
+                className="button button-danger"
+                onClick={() => void eraseAllData()}
+                disabled={busy}
+              >
+                <Trash2 size={16} /> {t("eraseAllData")}
+              </button>
+            </div>
+          </div>
         </section>
 
         <div className="settings-status" role="status">

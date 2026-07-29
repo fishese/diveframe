@@ -203,9 +203,19 @@ const en = {
   importComplete: "Imported {dives} dives, {photos} dive photos, and {backgrounds} reusable backgrounds. Existing unrelated records were kept.",
   importBackupFailed: "Could not import this backup.",
   dangerZone: "Danger zone",
+  eraseLocalDataTitle: "Erase local data",
+  eraseLocalDataDescription: "Choose whether to reset only imported dive records or completely clear DiveFrame from this browser.",
   eraseAllDataTitle: "Erase all data",
   eraseAllDataDescription:
     "Permanently delete every dive, photo, background, logo, site contribution, composer setting, and app preference stored in this browser. Use this before importing a backup if you want a clean restore.",
+  eraseDiveData: "Erase dive data only",
+  eraseDiveDataDescription:
+    "Deletes imported dives, source matches, and app-added site records. Dive photos, reusable backgrounds, logo, per-dive composer settings, and app preferences are kept. Re-import the same source logs to reconnect dive photos and composer settings.",
+  eraseDiveDataConfirm:
+    "Erase imported dives, source matches, and app-added site records? Photos, reusable backgrounds, logo, composer settings, and app preferences will remain. This cannot be undone.",
+  eraseDiveDataComplete: "Dive data erased; photos and settings were kept",
+  eraseDiveDataFailed: "Could not erase dive data.",
+  eraseAllDataWarning: "Also removes every photo, reusable background, logo, composer setting, and app preference.",
   eraseAllData: "Erase all data",
   eraseAllDataConfirm:
     "Erase all DiveFrame data on this device? This removes dives, photos, backgrounds, logo, site contributions, composer settings, and app preferences. This cannot be undone.",
@@ -498,9 +508,19 @@ const zhHant: Record<keyof typeof en, string> = {
   importComplete: "已匯入 {dives} 次潛水、{photos} 張潛水相片及 {backgrounds} 張共用背景。其他本機記錄已保留。",
   importBackupFailed: "無法匯入此備份。",
   dangerZone: "危險區域",
+  eraseLocalDataTitle: "清除本機資料",
+  eraseLocalDataDescription: "選擇只重設已匯入的潛水記錄，或完全清除此瀏覽器內的 DiveFrame 資料。",
   eraseAllDataTitle: "清除所有資料",
   eraseAllDataDescription:
     "永久刪除此瀏覽器內的所有潛水記錄、相片、背景、標誌、潛點新增、圖片編輯設定及應用程式偏好設定。如需乾淨還原備份，可先使用此功能。",
+  eraseDiveData: "只清除潛水資料",
+  eraseDiveDataDescription:
+    "刪除已匯入的潛水記錄、來源配對及在應用程式新增的潛點記錄。潛水相片、共用背景、標誌、個別潛水的圖片編輯設定及應用程式偏好設定會保留。重新匯入相同來源日誌後，潛水相片及圖片編輯設定會重新連接。",
+  eraseDiveDataConfirm:
+    "確定要清除已匯入的潛水記錄、來源配對及新增潛點記錄？相片、共用背景、標誌、圖片編輯設定及應用程式偏好設定會保留。此操作無法復原。",
+  eraseDiveDataComplete: "已清除潛水資料；相片及設定已保留",
+  eraseDiveDataFailed: "無法清除潛水資料。",
+  eraseAllDataWarning: "同時移除所有相片、共用背景、標誌、圖片編輯設定及應用程式偏好設定。",
   eraseAllData: "清除所有資料",
   eraseAllDataConfirm:
     "確定要清除此裝置上的所有 DiveFrame 資料？這會移除潛水記錄、相片、背景、標誌、潛點新增、圖片編輯設定及應用程式偏好設定。此操作無法復原。",

@@ -5,12 +5,12 @@ import {
   ArrowDownToLine,
   Camera,
   ChevronDown,
-  ChevronLeft,
   Clock3,
   Compass,
   Database as DatabaseIcon,
   Droplets,
   Gauge,
+  House,
   ImagePlus,
   Info,
   LoaderCircle,
@@ -479,6 +479,17 @@ export function DiveFrameApp() {
           </span>
         </button>
         <div className="topbar-actions">
+          {mobileDetail ? (
+            <button
+              type="button"
+              className="mobile-home-button"
+              onClick={() => setMobileDetail(false)}
+              aria-label={t("allDives")}
+              title={t("allDives")}
+            >
+              <House size={17} />
+            </button>
+          ) : null}
           {status !== t("importDiveLog") ? (
             <span className="status-pill">
               {busy ? <LoaderCircle size={14} className="spin" /> : <Droplets size={14} />}
@@ -673,7 +684,6 @@ export function DiveFrameApp() {
                   dive={selected}
                   attachments={attachments}
                   busy={busy}
-                  onBack={() => setMobileDetail(false)}
                   onUpload={uploadPhotos}
                   onShare={sharePhoto}
                   onSaveSite={saveDiveSite}
@@ -755,7 +765,6 @@ function DiveDetail({
   dive,
   attachments,
   busy,
-  onBack,
   onUpload,
   onShare,
   onSaveSite,
@@ -766,7 +775,6 @@ function DiveDetail({
   dive: Dive;
   attachments: Attachment[];
   busy: boolean;
-  onBack: () => void;
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onShare: (attachment: Attachment) => void;
   onSaveSite: (site: SiteSelection) => Promise<boolean>;
@@ -919,10 +927,6 @@ function DiveDetail({
 
   return (
     <div className="detail-content">
-      <button type="button" className="mobile-back" onClick={onBack}>
-        <ChevronLeft size={18} /> {t("allDives")}
-      </button>
-
       <div className="detail-hero">
         <div className="hero-topline">
           <span>{t("dive")} {dive.diveNumber ?? "—"}</span>

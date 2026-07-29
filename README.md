@@ -61,6 +61,9 @@ site corrections back to a source log.
 - A complete device-to-device backup file containing IndexedDB records, dive
   photos, reusable backgrounds, the overlay logo, composer settings, and the
   app-language preference.
+- Separate reset actions: erase all browser data, or clear only imported dives,
+  source matching, and app-added site records while retaining photos,
+  backgrounds, logo, composer settings, and app preferences.
 - A pass-through Subsurface export tool that adds matched site names, buddy,
   and notes to a freshly supplied SSRF/XML copy without rebuilding or dropping
   the source log's profiles, events, cylinders, or other fields.
@@ -73,7 +76,8 @@ site corrections back to a source log.
 - A live image composer with five original layouts, high-resolution PNG/JPEG
   output, common aspect ratios, metric/imperial units, and English/Traditional
   Chinese overlays. Its interactive crop mode supports drag-to-reposition,
-  wheel or slider zoom, touch input, and reset.
+  wheel or slider zoom, touch input, and reset. On mobile, the reduced preview
+  stays pinned below the top bar while controls scroll.
 - A curated overlay-font menu with public Traditional Chinese/Latin webfonts:
   Noto Sans HK, Noto Sans TC, Noto Serif TC, and LXGW WenKai TC.
 - Depth-profile charts from Subsurface samples, with optional sparse tank

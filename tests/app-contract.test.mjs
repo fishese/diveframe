@@ -79,6 +79,14 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /saveLocalOverlayLogo/);
   assert.match(storage, /exportLocalBackupSnapshot/);
   assert.match(storage, /importLocalBackupSnapshot/);
+  assert.match(storage, /clearLocalDiveData/);
+  const diveOnlyReset = storage.match(
+    /export async function clearLocalDiveData\(\)[\s\S]+?(?=async function updateDive)/,
+  )?.[0] ?? "";
+  assert.match(diveOnlyReset, /DIVES_STORE/);
+  assert.match(diveOnlyReset, /SOURCES_STORE/);
+  assert.doesNotMatch(diveOnlyReset, /ATTACHMENTS_STORE/);
+  assert.doesNotMatch(diveOnlyReset, /COMPOSER_SETTINGS_STORE/);
   assert.match(backup, /diveframe-local-backup/);
   assert.match(backup, /blobBase64/);
   assert.match(app, /createShareCard/);
@@ -154,6 +162,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /useAppI18n/);
   assert.doesNotMatch(app, /catalogNotesForDive/);
   assert.match(app, /photo-gallery-actions/);
+  assert.match(app, /mobile-home-button/);
+  assert.doesNotMatch(app, /mobile-back/);
   assert.match(app, /compareDivesByDate/);
   assert.match(app, /duration-desc/);
   assert.match(app, /depth-desc/);
@@ -183,6 +193,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   );
   assert.match(globalStyles, /select option/);
   assert.match(globalStyles, /color-scheme: dark/);
+  assert.match(globalStyles, /\.mobile-home-button/);
+  assert.match(globalStyles, /\.composer-preview-pane[\s\S]+position: sticky/);
+  assert.match(globalStyles, /\.danger-option \.button[\s\S]+width: 100%/);
 
   const nearbyRoute = await readFile(
     new URL("../app/api/nearby-sites/route.ts", import.meta.url),

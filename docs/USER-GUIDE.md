@@ -122,6 +122,16 @@ the app moves to a different web address. Use **Settings → Export app data**
 before changing devices, browsers, or addresses. The backup contains private
 log and photo data and should be kept securely.
 
+The Settings danger zone has two reset choices:
+
+- **Erase dive data only** removes imported dives, source mappings, and
+  app-added site records. It keeps dive photos, reusable backgrounds, the
+  global logo, per-dive composer settings, and app preferences. Re-import the
+  same source logs so their deterministic IDs reconnect the retained per-dive
+  photos and composer settings.
+- **Erase all data** removes every DiveFrame record and image from the current
+  browser.
+
 ## Changes made in DiveFrame
 
 Site choices, manually entered site names, buddy, notes, photos, categories,
@@ -164,6 +174,13 @@ mode. Drag the photograph to reposition it. Use the mouse wheel or the
 **Zoom** control to scale it; touch dragging works on mobile. **Reset crop**
 returns to a centred fill. The rule-of-thirds guide is only an editing aid and
 does not appear in the exported PNG or JPEG.
+
+On a mobile screen, the smaller live preview remains pinned below the top bar
+while the composer controls scroll. Changes to templates, fields, colours, and
+positioning can therefore be checked without repeatedly returning to the top.
+
+When a dive is open on mobile, use the small home button in the top bar to
+return to the dive list.
 
 **Bottom Profile** keeps a compact chart and statistics band in the lower
 third. **Full-width Graph** starts its information band higher and gives the

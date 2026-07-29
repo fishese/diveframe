@@ -740,6 +740,20 @@ export async function clearAllLocalData() {
   await transactionComplete(transaction);
 }
 
+export async function clearLocalDiveData() {
+  const database = await openDatabase();
+  const storeNames = [
+    DIVES_STORE,
+    SOURCES_STORE,
+    SITE_CONTRIBUTIONS_STORE,
+  ];
+  const transaction = database.transaction(storeNames, "readwrite");
+  for (const storeName of storeNames) {
+    transaction.objectStore(storeName).clear();
+  }
+  await transactionComplete(transaction);
+}
+
 async function updateDive(id: string, change: (dive: LocalDive) => LocalDive) {
   const database = await openDatabase();
   const transaction = database.transaction(DIVES_STORE, "readwrite");
