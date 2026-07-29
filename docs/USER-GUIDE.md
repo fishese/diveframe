@@ -156,6 +156,18 @@ The Settings danger zone has three reset choices:
 - **Erase all data** removes every DiveFrame record and image from the current
   browser.
 
+Settings also shows estimated stored-media and exported-backup sizes.
+**Optimize stored photos** converts eligible dive photos and reusable
+backgrounds to JPEG at 88% quality, with a maximum longest edge of 2560 pixels.
+An image is only replaced when the result is smaller. This is a lossy,
+irreversible operation; the global logo is excluded, and transparency in other
+PNG files is flattened onto a dark background.
+
+The logbook summary shows a storage warning when its estimated backup reaches
+about 150 MB on a phone or tablet, or 500 MB on a desktop. The estimate includes
+dive profile JSON and the roughly one-third size increase caused by embedding
+images as Base64 in the backup.
+
 For a device-transfer acceptance test, export from one browser and import into
 a clean profile in a different browser, then compare counts, edits, photos,
 backgrounds, presets, logo, and language. A fuller checklist is in
@@ -200,10 +212,12 @@ has no GPS.
 ## Using a regional dive-site catalog
 
 In **Settings**, choose a compatible `dive-sites.json` under **Dive-site
-catalog**. The selected catalog is used for nearby-site suggestions throughout
-the current browser tab and as the base for the existing merge/download tools.
-It is not added to backups or permanent app storage, and can be removed from
-the same card at any time.
+catalog**. Its sites are added to—not substituted for—the catalog included
+with DiveFrame. The combined list is used for nearby-site suggestions
+throughout the current browser tab and for the existing merge/download tools.
+Duplicate IDs and identical name/coordinate entries retain the bundled entry.
+The additional file is not added to backups or permanent app storage, and can
+be removed from the same card at any time.
 
 If you need a catalog for another region, download the AI catalog prompt from
 that card, replace the region placeholder, and give it to an AI assistant that

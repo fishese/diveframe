@@ -857,6 +857,116 @@ export async function clearLocalDivePhotos() {
   return attachments.length;
 }
 
+export async function getLocalBackupSizeEstimate() {
+  const snapshot = await exportLocalBackupSnapshot();
+  const attachments = snapshot.attachments.map(withoutBlob);
+  const backgrounds = snapshot.backgrounds.map(withoutBlob);
+  const brandingAssets = snapshot.brandingAssets.map(withoutBlob);
+  const metadataBytes = new Blob([
+    JSON.stringify({
+      ...snapshot,
+      attachments,
+      backgrounds,
+      brandingAssets,
+    }),
+  ]).size;
+  const mediaBytes = [
+    ...snapshot.attachments,
+    ...snapshot.backgrounds,
+    ...snapshot.brandingAssets,
+  ].reduce((total, record) => total + record.size, 0);
+  return {
+    mediaBytes,
+    estimatedBackupBytes: metadataBytes + Math.ceil((mediaBytes * 4) / 3),
+    divePhotos: snapshot.attachments.length,
+    backgrounds: snapshot.backgrounds.length,
+  };
+}
+
+export async function optimizeLocalStoredPhotos(
+  quality = 0.88,
+  maxDimension = 2560,
+) {
+  const database = await openDatabase();
+  const readTransaction = database.transaction([
+    ATTACHMENTS_STORE,
+    BACKGROUNDS_STORE,
+  ]);
+  const [attachments, backgrounds] = await Promise.all([
+    request<LocalAttachment[]>(
+      readTransaction.objectStore(ATTACHMENTS_STORE).getAll(),
+    ),
+    request<LocalBackground[]>(
+      readTransaction.objectStore(BACKGROUNDS_STORE).getAll(),
+    ),
+  ]);
+  const updatedAttachments: LocalAttachment[] = [];
+  const updatedBackgrounds: LocalBackground[] = [];
+  let beforeBytes = 0;
+  let afterBytes = 0;
+  for (const attachment of attachments) {
+    beforeBytes += attachment.size;
+    const blob = await optimizedJpeg(
+      attachment.blob,
+      attachment.contentType,
+      quality,
+      maxDimension,
+    );
+    const updated =
+      blob && blob.size < attachment.size
+        ? {
+            ...attachment,
+            fileName: jpegFileName(attachment.fileName),
+            contentType: "image/jpeg",
+            size: blob.size,
+            blob,
+          }
+        : attachment;
+    afterBytes += updated.size;
+    if (updated !== attachment) updatedAttachments.push(updated);
+  }
+  for (const background of backgrounds) {
+    beforeBytes += background.size;
+    const blob = await optimizedJpeg(
+      background.blob,
+      background.contentType,
+      quality,
+      maxDimension,
+    );
+    const updated =
+      blob && blob.size < background.size
+        ? {
+            ...background,
+            fileName: jpegFileName(background.fileName),
+            contentType: "image/jpeg",
+            size: blob.size,
+            blob,
+          }
+        : background;
+    afterBytes += updated.size;
+    if (updated !== background) updatedBackgrounds.push(updated);
+  }
+  if (updatedAttachments.length || updatedBackgrounds.length) {
+    const transaction = database.transaction(
+      [ATTACHMENTS_STORE, BACKGROUNDS_STORE],
+      "readwrite",
+    );
+    updatedAttachments.forEach((record) =>
+      transaction.objectStore(ATTACHMENTS_STORE).put(record),
+    );
+    updatedBackgrounds.forEach((record) =>
+      transaction.objectStore(BACKGROUNDS_STORE).put(record),
+    );
+    await transactionComplete(transaction);
+  }
+  return {
+    examined: attachments.length + backgrounds.length,
+    optimized: updatedAttachments.length + updatedBackgrounds.length,
+    beforeBytes,
+    afterBytes,
+  };
+}
+
 export async function mergeLocalDuplicateDives(
   keepId: string,
   removeId: string,
@@ -1160,6 +1270,61 @@ function mergeStoredDives(
       ...keep.sourceSiteNames,
     },
   };
+}
+
+async function optimizedJpeg(
+  source: Blob,
+  contentType: string,
+  quality: number,
+  maxDimension: number,
+) {
+  if (
+    !contentType.startsWith("image/") ||
+    contentType === "image/svg+xml" ||
+    typeof document === "undefined"
+  ) {
+    return null;
+  }
+  const url = URL.createObjectURL(source);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error("A stored image could not be decoded."));
+      element.src = url;
+    });
+    const scale = Math.min(
+      1,
+      maxDimension / Math.max(image.naturalWidth, image.naturalHeight),
+    );
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    context.fillStyle = "#081a22";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+    return await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", quality),
+    );
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function jpegFileName(fileName: string) {
+  return `${fileName.replace(/\.[^.]+$/, "") || "dive-photo"}.jpg`;
+}
+
+function withoutBlob<T extends { blob: Blob }>(record: T): Omit<T, "blob"> {
+  const copy: Record<string, unknown> = { ...record };
+  delete copy.blob;
+  return copy as Omit<T, "blob">;
 }
 
 function openDatabase() {

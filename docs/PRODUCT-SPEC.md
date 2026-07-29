@@ -63,6 +63,11 @@ complete enough to become the data layer for those larger capabilities.
 
 - View summary metrics, source-specific dive numbers, computer model, map,
   profile, temperature, and optional tank-pressure telemetry.
+- View logbook aggregates in this order: dive count, named-site count, unique
+  location count, buddy count, total underwater time, longest dive in minutes,
+  deepest dive, average maximum depth, and average SAC. Total underwater time
+  uses minutes through 300 minutes, hours through 72 hours, and days above
+  that.
 - Edit site, broader location, buddy, notes, category, cylinder choice, and
   manual start/end pressure.
 - Select a nearby site from the bundled, session-loaded, or OpenStreetMap
@@ -141,10 +146,13 @@ by Haversine distance. OpenStreetMap is the fallback when no bundled entry is
 nearby.
 
 A user can load a compatible regional `dive-sites.json` in Settings. That
-catalog is stored in `sessionStorage`, participates in nearby suggestions
-throughout the current tab, and can be removed without changing IndexedDB or
-backups. A downloadable prompt helps users ask an AI assistant to research a
-regional catalog, but generated data must be reviewed by a person.
+catalog is stored in `sessionStorage` and combined additively with the bundled
+catalog. The combined entries participate in nearby suggestions throughout the
+current tab and form the base of the merged catalog download. Duplicate IDs or
+identical name/coordinate records retain the bundled entry. Removing the
+additional catalog does not change IndexedDB or backups. A downloadable prompt
+helps users ask an AI assistant to research a regional catalog, but generated
+data must be reviewed by a person.
 
 Manual GPS-backed sites create contribution records. Settings can review,
 rename, add aliases, exclude, export, or merge those candidates into a catalog
@@ -177,6 +185,14 @@ Three destructive controls exist:
   contributions while retaining images and settings that can reconnect after
   deterministic re-import.
 - **Erase all data** clears every DiveFrame IndexedDB store.
+
+The logbook calculates an estimated JSON backup size from normalized records
+plus Base64-expanded media. It adds a warning summary card at 150 MiB for
+mobile/tablet user agents and 500 MiB for desktop user agents. Settings reports
+estimated backup and raw media sizes and offers an explicit lossy optimizer:
+eligible dive photos and reusable backgrounds are converted to JPEG quality
+0.88 and capped at 2560 px on the longest edge, but are only replaced when the
+new file is smaller. Logos and SVG files are excluded.
 
 The app requests persistent browser storage when available, but browser data is
 not a durable backup. The service worker caches the app shell and selected
@@ -270,13 +286,20 @@ Import reporting is currently record-level rather than parser-level: ambiguous
 or rejected source dives are still reported by the original log-import flow,
 not by app-backup restore.
 
-### Priority B: storage and media control
+### Storage and media control
 
-1. Show storage usage and whether persistent storage was granted.
-2. Add dive-photo deletion and optional captions.
-3. Offer optional image downscaling while retaining an explicit
-   keep-original choice.
-4. Deduplicate backup photos by content hash.
+Completed:
+
+1. Estimated backup/media size and size-dependent logbook warning.
+2. Bulk dive-photo deletion.
+3. Explicit bulk JPEG optimization/downscaling for dive photos and reusable
+   backgrounds.
+
+Remaining candidates:
+
+1. Show whether persistent storage was granted and the browser's quota.
+2. Optional per-photo captions and deletion.
+3. Deduplicate backup photos by content hash.
 
 ### Priority C: quality and portability
 

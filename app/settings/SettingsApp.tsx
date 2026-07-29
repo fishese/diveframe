@@ -40,12 +40,14 @@ import {
   deleteLocalBackground,
   deleteLocalOverlayLogo,
   getLocalAppPreferences,
+  getLocalBackupSizeEstimate,
   getLocalOverlayLogo,
   listLocalBackgrounds,
   listLocalDives,
   listLocalSourceRecords,
   listLocalSiteContributions,
   mergeLocalDuplicateDives,
+  optimizeLocalStoredPhotos,
   saveLocalAppPreferences,
   saveLocalOverlayLogo,
   updateLocalBackgroundName,
@@ -65,6 +67,7 @@ import {
 } from "@/lib/gas-calculations";
 import {
   clearSessionDiveSiteCatalog,
+  combineDiveSiteCatalogs,
   loadSessionDiveSiteCatalog,
   saveSessionDiveSiteCatalog,
   validateDiveSiteCatalog,
@@ -100,6 +103,9 @@ export function SettingsApp() {
     DuplicateDiveCandidate[]
   >([]);
   const [dismissedDuplicates, setDismissedDuplicates] = useState<string[]>([]);
+  const [storageEstimate, setStorageEstimate] = useState<Awaited<
+    ReturnType<typeof getLocalBackupSizeEstimate>
+  > | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -108,13 +114,16 @@ export function SettingsApp() {
       getLocalOverlayLogo(),
       getLocalAppPreferences(),
       listLocalDives(),
+      getLocalBackupSizeEstimate(),
     ])
-      .then(([items, savedBackgrounds, savedLogo, preferences, dives]) => {
+      .then(([items, savedBackgrounds, savedLogo, preferences, dives, estimate]) => {
         const sessionCatalog = loadSessionDiveSiteCatalog();
         setContributions(items);
         setReviewedSites(items.map(toSiteDraft));
         if (sessionCatalog) {
-          setCatalog(sessionCatalog.catalog);
+          setCatalog(
+            combineDiveSiteCatalogs(BUILT_IN_CATALOG, sessionCatalog.catalog),
+          );
           setCatalogLabel(sessionCatalog.label);
         }
         setBackgrounds(savedBackgrounds);
@@ -124,6 +133,7 @@ export function SettingsApp() {
         );
         setDismissedDuplicates(preferences?.dismissedDuplicatePairs ?? []);
         setDuplicateCandidates(findPotentialDuplicateDives(dives));
+        setStorageEstimate(estimate);
         setStatus(
           items.length
             ? t("manualSitesReady", { count: items.length, suffix: items.length === 1 ? "" : "s" })
@@ -154,6 +164,7 @@ export function SettingsApp() {
     try {
       await addLocalBackgrounds(files);
       setBackgrounds(await listLocalBackgrounds());
+      setStorageEstimate(await getLocalBackupSizeEstimate());
       setStatus(t("savedBackgrounds", { count: files.length, suffix: files.length === 1 ? "" : "s" }));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("backgroundsSaveFailed"));
@@ -167,6 +178,7 @@ export function SettingsApp() {
     try {
       await deleteLocalBackground(id);
       setBackgrounds((items) => items.filter((item) => item.id !== id));
+      setStorageEstimate(await getLocalBackupSizeEstimate());
       setStatus(t("removedBackground"));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("backgroundRemoveFailed"));
@@ -198,6 +210,7 @@ export function SettingsApp() {
     try {
       const saved = await saveLocalOverlayLogo(file);
       setLogo(saved);
+      setStorageEstimate(await getLocalBackupSizeEstimate());
       setStatus(t("savedLogo", { name: saved.fileName }));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("logoSaveFailed"));
@@ -211,6 +224,7 @@ export function SettingsApp() {
     try {
       await deleteLocalOverlayLogo();
       setLogo(null);
+      setStorageEstimate(await getLocalBackupSizeEstimate());
       setStatus(t("removedLogo"));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("logoRemoveFailed"));
@@ -281,6 +295,7 @@ export function SettingsApp() {
         restoredPreferences?.dismissedDuplicatePairs ?? [],
       );
       setBackupPreview(null);
+      setStorageEstimate(await getLocalBackupSizeEstimate());
       setStatus(
         mode === "merge"
           ? t("importMergeComplete", result)
@@ -298,9 +313,37 @@ export function SettingsApp() {
     setBusy(true);
     try {
       const count = await clearLocalDivePhotos();
+      setStorageEstimate(await getLocalBackupSizeEstimate());
       setStatus(t("eraseDivePhotosComplete", { count }));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("eraseDivePhotosFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function optimizeStoredPhotos() {
+    if (!window.confirm(t("optimizeStoredPhotosConfirm"))) return;
+    setBusy(true);
+    setStatus(t("optimizingStoredPhotos"));
+    try {
+      const result = await optimizeLocalStoredPhotos();
+      const [savedBackgrounds, estimate] = await Promise.all([
+        listLocalBackgrounds(),
+        getLocalBackupSizeEstimate(),
+      ]);
+      setBackgrounds(savedBackgrounds);
+      setStorageEstimate(estimate);
+      setStatus(
+        t("optimizeStoredPhotosComplete", {
+          optimized: result.optimized,
+          saved: formatByteCount(result.beforeBytes - result.afterBytes),
+        }),
+      );
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : t("optimizeStoredPhotosFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -342,6 +385,7 @@ export function SettingsApp() {
       setDismissedDuplicates([]);
       setBackgrounds([]);
       setLogo(null);
+      setStorageEstimate(null);
       setDefaultCylinderPresetId(DEFAULT_CYLINDER_PRESET_ID);
       await setLanguage("en");
       setStatus(t("eraseAllDataComplete"));
@@ -360,6 +404,7 @@ export function SettingsApp() {
       setContributions([]);
       setReviewedSites([]);
       setDuplicateCandidates([]);
+      setStorageEstimate(await getLocalBackupSizeEstimate());
       setStatus(t("eraseDiveDataComplete"));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("eraseDiveDataFailed"));
@@ -450,7 +495,7 @@ export function SettingsApp() {
       const parsed = JSON.parse(await file.text()) as unknown;
       const validated = validateDiveSiteCatalog(parsed);
       saveSessionDiveSiteCatalog(validated, file.name);
-      setCatalog(validated);
+      setCatalog(combineDiveSiteCatalogs(BUILT_IN_CATALOG, validated));
       setCatalogLabel(file.name);
       setStatus(t("usingCatalog", { name: file.name, count: validated.sites.length }));
     } catch (error) {
@@ -617,7 +662,10 @@ export function SettingsApp() {
             <div>
               <FileJson size={18} />
               <span>
-                <strong>{catalogLabel ?? t("bundledCatalog")}</strong>
+                <strong>
+                  {t("bundledCatalog")}
+                  {catalogLabel ? ` + ${catalogLabel}` : ""}
+                </strong>
                 <small>
                   {t("sessionCatalogDescription")}
                 </small>
@@ -988,6 +1036,40 @@ export function SettingsApp() {
           )}
         </section>
 
+        <section className="settings-card storage-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><Database size={21} /></span>
+            <div>
+              <p className="eyebrow">{t("storageManagement")}</p>
+              <h2>{t("localMediaStorage")}</h2>
+            </div>
+          </div>
+          <p className="settings-note">{t("storageManagementDescription")}</p>
+          {storageEstimate && (
+            <div className="storage-summary">
+              <div>
+                <strong>
+                  {formatByteCount(storageEstimate.estimatedBackupBytes)}
+                </strong>
+                <span>{t("estimatedBackupSize")}</span>
+              </div>
+              <div>
+                <strong>{formatByteCount(storageEstimate.mediaBytes)}</strong>
+                <span>{t("storedMediaSize")}</span>
+              </div>
+            </div>
+          )}
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() => void optimizeStoredPhotos()}
+            disabled={busy || storageEstimate?.mediaBytes === 0}
+          >
+            <RefreshCw size={16} /> {t("optimizeStoredPhotos")}
+          </button>
+          <p className="settings-note">{t("optimizeStoredPhotosDescription")}</p>
+        </section>
+
         <section className="settings-card danger-settings">
           <div className="settings-card-heading">
             <span className="settings-icon settings-icon-danger"><Trash2 size={21} /></span>
@@ -1057,6 +1139,13 @@ function backupImpact(backup: PreparedAppBackup) {
     }),
     { newRecords: 0, matchingRecords: 0, localOnlyRecords: 0 },
   );
+}
+
+function formatByteCount(bytes: number) {
+  const megabytes = bytes / (1024 * 1024);
+  if (megabytes < 1) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  if (megabytes < 1024) return `${Math.round(megabytes)} MB`;
+  return `${(megabytes / 1024).toFixed(1)} GB`;
 }
 
 function DuplicateDive({

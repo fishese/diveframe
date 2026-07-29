@@ -19,14 +19,16 @@ in Settings.
 
 Settings accepts another compatible `dive-sites.json`. The file is validated
 and stored in `sessionStorage`, so it remains available while the user moves
-between Settings and dive pages in the same tab. It is not written to
+between Settings and dive pages in the same tab. Its active sites are added to
+the bundled catalog rather than replacing it. Duplicate IDs and identical
+name/coordinate records retain the bundled entry. It is not written to
 IndexedDB, included in app backups, or uploaded to the server. Closing the tab
-session or choosing **Remove session catalog** returns suggestions to the
-bundled catalog and OpenStreetMap behavior.
+session or choosing **Remove additional catalog** removes only those additional
+entries; the bundled catalog and OpenStreetMap behavior remain.
 
-The same selected file becomes the base for the existing catalog merge/download
-tool. This lets a user work with a regional catalog without requiring the main
-repository to cover every dive destination.
+The combined bundled-plus-additional catalog becomes the base for the existing
+catalog merge/download tool. This lets a user work with a regional catalog
+without requiring the main repository to cover every dive destination.
 
 Settings links to
 `public/examples/dive-site-catalog-ai-prompt.md`, a reusable prompt for asking

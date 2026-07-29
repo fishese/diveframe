@@ -80,6 +80,27 @@ export function clearSessionDiveSiteCatalog() {
   sessionStorage.removeItem(SESSION_CATALOG_LABEL_KEY);
 }
 
+export function combineDiveSiteCatalogs(
+  bundled: DiveSiteCatalog,
+  additional: DiveSiteCatalog | null,
+): DiveSiteCatalog {
+  if (!additional) return bundled;
+  const sites = [...bundled.sites];
+  const ids = new Set(sites.map((site) => site.id));
+  const positions = new Set(sites.map(sitePositionKey));
+  additional.sites.forEach((site) => {
+    const position = sitePositionKey(site);
+    if (ids.has(site.id) || positions.has(position)) return;
+    sites.push(site);
+    ids.add(site.id);
+    positions.add(position);
+  });
+  return {
+    schemaVersion: Math.max(bundled.schemaVersion, additional.schemaVersion),
+    sites,
+  };
+}
+
 export function nearbySessionCatalogSites(
   catalog: DiveSiteCatalog | null,
   latitude: number,
@@ -119,6 +140,10 @@ function isCatalogSite(value: unknown): value is CatalogSite {
     Number.isFinite(site.coordinates?.latitude) &&
     Number.isFinite(site.coordinates?.longitude)
   );
+}
+
+function sitePositionKey(site: CatalogSite) {
+  return `${site.name.trim().toLocaleLowerCase("en")}\u0000${site.coordinates.latitude.toFixed(4)}\u0000${site.coordinates.longitude.toFixed(4)}`;
 }
 
 function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {

@@ -83,8 +83,14 @@ engineering reviewers.
 - A bundled Bubbles background lets a dive be composed before any personal
   photo is added. It can be removed for the current composer session.
 - A compatible regional `dive-sites.json` can be loaded for the current tab.
-  Its sites join nearby suggestions without permanently changing app data; a
-  downloadable AI prompt helps users prepare catalogs for their own regions.
+  Its sites are added to the bundled catalog for nearby suggestions and merged
+  catalog downloads without permanently changing app data; a downloadable AI
+  prompt helps users prepare catalogs for their own regions.
+- Nine logbook summaries cover dive/site/location/buddy counts, total and
+  longest time, deepest and average maximum depth, and average SAC. Large
+  estimated backups add a tenth storage-warning card.
+- Storage tools estimate backup/media size and can replace eligible dive photos
+  and reusable backgrounds with smaller 88%-quality JPEGs capped at 2560 px.
 - Share-image entry points at both the top of the dive and the bottom of its
   photo gallery.
 - A live image composer with five original layouts, including two purpose-built

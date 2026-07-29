@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowDownToLine,
   Camera,
   ChevronDown,
@@ -36,6 +37,7 @@ import {
 } from "react";
 import {
   addLocalPhotos,
+  getLocalBackupSizeEstimate,
   getLocalAppPreferences,
   listLocalAttachments,
   listLocalDives,
@@ -120,22 +122,30 @@ export function DiveFrameApp() {
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(false);
   const [mobileDetail, setMobileDetail] = useState(false);
+  const [storageEstimate, setStorageEstimate] = useState<Awaited<
+    ReturnType<typeof getLocalBackupSizeEstimate>
+  > | null>(null);
   const importInput = useRef<HTMLInputElement>(null);
   const enrichingLocations = useRef(false);
 
   const refreshDives = useCallback(async (preferredId?: string) => {
-    const next = await listLocalDives();
+    const [next, nextStorageEstimate] = await Promise.all([
+      listLocalDives(),
+      getLocalBackupSizeEstimate(),
+    ]);
     setDives(next);
+    setStorageEstimate(nextStorageEstimate);
     setSelectedId((current) => preferredId ?? current ?? next[0]?.id ?? null);
     setStatus(next.length ? t("divesReady", { count: next.length }) : t("importDiveLog"));
   }, [t]);
 
   useEffect(() => {
     let active = true;
-    listLocalDives()
-      .then((next) => {
+    Promise.all([listLocalDives(), getLocalBackupSizeEstimate()])
+      .then(([next, nextStorageEstimate]) => {
         if (!active) return;
         setDives(next);
+        setStorageEstimate(nextStorageEstimate);
         setSelectedId(next[0]?.id ?? null);
         setStatus(next.length ? t("divesReady", { count: next.length }) : t("importDiveLog"));
         void requestPersistentLocalStorage();
@@ -289,6 +299,18 @@ export function DiveFrameApp() {
       )
       .map((dive) => sacRateForDive(dive, defaultCylinderPresetId))
       .filter((rate): rate is number => rate !== null);
+    const durations = dives
+      .map((dive) => dive.durationSeconds)
+      .filter(
+        (duration): duration is number =>
+          duration !== null && Number.isFinite(duration) && duration > 0,
+      );
+    const maxDepths = dives
+      .map((dive) => dive.maxDepthM ?? numberFrom(dive.depth))
+      .filter(
+        (depth): depth is number =>
+          depth !== null && Number.isFinite(depth) && depth >= 0,
+      );
     return {
       dives: dives.length,
       namedDives: dives.filter((dive) => Boolean(dive.userSite || dive.site))
@@ -322,8 +344,18 @@ export function DiveFrameApp() {
             : [],
         ),
       ).size,
+      longestDiveSeconds: durations.length ? Math.max(...durations) : null,
+      deepestDiveM: maxDepths.length ? Math.max(...maxDepths) : null,
+      averageMaxDepthM: maxDepths.length
+        ? maxDepths.reduce((total, depth) => total + depth, 0) /
+          maxDepths.length
+        : null,
     };
   }, [defaultCylinderPresetId, dives]);
+  const backupWarningThreshold = backupSizeWarningThreshold();
+  const showStorageWarning =
+    storageEstimate !== null &&
+    storageEstimate.estimatedBackupBytes >= backupWarningThreshold;
 
   const siteSuggestions = useMemo(
     () =>
@@ -547,17 +579,52 @@ export function DiveFrameApp() {
               <Stat icon={<Compass size={19} />} value={stats.dives} label={t("dives")} />
               <Stat icon={<Sparkles size={19} />} value={stats.namedDives} label={t("divesAtNamedSites")} />
               <Stat icon={<MapPin size={19} />} value={stats.locations} label={t("diveLocations")} />
+              <Stat icon={<Users size={19} />} value={stats.buddies} label={t("buddies")} />
               <Stat
                 icon={<Waves size={19} />}
                 value={formatUnderwaterTime(stats.underwaterSeconds, t)}
                 label={t("underwater")}
               />
               <Stat
+                icon={<Clock3 size={19} />}
+                value={
+                  stats.longestDiveSeconds === null
+                    ? "—"
+                    : `${Math.round(stats.longestDiveSeconds / 60)} ${t("minutesShort")}`
+                }
+                label={t("longestDive")}
+              />
+              <Stat
+                icon={<Waves size={19} />}
+                value={
+                  stats.deepestDiveM === null
+                    ? "—"
+                    : `${stats.deepestDiveM.toFixed(1)} m`
+                }
+                label={t("deepestDive")}
+              />
+              <Stat
+                icon={<Droplets size={19} />}
+                value={
+                  stats.averageMaxDepthM === null
+                    ? "—"
+                    : `${stats.averageMaxDepthM.toFixed(1)} m`
+                }
+                label={t("averageMaxDepth")}
+              />
+              <Stat
                 icon={<Gauge size={19} />}
                 value={stats.averageSac === null ? "—" : `${stats.averageSac.toFixed(1)} L/min`}
                 label={t("averageSac")}
               />
-              <Stat icon={<Users size={19} />} value={stats.buddies} label={t("buddies")} />
+              {showStorageWarning && storageEstimate && (
+                <Stat
+                  icon={<AlertTriangle size={19} />}
+                  value={formatStorageSize(storageEstimate.estimatedBackupBytes)}
+                  label={t("storageWarning")}
+                  warning
+                />
+              )}
             </div>
           </section>
 
@@ -752,13 +819,15 @@ function Stat({
   icon,
   value,
   label,
+  warning = false,
 }: {
   icon: ReactNode;
   value: number | string;
   label: string;
+  warning?: boolean;
 }) {
   return (
-    <div className="stat">
+    <div className={`stat ${warning ? "stat-warning" : ""}`}>
       <span>{icon}</span>
       <strong>{value}</strong>
       <small>{label}</small>
@@ -1838,11 +1907,24 @@ function uniqueSuggestions(values: Array<string | null>) {
 }
 
 function formatUnderwaterTime(seconds: number, t: AppTranslate) {
+  const minutes = seconds / 60;
+  if (minutes <= 300) return `${compactNumber(minutes)} ${t("minutesShort")}`;
   const hours = seconds / 3_600;
-  if (hours < 48) return `${compactNumber(hours)} ${t("hoursShort")}`;
-  const days = hours / 24;
-  if (days < 60) return `${compactNumber(days)} ${t("daysShort")}`;
-  return `${compactNumber(days / 30.4375)} ${t("monthsShort")}`;
+  if (hours <= 72) return `${compactNumber(hours)} ${t("hoursShort")}`;
+  return `${compactNumber(hours / 24)} ${t("daysShort")}`;
+}
+
+function backupSizeWarningThreshold() {
+  if (typeof navigator === "undefined") return 500 * 1024 * 1024;
+  const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  return (mobile ? 150 : 500) * 1024 * 1024;
+}
+
+function formatStorageSize(bytes: number) {
+  const megabytes = bytes / (1024 * 1024);
+  return megabytes >= 1024
+    ? `${(megabytes / 1024).toFixed(1)} GB`
+    : `${Math.round(megabytes)} MB`;
 }
 
 function compactNumber(value: number) {

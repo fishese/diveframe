@@ -58,6 +58,24 @@ test("rejects malformed catalogs", () => {
   );
 });
 
+test("adds a session catalog to the bundled catalog without replacing it", () => {
+  const additional = {
+    ...catalog,
+    sites: [
+      {
+        ...catalog.sites[0],
+        id: "jp-extra-site",
+        name: "Additional Site",
+        coordinates: { latitude: 34.68, longitude: 138.94 },
+      },
+    ],
+  };
+  const combined = catalogTools.combineDiveSiteCatalogs(catalog, additional);
+  assert.equal(combined.sites.length, 2);
+  assert.equal(combined.sites[0].id, "hk-sharp-island-test-site");
+  assert.equal(combined.sites[1].id, "jp-extra-site");
+});
+
 test("stores and removes a catalog for the current tab session", () => {
   const values = new Map();
   globalThis.sessionStorage = {

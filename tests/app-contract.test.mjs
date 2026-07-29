@@ -76,6 +76,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /shouldPromoteCanonicalSource/);
   assert.match(storage, /rekeyDive/);
   assert.match(storage, /clearLocalDivePhotos/);
+  assert.match(storage, /getLocalBackupSizeEstimate/);
+  assert.match(storage, /optimizeLocalStoredPhotos/);
   assert.match(storage, /mergeLocalDuplicateDives/);
   assert.match(backup, /SHA-256/);
   assert.match(backup, /previewLocalAppBackup/);
@@ -222,6 +224,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(settings, /catalogSharingInvitation/);
   assert.match(app, /nearbySessionCatalogSites/);
   assert.match(catalogTools, /sessionStorage/);
+  assert.match(catalogTools, /combineDiveSiteCatalogs/);
   assert.match(catalogTools, /nearbySessionCatalogSites/);
   assert.match(catalogPrompt, /Return only the final UTF-8 JSON object/);
   assert.match(assetLicenses, /public\/backgrounds\/bubbles-bg\.jpg/);
