@@ -40,6 +40,19 @@ fields without allowing an empty field from a later import to erase useful
 existing data. Ambiguous records remain separate rather than being merged
 silently.
 
+DiveFrame now creates the same canonical IDs on every device from immutable
+source identifiers. Shearwater `DiveId` is preferred, followed by Subsurface
+`deviceid:diveid`, UDDF, and FIT identity. If a dive initially has only a
+Subsurface record and its matching Shearwater record is imported later,
+DiveFrame promotes the canonical ID and moves that dive’s photos, site
+contribution, source mappings, and composer settings with it. Date/time,
+computer serial, maximum depth, and duration are matching evidence; editable
+fields such as site, buddy, notes, and dive number are not part of the ID.
+
+Older import-order-dependent IDs are not migrated. For the first transfer after
+this update, use **Settings → Erase all data** on each device, re-import the
+source logs, reapply any edits you need, and create a fresh app-data backup.
+
 The logbook overview counts total dives, dives at named sites, unique non-empty
 location names from imported logs, accumulated underwater time, average
 calculable SAC, and unique buddies. Locations are compared as written after

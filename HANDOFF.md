@@ -36,6 +36,7 @@ distributed.
 - `lib/parsers/` — separate Shearwater, Subsurface, UDDF, and FIT importers.
 - `lib/dive-model.ts` and `lib/normalize-dive.ts` — normalized internal model.
 - `lib/dive-matching.ts` — cross-source record matching.
+- `lib/dive-identity.ts` — deterministic canonical IDs and source precedence.
 - `lib/chart-renderer.ts` — profile downsampling and vector-like canvas paths.
 - `lib/image-composer.ts`, `lib/templates.ts`, and `lib/exporter.ts` — data-driven
   layouts, rendering, and PNG/JPEG export.
@@ -137,11 +138,21 @@ Source identity is stored separately from the canonical dive ID:
 Matching order:
 
 1. Reuse an existing source mapping.
-2. Reuse the canonical Shearwater ID when present.
-3. Match records by start time, normalized computer serial, and maximum depth.
-4. For FIT/UDDF timezone mismatches only, try an unambiguous same-day
+2. Match records by start time, normalized computer serial, and maximum depth.
+3. For FIT/UDDF timezone mismatches only, try an unambiguous same-day
    depth-and-duration fingerprint.
-5. Create a new canonical record when no safe match exists.
+4. Create a new canonical record when no safe match exists.
+
+Canonical IDs use the immutable source ID with deterministic precedence:
+Shearwater, Subsurface, UDDF, then FIT. When a higher-priority source is
+matched later, the dive is re-keyed along with attachment `diveId` values, site
+contributions, composer settings, and all source mappings. This makes final IDs
+independent of source import order and consistent across devices that import
+the same logs. Editable fields are deliberately excluded from identity.
+
+There is no migration for the older import-order-dependent IDs. During this
+pre-release period, clear local data and re-import source logs before making a
+new portable backup.
 
 The start-time window is five minutes. Same-serial matches tolerate up to
 three metres of maximum-depth variance. Matches without a shared serial use a

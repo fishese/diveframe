@@ -59,6 +59,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /\.ssrf/);
   assert.match(subsurface, /sourceId/);
   assert.match(storage, /sourceMappings/);
+  assert.match(storage, /canonicalDiveId/);
+  assert.match(storage, /shouldPromoteCanonicalSource/);
+  assert.match(storage, /rekeyDive/);
+  assert.match(storage, /attachmentsStore\.put\(\{ \.\.\.attachment, diveId: nextId \}\)/);
   assert.match(matching, /normalizeSerial/);
   assert.match(matching, /secondsApart > 300/);
   assert.match(matching, /sameOrAdjacentCalendarDay/);

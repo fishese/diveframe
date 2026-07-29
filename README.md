@@ -110,6 +110,20 @@ The PWA is also a suitable base for a future Android wrapper, such as a Trusted
 Web Activity or Capacitor package. No APK wrapper or app-store signing is
 included yet.
 
+### Stable dive identity
+
+Canonical dive IDs are deterministic across devices. DiveFrame uses immutable
+source identifiers in this priority order: Shearwater `DiveId`, Subsurface
+`deviceid:diveid`, UDDF identity, then FIT identity. Date/time, computer serial,
+depth, and duration matching links records when a second source is imported.
+If that source has a higher-priority immutable ID, the dive and its attached
+photos, site contribution, source mappings, and composer settings are re-keyed
+together.
+
+This intentionally replaces the earlier import-order-dependent IDs. Existing
+test data is not migrated; use **Settings → Erase all data**, then import the
+source logs again before creating a new transferable backup.
+
 ## Development
 
 Use Node.js 22 or newer.

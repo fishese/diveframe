@@ -5,6 +5,10 @@ import type {
 } from "./dive-model";
 import type { ComposerSettings } from "./composer-settings";
 import { findMatchingDive } from "./dive-matching";
+import {
+  canonicalDiveId,
+  shouldPromoteCanonicalSource,
+} from "./dive-identity";
 import { normalizeShearwaterPressurePair } from "./gas-calculations";
 
 export type DiveSource = "shearwater" | "subsurface" | "uddf" | "fit";
@@ -175,12 +179,20 @@ export async function listLocalSourceRecords() {
 export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
   const database = await openDatabase();
   const transaction = database.transaction(
-    [DIVES_STORE, SOURCES_STORE, SITE_CONTRIBUTIONS_STORE],
+    [
+      DIVES_STORE,
+      SOURCES_STORE,
+      ATTACHMENTS_STORE,
+      SITE_CONTRIBUTIONS_STORE,
+      COMPOSER_SETTINGS_STORE,
+    ],
     "readwrite",
   );
   const divesStore = transaction.objectStore(DIVES_STORE);
   const sourcesStore = transaction.objectStore(SOURCES_STORE);
   const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
+  const attachmentsStore = transaction.objectStore(ATTACHMENTS_STORE);
+  const composerSettingsStore = transaction.objectStore(COMPOSER_SETTINGS_STORE);
   const [storedDives, storedSources] = await Promise.all([
     request<LocalDive[]>(divesStore.getAll()),
     request<SourceRecord[]>(sourcesStore.getAll()),
@@ -194,14 +206,32 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
   for (const incoming of importedDives) {
     const mappingKey = sourceKey(incoming.source, incoming.sourceId);
     const mappedId = sourceMappings.get(mappingKey);
-    const canonicalId =
-      mappedId ??
-      (incoming.source === "shearwater" && divesById.has(incoming.id)
-        ? incoming.id
-        : findMatchingDive(incoming, [...divesById.values()])) ??
-      (incoming.source === "shearwater"
-        ? incoming.id
-        : `${incoming.source}:${incoming.sourceId}`);
+    const matchedId =
+      mappedId ?? findMatchingDive(incoming, [...divesById.values()]);
+    let canonicalId = matchedId ?? canonicalDiveId(incoming);
+    if (
+      !mappedId &&
+      matchedId &&
+      shouldPromoteCanonicalSource(
+        incoming.source,
+        divesById.get(matchedId)?.sources ?? [],
+      )
+    ) {
+      const promotedId = canonicalDiveId(incoming);
+      await rekeyDive(
+        matchedId,
+        promotedId,
+        divesById,
+        storedSources,
+        sourceMappings,
+        divesStore,
+        sourcesStore,
+        attachmentsStore,
+        contributionsStore,
+        composerSettingsStore,
+      );
+      canonicalId = promotedId;
+    }
     const merged = mergeDive(canonicalId, divesById.get(canonicalId), incoming, now);
 
     divesById.set(canonicalId, merged);
@@ -219,6 +249,66 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
 
   await transactionComplete(transaction);
   return listLocalDives();
+}
+
+async function rekeyDive(
+  previousId: string,
+  nextId: string,
+  divesById: Map<string, LocalDive>,
+  storedSources: SourceRecord[],
+  sourceMappings: Map<string, string>,
+  divesStore: IDBObjectStore,
+  sourcesStore: IDBObjectStore,
+  attachmentsStore: IDBObjectStore,
+  contributionsStore: IDBObjectStore,
+  composerSettingsStore: IDBObjectStore,
+) {
+  if (previousId === nextId) return;
+  const dive = divesById.get(previousId);
+  if (!dive) return;
+
+  const [attachments, contribution, composerSettings] = await Promise.all([
+    request<LocalAttachment[]>(
+      attachmentsStore.index("diveId").getAll(previousId),
+    ),
+    request<LocalSiteContribution | undefined>(
+      contributionsStore.get(previousId),
+    ),
+    request<ComposerSettings | undefined>(
+      composerSettingsStore.get(previousId),
+    ),
+  ]);
+
+  divesStore.delete(previousId);
+  divesById.delete(previousId);
+  divesById.set(nextId, { ...dive, id: nextId });
+
+  attachments.forEach((attachment) =>
+    attachmentsStore.put({ ...attachment, diveId: nextId }),
+  );
+  if (contribution) {
+    contributionsStore.delete(previousId);
+    contributionsStore.put({
+      ...contribution,
+      id: nextId,
+      diveId: nextId,
+    });
+  }
+  if (composerSettings) {
+    composerSettingsStore.delete(previousId);
+    composerSettingsStore.put({
+      ...composerSettings,
+      id: nextId,
+      diveId: nextId,
+    });
+  }
+
+  storedSources.forEach((record) => {
+    if (record.diveId !== previousId) return;
+    record.diveId = nextId;
+    sourceMappings.set(record.key, nextId);
+    sourcesStore.put(record);
+  });
 }
 
 export async function listLocalAttachments(diveId: string) {
