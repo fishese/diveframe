@@ -1,8 +1,8 @@
 # DiveFrame product specification
 
-Status: pre-release review
+Status: beta / pre-release review
 
-Last updated: 2026-07-29
+Last updated: 2026-07-30
 
 ## Review brief
 
@@ -10,16 +10,21 @@ DiveFrame is a device-local dive log companion. It imports compatible exports
 from dive-computer and logbook applications, conservatively combines records
 for the same dive, enriches them with locations and photos, and creates
 shareable images. It does not currently download directly from a dive computer
-or replace the source application's cloud backup.
+or replace the source application's cloud backup. The current beta is
+deliberately local-first and may require a data reset while its schema and
+workflows are still being tested.
 
 This document is intended to support product, diving-domain, privacy,
-accessibility, and engineering review before two larger projects are started:
+accessibility, and engineering review before larger platform projects are
+started:
 
-1. packaging DiveFrame in a native mobile wrapper; and
-2. downloading dives directly over Bluetooth.
+1. packaging DiveFrame in a native mobile wrapper with direct BLE import;
+2. optional user-controlled backup/sync through Google Drive; and
+3. optional accounts with hosted record and settings recovery.
 
 Reviewers should focus on whether the current local logbook is trustworthy and
-complete enough to become the data layer for those larger capabilities.
+complete enough to become the shared data layer for those capabilities without
+weakening the web app or requiring a second logbook implementation.
 
 ## Product goals
 
@@ -28,7 +33,7 @@ complete enough to become the data layer for those larger capabilities.
 - Make GPS, dive-site context, profiles, gas telemetry, photos, and
   source-specific dive numbers easier to inspect.
 - Keep imported logs and photos private to the user's browser unless the user
-  explicitly exports them.
+  explicitly exports them or opts into a future synchronization service.
 - Let users correct local records while preserving clear boundaries between
   DiveFrame and the original logbook applications.
 - Produce polished, high-resolution dive-summary images from real data while
@@ -47,6 +52,11 @@ complete enough to become the data layer for those larger capabilities.
 - **Local first.** Server routes are stateless lookup helpers, not log storage.
 - **Portable before synchronized.** Reliable export/import must precede any
   automatic cross-device sync.
+- **One model across surfaces.** Web, a future native wrapper, Drive transport,
+  and optional account sync must share record formats, validation, identity,
+  migrations, and merge behavior.
+- **Accounts remain optional.** Future sign-in may add recovery and sync, but
+  anonymous local use must remain a complete supported workflow.
 
 ## Current users and primary workflows
 
@@ -272,16 +282,19 @@ without the necessary pressure and cylinder inputs.
 - The composer keeps a reduced live preview visible while controls scroll.
 - Native controls, labels, status regions, keyboard-accessible buttons, and
   reduced-motion CSS are used where available.
+- A global beta notice warns that updates may be incompatible or require
+  clearing local data and links directly to the backup tools.
 - DiveFrame can be installed as a PWA. It is not yet an APK, native iOS app, or
   store-distributed application.
 
 Formal screen-reader, keyboard-only, contrast, and iOS/Android device matrices
 have not yet been completed.
 
-## Explicit current non-goals
+## Explicit current-release non-goals
 
-- Server-hosted logbook accounts or automatic cloud sync.
-- Direct Bluetooth transfer.
+- Server-hosted logbook accounts or automatic cloud sync in the beta.
+- Google Drive synchronization in the beta.
+- Direct Bluetooth transfer in the web/PWA beta.
 - Editing the original Shearwater, UDDF, or FIT file.
 - Automatic acceptance of AI-generated dive-site data.
 - Decompression or interpretation of undocumented proprietary sample blobs.
@@ -369,27 +382,28 @@ A Trusted Web Activity is simpler but remains dependent on the hosted origin.
 Capacitor offers native plugins and is the stronger candidate if Bluetooth and
 native storage are planned.
 
-## Bluetooth discovery phase
+## Planned extension guardrails
 
-Bluetooth support should begin as a separate research/specification phase:
+These are planned directions, not commitments for the current beta:
 
-1. Define the first supported platform and device model.
-2. Confirm protocol documentation, licensing, and lawful interoperability
-   constraints.
-3. Capture pairing, service discovery, transfer framing, retry, resume, and
-   cancellation behavior.
-4. Decide whether transfer is native BLE or Web Bluetooth. iPhone support
-   strongly favors a native wrapper because Safari does not provide general Web
-   Bluetooth access.
-5. Keep raw downloaded records until parsing succeeds, then pass normalized
-   dives through the same identity/merge pipeline as file imports.
-6. Design interruption handling for phone backgrounding, screen lock, low
-   battery, and large log histories.
-7. Build a device/firmware compatibility matrix and test with real hardware.
-8. Avoid presenting DiveFrame as a safety-critical device-management tool.
+- **BLE:** Keep the web app as the onboarding and general-use surface. A future
+  native app may add read-only BLE import, but downloaded dives must enter the
+  same normalized identity/merge pipeline and remain fully portable back to the
+  web app. Detailed protocol research remains parked separately.
+- **Google Drive:** Treat Drive as an optional transport for the versioned
+  backup/snapshot model, not as a second database or a native-only record
+  format.
+- **Accounts:** Preserve room for optional sign-in, hosted record/settings
+  recovery, and multi-device sync. IndexedDB remains the local working
+  database; canonical IDs must not depend on account, device, or provider IDs.
+  Hosted sync will require explicit revisions, deletion tombstones, conflict
+  behavior, tenant isolation, export/deletion, privacy, quota, and cost review
+  before implementation.
 
-The initial milestone should be read-only transfer from one explicitly
-supported computer, with no settings or firmware writes.
+All three directions must preserve anonymous local use and provider-independent
+backup export. The current single-user beta may use documented destructive
+schema resets when worthwhile; supported migrations become mandatory before
+other users are invited or hosted accounts are offered.
 
 ## Questions for reviewers
 
@@ -406,6 +420,8 @@ supported computer, with no settings or firmware writes.
 
 - Are the local-storage and network-lookup boundaries described clearly?
 - Should backup encryption be required before broader release?
+- What security, account-recovery, data-retention, and storage-cost controls are
+  required before optional hosted accounts or sync can be offered?
 - Are there risks in importing untrusted XML, JSON, FIT, SQLite, SVG, or image
   files that need additional limits or sanitization?
 - Is the regional AI-catalog workflow sufficiently explicit about human review?
@@ -424,6 +440,9 @@ supported computer, with no settings or firmware writes.
 - Does the backup format need redesign before more users accumulate photos?
 - Is `sessionStorage` the right lifetime for user-supplied regional catalogs?
 - Which wrapper architecture best supports BLE, local files, and future iOS?
+- Do current IDs, serializers, and store boundaries leave a clean seam for
+  Drive transport and optional account sync without coupling records to a
+  provider?
 - What telemetry, if any, can help diagnose failures without collecting dive
   or location data?
 

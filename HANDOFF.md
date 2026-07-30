@@ -16,6 +16,9 @@ The current product is deliberately device-local:
 - Map search and nearby-site endpoints are stateless network helpers.
 - There is no cross-device synchronization yet.
 
+The app is explicitly marked beta in a global trilingual notice. Pre-release
+updates may require clearing local data; backup tools remain the recovery path.
+
 Deployment is managed by the repository's Cloudflare Worker integration.
 
 The current install surface is a PWA. It can later be wrapped for Android with
@@ -53,13 +56,16 @@ distributed.
 - `app/globals.css` — responsive application styling.
 - `app/PwaInstall.tsx` — global service-worker registration and the
   browser/iOS-aware install control shown in Settings.
+- `app/BetaNotice.tsx` — global trilingual beta/data-reset warning and Settings
+  backup link.
 - `public/manifest.webmanifest`, `public/sw.js`, and `public/icons/` —
   installable-web-app metadata, cached app shell, and header-mark app icons.
 - `tests/` — product contract, deterministic identity, catalog, composer, gas,
   Subsurface pass-through, and optional real Shearwater fixture tests.
 - `docs/USER-GUIDE.md` — supported-format and device-local workflow guide.
 - `docs/PRODUCT-SPEC.md` — authoritative current-state product specification,
-  pre-wrapper readiness gate, Bluetooth discovery scope, and reviewer questions.
+  pre-wrapper readiness gate, planned extension guardrails, and reviewer
+  questions.
 - `LICENSE` — project notice for `GPL-3.0-or-later`.
 - `ASSET-LICENSES.md` — separate copyright boundary for the non-GPL Bubbles
   sample background.
@@ -146,12 +152,15 @@ checksummed document in a `diveframe-encrypted-backup` envelope using
 PBKDF2-SHA-256 and AES-256-GCM. The password is requested during import and
 never stored.
 
-Import is additive by primary key: complete backup records replace matching
-local records while destination-only records remain. Separately added photos
-usually have different random IDs and both survive; an exact matching ID is
-replaced by the backup copy.
+Import validates and previews the backup before writing. **Merge** replaces
+matching complete records while retaining destination-only records; separately
+added photos usually have different random IDs and both survive. **Replace**
+atomically clears all covered stores before restoring the backup. An exact
+matching photo ID is replaced by the backup copy in either mode.
 
-The danger zone exposes two deletion scopes. `clearLocalDiveData()` clears
+The danger zone exposes three deletion scopes. `clearLocalDivePhotos()` removes
+per-dive attachments while keeping dives and reusable assets.
+`clearLocalDiveData()` clears
 `dives`, `sourceRecords`, and `siteContributions`, retaining attachments,
 composer settings, named composer presets, backgrounds, branding, and app
 preferences. Retained
@@ -424,7 +433,10 @@ the existing dive record, so no IndexedDB migration is required.
 ## Current hosting
 
 The project uses the bundled Vinext/Cloudflare-compatible build. Production is
-the user-managed Cloudflare Worker connected to the GitHub `main` branch.
+the user-managed Cloudflare Worker connected to the GitHub `main` branch. The
+canonical user-facing origin is `https://divelog.fishese.cc`; internal
+navigation and static assets should remain relative so alternate preview and
+wrapper origins continue to work.
 
 The data layer no longer needs D1 or R2. Two stateless server routes remain for
 OpenStreetMap lookups. If the project moves to Cloudflare Workers, those routes
@@ -470,9 +482,13 @@ for a later archive revision includes:
 5. Deduplicate photos by content hash rather than filename.
 6. Preview additions and conflicts before writing anything.
 
-Once backup/restore is reliable, synchronization can use the same manifest and
-merge semantics over a user-selected provider such as a local folder, WebDAV,
-Google Drive, iCloud Drive, or a small private API.
+Future synchronization should reuse the same validated records and merge
+semantics. Google Drive may be an optional app-only transport; optional
+DiveFrame accounts may later add hosted record/settings recovery. Neither
+should create a second data model or weaken anonymous local/web use. Keep
+canonical IDs independent of account, device, and provider IDs, and require a
+separate conflict, tombstone, authorization, privacy, quota, and cost design
+before hosted sync.
 
 ## Known follow-ups
 

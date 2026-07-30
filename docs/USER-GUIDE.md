@@ -8,6 +8,11 @@ profiles and statistics.
 It complements the original dive-computer or logbook application. It does not
 replace that application's cloud backup and does not write changes back to it.
 
+> **Beta:** Updates may be incompatible or require clearing data stored by
+> DiveFrame in this browser. Keep the original source exports and a recent app
+> backup. The notice shown throughout the app links to **Settings**, where
+> backups can be exported.
+
 The full interface and exported-image controls support English, Traditional
 Chinese (Hong Kong), and Japanese. Change the interface language in **Settings**
 directly below the install card. Each share image can use a different overlay
@@ -339,8 +344,14 @@ unless they have permission from the copyright holder. See
 ## Product review and roadmap
 
 The [product specification](PRODUCT-SPEC.md) describes the implemented
-behavior, known limits, privacy model, pre-wrapper readiness gate, Bluetooth
-discovery scope, and questions for outside reviewers. It is the best single
+behavior, known limits, privacy model, pre-wrapper readiness gate, and questions
+for outside reviewers. It is the best single
 document to share when asking divers, accessibility/localization reviewers,
 privacy reviewers, or developers what should be addressed before native
 packaging and direct computer transfer.
+
+Future directions include app-only BLE import, optional Google Drive
+backup/sync, and optional accounts for hosted record and settings recovery.
+None are part of the current beta. They are intended to reuse the same portable
+data and merge behavior, keep the web app fully supported, and preserve
+anonymous local use.

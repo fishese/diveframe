@@ -24,6 +24,8 @@ Using Chromium and Firefox is a useful manual acceptance test:
 10. Confirm an incorrect password cannot open the encrypted backup, then enter
     the correct password and complete the preview.
 11. Compare the persistent/best-effort storage status shown by each browser.
+12. Confirm the beta notice appears in each interface language and its backup
+    link opens Settings without changing the deployment origin.
 
 Use disposable browser profiles for destructive replace tests. Do not use
 private browsing because IndexedDB is intentionally temporary there.

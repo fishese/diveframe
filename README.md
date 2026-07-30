@@ -4,6 +4,12 @@ DiveFrame is a device-local dive log companion. Your dive-computer apps remain
 the source and backup; DiveFrame brings those records together with Subsurface
 data, then adds maps, photos, site details, and shareable image overlays.
 
+> **Beta:** DiveFrame is under active development. Updates may be incompatible
+> or require clearing locally stored data. Keep the original dive-log exports
+> and a recent DiveFrame backup.
+
+The web app is available at [divelog.fishese.cc](https://divelog.fishese.cc).
+
 ## Current workflow
 
 1. Export a supported log: Shearwater Cloud Desktop `.db`, Subsurface
@@ -27,9 +33,9 @@ site corrections back to a source log.
 
 For product and engineering review, see the
 [current product specification](docs/PRODUCT-SPEC.md). It includes known
-limits, a pre-wrapper readiness gate, Bluetooth discovery questions, and a
-review checklist for divers, privacy, accessibility, localization, and
-engineering reviewers.
+limits, a pre-wrapper readiness gate, planned extension guardrails, and a review
+checklist for divers, privacy, accessibility, localization, and engineering
+reviewers.
 
 ## Features
 
@@ -130,6 +136,8 @@ engineering reviewers.
   with per-dive visibility, anchor, and horizontal/vertical fine-positioning
   controls in the composer.
 - Installable web-app metadata for mobile and desktop browsers.
+- A trilingual beta notice on every page links to backup tools and warns that
+  pre-release updates may require a local-data reset.
 
 ## Install the app
 
@@ -146,7 +154,23 @@ The PWA is also a suitable base for a future Android wrapper, such as a Trusted
 Web Activity or Capacitor package. No APK wrapper or app-store signing is
 included yet.
 
-### Stable dive identity
+## Planned compatibility
+
+Direct BLE import, Google Drive synchronization, and user accounts are not in
+the current beta, but future changes should preserve room for them:
+
+- the web app remains a first-class, account-optional onboarding and usage
+  surface;
+- a native BLE importer feeds the same portable records and merge pipeline;
+- Google Drive acts as an optional backup/sync transport rather than a separate
+  data model; and
+- optional accounts synchronize the local IndexedDB model without making
+  canonical dive IDs depend on an account, device, or storage provider.
+
+Portable backup export remains the provider-independent recovery path. See the
+[product specification](docs/PRODUCT-SPEC.md) for the architectural guardrails.
+
+## Stable dive identity
 
 Canonical dive IDs are deterministic across devices. DiveFrame uses immutable
 source identifiers in this priority order: Shearwater `DiveId`, Subsurface
