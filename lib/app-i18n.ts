@@ -5,6 +5,9 @@ import {
 
 const en = {
   ...overlayTranslations.en,
+  betaNoticeLabel: "Beta",
+  betaNoticeText: "DiveFrame is under active development. Updates may be incompatible or require clearing data stored on this device.",
+  betaNoticeBackup: "Keep a recent backup.",
   diveLogCompanion: "Dive log companion",
   settingsAndData: "Settings & data tools",
   settingsDescription: "Manage backups, language, reusable photos, branding, and the dive-site catalog stored in this browser.",
@@ -391,6 +394,9 @@ const en = {
 
 const zhHant: Record<keyof typeof en, string> = {
   ...overlayTranslations["zh-Hant"],
+  betaNoticeLabel: "測試版",
+  betaNoticeText: "DiveFrame 仍在積極開發中。更新可能不相容，或需要清除此裝置上儲存的資料。",
+  betaNoticeBackup: "請保留最新備份。",
   diveLogCompanion: "潛水紀錄工具",
   settingsAndData: "設定及資料工具",
   settingsDescription: "管理儲存在此瀏覽器內的備份、語言、共用背景、標誌及潛點資料庫。",
@@ -777,6 +783,9 @@ const zhHant: Record<keyof typeof en, string> = {
 
 const ja: Record<keyof typeof en, string> = {
   ...overlayTranslations.ja,
+  betaNoticeLabel: "ベータ版",
+  betaNoticeText: "DiveFrameは現在も開発中です。更新に互換性がない場合や、この端末に保存されたデータの消去が必要になる場合があります。",
+  betaNoticeBackup: "最新のバックアップを保管してください。",
   diveLogCompanion: "ダイブログツール",
   settingsAndData: "設定とデータツール",
   settingsDescription: "このブラウザーに保存されているバックアップ、言語、共通背景、ロゴ、ダイブサイトカタログを管理します。",

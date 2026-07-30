@@ -49,6 +49,41 @@ select option {
   color: #f2faf8;
 }
 
+.beta-notice {
+  align-items: center;
+  background: rgba(255, 143, 118, 0.12);
+  border-bottom: 1px solid rgba(255, 143, 118, 0.28);
+  color: #ffe4dc;
+  display: flex;
+  font-size: 12px;
+  gap: 9px;
+  justify-content: center;
+  line-height: 1.45;
+  padding: 8px 4vw;
+}
+
+.beta-notice > svg {
+  color: var(--coral);
+  flex: 0 0 auto;
+}
+
+.beta-notice p {
+  margin: 0;
+}
+
+.beta-notice strong {
+  color: var(--coral);
+  margin-right: 7px;
+  text-transform: uppercase;
+}
+
+.beta-notice a {
+  color: var(--teal);
+  font-weight: 700;
+  margin-left: 7px;
+  text-underline-offset: 2px;
+}
+
 .pwa-install-status {
   align-items: center;
   color: var(--teal);

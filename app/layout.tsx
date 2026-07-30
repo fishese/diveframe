@@ -3,7 +3,10 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
 import { AppI18nProvider } from "./AppI18nProvider";
+import { BetaNotice } from "./BetaNotice";
 import { PwaManager } from "./PwaInstall";
+
+const CANONICAL_ORIGIN = "https://divelog.fishese.cc";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const protocol =
     requestHeaders.get("x-forwarded-proto") ??
     (host?.startsWith("localhost") ? "http" : "https");
-  const origin = host ? `${protocol}://${host}` : "http://localhost:3000";
+  const origin = host ? `${protocol}://${host}` : CANONICAL_ORIGIN;
 
   return {
     title: "DiveFrame — Dive log companion",
@@ -73,6 +76,7 @@ export default function RootLayout({
       >
         <AppI18nProvider>
           <PwaManager />
+          <BetaNotice />
           {children}
         </AppI18nProvider>
       </body>
