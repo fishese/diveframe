@@ -738,6 +738,33 @@ export async function requestPersistentLocalStorage() {
   return navigator.storage.persist();
 }
 
+export type LocalStoragePersistenceStatus = {
+  mode: "persistent" | "best-effort" | "unsupported";
+  usage: number | null;
+  quota: number | null;
+};
+
+export async function getLocalStoragePersistenceStatus(
+  requestPersistence = false,
+): Promise<LocalStoragePersistenceStatus> {
+  if (!navigator.storage) {
+    return { mode: "unsupported", usage: null, quota: null };
+  }
+  let persistent = await navigator.storage.persisted?.();
+  if (!persistent && requestPersistence && navigator.storage.persist) {
+    persistent = await navigator.storage.persist();
+  }
+  const estimate = await navigator.storage.estimate?.();
+  return {
+    mode:
+      persistent === true
+        ? "persistent"
+        : "best-effort",
+    usage: Number.isFinite(estimate?.usage) ? estimate!.usage! : null,
+    quota: Number.isFinite(estimate?.quota) ? estimate!.quota! : null,
+  };
+}
+
 export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> {
   const database = await openDatabase();
   const transaction = database.transaction([

@@ -165,17 +165,26 @@ contributions, per-dive composer settings, named presets, reusable backgrounds,
 the overlay logo, and app preferences.
 
 The complete app backup is a versioned JSON file with embedded image data.
-Current backups include a SHA-256 integrity checksum. Import validates the
-structure, record keys, important dive references, encoded image data, and
-checksum before showing a non-destructive preview. The user then explicitly
-chooses **merge** (matching keys update, destination-only records remain) or
-**replace** (all local stores are atomically replaced). The file is not
-encrypted.
+Current backups include a SHA-256 integrity checksum. Export can optionally
+wrap that document in password-based PBKDF2/AES-GCM encryption. The password is
+required to decrypt and validate the file during import; it is not stored and
+does not lock normal use of the local app.
+
+Import validates the structure, record keys, important dive references,
+encoded image data, and checksum before showing a non-destructive preview. The
+user then explicitly chooses **merge** or **replace**. During merge, the
+incoming complete record replaces the local record when their primary keys
+match, while destination-only records remain. Photos added separately on two
+devices normally have different IDs and are both kept; an exact matching photo
+ID is replaced by the backup copy. Replace atomically clears all local stores
+before writing the backup.
 
 Deterministic dive IDs prevent duplicate dives when two devices imported the
 same source logs. A collapsed manual review tool also identifies conservative
 time/depth/duration matches and lets the user merge either record into the
-other or keep them separate.
+other or keep them separate. The same tool lets a user select any two dives for
+manual merging when an otherwise-identical record uses a different timezone or
+clock time.
 
 Three destructive controls exist:
 
@@ -184,7 +193,9 @@ Three destructive controls exist:
 - **Erase dive data only** clears dives, source mappings, and site
   contributions while retaining images and settings that can reconnect after
   deterministic re-import.
-- **Erase all data** clears every DiveFrame IndexedDB store.
+- **Erase all local logbook data** clears every DiveFrame IndexedDB store and
+  the temporary session dive-site catalog. Service-worker application caches
+  contain no logbook records and are deliberately retained.
 
 The logbook calculates an estimated JSON backup size from normalized records
 plus Base64-expanded media. It adds a warning summary card at 150 MiB for
@@ -194,9 +205,12 @@ eligible dive photos and reusable backgrounds are converted to JPEG quality
 0.88 and capped at 2560 px on the longest edge, but are only replaced when the
 new file is smaller. Logos and SVG files are excluded.
 
-The app requests persistent browser storage when available, but browser data is
-not a durable backup. The service worker caches the app shell and selected
-static assets; map and geocoding lookups still require a network connection.
+The app requests persistent browser storage when available and Settings reports
+whether the browser granted persistent storage, is using best-effort storage,
+or cannot report its status. Where supported it also shows estimated usage and
+quota. Browser data is still not a durable backup. The service worker caches
+the app shell and selected static assets; map and geocoding lookups still
+require a network connection.
 
 ## Exports
 
@@ -302,9 +316,8 @@ Completed:
 
 Remaining candidates:
 
-1. Show whether persistent storage was granted and the browser's quota.
-2. Optional per-photo captions and deletion.
-3. Deduplicate backup photos by content hash.
+1. Optional per-photo captions and deletion.
+2. Deduplicate backup photos by content hash.
 
 ### Priority C: quality and portability
 
@@ -333,7 +346,7 @@ These may be useful, but should be driven by interviews rather than assumed:
 - Printable/PDF logbook output.
 - General CSV export.
 - Photo captions, favourites, and per-dive ordering.
-- Manual split/merge for dives that automated matching cannot resolve.
+- Manual splitting for dives that automated matching combined incorrectly.
 
 For each candidate, ask whether it belongs in DiveFrame or remains better in
 Subsurface/source apps.

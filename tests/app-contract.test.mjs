@@ -81,6 +81,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /bundledBackgroundHidden/);
   assert.match(storage, /mergeLocalDuplicateDives/);
   assert.match(backup, /SHA-256/);
+  assert.match(backup, /encryptBackupText/);
+  assert.match(settings, /unlockEncryptedBackup/);
   assert.match(backup, /previewLocalAppBackup/);
   assert.match(backup, /restorePreparedAppBackup/);
   assert.match(settings, /restoreAppData\("merge"\)/);
@@ -97,6 +99,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /BRANDING_ASSETS_STORE/);
   assert.match(storage, /saveLocalOverlayLogo/);
   assert.match(storage, /exportLocalBackupSnapshot/);
+  assert.match(storage, /getLocalStoragePersistenceStatus/);
+  assert.match(settings, /resolveManualDuplicate/);
   assert.match(storage, /importLocalBackupSnapshot/);
   assert.match(storage, /clearLocalDiveData/);
   const diveOnlyReset = storage.match(

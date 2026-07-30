@@ -27,6 +27,8 @@ import {
 } from "react";
 import bundledCatalog from "@/data/dive-sites.json";
 import {
+  BackupPasswordIncorrectError,
+  BackupPasswordRequiredError,
   createLocalAppBackup,
   previewLocalAppBackup,
   restorePreparedAppBackup,
@@ -74,6 +76,7 @@ import {
   type CatalogSite,
   type DiveSiteCatalog,
 } from "@/lib/dive-site-catalog";
+import { validateDiveSitesFile } from "@/lib/dive-site-validation";
 import { addDiveFrameSitesToSubsurface } from "@/lib/subsurface-site-export";
 import { useAppI18n } from "../AppI18nProvider";
 import { PwaInstallCard } from "../PwaInstall";
@@ -99,6 +102,17 @@ export function SettingsApp() {
   const [busy, setBusy] = useState(true);
   const [backupPreview, setBackupPreview] =
     useState<PreparedAppBackup | null>(null);
+  const [encryptBackup, setEncryptBackup] = useState(false);
+  const [exportPassword, setExportPassword] = useState("");
+  const [exportPasswordConfirmation, setExportPasswordConfirmation] =
+    useState("");
+  const [encryptedBackupFile, setEncryptedBackupFile] = useState<File | null>(
+    null,
+  );
+  const [importPassword, setImportPassword] = useState("");
+  const [dives, setDives] = useState<LocalDive[]>([]);
+  const [manualMergeFirstId, setManualMergeFirstId] = useState("");
+  const [manualMergeSecondId, setManualMergeSecondId] = useState("");
   const [duplicateCandidates, setDuplicateCandidates] = useState<
     DuplicateDiveCandidate[]
   >([]);
@@ -135,6 +149,7 @@ export function SettingsApp() {
         setDismissedDuplicates(preferences?.dismissedDuplicatePairs ?? []);
         setBundledBackgroundVisible(!preferences?.bundledBackgroundHidden);
         setDuplicateCandidates(findPotentialDuplicateDives(dives));
+        setDives(dives);
         setStorageEstimate(estimate);
         setStatus(
           items.length
@@ -262,12 +277,33 @@ export function SettingsApp() {
   }
 
   async function exportAppData() {
+    if (
+      encryptBackup &&
+      (!exportPassword || exportPassword !== exportPasswordConfirmation)
+    ) {
+      setStatus(
+        !exportPassword
+          ? t("backupPasswordRequired")
+          : t("backupPasswordsDoNotMatch"),
+      );
+      return;
+    }
     setBusy(true);
     setStatus(t("preparingBackup"));
     try {
-      const backup = await createLocalAppBackup();
+      const backup = await createLocalAppBackup(
+        encryptBackup ? exportPassword : undefined,
+      );
       const date = new Date().toISOString().slice(0, 10);
-      downloadBlob(backup.blob, `diveframe-backup-${date}.json`);
+      downloadBlob(
+        backup.blob,
+        `diveframe-backup${backup.encrypted ? "-encrypted" : ""}-${date}.json`,
+      );
+      if (backup.encrypted) {
+        setEncryptBackup(false);
+        setExportPassword("");
+        setExportPasswordConfirmation("");
+      }
       setStatus(t("backupComplete", backup.counts));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("backupFailed"));
@@ -280,6 +316,8 @@ export function SettingsApp() {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
+    setEncryptedBackupFile(null);
+    setImportPassword("");
     setBusy(true);
     setStatus(t("validatingBackup"));
     try {
@@ -288,7 +326,45 @@ export function SettingsApp() {
       setStatus(t("backupReadyForReview"));
     } catch (error) {
       setBackupPreview(null);
-      setStatus(error instanceof Error ? error.message : t("importBackupFailed"));
+      if (error instanceof BackupPasswordRequiredError) {
+        setEncryptedBackupFile(file);
+        setStatus(t("encryptedBackupNeedsPassword"));
+      } else {
+        setStatus(
+          error instanceof Error ? error.message : t("importBackupFailed"),
+        );
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function unlockEncryptedBackup() {
+    if (!encryptedBackupFile) return;
+    if (!importPassword) {
+      setStatus(t("backupPasswordRequired"));
+      return;
+    }
+    setBusy(true);
+    setStatus(t("decryptingBackup"));
+    try {
+      const preview = await previewLocalAppBackup(
+        encryptedBackupFile,
+        importPassword,
+      );
+      setBackupPreview(preview);
+      setEncryptedBackupFile(null);
+      setImportPassword("");
+      setStatus(t("backupReadyForReview"));
+    } catch (error) {
+      setBackupPreview(null);
+      setStatus(
+        error instanceof BackupPasswordIncorrectError
+          ? t("backupPasswordIncorrect")
+          : error instanceof Error
+            ? error.message
+            : t("importBackupFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -322,10 +398,13 @@ export function SettingsApp() {
       );
       const dives = await listLocalDives();
       setDuplicateCandidates(findPotentialDuplicateDives(dives));
+      setDives(dives);
       setDismissedDuplicates(
         restoredPreferences?.dismissedDuplicatePairs ?? [],
       );
       setBackupPreview(null);
+      setEncryptedBackupFile(null);
+      setImportPassword("");
       setStorageEstimate(await getLocalBackupSizeEstimate());
       setStatus(
         mode === "merge"
@@ -386,12 +465,24 @@ export function SettingsApp() {
       const result = await mergeLocalDuplicateDives(keepId, removeId);
       const dives = await listLocalDives();
       setDuplicateCandidates(findPotentialDuplicateDives(dives));
+      setDives(dives);
+      setManualMergeFirstId("");
+      setManualMergeSecondId("");
       setStatus(t("duplicateMergeComplete", result));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("duplicateMergeFailed"));
     } finally {
       setBusy(false);
     }
+  }
+
+  async function resolveManualDuplicate(keepId: string, removeId: string) {
+    if (!keepId || !removeId || keepId === removeId) {
+      setStatus(t("chooseTwoDifferentDives"));
+      return;
+    }
+    if (!window.confirm(t("manualMergeConfirm"))) return;
+    await resolveDuplicate(keepId, removeId);
   }
 
   async function keepDuplicateSeparate(candidateId: string) {
@@ -410,6 +501,7 @@ export function SettingsApp() {
     setBusy(true);
     try {
       await clearAllLocalData();
+      clearSessionDiveSiteCatalog();
       setContributions([]);
       setReviewedSites([]);
       setDuplicateCandidates([]);
@@ -419,6 +511,11 @@ export function SettingsApp() {
       setLogo(null);
       setStorageEstimate(null);
       setDefaultCylinderPresetId(DEFAULT_CYLINDER_PRESET_ID);
+      setCatalog(BUILT_IN_CATALOG);
+      setCatalogLabel(null);
+      setDives([]);
+      setManualMergeFirstId("");
+      setManualMergeSecondId("");
       await setLanguage("en");
       setStatus(t("eraseAllDataComplete"));
     } catch (error) {
@@ -525,11 +622,36 @@ export function SettingsApp() {
     setBusy(true);
     try {
       const parsed = JSON.parse(await file.text()) as unknown;
-      const validated = validateDiveSiteCatalog(parsed);
+      const validation = validateDiveSitesFile(parsed);
+      if (!validation.ok || !validation.catalog) {
+        const details = validation.issues
+          .filter(({ level }) => level === "error")
+          .slice(0, 3)
+          .map(({ message }) => message)
+          .join(" ");
+        throw new Error(
+          t("catalogValidationFailed", {
+            count: validation.errorCount,
+            details,
+          }),
+        );
+      }
+      const validated = validateDiveSiteCatalog(validation.catalog);
       saveSessionDiveSiteCatalog(validated, file.name);
       setCatalog(combineDiveSiteCatalogs(BUILT_IN_CATALOG, validated));
       setCatalogLabel(file.name);
-      setStatus(t("usingCatalog", { name: file.name, count: validated.sites.length }));
+      setStatus(
+        validation.warningCount > 0
+          ? t("usingCatalogWithWarnings", {
+              name: file.name,
+              count: validated.sites.length,
+              warnings: validation.warningCount,
+            })
+          : t("usingCatalog", {
+              name: file.name,
+              count: validated.sites.length,
+            }),
+      );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("catalogReadFailed"));
     } finally {
@@ -776,6 +898,44 @@ export function SettingsApp() {
           <p className="settings-note">
             {t("backupDescription")}
           </p>
+          <label className="backup-encryption-toggle">
+            <input
+              type="checkbox"
+              checked={encryptBackup}
+              onChange={(event) => setEncryptBackup(event.target.checked)}
+              disabled={busy}
+            />
+            <span>
+              <strong>{t("passwordProtectBackup")}</strong>
+              <small>{t("passwordProtectBackupDescription")}</small>
+            </span>
+          </label>
+          {encryptBackup && (
+            <div className="backup-password-fields">
+              <label>
+                <span>{t("backupPassword")}</span>
+                <input
+                  type="password"
+                  value={exportPassword}
+                  autoComplete="new-password"
+                  onChange={(event) => setExportPassword(event.target.value)}
+                  disabled={busy}
+                />
+              </label>
+              <label>
+                <span>{t("confirmBackupPassword")}</span>
+                <input
+                  type="password"
+                  value={exportPasswordConfirmation}
+                  autoComplete="new-password"
+                  onChange={(event) =>
+                    setExportPasswordConfirmation(event.target.value)
+                  }
+                  disabled={busy}
+                />
+              </label>
+            </div>
+          )}
           <div className="settings-actions">
             <button type="button" className="button button-primary" onClick={exportAppData} disabled={busy}>
               <Download size={16} /> {t("exportAppData")}
@@ -794,6 +954,49 @@ export function SettingsApp() {
           <p className="settings-note">
             {t("importMergeNote")}
           </p>
+          {encryptedBackupFile && (
+            <div className="encrypted-backup-unlock">
+              <ShieldCheck size={19} />
+              <div>
+                <strong>{t("unlockEncryptedBackup")}</strong>
+                <small>{encryptedBackupFile.name}</small>
+              </div>
+              <label>
+                <span>{t("backupPassword")}</span>
+                <input
+                  type="password"
+                  value={importPassword}
+                  autoComplete="current-password"
+                  onChange={(event) => setImportPassword(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") void unlockEncryptedBackup();
+                  }}
+                  disabled={busy}
+                />
+              </label>
+              <div className="settings-actions">
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={() => void unlockEncryptedBackup()}
+                  disabled={busy || !importPassword}
+                >
+                  {t("unlockBackup")}
+                </button>
+                <button
+                  type="button"
+                  className="button button-quiet"
+                  onClick={() => {
+                    setEncryptedBackupFile(null);
+                    setImportPassword("");
+                  }}
+                  disabled={busy}
+                >
+                  {t("cancel")}
+                </button>
+              </div>
+            </div>
+          )}
           {backupPreview && (
             <div className="backup-preview" role="region" aria-label={t("backupPreview")}>
               <div className="backup-preview-heading">
@@ -809,8 +1012,10 @@ export function SettingsApp() {
                       : "integrity-badge legacy"
                   }
                 >
-                  {backupPreview.integrity === "verified"
-                    ? t("checksumVerified")
+                  {backupPreview.encryption === "encrypted"
+                    ? t("encryptedAndVerified")
+                    : backupPreview.integrity === "verified"
+                      ? t("checksumVerified")
                     : t("legacyBackup")}
                 </span>
               </div>
@@ -827,6 +1032,9 @@ export function SettingsApp() {
               </div>
               <p className="settings-note">
                 {t("backupImpact", backupImpact(backupPreview))}
+              </p>
+              <p className="settings-note">
+                {t("backupMergeConflictRule")}
               </p>
               <div className="settings-actions">
                 <button
@@ -926,6 +1134,62 @@ export function SettingsApp() {
                   </div>
                 </article>
               ))}
+            </div>
+            <div className="manual-merge">
+              <strong>{t("manualMergeTitle")}</strong>
+              <p>{t("manualMergeDescription")}</p>
+              <div className="manual-merge-selects">
+                <label>
+                  <span>{t("diveToKeep")}</span>
+                  <select
+                    value={manualMergeFirstId}
+                    onChange={(event) =>
+                      setManualMergeFirstId(event.target.value)
+                    }
+                  >
+                    <option value="">{t("chooseDive")}</option>
+                    {dives.map((dive) => (
+                      <option key={dive.id} value={dive.id}>
+                        {diveOptionLabel(dive, t)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>{t("diveToMerge")}</span>
+                  <select
+                    value={manualMergeSecondId}
+                    onChange={(event) =>
+                      setManualMergeSecondId(event.target.value)
+                    }
+                  >
+                    <option value="">{t("chooseDive")}</option>
+                    {dives.map((dive) => (
+                      <option key={dive.id} value={dive.id}>
+                        {diveOptionLabel(dive, t)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() =>
+                  void resolveManualDuplicate(
+                    manualMergeFirstId,
+                    manualMergeSecondId,
+                  )
+                }
+                disabled={
+                  busy ||
+                  !manualMergeFirstId ||
+                  !manualMergeSecondId ||
+                  manualMergeFirstId === manualMergeSecondId
+                }
+              >
+                <GitMerge size={16} /> {t("mergeSelectedDives")}
+              </button>
             </div>
           </details>
         </section>
@@ -1193,6 +1457,17 @@ function formatByteCount(bytes: number) {
   if (megabytes < 1) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   if (megabytes < 1024) return `${Math.round(megabytes)} MB`;
   return `${(megabytes / 1024).toFixed(1)} GB`;
+}
+
+function diveOptionLabel(dive: LocalDive, t: AppTranslate) {
+  const date = dive.diveDate
+    ? new Date(dive.diveDate).toLocaleString()
+    : t("dateUnknown");
+  const site =
+    dive.userSite || dive.site || dive.location || t("unnamedDiveSite");
+  const depth =
+    dive.maxDepthM === null ? "" : ` · ${dive.maxDepthM.toFixed(1)} m`;
+  return `${date} · ${site}${depth}`;
 }
 
 function DuplicateDive({

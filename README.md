@@ -68,8 +68,11 @@ engineering reviewers.
   photos, reusable backgrounds, the overlay logo, per-dive composer settings,
   named composer presets, and the app-language preference. Current backups use
   a SHA-256 checksum and show a preview before an explicit merge or replace.
-- Manual review and user-directed merging of likely duplicate dive records.
-- Separate reset actions: erase all browser data, clear only imported dives,
+  Export can optionally password-encrypt the file; encrypted imports request
+  the password before validation and preview.
+- Manual review and user-directed merging of likely duplicate dive records,
+  plus direct selection of timezone-offset pairs.
+- Separate reset actions: erase all local logbook data, clear only imported dives,
   or clear only per-dive photos while retaining reusable backgrounds and other
   settings.
 - A pass-through Subsurface export tool that adds matched site names, buddy,
@@ -158,7 +161,7 @@ photos, site contribution, source mappings, and composer settings are re-keyed
 together.
 
 This intentionally replaces the earlier import-order-dependent IDs. Existing
-test data is not migrated; use **Settings → Erase all data**, then import the
+test data is not migrated; use **Settings → Erase all local logbook data**, then import the
 source logs again before creating a new transferable backup.
 
 ## Development
@@ -169,6 +172,17 @@ Use Node.js 22 or newer.
 npm install
 npm run dev
 ```
+
+To validate the bundled dive-site catalog, or a proposed regional catalog,
+without uploading it anywhere:
+
+```bash
+npm run validate:sites -- data/dive-sites.json
+```
+
+Warnings request human review but do not fail the command. Structural errors,
+duplicate IDs, and same-name records within 150 metres exit with status 1. See
+[`docs/dive-site-validation.md`](docs/dive-site-validation.md) for details.
 
 The deployed Worker is stateless. Dive and photo data stay in the browser;
 server routes only proxy map lookups. Use **Settings → Export app data** to

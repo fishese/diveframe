@@ -2,6 +2,10 @@
 
 import { Check, Download, Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  getLocalStoragePersistenceStatus,
+  type LocalStoragePersistenceStatus,
+} from "@/lib/indexed-db";
 import { useAppI18n } from "./AppI18nProvider";
 
 type BeforeInstallPromptEvent = Event & {
@@ -69,6 +73,8 @@ export function PwaInstallCard() {
   );
   const [installed, setInstalled] = useState(isInstalledApp);
   const [isIos] = useState(isIosDevice);
+  const [storageStatus, setStorageStatus] =
+    useState<LocalStoragePersistenceStatus | null>(null);
 
   useEffect(() => {
     const showInstall = () => setCanInstall(true);
@@ -82,6 +88,18 @@ export function PwaInstallCard() {
       window.removeEventListener(INSTALL_AVAILABLE_EVENT, showInstall);
       window.removeEventListener(APP_INSTALLED_EVENT, showInstalled);
     };
+  }, []);
+
+  useEffect(() => {
+    getLocalStoragePersistenceStatus(true)
+      .then(setStorageStatus)
+      .catch(() =>
+        setStorageStatus({
+          mode: "unsupported",
+          usage: null,
+          quota: null,
+        }),
+      );
   }, []);
 
   async function install() {
@@ -123,6 +141,38 @@ export function PwaInstallCard() {
         <p className="settings-note">{t("installBrowserInstructions")}</p>
       )}
       <p className="settings-note pwa-data-note">{t("installedDataNote")}</p>
+      {storageStatus && (
+        <div className={`storage-persistence ${storageStatus.mode}`}>
+          <strong>
+            {storageStatus.mode === "persistent"
+              ? t("storagePersistent")
+              : storageStatus.mode === "best-effort"
+                ? t("storageBestEffort")
+                : t("storagePersistenceUnavailable")}
+          </strong>
+          <span>
+            {storageStatus.mode === "persistent"
+              ? t("storagePersistentDescription")
+              : storageStatus.mode === "best-effort"
+                ? t("storageBestEffortDescription")
+                : t("storagePersistenceUnavailableDescription")}
+          </span>
+          {storageStatus.usage !== null && storageStatus.quota !== null && (
+            <small>
+              {t("browserStorageUsage", {
+                used: formatStorage(storageStatus.usage),
+                quota: formatStorage(storageStatus.quota),
+              })}
+            </small>
+          )}
+        </div>
+      )}
     </section>
   );
+}
+
+function formatStorage(bytes: number) {
+  const megabytes = bytes / (1024 * 1024);
+  if (megabytes < 1024) return `${Math.max(1, Math.round(megabytes))} MB`;
+  return `${(megabytes / 1024).toFixed(1)} GB`;
 }

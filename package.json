@@ -10,7 +10,8 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/app-contract.test.mjs tests/composer-output.test.mjs tests/composer-presets.test.mjs tests/dive-identity.test.mjs tests/dive-site-catalog.test.mjs tests/duplicate-dives.test.mjs tests/gas-calculations.test.mjs tests/geocode-query.test.mjs tests/import-shearwater.test.mjs tests/media-optimization.test.mjs tests/subsurface-export.test.mjs",
+    "test": "npm run build && node --test tests/app-contract.test.mjs tests/backup-crypto.test.mjs tests/composer-output.test.mjs tests/composer-presets.test.mjs tests/dive-identity.test.mjs tests/dive-site-catalog.test.mjs tests/dive-site-validation.test.mjs tests/duplicate-dives.test.mjs tests/gas-calculations.test.mjs tests/geocode-query.test.mjs tests/import-shearwater.test.mjs tests/media-optimization.test.mjs tests/subsurface-export.test.mjs",
+    "validate:sites": "tsx scripts/validate-dive-sites.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {
@@ -36,6 +37,7 @@
     "linkedom": "^0.18.13",
     "react-server-dom-webpack": "19.2.6",
     "tailwindcss": "4.2.1",
+    "tsx": "^4.23.1",
     "typescript": "5.9.3",
     "vinext": "0.0.50",
     "vite": "8.0.13",

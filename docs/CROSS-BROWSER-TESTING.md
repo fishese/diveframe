@@ -8,6 +8,8 @@ Using Chromium and Firefox is a useful manual acceptance test:
    several local changes.
 2. Add a dive photo, reusable background, logo, and named composer preset.
 3. Export an app backup.
+   Repeat with **Password-protect this backup**, including a short numeric
+   password, and confirm the encrypted file requests that password on import.
 4. Open DiveFrame in a clean Firefox profile and select that backup.
 5. Confirm the preview shows a verified checksum and the expected counts.
 6. Choose **Replace with backup** and compare dive counts, source numbers,
@@ -19,6 +21,9 @@ Using Chromium and Firefox is a useful manual acceptance test:
    backup are removed.
 9. Deliberately change one character in a current backup file and confirm the
    checksum failure prevents import.
+10. Confirm an incorrect password cannot open the encrypted backup, then enter
+    the correct password and complete the preview.
+11. Compare the persistent/best-effort storage status shown by each browser.
 
 Use disposable browser profiles for destructive replace tests. Do not use
 private browsing because IndexedDB is intentionally temporary there.

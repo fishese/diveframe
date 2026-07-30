@@ -60,7 +60,7 @@ computer serial, maximum depth, and duration are matching evidence; editable
 fields such as site, buddy, notes, and dive number are not part of the ID.
 
 Older import-order-dependent IDs are not migrated. For the first transfer after
-this update, use **Settings → Erase all data** on each device, re-import the
+this update, use **Settings → Erase all local logbook data** on each device, re-import the
 source logs, reapply any edits you need, and create a fresh app-data backup.
 
 The logbook overview counts total dives, dives at named sites, unique non-empty
@@ -126,14 +126,22 @@ Browser data is not a durable cloud backup. It can be lost when site data is
 cleared, a private-browsing session ends, the browser profile is removed, or
 the app moves to a different web address. Use **Settings → Export app data**
 before changing devices, browsers, or addresses. The backup contains private
-log and photo data and should be kept securely.
+log and photo data and should be kept securely. When exporting,
+**Password-protect this backup** can optionally encrypt the download. Enter and
+confirm any non-empty password. DiveFrame does not store or recover it.
+To replace an encrypted backup with an unencrypted one, import it and export a
+new backup without selecting password protection.
 
-When importing, DiveFrame validates the file and verifies the SHA-256 checksum
+When importing an encrypted backup, DiveFrame asks for its password before
+showing the normal preview. Unencrypted and older backups remain supported.
+DiveFrame validates the file and verifies the SHA-256 checksum
 on current-format backups before showing a preview. Older backups without a
 checksum are identified as legacy backups. Nothing is written until you choose:
 
-- **Merge backup** adds new records, updates records with matching IDs, and
-  keeps records that exist only on the current device.
+- **Merge backup** adds new records and keeps records that exist only on the
+  current device. When an ID matches, the complete backup record replaces the
+  local record rather than merging individual fields. Photos with different
+  IDs are both kept; an exact matching photo ID is replaced by the backup copy.
 - **Replace with backup** atomically clears DiveFrame's current local stores
   and restores exactly what is in the backup. Review the preview and
   confirmation carefully because device-only records are removed.
@@ -141,7 +149,9 @@ checksum are identified as legacy backups. Nothing is written until you choose:
 After import, the status message reports new, matching, retained, or removed
 record counts. Settings also contains a collapsed **Review possible
 duplicates** tool. It compares likely pairs and lets you choose which record
-keeps its ID and preferred values, or leave the pair separate.
+keeps its ID and preferred values, or leave the pair separate. If matching
+imports use different clock times—for example, UTC and local time—use
+**Merge two dives manually** to select the two records directly.
 
 The Settings danger zone has three reset choices:
 
@@ -153,10 +163,15 @@ The Settings danger zone has three reset choices:
   global logo, per-dive composer settings, named composer presets, and app
   preferences. Re-import the same source logs so their deterministic IDs
   reconnect the retained per-dive photos and composer settings.
-- **Erase all data** removes every DiveFrame record and image from the current
-  browser.
+- **Erase all local logbook data** removes every DiveFrame record and image
+  from the current browser and removes the temporary regional site catalog.
+  Offline application files remain cached because they contain no logbook
+  information.
 
 Settings also shows estimated stored-media and exported-backup sizes.
+The install card reports whether browser storage is **persistent** or
+**best effort**. Best-effort data can be evicted under storage pressure, so
+keep a recent exported backup. The displayed browser quota is only an estimate.
 **Optimize stored photos** converts eligible dive photos and reusable
 backgrounds to JPEG at 88% quality, with a maximum longest edge of 2560 pixels.
 An image is only replaced when the result is smaller. This is a lossy,

@@ -49,6 +49,41 @@ select option {
   color: #f2faf8;
 }
 
+.beta-notice {
+  align-items: center;
+  background: rgba(255, 143, 118, 0.12);
+  border-bottom: 1px solid rgba(255, 143, 118, 0.28);
+  color: #ffe4dc;
+  display: flex;
+  font-size: 12px;
+  gap: 9px;
+  justify-content: center;
+  line-height: 1.45;
+  padding: 8px 4vw;
+}
+
+.beta-notice > svg {
+  color: var(--coral);
+  flex: 0 0 auto;
+}
+
+.beta-notice p {
+  margin: 0;
+}
+
+.beta-notice strong {
+  color: var(--coral);
+  margin-right: 7px;
+  text-transform: uppercase;
+}
+
+.beta-notice a {
+  color: var(--teal);
+  font-weight: 700;
+  margin-left: 7px;
+  text-underline-offset: 2px;
+}
+
 .pwa-install-status {
   align-items: center;
   color: var(--teal);
@@ -2015,6 +2050,89 @@ button {
   padding: 16px;
 }
 
+.backup-encryption-toggle {
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 13px;
+}
+
+.backup-encryption-toggle input {
+  accent-color: var(--teal);
+  margin-top: 3px;
+}
+
+.backup-encryption-toggle span,
+.encrypted-backup-unlock > div {
+  display: grid;
+  gap: 3px;
+}
+
+.backup-encryption-toggle small,
+.encrypted-backup-unlock small,
+.manual-merge p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.backup-password-fields,
+.manual-merge-selects {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.backup-password-fields label,
+.encrypted-backup-unlock label,
+.manual-merge-selects label {
+  display: grid;
+  gap: 6px;
+}
+
+.backup-password-fields span,
+.encrypted-backup-unlock label span,
+.manual-merge-selects span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.backup-password-fields input,
+.encrypted-backup-unlock input,
+.manual-merge-selects select {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #fff;
+  min-height: 40px;
+  padding: 7px 9px;
+  width: 100%;
+}
+
+.encrypted-backup-unlock {
+  align-items: center;
+  background: rgba(141, 235, 215, 0.05);
+  border: 1px solid rgba(141, 235, 215, 0.2);
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-top: 18px;
+  padding: 16px;
+}
+
+.encrypted-backup-unlock label,
+.encrypted-backup-unlock .settings-actions {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+
 .backup-preview-heading {
   align-items: center;
   display: flex;
@@ -2105,6 +2223,51 @@ button {
 .duplicate-dive small {
   color: var(--muted);
   font-size: 11px;
+}
+
+.manual-merge {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  padding-top: 16px;
+}
+
+.manual-merge > p {
+  margin: 6px 0 0;
+}
+
+.manual-merge > .button {
+  margin-top: 12px;
+}
+
+.storage-persistence {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 4px;
+  margin-top: 16px;
+  padding: 13px;
+}
+
+.storage-persistence.persistent {
+  background: rgba(141, 235, 215, 0.055);
+  border-color: rgba(141, 235, 215, 0.2);
+}
+
+.storage-persistence.best-effort,
+.storage-persistence.unsupported {
+  background: rgba(255, 203, 107, 0.055);
+  border-color: rgba(255, 203, 107, 0.2);
+}
+
+.storage-persistence span,
+.storage-persistence small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.storage-persistence small {
+  margin-top: 3px;
 }
 
 .storage-summary {
@@ -2793,6 +2956,11 @@ button {
   .backup-counts,
   .duplicate-comparison {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .backup-password-fields,
+  .manual-merge-selects {
+    grid-template-columns: 1fr;
   }
 
   .backup-preview-heading {

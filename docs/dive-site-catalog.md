@@ -18,7 +18,8 @@ in Settings.
 ## Regional session catalogs
 
 Settings accepts another compatible `dive-sites.json`. The file is validated
-and stored in `sessionStorage`, so it remains available while the user moves
+structurally and checked for geographic anomalies before it is stored in
+`sessionStorage`, so it remains available while the user moves
 between Settings and dive pages in the same tab. Its active sites are added to
 the bundled catalog rather than replacing it. Duplicate IDs and identical
 name/coordinate records retain the bundled entry. It is not written to
@@ -40,6 +41,9 @@ Users who are comfortable doing so are invited to share a reviewed regional
 catalog with the DiveFrame developer for possible inclusion in a future
 bundled catalog. Sharing is optional. There is deliberately no upload endpoint
 or contact workflow in the app yet.
+
+See `docs/dive-site-validation.md` for the full validation rules and the
+maintainer command-line workflow.
 
 ## JSON format
 

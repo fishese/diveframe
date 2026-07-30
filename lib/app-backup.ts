@@ -7,6 +7,17 @@ import {
   type LocalBackupSnapshot,
   type LocalBrandingAsset,
 } from "./indexed-db";
+import {
+  BackupPasswordRequiredError,
+  decryptBackupEnvelope,
+  encryptBackupText,
+  isEncryptedBackupEnvelope,
+} from "./backup-crypto";
+
+export {
+  BackupPasswordIncorrectError,
+  BackupPasswordRequiredError,
+} from "./backup-crypto";
 
 const BACKUP_FORMAT = "diveframe-local-backup";
 const BACKUP_VERSION = 2;
@@ -44,6 +55,7 @@ export type PreparedAppBackup = {
   fileName: string;
   exportedAt: string;
   integrity: "verified" | "legacy";
+  encryption: "encrypted" | "none";
   snapshot: LocalBackupSnapshot;
   stores: Record<keyof LocalBackupSnapshot, BackupStorePreview>;
   counts: {
@@ -54,7 +66,7 @@ export type PreparedAppBackup = {
   };
 };
 
-export async function createLocalAppBackup() {
+export async function createLocalAppBackup(password?: string) {
   const snapshot = await exportLocalBackupSnapshot();
   const unsigned = {
     format: BACKUP_FORMAT,
@@ -81,8 +93,13 @@ export async function createLocalAppBackup() {
       digest: await sha256(JSON.stringify(unsigned)),
     },
   };
+  const plaintext = JSON.stringify(document);
+  const contents = password
+    ? JSON.stringify(await encryptBackupText(plaintext, password))
+    : plaintext;
   return {
-    blob: new Blob([JSON.stringify(document)], { type: "application/json" }),
+    blob: new Blob([contents], { type: "application/json" }),
+    encrypted: Boolean(password),
     counts: {
       dives: snapshot.dives.length,
       photos: snapshot.attachments.length,
@@ -93,12 +110,28 @@ export async function createLocalAppBackup() {
 
 export async function previewLocalAppBackup(
   file: File,
+  password?: string,
 ): Promise<PreparedAppBackup> {
   let parsed: unknown;
   try {
     parsed = JSON.parse(await file.text());
   } catch {
     throw new Error("This backup is not valid JSON.");
+  }
+  const encryptedEnvelope = isEncryptedBackupEnvelope(parsed) ? parsed : null;
+  const encryption = encryptedEnvelope ? "encrypted" : "none";
+  if (encryptedEnvelope) {
+    if (!password) throw new BackupPasswordRequiredError();
+    try {
+      parsed = JSON.parse(
+        await decryptBackupEnvelope(encryptedEnvelope, password),
+      );
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error("The decrypted backup does not contain valid JSON.");
+      }
+      throw error;
+    }
   }
   const document = validateBackupDocument(parsed);
   const integrity = await verifyIntegrity(document);
@@ -110,6 +143,7 @@ export async function previewLocalAppBackup(
     fileName: file.name,
     exportedAt: document.exportedAt,
     integrity,
+    encryption,
     snapshot,
     stores,
     counts: {

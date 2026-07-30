@@ -39,7 +39,7 @@ export function validateDiveSiteCatalog(value: unknown): DiveSiteCatalog {
   }
   const candidate = value as { schemaVersion?: unknown; sites?: unknown };
   if (
-    typeof candidate.schemaVersion !== "number" ||
+    candidate.schemaVersion !== 1 ||
     !Array.isArray(candidate.sites) ||
     !candidate.sites.every(isCatalogSite)
   ) {
@@ -134,12 +134,36 @@ function isCatalogSite(value: unknown): value is CatalogSite {
   const site = value as Partial<CatalogSite>;
   return (
     typeof site.id === "string" &&
+    site.id.trim().length > 0 &&
     typeof site.name === "string" &&
+    site.name.trim().length > 0 &&
     Array.isArray(site.aliases) &&
+    site.aliases.every((alias) => typeof alias === "string") &&
     Boolean(site.coordinates) &&
     Number.isFinite(site.coordinates?.latitude) &&
-    Number.isFinite(site.coordinates?.longitude)
+    Number.isFinite(site.coordinates?.longitude) &&
+    site.coordinates!.latitude >= -90 &&
+    site.coordinates!.latitude <= 90 &&
+    site.coordinates!.longitude >= -180 &&
+    site.coordinates!.longitude <= 180 &&
+    Boolean(site.place) &&
+    isNullableString(site.place?.countryCode) &&
+    isNullableString(site.place?.country) &&
+    isNullableString(site.place?.region) &&
+    isNullableString(site.place?.locality) &&
+    Boolean(site.source) &&
+    typeof site.source?.kind === "string" &&
+    site.source.kind.trim().length > 0 &&
+    isNullableString(site.source?.reference) &&
+    typeof site.status === "string" &&
+    ["active", "review", "retired"].includes(site.status) &&
+    typeof site.updatedAt === "string" &&
+    !Number.isNaN(Date.parse(site.updatedAt))
   );
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
 }
 
 function sitePositionKey(site: CatalogSite) {

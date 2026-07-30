@@ -134,15 +134,22 @@ users create regional catalogs for human review.
 
 `attachments` and `sourceRecords` each have a `diveId` index.
 
-The app requests persistent browser storage when available. This reduces
-eviction risk but does not replace a backup.
+The app requests persistent browser storage when available. The install card
+reports persistent, best-effort, or unsupported status and shows estimated
+usage/quota when available. This reduces eviction risk but does not replace a
+backup.
 
 Settings can export a versioned `diveframe-local-backup` JSON document covering
 all nine stores, including named composer presets and base64-encoded photo,
-reusable-background, and logo
-blobs. Import is additive by primary key: backup records replace matching local
-records while destination-only records remain. The file is not encrypted and
-the UI warns the user to keep it private.
+reusable-background, and logo blobs. Export may optionally wrap the complete
+checksummed document in a `diveframe-encrypted-backup` envelope using
+PBKDF2-SHA-256 and AES-256-GCM. The password is requested during import and
+never stored.
+
+Import is additive by primary key: complete backup records replace matching
+local records while destination-only records remain. Separately added photos
+usually have different random IDs and both survive; an exact matching ID is
+replaced by the backup copy.
 
 The danger zone exposes two deletion scopes. `clearLocalDiveData()` clears
 `dives`, `sourceRecords`, and `siteContributions`, retaining attachments,
@@ -150,7 +157,8 @@ composer settings, named composer presets, backgrounds, branding, and app
 preferences. Retained
 per-dive attachments/settings reconnect after the same source logs recreate
 their deterministic canonical IDs. `clearAllLocalData()` clears all nine
-stores.
+stores. The Settings action also clears the session catalog; service-worker
+application caches are intentionally kept.
 
 On mobile, an open dive shows a compact home control in the global top bar.
 The composer preview pane becomes a short sticky panel below its top bar so
@@ -197,6 +205,8 @@ stricter 90-second and one-metre threshold.
 The timezone fallback requires maximum depth within 0.75 m and duration within
 90 seconds. It refuses the match when the two best candidates are too close,
 preferring a visible duplicate over silently combining different dives.
+Settings also provides manual selection of any two dives, allowing a user to
+merge a UTC/local-time pair that the conservative fallback rejected.
 
 Merge rules:
 
@@ -433,9 +443,10 @@ native wrapper or Bluetooth transfer as the next production milestone.
 
 Backup hardening remains the highest-priority part of that gate.
 
-The first portable backup/import implementation is now complete. A future
-iteration should add encryption, checksums, streaming ZIP output for very large
-photo libraries, and an import preview/conflict UI.
+The portable backup/import implementation includes optional password
+encryption, checksums, explicit merge/replace choices, and an import preview.
+The JSON format remains appropriate while DiveFrame is used with small,
+purpose-specific photo sets.
 
 The current JSON format deliberately favors a simple first transfer workflow.
 For large libraries, migrate it to a streaming archive such as:
@@ -449,11 +460,12 @@ diveframe-backup.zip
     └── <attachment-id>.<extension>
 ```
 
-Recommended hardening:
+If real-world libraries eventually outgrow the JSON format, possible hardening
+for a later archive revision includes:
 
 1. Retain coverage of all IndexedDB stores and image blobs.
 2. Include a format version, creation timestamp, and checksums.
-3. Encrypt the archive client-side with a user passphrase.
+3. Preserve the current optional client-side password encryption.
 4. On import, merge dives using the existing source mapping and matching rules.
 5. Deduplicate photos by content hash rather than filename.
 6. Preview additions and conflicts before writing anything.
@@ -464,13 +476,13 @@ Google Drive, iCloud Drive, or a small private API.
 
 ## Known follow-ups
 
-- Add streaming, encrypted backup export before photo libraries become very large.
-- Add import preview with explicit merge/replace behavior and a result report.
-- Add manual duplicate comparison, merge, and keep-separate controls.
-- Add dive-photo deletion, captions, and storage-usage reporting.
+- Consider streaming backup export only if real-world photo libraries become
+  too large for the current JSON workflow.
+- Add field-level conflict comparison if device-to-device editing becomes common.
+- Consider manual splitting for the rarer case of an incorrect automatic merge.
+- Add per-photo deletion and captions.
 - Add draggable custom positions for non-logo overlay blocks. Logo fine
   positioning already uses horizontal and vertical sliders.
-- Show whether persistent browser storage was granted.
 - Add browser integration tests for IndexedDB, backup/restore, PWA updates, and
   high-resolution image export.
 - Consider image downscaling or optional originals for large phone photos.
