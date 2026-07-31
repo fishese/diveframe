@@ -10,11 +10,16 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/app-contract.test.mjs tests/backup-crypto.test.mjs tests/composer-output.test.mjs tests/composer-presets.test.mjs tests/dive-identity.test.mjs tests/dive-site-catalog.test.mjs tests/dive-site-validation.test.mjs tests/duplicate-dives.test.mjs tests/gas-calculations.test.mjs tests/geocode-query.test.mjs tests/import-shearwater.test.mjs tests/media-optimization.test.mjs tests/subsurface-export.test.mjs",
+    "native:web": "vite build --config vite.native.config.mjs --configLoader native",
+    "native:sync": "npm run native:web && cap sync android",
+    "native:open": "cap open android",
+    "test": "npm run build && node --test tests/app-contract.test.mjs tests/backup-crypto.test.mjs tests/ble-capture-fixture.test.mjs tests/ble-dive-normalizer.test.mjs tests/ble-identity-offline.test.mjs tests/composer-output.test.mjs tests/composer-presets.test.mjs tests/dive-identity.test.mjs tests/dive-site-catalog.test.mjs tests/dive-site-validation.test.mjs tests/duplicate-dives.test.mjs tests/gas-calculations.test.mjs tests/geocode-query.test.mjs tests/import-shearwater.test.mjs tests/media-optimization.test.mjs tests/native-contract.test.mjs tests/subsurface-export.test.mjs",
     "validate:sites": "tsx scripts/validate-dive-sites.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
     "fit-file-parser": "^3.1.3",
     "lucide-react": "^1.27.0",
     "next": "^16.2.12",
@@ -23,6 +28,7 @@
     "sql.js": "^1.14.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
     "@cloudflare/vite-plugin": "1.37.1",
     "@cloudflare/workers-types": "^4.20260702.1",
     "@tailwindcss/postcss": "4.2.1",

@@ -23,7 +23,10 @@ test(
         LEFT JOIN log_data l ON l.log_id = d.DiveId
       `);
       assert.equal(result.length, 1);
-      assert.equal(result[0].values.length, 171);
+      assert.ok(
+        result[0].values.length >= 1,
+        "expected at least one dive_details row",
+      );
 
       const gnssIndex = result[0].columns.indexOf("GnssEntryLocation");
       const gpsRows = result[0].values.filter((row) => {

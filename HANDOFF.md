@@ -103,6 +103,7 @@ To run the real Shearwater database test:
 
 ```powershell
 $env:SHEARWATER_DB_FIXTURE="D:\path\to\Shearwater export.db"
+$env:BLE_CAPTURE_FIXTURE="D:\Projects\Dive log\web\fixtures\ble\perdix2-….json"
 node --test tests/import-shearwater.test.mjs
 ```
 

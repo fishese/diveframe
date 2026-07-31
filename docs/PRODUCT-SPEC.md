@@ -236,6 +236,14 @@ normalized model. Profiles, pressure samples, cylinders, events, extensions,
 and unknown fields remain in the supplied document. DiveFrame does not
 currently write modified Shearwater, UDDF, or FIT files.
 
+**Planned (not implemented):** after IndexedDB v8 retains per-dive raw capture
+bytes and user overlays (see `docs/2026-07-30-indexeddb-v8-planning.md`),
+DiveFrame should be able to **generate** a new Subsurface `.ssrf` and possibly
+UDDF file from reparsed raw data plus DiveFrame overlays (site, buddy, notes,
+optional user GPS via `exportGpsPreference`, trip metadata as appropriate).
+That generator is separate from today's pass-through tool and must not mutate
+stored raw records.
+
 ## Licensing boundary
 
 The DiveFrame software source is licensed under `GPL-3.0-or-later`. The

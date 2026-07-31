@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DiveFrame</string>
+    <string name="title_activity_main">DiveFrame</string>
+    <string name="package_name">cc.fishese.divelog</string>
+    <string name="custom_url_scheme">cc.fishese.divelog</string>
+</resources>

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>DiveFrame capture spike</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background: #071820;
+        color: #e8f7f7;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 90% 5%, #147e7a55, transparent 34rem),
+          linear-gradient(180deg, #0b2730 0%, #071820 58%);
+      }
+
+      main {
+        width: min(42rem, 100%);
+        margin: 0 auto;
+        padding: calc(2rem + env(safe-area-inset-top)) 1.25rem
+          calc(2rem + env(safe-area-inset-bottom));
+      }
+
+      .eyebrow {
+        margin: 0 0 0.5rem;
+        color: #6fd1c7;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 9vw, 3.25rem);
+        line-height: 1;
+      }
+
+      .intro {
+        max-width: 36rem;
+        margin: 1rem 0 1.5rem;
+        color: #b8d0d2;
+        line-height: 1.55;
+      }
+
+      .panel {
+        padding: 1rem;
+        border: 1px solid #2b5159;
+        border-radius: 1rem;
+        background: #09232bcc;
+        box-shadow: 0 1.5rem 4rem #0006;
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-bottom: 1rem;
+      }
+
+      .dot {
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 999px;
+        background: #f5b942;
+        box-shadow: 0 0 0 0.25rem #f5b94220;
+      }
+
+      .dot.ready {
+        background: #59d38c;
+        box-shadow: 0 0 0 0.25rem #59d38c20;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+
+      button {
+        min-height: 3rem;
+        border: 0;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: #55c6bd;
+        color: #06191d;
+        font: inherit;
+        font-weight: 750;
+      }
+
+      button.secondary {
+        border: 1px solid #42646a;
+        background: transparent;
+        color: #dceff0;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+
+      pre {
+        min-height: 8rem;
+        margin: 1rem 0 0;
+        overflow: auto;
+        border-radius: 0.75rem;
+        padding: 0.85rem;
+        background: #041116;
+        color: #a8d7d4;
+        font: 0.78rem/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Android research build</p>
+      <h1>Dive capture spike</h1>
+      <p class="intro">
+  Temporary native shell for permissions, Shearwater BLE scan, classic
+  GATT transport, multi-dive download with fingerprint checkpoints and
+  progress, on-device parsing, and saving a full capture fixture for
+  offline work. It does not alter the web app or local logbook.
+      </p>
+
+      <section class="panel" aria-labelledby="bridge-status">
+        <div class="status">
+          <span class="dot" id="status-dot" aria-hidden="true"></span>
+          <strong id="bridge-status">Checking native bridge…</strong>
+        </div>
+        <div class="actions">
+          <button id="inspect" type="button">Inspect bridge</button>
+          <button id="permissions" class="secondary" type="button" disabled>
+            Request permissions
+          </button>
+          <button id="scan" type="button" disabled>Scan Shearwater</button>
+          <button id="connect" class="secondary" type="button" disabled>
+            Connect first device
+          </button>
+          <button id="download-one" type="button" disabled>Download 1 dive</button>
+          <button id="download-five" type="button" disabled>
+            Download up to 5
+          </button>
+          <button id="download-since" class="secondary" type="button" disabled>
+            New since last FP
+          </button>
+          <button id="save-capture" class="secondary" type="button" disabled>
+            Save full capture
+          </button>
+          <button id="cancel" class="secondary" type="button" disabled>
+            Cancel
+          </button>
+        </div>
+        <pre id="output" aria-live="polite">Waiting for Capacitor…</pre>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

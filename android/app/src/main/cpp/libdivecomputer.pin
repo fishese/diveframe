@@ -1,0 +1,4 @@
+repository=https://github.com/libdivecomputer/libdivecomputer.git
+commit=8e564eb5cf9fb4318af3d540895abb916e1809b0
+version=0.10.0-devel
+license=LGPL-2.1-or-later

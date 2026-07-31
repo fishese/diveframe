@@ -35,6 +35,14 @@ site from the phone's location as part of this feature.
   foreground service are not v1 requirements.
 - **Lossless capture:** Retain the raw bytes for each downloaded dive together
   with parser provenance.
+- **Layered export readiness:** Raw retention exists so DiveFrame can later
+  **generate** a new Subsurface `.ssrf` / UDDF file (reparse raw + apply user
+  overlays) instead of only patching a supplied Subsurface document. Do not
+  implement that generator in the BLE milestone. Keep raw bytes immutable
+  under user edits; keep computer GPS distinct from future user-supplied GPS.
+  Overlay fields, trips, and `exportGpsPreference` are specified in
+  [`docs/2026-07-30-indexeddb-v8-planning.md`](../../2026-07-30-indexeddb-v8-planning.md)
+  and ride the same v8 erase-reimport as the BLE stores.
 - **Data path:** Native download and staging → JavaScript data contract →
   normalization → the existing identity/merge pipeline, extended only where
   required for raw records, checkpoints, and outcome counts.
@@ -469,15 +477,29 @@ may supplement but not replace hardware testing.
 
 ## Implementation phases (only after explicit unblock)
 
-1. **Transport and capture spike:** Pin libdivecomputer; build the smallest
+1. **Transport and capture spike:** ~~Pin libdivecomputer; build the smallest
    Capacitor/Android/JNI path; connect to one real computer; capture device info,
-   one complete raw dive, callbacks, and a fingerprint; record field coverage.
-2. **Identity spike:** Capture the same dives through BLE and Shearwater Cloud;
+   one complete raw dive, callbacks, and a fingerprint; record field coverage.~~
+   **Done (classic Shearwater BLE, 2026-08):** Peregrine and Perdix 2 validated
+   for multi-dive download, fingerprint checkpoints, progress events, and
+   `dc_parser` summaries. See `docs/native-android-spike.md`. Still no IndexedDB
+   writes.
+2. **Identity spike:** ~~Capture the same dives through BLE and Shearwater Cloud;
    settle source/provenance IDs, date/time handling, compatibility scope, and
-   deterministic merge tests.
+   deterministic merge tests.~~ **In progress / largely settled offline
+   (2026-08):** Perdix 2 BLE fixture vs Cloud DB linked 5/5 dives at high
+   confidence (serial + local datetime + duration + max depth). BLE id =
+   fingerprint hex; Cloud id stays `DiveId`. Provisional preview source
+   `shearwater-ble` is not a real `DiveSource` yet and must not be upserted.
+   Re-touch hardware only for behavior changes or milestones. Helpers:
+   `lib/ble-cloud-identity.ts`, `scripts/report-ble-cloud-identity.mjs`.
 3. **Persistence design:** Finalize raw-record and checkpoint schemas, atomic
    commit behavior, backup/erase/migration rules, import outcome counts, and the
-   account-readiness invariants without implementing accounts.
+   account-readiness invariants without implementing accounts. Fold the v8
+   overlay contracts (user GPS, `exportGpsPreference`, trips, attachment
+   `role`) from `docs/2026-07-30-indexeddb-v8-planning.md` into the same
+   destructive schema bump; do not implement the full Subsurface/UDDF
+   generator yet.
 4. **Normalizer:** Map the approved v1 field inventory into
    `LocalImportedDive`, retain unmodeled raw data, and add fixture tests.
 5. **Product UX:** Add permissions, scan/device choice, progress, cancellation,

@@ -1,0 +1,5 @@
+# Private BLE capture fixtures (real serials + raw dive bytes).
+# Keep local copies for offline normalizer/identity work; do not commit.
+*
+!.gitignore
+!README.md
