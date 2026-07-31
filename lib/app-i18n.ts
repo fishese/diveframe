@@ -6,7 +6,7 @@ import {
 const en = {
   ...overlayTranslations.en,
   betaNoticeLabel: "Beta",
-  betaNoticeText: "DiveFrame is under active development. Updates may be incompatible or require clearing data stored on this device.",
+  betaNoticeText: "DiveFrame is under active development. This IndexedDB v8 build erases local DiveFrame data on first open of this version — re-import your source logs afterward.",
   betaNoticeBackup: "Keep a recent backup.",
   diveLogCompanion: "Dive log companion",
   settingsAndData: "Settings & data tools",
@@ -424,7 +424,7 @@ const en = {
 const zhHant: Record<keyof typeof en, string> = {
   ...overlayTranslations["zh-Hant"],
   betaNoticeLabel: "測試版",
-  betaNoticeText: "DiveFrame 仍在積極開發中。更新可能不相容，或需要清除此裝置上儲存的資料。",
+  betaNoticeText: "DiveFrame 仍在積極開發中。此 IndexedDB v8 版本首次開啟時會清除本機 DiveFrame 資料，之後請重新匯入來源潛水紀錄。",
   betaNoticeBackup: "請保留最新備份。",
   diveLogCompanion: "潛水紀錄工具",
   settingsAndData: "設定及資料工具",
@@ -842,7 +842,7 @@ const zhHant: Record<keyof typeof en, string> = {
 const ja: Record<keyof typeof en, string> = {
   ...overlayTranslations.ja,
   betaNoticeLabel: "ベータ版",
-  betaNoticeText: "DiveFrameは現在も開発中です。更新に互換性がない場合や、この端末に保存されたデータの消去が必要になる場合があります。",
+  betaNoticeText: "DiveFrameは現在も開発中です。この IndexedDB v8 版を初めて開くとローカルの DiveFrame データが消去されます。その後、元のログを再読み込みしてください。",
   betaNoticeBackup: "最新のバックアップを保管してください。",
   diveLogCompanion: "ダイブログツール",
   settingsAndData: "設定とデータツール",

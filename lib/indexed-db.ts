@@ -12,8 +12,22 @@ import {
 } from "./dive-identity";
 import { normalizeShearwaterPressurePair } from "./gas-calculations";
 import { withOptimizedJpeg } from "./media-optimization";
+import {
+  ALL_STORE_NAMES,
+  STORE_NAMES,
+  storeNamesForErase,
+} from "./store-manifest";
 
-export type DiveSource = "shearwater" | "subsurface" | "uddf" | "fit";
+export type DiveSource =
+  | "shearwater"
+  | "shearwater-ble"
+  | "subsurface"
+  | "uddf"
+  | "fit";
+
+export type ExportGpsPreference = "computer" | "user" | "user-if-missing";
+export type UserGpsSource = "manual" | "photo-exif";
+export type AttachmentRole = "dive-photo" | "geo-reference";
 
 export type LocalDive = {
   id: string;
@@ -51,6 +65,13 @@ export type LocalDive = {
   userSiteSource: "catalog" | "suggestion" | "manual" | null;
   userSiteCatalogId: string | null;
   userSiteUpdatedAt: string | null;
+  /** User-supplied pin; never overwrites computer gpsEntry/gpsExit fields. */
+  userGpsLat: number | null;
+  userGpsLng: number | null;
+  userGpsSource: UserGpsSource | null;
+  userGpsUpdatedAt: string | null;
+  exportGpsPreference: ExportGpsPreference;
+  tripId: string | null;
   resolvedLocation: string | null;
   resolvedCity: string | null;
   resolvedCountry: string | null;
@@ -69,6 +90,12 @@ export type LocalImportedDive = Omit<
   | "userSiteSource"
   | "userSiteCatalogId"
   | "userSiteUpdatedAt"
+  | "userGpsLat"
+  | "userGpsLng"
+  | "userGpsSource"
+  | "userGpsUpdatedAt"
+  | "exportGpsPreference"
+  | "tripId"
   | "resolvedLocation"
   | "resolvedCity"
   | "resolvedCountry"
@@ -89,7 +116,43 @@ export type LocalAttachment = {
   caption: string | null;
   sortOrder: number;
   createdAt: string;
+  /** Absent or dive-photo for normal gallery photos. */
+  role?: AttachmentRole;
   blob: Blob;
+};
+
+export type LocalRawDiveRecord = {
+  id: string;
+  diveId: string;
+  sourceKind: string;
+  rawFormat: string;
+  deviceDescriptor: string;
+  deviceSerial: string;
+  libdivecomputerVersion: string;
+  libdivecomputerCommit?: string;
+  parserContractVersion: string;
+  capturedAt: string;
+  fingerprintHex: string;
+  length: number;
+  checksum: string;
+  rawBytes: Blob;
+};
+
+export type LocalDeviceCheckpoint = {
+  id: string;
+  fingerprint: Blob;
+  fingerprintHex: string;
+  lastSyncedAt: string;
+  lastOutcomeCounts?: {
+    downloaded: number;
+    matched?: number;
+  };
+};
+
+export type LocalTrip = {
+  id: string;
+  name: string;
+  updatedAt: string;
 };
 
 export type LocalBackground = {
@@ -162,21 +225,27 @@ export type LocalBackupSnapshot = {
   backgrounds: LocalBackground[];
   brandingAssets: LocalBrandingAsset[];
   appPreferences: LocalAppPreferences[];
+  rawDiveRecords: LocalRawDiveRecord[];
+  deviceCheckpoints: LocalDeviceCheckpoint[];
+  trips: LocalTrip[];
 };
 
 export type BackupImportMode = "merge" | "replace";
 
 const DATABASE_NAME = "diveframe-local";
-const DATABASE_VERSION = 7;
-const DIVES_STORE = "dives";
-const SOURCES_STORE = "sourceRecords";
-const ATTACHMENTS_STORE = "attachments";
-const SITE_CONTRIBUTIONS_STORE = "siteContributions";
-const COMPOSER_SETTINGS_STORE = "composerSettings";
-const COMPOSER_PRESETS_STORE = "composerPresets";
-const BACKGROUNDS_STORE = "backgrounds";
-const BRANDING_ASSETS_STORE = "brandingAssets";
-const APP_PREFERENCES_STORE = "appPreferences";
+export const DATABASE_VERSION = 8;
+const DIVES_STORE = STORE_NAMES.dives;
+const SOURCES_STORE = STORE_NAMES.sourceRecords;
+const ATTACHMENTS_STORE = STORE_NAMES.attachments;
+const SITE_CONTRIBUTIONS_STORE = STORE_NAMES.siteContributions;
+const COMPOSER_SETTINGS_STORE = STORE_NAMES.composerSettings;
+const COMPOSER_PRESETS_STORE = STORE_NAMES.composerPresets;
+const BACKGROUNDS_STORE = STORE_NAMES.backgrounds;
+const BRANDING_ASSETS_STORE = STORE_NAMES.brandingAssets;
+const APP_PREFERENCES_STORE = STORE_NAMES.appPreferences;
+const RAW_DIVE_RECORDS_STORE = STORE_NAMES.rawDiveRecords;
+const DEVICE_CHECKPOINTS_STORE = STORE_NAMES.deviceCheckpoints;
+const TRIPS_STORE = STORE_NAMES.trips;
 
 export async function listLocalDives() {
   const database = await openDatabase();
@@ -205,6 +274,7 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
       ATTACHMENTS_STORE,
       SITE_CONTRIBUTIONS_STORE,
       COMPOSER_SETTINGS_STORE,
+      RAW_DIVE_RECORDS_STORE,
     ],
     "readwrite",
   );
@@ -213,6 +283,7 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
   const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
   const attachmentsStore = transaction.objectStore(ATTACHMENTS_STORE);
   const composerSettingsStore = transaction.objectStore(COMPOSER_SETTINGS_STORE);
+  const rawStore = transaction.objectStore(RAW_DIVE_RECORDS_STORE);
   const [storedDives, storedSources] = await Promise.all([
     request<LocalDive[]>(divesStore.getAll()),
     request<SourceRecord[]>(sourcesStore.getAll()),
@@ -249,6 +320,7 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
         attachmentsStore,
         contributionsStore,
         composerSettingsStore,
+        rawStore,
       );
       canonicalId = promotedId;
     }
@@ -271,6 +343,107 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
   return listLocalDives();
 }
 
+/**
+ * Atomically merge BLE-normalized dives, raw capture blobs, and the device
+ * checkpoint. Advances the checkpoint only in the same transaction as the
+ * retained dive/raw writes.
+ */
+export async function persistBleImport(options: {
+  dives: LocalImportedDive[];
+  rawRecords: LocalRawDiveRecord[];
+  checkpoint: LocalDeviceCheckpoint | null;
+}) {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [
+      DIVES_STORE,
+      SOURCES_STORE,
+      ATTACHMENTS_STORE,
+      SITE_CONTRIBUTIONS_STORE,
+      COMPOSER_SETTINGS_STORE,
+      RAW_DIVE_RECORDS_STORE,
+      DEVICE_CHECKPOINTS_STORE,
+    ],
+    "readwrite",
+  );
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const sourcesStore = transaction.objectStore(SOURCES_STORE);
+  const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
+  const attachmentsStore = transaction.objectStore(ATTACHMENTS_STORE);
+  const composerSettingsStore = transaction.objectStore(COMPOSER_SETTINGS_STORE);
+  const rawStore = transaction.objectStore(RAW_DIVE_RECORDS_STORE);
+  const checkpointStore = transaction.objectStore(DEVICE_CHECKPOINTS_STORE);
+  const [storedDives, storedSources] = await Promise.all([
+    request<LocalDive[]>(divesStore.getAll()),
+    request<SourceRecord[]>(sourcesStore.getAll()),
+  ]);
+  const divesById = new Map(storedDives.map((dive) => [dive.id, dive]));
+  const sourceMappings = new Map(
+    storedSources.map((record) => [record.key, record.diveId]),
+  );
+  const now = new Date().toISOString();
+  const idBySourceId = new Map<string, string>();
+
+  for (const incoming of options.dives) {
+    const mappingKey = sourceKey(incoming.source, incoming.sourceId);
+    const mappedId = sourceMappings.get(mappingKey);
+    const matchedId =
+      mappedId ?? findMatchingDive(incoming, [...divesById.values()]);
+    let canonicalId = matchedId ?? canonicalDiveId(incoming);
+    if (
+      !mappedId &&
+      matchedId &&
+      shouldPromoteCanonicalSource(
+        incoming.source,
+        divesById.get(matchedId)?.sources ?? [],
+      )
+    ) {
+      const promotedId = canonicalDiveId(incoming);
+      await rekeyDive(
+        matchedId,
+        promotedId,
+        divesById,
+        storedSources,
+        sourceMappings,
+        divesStore,
+        sourcesStore,
+        attachmentsStore,
+        contributionsStore,
+        composerSettingsStore,
+        rawStore,
+      );
+      canonicalId = promotedId;
+    }
+    const merged = mergeDive(canonicalId, divesById.get(canonicalId), incoming, now);
+    divesById.set(canonicalId, merged);
+    sourceMappings.set(mappingKey, canonicalId);
+    idBySourceId.set(incoming.sourceId, canonicalId);
+    divesStore.put(merged);
+    sourcesStore.put({
+      key: mappingKey,
+      source: incoming.source,
+      sourceId: incoming.sourceId,
+      diveId: canonicalId,
+      importedAt: now,
+    } satisfies SourceRecord);
+  }
+
+  for (const raw of options.rawRecords) {
+    const diveId = idBySourceId.get(raw.fingerprintHex) ?? raw.diveId;
+    rawStore.put({ ...raw, diveId });
+  }
+  if (options.checkpoint) {
+    checkpointStore.put(options.checkpoint);
+  }
+
+  await transactionComplete(transaction);
+  return {
+    diveCount: options.dives.length,
+    rawCount: options.rawRecords.length,
+    checkpointAdvanced: Boolean(options.checkpoint),
+  };
+}
+
 async function rekeyDive(
   previousId: string,
   nextId: string,
@@ -282,22 +455,25 @@ async function rekeyDive(
   attachmentsStore: IDBObjectStore,
   contributionsStore: IDBObjectStore,
   composerSettingsStore: IDBObjectStore,
+  rawStore: IDBObjectStore,
 ) {
   if (previousId === nextId) return;
   const dive = divesById.get(previousId);
   if (!dive) return;
 
-  const [attachments, contribution, composerSettings] = await Promise.all([
-    request<LocalAttachment[]>(
-      attachmentsStore.index("diveId").getAll(previousId),
-    ),
-    request<LocalSiteContribution | undefined>(
-      contributionsStore.get(previousId),
-    ),
-    request<ComposerSettings | undefined>(
-      composerSettingsStore.get(previousId),
-    ),
-  ]);
+  const [attachments, contribution, composerSettings, rawRecords] =
+    await Promise.all([
+      request<LocalAttachment[]>(
+        attachmentsStore.index("diveId").getAll(previousId),
+      ),
+      request<LocalSiteContribution | undefined>(
+        contributionsStore.get(previousId),
+      ),
+      request<ComposerSettings | undefined>(
+        composerSettingsStore.get(previousId),
+      ),
+      request<LocalRawDiveRecord[]>(rawStore.index("diveId").getAll(previousId)),
+    ]);
 
   divesStore.delete(previousId);
   divesById.delete(previousId);
@@ -305,6 +481,9 @@ async function rekeyDive(
 
   attachments.forEach((attachment) =>
     attachmentsStore.put({ ...attachment, diveId: nextId }),
+  );
+  rawRecords.forEach((record) =>
+    rawStore.put({ ...record, diveId: nextId }),
   );
   if (contribution) {
     contributionsStore.delete(previousId);
@@ -767,17 +946,7 @@ export async function getLocalStoragePersistenceStatus(
 
 export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> {
   const database = await openDatabase();
-  const transaction = database.transaction([
-    DIVES_STORE,
-    SOURCES_STORE,
-    ATTACHMENTS_STORE,
-    SITE_CONTRIBUTIONS_STORE,
-    COMPOSER_SETTINGS_STORE,
-    COMPOSER_PRESETS_STORE,
-    BACKGROUNDS_STORE,
-    BRANDING_ASSETS_STORE,
-    APP_PREFERENCES_STORE,
-  ]);
+  const transaction = database.transaction([...ALL_STORE_NAMES]);
   const [
     dives,
     sourceRecords,
@@ -788,6 +957,9 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     backgrounds,
     brandingAssets,
     appPreferences,
+    rawDiveRecords,
+    deviceCheckpoints,
+    trips,
   ] = await Promise.all([
     request<LocalDive[]>(transaction.objectStore(DIVES_STORE).getAll()),
     request<SourceRecord[]>(transaction.objectStore(SOURCES_STORE).getAll()),
@@ -808,6 +980,13 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     request<LocalAppPreferences[]>(
       transaction.objectStore(APP_PREFERENCES_STORE).getAll(),
     ),
+    request<LocalRawDiveRecord[]>(
+      transaction.objectStore(RAW_DIVE_RECORDS_STORE).getAll(),
+    ),
+    request<LocalDeviceCheckpoint[]>(
+      transaction.objectStore(DEVICE_CHECKPOINTS_STORE).getAll(),
+    ),
+    request<LocalTrip[]>(transaction.objectStore(TRIPS_STORE).getAll()),
   ]);
   return {
     dives: dives.map(hydrateDive),
@@ -819,6 +998,9 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     backgrounds,
     brandingAssets,
     appPreferences,
+    rawDiveRecords,
+    deviceCheckpoints,
+    trips,
   };
 }
 
@@ -827,20 +1009,7 @@ export async function importLocalBackupSnapshot(
   mode: BackupImportMode = "merge",
 ) {
   const database = await openDatabase();
-  const transaction = database.transaction(
-    [
-      DIVES_STORE,
-      SOURCES_STORE,
-      ATTACHMENTS_STORE,
-      SITE_CONTRIBUTIONS_STORE,
-      COMPOSER_SETTINGS_STORE,
-      COMPOSER_PRESETS_STORE,
-      BACKGROUNDS_STORE,
-      BRANDING_ASSETS_STORE,
-      APP_PREFERENCES_STORE,
-    ],
-    "readwrite",
-  );
+  const transaction = database.transaction([...ALL_STORE_NAMES], "readwrite");
   const recordsByStore: Array<[string, unknown[]]> = [
     [DIVES_STORE, snapshot.dives],
     [SOURCES_STORE, snapshot.sourceRecords],
@@ -851,6 +1020,9 @@ export async function importLocalBackupSnapshot(
     [BACKGROUNDS_STORE, snapshot.backgrounds],
     [BRANDING_ASSETS_STORE, snapshot.brandingAssets],
     [APP_PREFERENCES_STORE, snapshot.appPreferences],
+    [RAW_DIVE_RECORDS_STORE, snapshot.rawDiveRecords],
+    [DEVICE_CHECKPOINTS_STORE, snapshot.deviceCheckpoints],
+    [TRIPS_STORE, snapshot.trips],
   ];
   if (mode === "replace") {
     for (const [storeName] of recordsByStore) {
@@ -868,6 +1040,8 @@ export async function importLocalBackupSnapshot(
     photos: snapshot.attachments.length,
     backgrounds: snapshot.backgrounds.length,
     siteContributions: snapshot.siteContributions.length,
+    rawDiveRecords: snapshot.rawDiveRecords.length,
+    trips: snapshot.trips.length,
   };
 }
 
@@ -896,12 +1070,22 @@ export async function getLocalBackupSizeEstimate() {
   const attachments = snapshot.attachments.map(withoutBlob);
   const backgrounds = snapshot.backgrounds.map(withoutBlob);
   const brandingAssets = snapshot.brandingAssets.map(withoutBlob);
+  const rawDiveRecords = snapshot.rawDiveRecords.map((record) => {
+    const { rawBytes: _rawBytes, ...metadata } = record;
+    return metadata;
+  });
+  const deviceCheckpoints = snapshot.deviceCheckpoints.map((record) => {
+    const { fingerprint: _fingerprint, ...metadata } = record;
+    return metadata;
+  });
   const metadataBytes = new Blob([
     JSON.stringify({
       ...snapshot,
       attachments,
       backgrounds,
       brandingAssets,
+      rawDiveRecords,
+      deviceCheckpoints,
     }),
   ]).size;
   const mediaBytes = [
@@ -909,11 +1093,22 @@ export async function getLocalBackupSizeEstimate() {
     ...snapshot.backgrounds,
     ...snapshot.brandingAssets,
   ].reduce((total, record) => total + record.size, 0);
+  const rawBytes = snapshot.rawDiveRecords.reduce(
+    (total, record) => total + record.rawBytes.size,
+    0,
+  );
+  const fingerprintBytes = snapshot.deviceCheckpoints.reduce(
+    (total, record) => total + record.fingerprint.size,
+    0,
+  );
+  const binaryBytes = mediaBytes + rawBytes + fingerprintBytes;
   return {
     mediaBytes,
-    estimatedBackupBytes: metadataBytes + Math.ceil((mediaBytes * 4) / 3),
+    rawBytes,
+    estimatedBackupBytes: metadataBytes + Math.ceil((binaryBytes * 4) / 3),
     divePhotos: snapshot.attachments.length,
     backgrounds: snapshot.backgrounds.length,
+    rawDiveRecords: snapshot.rawDiveRecords.length,
   };
 }
 
@@ -1002,6 +1197,7 @@ export async function mergeLocalDuplicateDives(
       ATTACHMENTS_STORE,
       SITE_CONTRIBUTIONS_STORE,
       COMPOSER_SETTINGS_STORE,
+      RAW_DIVE_RECORDS_STORE,
     ],
     "readwrite",
   );
@@ -1010,7 +1206,8 @@ export async function mergeLocalDuplicateDives(
   const attachmentsStore = transaction.objectStore(ATTACHMENTS_STORE);
   const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
   const composerSettingsStore = transaction.objectStore(COMPOSER_SETTINGS_STORE);
-  const [keepRaw, removeRaw, attachments, sources, keepContribution, removeContribution, keepSettings, removeSettings] =
+  const rawStore = transaction.objectStore(RAW_DIVE_RECORDS_STORE);
+  const [keepRaw, removeRaw, attachments, sources, keepContribution, removeContribution, keepSettings, removeSettings, rawRecords] =
     await Promise.all([
       request<LocalDive | undefined>(divesStore.get(keepId)),
       request<LocalDive | undefined>(divesStore.get(removeId)),
@@ -1022,6 +1219,7 @@ export async function mergeLocalDuplicateDives(
       request<LocalSiteContribution | undefined>(contributionsStore.get(removeId)),
       request<ComposerSettings | undefined>(composerSettingsStore.get(keepId)),
       request<ComposerSettings | undefined>(composerSettingsStore.get(removeId)),
+      request<LocalRawDiveRecord[]>(rawStore.index("diveId").getAll(removeId)),
     ]);
   if (!keepRaw || !removeRaw) {
     transaction.abort();
@@ -1034,6 +1232,9 @@ export async function mergeLocalDuplicateDives(
   divesStore.delete(removeId);
   attachments.forEach((attachment) =>
     attachmentsStore.put({ ...attachment, diveId: keepId }),
+  );
+  rawRecords.forEach((record) =>
+    rawStore.put({ ...record, diveId: keepId }),
   );
   sources.forEach((record) => {
     if (record.diveId === removeId) {
@@ -1067,17 +1268,7 @@ export async function mergeLocalDuplicateDives(
 
 export async function clearAllLocalData() {
   const database = await openDatabase();
-  const storeNames = [
-    DIVES_STORE,
-    SOURCES_STORE,
-    ATTACHMENTS_STORE,
-    SITE_CONTRIBUTIONS_STORE,
-    COMPOSER_SETTINGS_STORE,
-    COMPOSER_PRESETS_STORE,
-    BACKGROUNDS_STORE,
-    BRANDING_ASSETS_STORE,
-    APP_PREFERENCES_STORE,
-  ];
+  const storeNames = storeNamesForErase("all-data");
   const transaction = database.transaction(storeNames, "readwrite");
   for (const storeName of storeNames) {
     transaction.objectStore(storeName).clear();
@@ -1087,11 +1278,7 @@ export async function clearAllLocalData() {
 
 export async function clearLocalDiveData() {
   const database = await openDatabase();
-  const storeNames = [
-    DIVES_STORE,
-    SOURCES_STORE,
-    SITE_CONTRIBUTIONS_STORE,
-  ];
+  const storeNames = storeNamesForErase("dive-data-only");
   const transaction = database.transaction(storeNames, "readwrite");
   for (const storeName of storeNames) {
     transaction.objectStore(storeName).clear();
@@ -1121,7 +1308,8 @@ function mergeDive(
   importedAt: string,
 ): LocalDive {
   existing = existing ? hydrateDive(existing) : undefined;
-  const preferIncoming = incoming.source === "shearwater";
+  const preferIncoming =
+    incoming.source === "shearwater" || incoming.source === "shearwater-ble";
   const core = <T>(next: T | null, current: T | null | undefined) =>
     preferIncoming && next !== null ? next : (current ?? next);
   const sources = new Set(existing?.sources ?? []);
@@ -1207,6 +1395,12 @@ function mergeDive(
     userSiteUpdatedAt: sourceSuppliesSite
       ? null
       : (existing?.userSiteUpdatedAt ?? null),
+    userGpsLat: existing?.userGpsLat ?? null,
+    userGpsLng: existing?.userGpsLng ?? null,
+    userGpsSource: existing?.userGpsSource ?? null,
+    userGpsUpdatedAt: existing?.userGpsUpdatedAt ?? null,
+    exportGpsPreference: existing?.exportGpsPreference ?? "computer",
+    tripId: existing?.tripId ?? null,
     resolvedLocation: existing?.resolvedLocation ?? null,
     resolvedCity: existing?.resolvedCity ?? null,
     resolvedCountry: existing?.resolvedCountry ?? null,
@@ -1276,6 +1470,13 @@ function mergeStoredDives(
       keep.userSiteUpdatedAt,
       remove.userSiteUpdatedAt,
     ),
+    userGpsLat: value(keep.userGpsLat, remove.userGpsLat),
+    userGpsLng: value(keep.userGpsLng, remove.userGpsLng),
+    userGpsSource: value(keep.userGpsSource, remove.userGpsSource),
+    userGpsUpdatedAt: value(keep.userGpsUpdatedAt, remove.userGpsUpdatedAt),
+    exportGpsPreference:
+      keep.exportGpsPreference ?? remove.exportGpsPreference ?? "computer",
+    tripId: value(keep.tripId, remove.tripId),
     resolvedLocation: value(keep.resolvedLocation, remove.resolvedLocation),
     resolvedCity: value(keep.resolvedCity, remove.resolvedCity),
     resolvedCountry: value(keep.resolvedCountry, remove.resolvedCountry),
@@ -1348,47 +1549,17 @@ function withoutBlob<T extends { blob: Blob }>(record: T): Omit<T, "blob"> {
 function openDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const operation = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-    operation.onupgradeneeded = () => {
+    operation.onupgradeneeded = (event) => {
       const database = operation.result;
-      if (!database.objectStoreNames.contains(DIVES_STORE)) {
-        database.createObjectStore(DIVES_STORE, { keyPath: "id" });
+      const previousVersion = event.oldVersion;
+      // Solo-beta clean reset: delete every v7 (and older) store, then recreate
+      // the complete v8 schema. No record backfill.
+      if (previousVersion > 0 && previousVersion < DATABASE_VERSION) {
+        for (const storeName of Array.from(database.objectStoreNames)) {
+          database.deleteObjectStore(storeName);
+        }
       }
-      if (!database.objectStoreNames.contains(SOURCES_STORE)) {
-        const sourceStore = database.createObjectStore(SOURCES_STORE, {
-          keyPath: "key",
-        });
-        sourceStore.createIndex("diveId", "diveId");
-      }
-      if (!database.objectStoreNames.contains(ATTACHMENTS_STORE)) {
-        const attachmentStore = database.createObjectStore(ATTACHMENTS_STORE, {
-          keyPath: "id",
-        });
-        attachmentStore.createIndex("diveId", "diveId");
-      }
-      if (!database.objectStoreNames.contains(SITE_CONTRIBUTIONS_STORE)) {
-        database.createObjectStore(SITE_CONTRIBUTIONS_STORE, {
-          keyPath: "id",
-        });
-      }
-      if (!database.objectStoreNames.contains(COMPOSER_SETTINGS_STORE)) {
-        database.createObjectStore(COMPOSER_SETTINGS_STORE, {
-          keyPath: "id",
-        });
-      }
-      if (!database.objectStoreNames.contains(COMPOSER_PRESETS_STORE)) {
-        database.createObjectStore(COMPOSER_PRESETS_STORE, {
-          keyPath: "id",
-        });
-      }
-      if (!database.objectStoreNames.contains(BACKGROUNDS_STORE)) {
-        database.createObjectStore(BACKGROUNDS_STORE, { keyPath: "id" });
-      }
-      if (!database.objectStoreNames.contains(BRANDING_ASSETS_STORE)) {
-        database.createObjectStore(BRANDING_ASSETS_STORE, { keyPath: "id" });
-      }
-      if (!database.objectStoreNames.contains(APP_PREFERENCES_STORE)) {
-        database.createObjectStore(APP_PREFERENCES_STORE, { keyPath: "id" });
-      }
+      createV8ObjectStores(database);
     };
     operation.onsuccess = () => resolve(operation.result);
     operation.onerror = () =>
@@ -1396,6 +1567,61 @@ function openDatabase() {
     operation.onblocked = () =>
       reject(new Error("Close other DiveFrame tabs and try again."));
   });
+}
+
+function createV8ObjectStores(database: IDBDatabase) {
+  if (!database.objectStoreNames.contains(DIVES_STORE)) {
+    const diveStore = database.createObjectStore(DIVES_STORE, { keyPath: "id" });
+    diveStore.createIndex("tripId", "tripId", { unique: false });
+  }
+  if (!database.objectStoreNames.contains(SOURCES_STORE)) {
+    const sourceStore = database.createObjectStore(SOURCES_STORE, {
+      keyPath: "key",
+    });
+    sourceStore.createIndex("diveId", "diveId");
+  }
+  if (!database.objectStoreNames.contains(ATTACHMENTS_STORE)) {
+    const attachmentStore = database.createObjectStore(ATTACHMENTS_STORE, {
+      keyPath: "id",
+    });
+    attachmentStore.createIndex("diveId", "diveId");
+  }
+  if (!database.objectStoreNames.contains(SITE_CONTRIBUTIONS_STORE)) {
+    database.createObjectStore(SITE_CONTRIBUTIONS_STORE, {
+      keyPath: "id",
+    });
+  }
+  if (!database.objectStoreNames.contains(COMPOSER_SETTINGS_STORE)) {
+    database.createObjectStore(COMPOSER_SETTINGS_STORE, {
+      keyPath: "id",
+    });
+  }
+  if (!database.objectStoreNames.contains(COMPOSER_PRESETS_STORE)) {
+    database.createObjectStore(COMPOSER_PRESETS_STORE, {
+      keyPath: "id",
+    });
+  }
+  if (!database.objectStoreNames.contains(BACKGROUNDS_STORE)) {
+    database.createObjectStore(BACKGROUNDS_STORE, { keyPath: "id" });
+  }
+  if (!database.objectStoreNames.contains(BRANDING_ASSETS_STORE)) {
+    database.createObjectStore(BRANDING_ASSETS_STORE, { keyPath: "id" });
+  }
+  if (!database.objectStoreNames.contains(APP_PREFERENCES_STORE)) {
+    database.createObjectStore(APP_PREFERENCES_STORE, { keyPath: "id" });
+  }
+  if (!database.objectStoreNames.contains(RAW_DIVE_RECORDS_STORE)) {
+    const rawStore = database.createObjectStore(RAW_DIVE_RECORDS_STORE, {
+      keyPath: "id",
+    });
+    rawStore.createIndex("diveId", "diveId");
+  }
+  if (!database.objectStoreNames.contains(DEVICE_CHECKPOINTS_STORE)) {
+    database.createObjectStore(DEVICE_CHECKPOINTS_STORE, { keyPath: "id" });
+  }
+  if (!database.objectStoreNames.contains(TRIPS_STORE)) {
+    database.createObjectStore(TRIPS_STORE, { keyPath: "id" });
+  }
 }
 
 function request<T>(operation: IDBRequest<T>) {
@@ -1450,6 +1676,12 @@ function hydrateDive(dive: LocalDive): LocalDive {
     samples: dive.samples ?? [],
     tankPressuresStartBar: pressures.start,
     tankPressuresEndBar: pressures.end,
+    userGpsLat: dive.userGpsLat ?? null,
+    userGpsLng: dive.userGpsLng ?? null,
+    userGpsSource: dive.userGpsSource ?? null,
+    userGpsUpdatedAt: dive.userGpsUpdatedAt ?? null,
+    exportGpsPreference: dive.exportGpsPreference ?? "computer",
+    tripId: dive.tripId ?? null,
     sourceDiveNumbers: dive.sourceDiveNumbers ?? {},
     sourceSiteNames: dive.sourceSiteNames ?? {},
   };

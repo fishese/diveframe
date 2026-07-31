@@ -7,6 +7,12 @@ data, then adds maps, photos, site details, and shareable image overlays.
 > **Beta:** DiveFrame is under active development. Updates may be incompatible
 > or require clearing locally stored data. Keep the original dive-log exports
 > and a recent DiveFrame backup.
+>
+> **IndexedDB v8 (destructive):** Opening this build upgrades local storage to
+> schema version 8 by erasing all DiveFrame records on this origin (dives,
+> photos, presets, branding, and settings). Re-import your source logs afterward
+> and recreate any non-source edits you still want. Export a backup first only
+> as an extra safety copy — it is not a v7→v8 migration path.
 
 The web app is available at [divelog.fishese.cc](https://divelog.fishese.cc).
 
@@ -73,9 +79,10 @@ reviewers.
 - A complete device-to-device backup file containing IndexedDB records, dive
   photos, reusable backgrounds, the overlay logo, per-dive composer settings,
   named composer presets, and the app-language preference. Current backups use
-  a SHA-256 checksum and show a preview before an explicit merge or replace.
-  Export can optionally password-encrypt the file; encrypted imports request
-  the password before validation and preview.
+  format version 3 (SHA-256 checksum) and show a preview before an explicit
+  merge or replace. Format versions 1–2 still import; absent BLE/trips stores
+  are treated as empty. Export can optionally password-encrypt the file;
+  encrypted imports request the password before validation and preview.
 - Manual review and user-directed merging of likely duplicate dive records,
   plus direct selection of timezone-offset pairs.
 - Separate reset actions: erase all local logbook data, clear only imported dives,

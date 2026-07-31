@@ -114,21 +114,24 @@ real dive exports, photos, or generated share cards to the repository.
 
 Database: `diveframe-local`
 
-Version: `7`
+Version: `8` (destructive upgrade from 7: all stores deleted and recreated)
 
-Object stores:
+Object stores (see also `lib/store-manifest.ts`):
 
 | Store | Key | Purpose |
 | --- | --- | --- |
-| `dives` | `id` | Canonical merged dive records and user-selected site names |
+| `dives` | `id` | Canonical merged dive records, site overlays, user GPS, `tripId` |
 | `sourceRecords` | `key` | Maps a source record to its canonical dive ID |
-| `attachments` | `id` | Photo metadata and the original image `Blob` |
+| `attachments` | `id` | Photo metadata and the original image `Blob` (optional `role`) |
 | `siteContributions` | `id` | Sites manually typed for a dive and available for JSON export |
 | `composerSettings` | `id` | Per-dive composer state and selected image |
 | `composerPresets` | `id` | Named reusable composer layout and styling choices |
 | `backgrounds` | `id` | Reusable generic diving background image blobs |
 | `brandingAssets` | `id` | Device-local transparent PNG/SVG overlay logo |
 | `appPreferences` | `id` | Device-local interface language and future global preferences |
+| `rawDiveRecords` | `id` | BLE/libdivecomputer raw capture blobs + parser provenance |
+| `deviceCheckpoints` | `id` | Per-computer download fingerprints (descriptor+serial) |
+| `trips` | `id` | Trip labels referenced by `dives.tripId` |
 
 The optional regional dive-site catalog is deliberately stored in
 `sessionStorage`, not IndexedDB. `lib/dive-site-catalog.ts` validates it and
@@ -139,7 +142,8 @@ when that tab session ends. Settings can remove it immediately. The
 downloadable prompt at `public/examples/dive-site-catalog-ai-prompt.md` helps
 users create regional catalogs for human review.
 
-`attachments` and `sourceRecords` each have a `diveId` index.
+`attachments`, `sourceRecords`, and `rawDiveRecords` each have a `diveId`
+index. `dives` has a `tripId` index.
 
 The app requests persistent browser storage when available. The install card
 reports persistent, best-effort, or unsupported status and shows estimated
@@ -147,11 +151,12 @@ usage/quota when available. This reduces eviction risk but does not replace a
 backup.
 
 Settings can export a versioned `diveframe-local-backup` JSON document covering
-all nine stores, including named composer presets and base64-encoded photo,
-reusable-background, and logo blobs. Export may optionally wrap the complete
-checksummed document in a `diveframe-encrypted-backup` envelope using
-PBKDF2-SHA-256 and AES-256-GCM. The password is requested during import and
-never stored.
+all stores (backup format v3), including named composer presets, BLE raw
+records/checkpoints, trips, and base64-encoded photo, reusable-background,
+logo, and raw-byte blobs. Export may optionally wrap the complete checksummed
+document in a `diveframe-encrypted-backup` envelope using PBKDF2-SHA-256 and
+AES-256-GCM. The password is requested during import and never stored. Older
+backup versions (1–2) still import with empty BLE/trips stores.
 
 Import validates and previews the backup before writing. **Merge** replaces
 matching complete records while retaining destination-only records; separately
@@ -161,13 +166,13 @@ matching photo ID is replaced by the backup copy in either mode.
 
 The danger zone exposes three deletion scopes. `clearLocalDivePhotos()` removes
 per-dive attachments while keeping dives and reusable assets.
-`clearLocalDiveData()` clears
-`dives`, `sourceRecords`, and `siteContributions`, retaining attachments,
-composer settings, named composer presets, backgrounds, branding, and app
-preferences. Retained
+`clearLocalDiveData()` clears dive-domain stores from `lib/store-manifest.ts`
+(`dives`, `sourceRecords`, `siteContributions`, `rawDiveRecords`,
+`deviceCheckpoints`, and `trips`), retaining attachments, composer settings,
+named composer presets, backgrounds, branding, and app preferences. Retained
 per-dive attachments/settings reconnect after the same source logs recreate
-their deterministic canonical IDs. `clearAllLocalData()` clears all nine
-stores. The Settings action also clears the session catalog; service-worker
+their deterministic canonical IDs. `clearAllLocalData()` clears every store in
+the manifest. The Settings action also clears the session catalog; service-worker
 application caches are intentionally kept.
 
 On mobile, an open dive shows a compact home control in the global top bar.

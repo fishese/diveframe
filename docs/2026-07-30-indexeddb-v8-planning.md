@@ -1,15 +1,17 @@
 # IndexedDB schema v8 planning: BLE stores + future-proofing
 
-Status: planning sketch, not an implementation spec. Write actual store
-definitions and upgrade code against this once BLE implementation phase 3
-("Persistence design") starts.
+Status: **implemented** (2026-08). IndexedDB `DATABASE_VERSION` is 8 with a
+destructive upgrade that deletes and recreates all stores. Backup format is v3.
+Store coverage lives in `lib/store-manifest.ts`. BLE persistence helpers are in
+`lib/ble-persist.ts` (`persistBleImport` / fixture prepare). Product UI for BLE
+download into the logbook and trip/user-GPS editors can still land later; the
+native spike remains non-persisting until that UI is wired.
 
 Capture spike status (2026-08): Shearwater classic BLE download + `dc_parser`
 summaries work on real Peregrine and Perdix 2 hardware, including multi-dive
 limits and fingerprint checkpoints. An import-shaped preview normalizer exists
-(`lib/ble-dive-normalizer.ts`) but does not write IndexedDB. Persistence,
-IndexedDB bumps, and erase-reimport remain blocked until this plan is frozen
-and explicitly approved.
+(`lib/ble-dive-normalizer.ts`) and can be persisted via `ble-persist` / IndexedDB
+v8. Full product download UI is still separate from the research spike.
 
 ## Why this is one version bump, not several
 

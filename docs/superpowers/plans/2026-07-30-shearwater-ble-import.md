@@ -482,26 +482,22 @@ may supplement but not replace hardware testing.
    one complete raw dive, callbacks, and a fingerprint; record field coverage.~~
    **Done (classic Shearwater BLE, 2026-08):** Peregrine and Perdix 2 validated
    for multi-dive download, fingerprint checkpoints, progress events, and
-   `dc_parser` summaries. See `docs/native-android-spike.md`. Still no IndexedDB
-   writes.
+   `dc_parser` summaries. See `docs/native-android-spike.md`. Spike UI still
+   does not write IndexedDB (`persisted: false`).
 2. **Identity spike:** ~~Capture the same dives through BLE and Shearwater Cloud;
    settle source/provenance IDs, date/time handling, compatibility scope, and
-   deterministic merge tests.~~ **In progress / largely settled offline
-   (2026-08):** Perdix 2 BLE fixture vs Cloud DB linked 5/5 dives at high
-   confidence (serial + local datetime + duration + max depth). BLE id =
-   fingerprint hex; Cloud id stays `DiveId`. Provisional preview source
-   `shearwater-ble` is not a real `DiveSource` yet and must not be upserted.
-   Re-touch hardware only for behavior changes or milestones. Helpers:
+   deterministic merge tests.~~ **Settled offline (2026-08):** Perdix 2 BLE
+   fixture vs Cloud DB linked 5/5 dives at high confidence (serial + local
+   datetime + duration + max depth). BLE id = fingerprint hex; Cloud id stays
+   `DiveId`. `shearwater-ble` is now a real `DiveSource`. Helpers:
    `lib/ble-cloud-identity.ts`, `scripts/report-ble-cloud-identity.mjs`.
-3. **Persistence design:** Finalize raw-record and checkpoint schemas, atomic
-   commit behavior, backup/erase/migration rules, import outcome counts, and the
-   account-readiness invariants without implementing accounts. Fold the v8
-   overlay contracts (user GPS, `exportGpsPreference`, trips, attachment
-   `role`) from `docs/2026-07-30-indexeddb-v8-planning.md` into the same
-   destructive schema bump; do not implement the full Subsurface/UDDF
-   generator yet.
-4. **Normalizer:** Map the approved v1 field inventory into
-   `LocalImportedDive`, retain unmodeled raw data, and add fixture tests.
+3. **Persistence design:** ~~Finalize raw-record and checkpoint schemas…~~
+   **Done (IndexedDB v8, 2026-08):** Destructive recreate, store manifest,
+   backup v3, overlay fields, `persistBleImport` / `ble-persist` helpers. Product
+   download UI still not wired. Full Subsurface/UDDF generator still deferred.
+4. **Normalizer:** ~~Map the approved v1 field inventory…~~ **Done for preview
+   contract** (`lib/ble-dive-normalizer.ts` + fixture tests). Product upsert
+   path uses `previewToImportedDive`.
 5. **Product UX:** Add permissions, scan/device choice, progress, cancellation,
    recovery controls, summary, pairing help, and translations.
 6. **Hardening and release:** Run the failure/device matrix, complete privacy

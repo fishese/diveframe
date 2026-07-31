@@ -6,6 +6,8 @@ import {
   type LocalBackground,
   type LocalBackupSnapshot,
   type LocalBrandingAsset,
+  type LocalDeviceCheckpoint,
+  type LocalRawDiveRecord,
 } from "./indexed-db";
 import {
   BackupPasswordRequiredError,
@@ -20,22 +22,35 @@ export {
 } from "./backup-crypto";
 
 const BACKUP_FORMAT = "diveframe-local-backup";
-const BACKUP_VERSION = 2;
+const BACKUP_VERSION = 3;
+const SUPPORTED_BACKUP_VERSIONS = [1, 2, 3] as const;
 const LEGACY_BACKUP_VERSION = 1;
 
 type EncodedBlobRecord<T> = Omit<T, "blob"> & { blobBase64: string };
+type EncodedRawDiveRecord = Omit<LocalRawDiveRecord, "rawBytes"> & {
+  rawBytesBase64: string;
+};
+type EncodedDeviceCheckpoint = Omit<LocalDeviceCheckpoint, "fingerprint"> & {
+  fingerprintBase64: string;
+};
 type EncodedStores = Omit<
   LocalBackupSnapshot,
-  "attachments" | "backgrounds" | "brandingAssets"
+  | "attachments"
+  | "backgrounds"
+  | "brandingAssets"
+  | "rawDiveRecords"
+  | "deviceCheckpoints"
 > & {
   attachments: Array<EncodedBlobRecord<LocalAttachment>>;
   backgrounds: Array<EncodedBlobRecord<LocalBackground>>;
   brandingAssets: Array<EncodedBlobRecord<LocalBrandingAsset>>;
+  rawDiveRecords: EncodedRawDiveRecord[];
+  deviceCheckpoints: EncodedDeviceCheckpoint[];
 };
 
 type BackupDocument = {
   format: typeof BACKUP_FORMAT;
-  version: typeof BACKUP_VERSION | typeof LEGACY_BACKUP_VERSION;
+  version: (typeof SUPPORTED_BACKUP_VERSIONS)[number];
   exportedAt: string;
   stores: EncodedStores;
   integrity?: {
@@ -63,6 +78,8 @@ export type PreparedAppBackup = {
     photos: number;
     backgrounds: number;
     presets: number;
+    rawDiveRecords: number;
+    trips: number;
   };
 };
 
@@ -84,6 +101,13 @@ export async function createLocalAppBackup(password?: string) {
         snapshot.brandingAssets.map(encodeBlobRecord),
       ),
       appPreferences: snapshot.appPreferences,
+      rawDiveRecords: await Promise.all(
+        snapshot.rawDiveRecords.map(encodeRawDiveRecord),
+      ),
+      deviceCheckpoints: await Promise.all(
+        snapshot.deviceCheckpoints.map(encodeDeviceCheckpoint),
+      ),
+      trips: snapshot.trips,
     },
   } satisfies Omit<BackupDocument, "integrity">;
   const document: BackupDocument = {
@@ -104,6 +128,8 @@ export async function createLocalAppBackup(password?: string) {
       dives: snapshot.dives.length,
       photos: snapshot.attachments.length,
       backgrounds: snapshot.backgrounds.length,
+      rawDiveRecords: snapshot.rawDiveRecords.length,
+      trips: snapshot.trips.length,
     },
   };
 }
@@ -151,6 +177,8 @@ export async function previewLocalAppBackup(
       photos: snapshot.attachments.length,
       backgrounds: snapshot.backgrounds.length,
       presets: snapshot.composerPresets.length,
+      rawDiveRecords: snapshot.rawDiveRecords.length,
+      trips: snapshot.trips.length,
     },
   };
 }
@@ -198,6 +226,13 @@ async function decodeSnapshot(document: BackupDocument): Promise<LocalBackupSnap
       document.stores.brandingAssets.map(decodeBlobRecord),
     ),
     appPreferences: document.stores.appPreferences ?? [],
+    rawDiveRecords: await Promise.all(
+      (document.stores.rawDiveRecords ?? []).map(decodeRawDiveRecord),
+    ),
+    deviceCheckpoints: await Promise.all(
+      (document.stores.deviceCheckpoints ?? []).map(decodeDeviceCheckpoint),
+    ),
+    trips: document.stores.trips ?? [],
   };
 }
 
@@ -253,6 +288,47 @@ async function decodeBlobRecord<
   };
 }
 
+async function encodeRawDiveRecord(
+  record: LocalRawDiveRecord,
+): Promise<EncodedRawDiveRecord> {
+  const { rawBytes, ...metadata } = record;
+  return {
+    ...metadata,
+    rawBytesBase64: bytesToBase64(new Uint8Array(await rawBytes.arrayBuffer())),
+  };
+}
+
+async function decodeRawDiveRecord(record: EncodedRawDiveRecord) {
+  const { rawBytesBase64, ...metadata } = record;
+  const bytes = base64ToBytes(rawBytesBase64);
+  return {
+    ...metadata,
+    rawBytes: new Blob([bytes], { type: "application/octet-stream" }),
+  } satisfies LocalRawDiveRecord;
+}
+
+async function encodeDeviceCheckpoint(
+  record: LocalDeviceCheckpoint,
+): Promise<EncodedDeviceCheckpoint> {
+  const { fingerprint, ...metadata } = record;
+  return {
+    ...metadata,
+    fingerprintBase64: bytesToBase64(
+      new Uint8Array(await fingerprint.arrayBuffer()),
+    ),
+  };
+}
+
+async function decodeDeviceCheckpoint(record: EncodedDeviceCheckpoint) {
+  const { fingerprintBase64, ...metadata } = record;
+  return {
+    ...metadata,
+    fingerprint: new Blob([base64ToBytes(fingerprintBase64)], {
+      type: "application/octet-stream",
+    }),
+  } satisfies LocalDeviceCheckpoint;
+}
+
 function bytesToBase64(bytes: Uint8Array) {
   let binary = "";
   const chunkSize = 0x8000;
@@ -283,7 +359,9 @@ function validateBackupDocument(value: unknown): BackupDocument {
   const document = value as Partial<BackupDocument>;
   if (
     document.format !== BACKUP_FORMAT ||
-    ![LEGACY_BACKUP_VERSION, BACKUP_VERSION].includes(document.version ?? -1) ||
+    !SUPPORTED_BACKUP_VERSIONS.includes(
+      (document.version ?? -1) as (typeof SUPPORTED_BACKUP_VERSIONS)[number],
+    ) ||
     !document.stores ||
     !arraysPresent(document.stores) ||
     typeof document.exportedAt !== "string" ||
@@ -302,6 +380,9 @@ function validateBackupDocument(value: unknown): BackupDocument {
     ["backgrounds", stores.backgrounds, "id"],
     ["branding assets", stores.brandingAssets, "id"],
     ["app preferences", stores.appPreferences ?? [], "id"],
+    ["raw dive records", stores.rawDiveRecords ?? [], "id"],
+    ["device checkpoints", stores.deviceCheckpoints ?? [], "id"],
+    ["trips", stores.trips ?? [], "id"],
   ];
   for (const [label, records, key] of keyedStores) {
     const keys = records.map((record) =>
@@ -332,14 +413,39 @@ function validateBackupDocument(value: unknown): BackupDocument {
   ) {
     throw new Error("The backup contains invalid image data.");
   }
+  if (
+    !(stores.rawDiveRecords ?? []).every(
+      (record) =>
+        typeof record.rawBytesBase64 === "string" &&
+        typeof record.length === "number" &&
+        record.length >= 0,
+    )
+  ) {
+    throw new Error("The backup contains invalid raw dive records.");
+  }
+  if (
+    !(stores.deviceCheckpoints ?? []).every(
+      (record) => typeof record.fingerprintBase64 === "string",
+    )
+  ) {
+    throw new Error("The backup contains invalid device checkpoints.");
+  }
   return document as BackupDocument;
 }
 
 function validateSnapshotReferences(snapshot: LocalBackupSnapshot) {
   const diveIds = new Set(snapshot.dives.map((dive) => dive.id));
+  const tripIds = new Set(snapshot.trips.map((trip) => trip.id));
   const invalidReference =
     snapshot.sourceRecords.some((record) => !diveIds.has(record.diveId)) ||
-    snapshot.siteContributions.some((record) => !diveIds.has(record.diveId));
+    snapshot.siteContributions.some((record) => !diveIds.has(record.diveId)) ||
+    snapshot.rawDiveRecords.some((record) => !diveIds.has(record.diveId)) ||
+    snapshot.dives.some(
+      (dive) =>
+        typeof dive.tripId === "string" &&
+        dive.tripId.length > 0 &&
+        !tripIds.has(dive.tripId),
+    );
   if (invalidReference) {
     throw new Error("The backup contains records linked to missing dives.");
   }
@@ -350,6 +456,12 @@ function validateSnapshotReferences(snapshot: LocalBackupSnapshot) {
   ].some((record) => record.blob.size !== record.size);
   if (damagedImage) {
     throw new Error("The backup contains incomplete image data.");
+  }
+  const damagedRaw = snapshot.rawDiveRecords.some(
+    (record) => record.rawBytes.size !== record.length,
+  );
+  if (damagedRaw) {
+    throw new Error("The backup contains incomplete raw dive data.");
   }
 }
 
@@ -391,6 +503,10 @@ function arraysPresent(stores: Partial<EncodedStores>) {
       Array.isArray(stores.composerPresets)) &&
     Array.isArray(stores.backgrounds) &&
     Array.isArray(stores.brandingAssets) &&
-    (stores.appPreferences === undefined || Array.isArray(stores.appPreferences))
+    (stores.appPreferences === undefined || Array.isArray(stores.appPreferences)) &&
+    (stores.rawDiveRecords === undefined || Array.isArray(stores.rawDiveRecords)) &&
+    (stores.deviceCheckpoints === undefined ||
+      Array.isArray(stores.deviceCheckpoints)) &&
+    (stores.trips === undefined || Array.isArray(stores.trips))
   );
 }

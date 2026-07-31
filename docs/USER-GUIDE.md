@@ -12,6 +12,13 @@ replace that application's cloud backup and does not write changes back to it.
 > DiveFrame in this browser. Keep the original source exports and a recent app
 > backup. The notice shown throughout the app links to **Settings**, where
 > backups can be exported.
+>
+> **Schema v8 erase-reimport:** The first launch of this IndexedDB version
+> deletes every local DiveFrame store on this browser origin, then recreates an
+> empty v8 schema (including BLE raw records, device checkpoints, trips, and
+> user GPS overlay fields). Re-import Shearwater / Subsurface / UDDF / FIT
+> exports after upgrading. A pre-upgrade backup does not migrate into v8
+> automatically.
 
 The full interface and exported-image controls support English, Traditional
 Chinese (Hong Kong), and Japanese. Change the interface language in **Settings**

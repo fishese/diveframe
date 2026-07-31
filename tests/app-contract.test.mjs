@@ -106,8 +106,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   const diveOnlyReset = storage.match(
     /export async function clearLocalDiveData\(\)[\s\S]+?(?=async function updateDive)/,
   )?.[0] ?? "";
-  assert.match(diveOnlyReset, /DIVES_STORE/);
-  assert.match(diveOnlyReset, /SOURCES_STORE/);
+  assert.match(diveOnlyReset, /storeNamesForErase\("dive-data-only"\)/);
   assert.doesNotMatch(diveOnlyReset, /ATTACHMENTS_STORE/);
   assert.doesNotMatch(diveOnlyReset, /COMPOSER_SETTINGS_STORE/);
   assert.match(backup, /diveframe-local-backup/);
@@ -208,7 +207,16 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composerPresets, /selectedPhotoId/);
   assert.match(composerPresets, /photoOffsetX/);
   assert.match(storage, /composerPresets/);
-  assert.match(storage, /DATABASE_VERSION = 7/);
+  assert.match(storage, /DATABASE_VERSION = 8/);
+  assert.match(storage, /createV8ObjectStores/);
+  assert.match(storage, /deleteObjectStore/);
+  assert.match(storage, /persistBleImport/);
+  assert.match(storage, /rawDiveRecords/);
+  assert.match(storage, /deviceCheckpoints/);
+  assert.match(storage, /storeNamesForErase/);
+  assert.match(backup, /BACKUP_VERSION = 3/);
+  assert.match(backup, /rawBytesBase64/);
+  assert.match(backup, /fingerprintBase64/);
   assert.match(backup, /composerPresets/);
   assert.doesNotMatch(settings, /overlayStyles/);
   assert.match(i18n, /Manage reusable backgrounds/);

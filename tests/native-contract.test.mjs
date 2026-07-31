@@ -134,13 +134,13 @@ test("download path uses dc_custom_open and does not claim persistence", async (
   assert.match(javaPlugin, /diveCaptured/);
   assert.match(javaPlugin, /parsedToJson|put\("parsed"/);
   assert.match(docs, /erase-reimport|IndexedDB/);
-  assert.match(docs, /without\s+persisting|does not write|not written|Nothing is written/i);
+  assert.match(docs, /spike still does not write|does not write|non-persisting|Nothing is written|persisted: false/i);
   assert.match(docs, /fingerprint|checkpoint/i);
   assert.match(docs, /Peregrine|Perdix 2/);
 });
 
 test("BLE normalizer exists and is wired into the spike without persistence", async () => {
-  const [normalizer, spike, docs, javaPlugin] = await Promise.all([
+  const [normalizer, spike, docs, javaPlugin, persist] = await Promise.all([
     readFile(new URL("../lib/ble-dive-normalizer.ts", import.meta.url), "utf8"),
     readFile(new URL("../native-spike/src/main.ts", import.meta.url), "utf8"),
     readFile(
@@ -148,10 +148,12 @@ test("BLE normalizer exists and is wired into the spike without persistence", as
       "utf8",
     ),
     readFile(files.javaPlugin, "utf8"),
+    readFile(new URL("../lib/ble-persist.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(normalizer, /shearwater-ble/);
-  assert.match(normalizer, /upsertLocalDives/);
+  assert.match(persist, /previewToImportedDive/);
+  assert.match(persist, /persistBleImport|prepareBlePersistFromFixture/);
   assert.match(normalizer, /proposedCanonicalId/);
   assert.match(spike, /normalizeBleDownloadPreview/);
   assert.match(spike, /saveCaptureFixture|Save full capture|save-capture/);

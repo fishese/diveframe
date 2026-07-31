@@ -83,7 +83,7 @@ test("BLE normalizer maps a parsed Perdix-shaped dive into an import preview", (
   assert.deepEqual(preview.tankPressuresStartBar, [113.2]);
   assert.deepEqual(preview.tankPressuresEndBar, [108.4]);
   assert.equal(preview.samples.length, 2);
-  assert.ok(preview.omissions.some((item) => /IndexedDB/i.test(item)));
+  assert.ok(preview.omissions.some((item) => /rawDiveRecords/i.test(item)));
   assert.equal(diveModel.gasMixLabel(21, 0), "Air");
 });
 

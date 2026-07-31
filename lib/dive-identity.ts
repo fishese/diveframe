@@ -3,6 +3,7 @@ import type { DiveSample } from "./dive-model";
 
 const SOURCE_PRIORITY: Record<DiveSource, number> = {
   shearwater: 0,
+  "shearwater-ble": 0,
   subsurface: 1,
   uddf: 2,
   fit: 3,

@@ -1,8 +1,9 @@
 # Android capture spike
 
 Status: **capture path validated on hardware** (research shell only). This is
-not a supported Bluetooth import feature in the production web app yet.
-Nothing is written to the web logbook or IndexedDB.
+not a supported Bluetooth import feature in the production web app yet. The
+spike still does not write the logbook; IndexedDB v8 stores and
+`persistBleImport` exist for product wiring later.
 
 ## Current status (2026-08-01)
 
@@ -18,7 +19,7 @@ Nothing is written to the web logbook or IndexedDB.
 | Map BLE capture → import-shaped preview (no persist) | Working |
 | Save full capture fixture (Downloads via MediaStore) | Working |
 | Offline BLE↔Cloud identity matcher (fixture-driven) | Working — 5/5 high matches on Perdix 2 |
-| IndexedDB / raw stores / durable checkpoints | **Blocked** (v8 erase-reimport gate) |
+| IndexedDB v8 + raw/checkpoint/trips stores | **Shipped** (destructive upgrade; spike still non-persisting) |
 | Production Import UI | Not started |
 
 ### Hardware exercised
@@ -42,12 +43,13 @@ Perdix 3 remains out of scope (different GATT service).
 
 ## Schema / erase-reimport gate
 
-Do **not** bump IndexedDB or break old saves in this spike. Persistence,
-raw-record stores, and any erase-reimport migration stay blocked until you say
-the new schema preparations are ready. Overlay fields for user GPS, trips, and
-a future generate-from-DiveFrame Subsurface/UDDF export are specified in
-`docs/2026-07-30-indexeddb-v8-planning.md` and ride that same future v8 reset.
-This checkpoint only returns capture payloads (and an import-shaped preview)
+IndexedDB v8 is live: destructive recreate of all stores, backup format v3,
+and store coverage in `lib/store-manifest.ts`. The spike UI still keeps
+`persisted: false` and does not call `persistBleImport` — wire that from the
+product import flow, not this research shell. Overlay fields for user GPS,
+trips, and a future generate-from-DiveFrame Subsurface/UDDF export are in
+`docs/2026-07-30-indexeddb-v8-planning.md`. This checkpoint only returns
+capture payloads (and an import-shaped preview)
 to the temporary native screen.
 
 ## Purpose
@@ -128,8 +130,9 @@ Settled for now:
 - BLE durable id = libdivecomputer fingerprint hex (not Cloud `DiveId`).
 - Cross-source link to Shearwater Cloud uses serial + device-local datetime +
   duration + max depth; do not invent a shared id from Cloud alone.
-- Provisional `DiveSource` label remains `shearwater-ble` until persistence
-  unblocks adding it to the real enum / upsert path.
+- `shearwater-ble` is a real `DiveSource`; product UI should call
+  `persistBleImport` / `persistBleCaptureFromFixture`, not the spike shell.
+- Spike download responses still set `persisted: false` until that UI exists.
 
 Report helper: `node scripts/report-ble-cloud-identity.mjs` (same env vars).
 
@@ -164,8 +167,9 @@ this workspace's space-containing path.
 The bridge exposes capability inspection, permission requests, scan/connect
 control, multi-dive download with fingerprint checkpoints, progress events,
 `dc_parser` summaries, an import-shaped preview normalizer, and cancellation.
-It does **not** call `upsertLocalDives`, advance a durable checkpoint store, or
-touch IndexedDB.
+It does **not** call `persistBleImport` / `upsertLocalDives`, advance a durable
+checkpoint store, or write the logbook from this research shell. IndexedDB v8
+and helpers are ready for the product import UI.
 
 ## Licensing gate
 

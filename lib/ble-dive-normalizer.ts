@@ -1,12 +1,12 @@
 import { gasMixLabel, type DiveSample, type GasMix } from "./dive-model";
 
 /**
- * Import-contract preview for BLE captures. Structurally aligned with
- * {@link import("./indexed-db").LocalImportedDive} but intentionally not typed
- * as that until persistence and DiveSource identity are unblocked — callers
- * must not pass these objects to {@code upsertLocalDives}.
+ * Import-contract preview for BLE captures. Aligns with
+ * {@link import("./indexed-db").LocalImportedDive}; use
+ * {@link import("./ble-persist").previewToImportedDive} /
+ * {@link import("./ble-persist").persistBleCaptureFromFixture} to write IndexedDB.
  */
-export const BLE_NORMALIZER_CONTRACT_VERSION = "0.1-spike";
+export const BLE_NORMALIZER_CONTRACT_VERSION = "1.0";
 
 export type BleDeviceContext = {
   vendor: string;
@@ -48,7 +48,7 @@ export type BleRawDiveInput = {
 
 export type BleNormalizedDivePreview = {
   contractVersion: string;
-  /** Provisional source label; not yet a {@code DiveSource} enum value. */
+  /** Source label matching {@code DiveSource}. */
   provisionalSource: "shearwater-ble";
   /**
    * Stable per-dive id for a given computer: fingerprint hex. Must not be
@@ -56,8 +56,7 @@ export type BleNormalizedDivePreview = {
    */
   sourceId: string;
   /**
-   * Preview of {@code canonicalDiveId} once {@code shearwater-ble} is a real
-   * {@code DiveSource}: {@code dive:v1:shearwater-ble:<fingerprint>}.
+   * Canonical dive id: {@code dive:v1:shearwater-ble:<fingerprint>}.
    */
   proposedCanonicalId: string;
   diveDate: string | null;
@@ -107,10 +106,9 @@ export function normalizeBleDivePreview(
   const parsed = dive.parsed;
   const parseOk = Boolean(parsed && parsed.parseStatus === 0);
   const omissions: string[] = [
-    "full-resolution profile samples (raw bytes only until persistence)",
+    "full-resolution profile samples retained in rawDiveRecords until reparse",
     "Shearwater Cloud DiveId / dive number",
     "site, location, buddy, notes, GPS from computer when absent in parser",
-    "not written to IndexedDB",
   ];
 
   if (!parsed || !parseOk) {

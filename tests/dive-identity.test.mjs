@@ -92,6 +92,14 @@ test("higher priority sources deterministically promote the canonical id", () =>
     identity.shouldPromoteCanonicalSource("uddf", ["fit"]),
     true,
   );
+  assert.equal(
+    identity.shouldPromoteCanonicalSource("shearwater-ble", ["subsurface"]),
+    true,
+  );
+  assert.equal(
+    identity.shouldPromoteCanonicalSource("subsurface", ["shearwater-ble"]),
+    false,
+  );
 });
 
 test("portable export identity prefers an explicit immutable activity id", () => {
