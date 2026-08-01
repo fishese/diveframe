@@ -304,6 +304,11 @@ without the necessary pressure and cylinder inputs.
 - DiveFrame can be installed as a PWA. An Android debug Capacitor APK ships the
   same web UI with optional classic Shearwater BLE import. It is not yet an
   iOS app or store-distributed application.
+- The Android WebView ignores `<a download>` blob URLs, so every export
+  (backup, added-site log, merged catalog, Subsurface copy, composer image,
+  share card) is streamed through a native plugin into the phone's public
+  Downloads folder, with an optional share-sheet handoff. The install card is
+  replaced by a storage-only card inside the app.
 
 Formal screen-reader, keyboard-only, contrast, and iOS/Android device matrices
 have not yet been completed.

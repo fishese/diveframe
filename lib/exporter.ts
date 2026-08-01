@@ -3,6 +3,7 @@ import type { Dive } from "./dive-model";
 import { renderComposition } from "./image-composer";
 import { ensureOverlayFont } from "./composer-fonts";
 import { exportFileName } from "./export-file-name";
+import { saveExportFile } from "./file-export";
 
 export function outputDimensions(
   image: { width: number; height: number },
@@ -38,12 +39,8 @@ export async function exportComposition(
       settings.jpegQuality,
     ),
   );
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `${exportFileName(dive.startDateTime)}.${settings.format === "png" ? "png" : "jpg"}`;
-  anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  const fileName = `${exportFileName(dive.startDateTime)}.${settings.format === "png" ? "png" : "jpg"}`;
+  return saveExportFile(blob, fileName, mime);
 }
 
 function ratioNumber(ratio: CanvasRatio, original: number) {

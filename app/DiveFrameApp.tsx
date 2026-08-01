@@ -71,6 +71,7 @@ import {
   type DiveSortOption,
 } from "@/lib/dive-list-model";
 import { resolveDiveMapCoordinates } from "@/lib/dive-gps";
+import { saveExportFile, savedFileNotice } from "@/lib/file-export";
 import { readJpegExifGps } from "@/lib/photo-exif-gps";
 import { chartAvailability, renderDiveChart } from "@/lib/chart-renderer";
 import { defaultComposerSettings } from "@/lib/composer-settings";
@@ -498,10 +499,12 @@ export function DiveFrameApp() {
           title: displaySite(selected, t("unnamedDiveSite")),
           text: `${t("dive")} ${selected.diveNumber ?? ""} · ${formatDate(selected.diveDate, language, t("dateUnknown"))}`,
         });
+        setStatus(t("shareCardReady"));
       } else {
-        downloadBlob(blob, fileName);
+        const saved = await saveExportFile(blob, fileName, "image/png");
+        const notice = savedFileNotice(saved, t);
+        setStatus(notice ?? t("shareCardReady"));
       }
-      setStatus(t("shareCardReady"));
     } catch (error) {
       if ((error as DOMException)?.name !== "AbortError") {
         setStatus(error instanceof Error ? error.message : t("shareCardFailed"));
@@ -2569,14 +2572,6 @@ function loadImage(blob: Blob) {
     };
     image.src = url;
   });
-}
-
-function downloadBlob(blob: Blob, fileName: string) {
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = fileName;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
 function displaySite(

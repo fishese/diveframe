@@ -237,6 +237,49 @@ test("BLE normalizer exists and is wired into the spike without persistence", as
   assert.doesNotMatch(sessionJava, /Math\.min\(limit, 50\)/);
 });
 
+test("exports are written natively because the WebView drops blob downloads", async () => {
+  const [plugin, mainActivity, helper, settings, app, composer, exporter, pwa] =
+    await Promise.all([
+      readFile(
+        new URL(
+          "../android/app/src/main/java/cc/fishese/divelog/FileExportPlugin.java",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+      readFile(files.mainActivity, "utf8"),
+      readFile(new URL("../lib/file-export.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/settings/SettingsApp.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/DiveFrameApp.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/compose/ComposerApp.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../lib/exporter.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/PwaInstall.tsx", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(plugin, /name = "FileExport"/);
+  assert.match(plugin, /MediaStore\.Downloads\.EXTERNAL_CONTENT_URI/);
+  assert.match(plugin, /beginFile|writeChunk|finishFile|abortFile/);
+  assert.match(plugin, /Base64\.decode/);
+  assert.match(plugin, /Intent\.ACTION_SEND/);
+  assert.match(mainActivity, /registerPlugin\(FileExportPlugin\.class\)/);
+
+  assert.match(helper, /Capacitor\.isPluginAvailable\("FileExport"\)/);
+  assert.match(helper, /blob\.slice\(offset/);
+  assert.match(helper, /abortFile/);
+  assert.match(helper, /link\.download = fileName/);
+
+  // No screen may fall back to an anchor download of its own.
+  for (const source of [settings, app, composer, exporter]) {
+    assert.doesNotMatch(source, /\.download = /);
+  }
+  assert.match(settings, /saveExportFile\(/);
+  assert.match(settings, /shareExportFile\(/);
+  assert.match(app, /saveExportFile\(/);
+  assert.match(exporter, /saveExportFile\(/);
+  assert.match(pwa, /Capacitor\.isNativePlatform\(\)/);
+  assert.match(pwa, /isNative \? t\("deviceStorageTitle"\)/);
+});
+
 function major(versionRange) {
   const match = String(versionRange).match(/\d+/);
   assert.ok(match, `expected a semver range, received ${versionRange}`);

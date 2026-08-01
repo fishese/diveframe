@@ -205,6 +205,14 @@ confirm any non-empty password. DiveFrame does not store or recover it.
 To replace an encrypted backup with an unencrypted one, import it and export a
 new backup without selecting password protection.
 
+In the Android app there is no browser download, so DiveFrame writes exports
+into the phone's public **Downloads** folder and the status line reports the
+file name. **Send a copy** then opens the Android share sheet to move the
+backup off the phone. **Import app data** uses the normal Android file picker,
+so a backup saved in Downloads can be re-imported directly. Composer images,
+share cards, added-site logs, and updated Subsurface files are saved the same
+way.
+
 When importing an encrypted backup, DiveFrame asks for its password before
 showing the normal preview. Unencrypted and older backups remain supported.
 DiveFrame validates the file and verifies the SHA-256 checksum
@@ -242,7 +250,8 @@ The Settings danger zone has three reset choices:
   information.
 
 Settings also shows estimated stored-media and exported-backup sizes.
-The install card reports whether browser storage is **persistent** or
+The storage card — **Install DiveFrame** on the web, **This device's logbook**
+in the Android app, which has no install prompt — reports whether storage is **persistent** or
 **best effort**. Best-effort data can be evicted under storage pressure, so
 keep a recent exported backup. The displayed browser quota is only an estimate.
 **Optimize stored photos** converts eligible dive photos and reusable

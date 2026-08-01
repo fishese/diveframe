@@ -49,10 +49,26 @@ Validated on device:
 - Android `FLAG_KEEP_SCREEN_ON` during BLE transfer only
 - Last N field / steppers auto-select the Last N radio
 
+### App file exports
+
+- The Android WebView silently ignores `<a download>` blob URLs, so **Export
+  app data** appeared to do nothing in the APK.
+- `FileExportPlugin` (`beginFile` / `writeChunk` / `finishFile` / `abortFile` /
+  `shareFile`) streams base64 chunks into the public Downloads folder via
+  MediaStore; `lib/file-export.ts` picks that path on Android and keeps the
+  anchor download on the web.
+- All exports go through it: backup, added-site log, merged catalog, updated
+  Subsurface file, composer image, share card. Status lines report the saved
+  file name, and **Send a copy** opens the Android share sheet after a backup.
+- The install card becomes a storage-only card (**This device's logbook**)
+  inside the app, so the PWA install blurb no longer shows on the APK.
+
 ## Resume checklist
 
 1. Smoke-test cancel-with-summary / crash-keeps-dives on device when convenient
    (do not `adb install` while a download is running).
+   Also smoke-test **Export app data** in the APK: the file must appear in
+   Downloads and re-import cleanly before editing trips / GPS on device.
 2. Next product steps:
    - Trip / user-GPS editors — **done** on `feature/trip-user-gps-editors`
      (list blocks, select mode, details assignment, user GPS + JPEG EXIF, alias

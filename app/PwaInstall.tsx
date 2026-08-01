@@ -1,7 +1,7 @@
 "use client";
 
 import { Capacitor } from "@capacitor/core";
-import { Check, Download, Share2 } from "lucide-react";
+import { Check, Download, Share2, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   getLocalStoragePersistenceStatus,
@@ -97,8 +97,13 @@ export function PwaInstallCard() {
   );
   const [installed, setInstalled] = useState(isInstalledApp);
   const [isIos] = useState(isIosDevice);
+  const [isNative, setIsNative] = useState(false);
   const [storageStatus, setStorageStatus] =
     useState<LocalStoragePersistenceStatus | null>(null);
+
+  useEffect(() => {
+    setIsNative(Capacitor.isNativePlatform());
+  }, []);
 
   useEffect(() => {
     const showInstall = () => setCanInstall(true);
@@ -141,15 +146,25 @@ export function PwaInstallCard() {
     <section className="settings-card pwa-settings">
       <div className="settings-card-heading">
         <span className="settings-icon">
-          {installed ? <Check size={21} /> : <Download size={21} />}
+          {isNative ? (
+            <Smartphone size={21} />
+          ) : installed ? (
+            <Check size={21} />
+          ) : (
+            <Download size={21} />
+          )}
         </span>
         <div>
-          <p className="eyebrow">{t("installableApp")}</p>
-          <h2>{t("installDiveFrame")}</h2>
+          <p className="eyebrow">
+            {isNative ? t("appStorage") : t("installableApp")}
+          </p>
+          <h2>{isNative ? t("deviceStorageTitle") : t("installDiveFrame")}</h2>
         </div>
       </div>
-      <p className="settings-note">{t("installDiveFrameDescription")}</p>
-      {installed ? (
+      {!isNative && (
+        <p className="settings-note">{t("installDiveFrameDescription")}</p>
+      )}
+      {isNative ? null : installed ? (
         <p className="pwa-install-status">
           <Check size={17} /> {t("appAlreadyInstalled")}
         </p>
@@ -164,7 +179,9 @@ export function PwaInstallCard() {
       ) : (
         <p className="settings-note">{t("installBrowserInstructions")}</p>
       )}
-      <p className="settings-note pwa-data-note">{t("installedDataNote")}</p>
+      <p className="settings-note pwa-data-note">
+        {isNative ? t("nativeDataNote") : t("installedDataNote")}
+      </p>
       {storageStatus && (
         <div className={`storage-persistence ${storageStatus.mode}`}>
           <strong>

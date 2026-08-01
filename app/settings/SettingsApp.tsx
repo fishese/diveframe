@@ -14,6 +14,7 @@ import {
   Languages,
   LoaderCircle,
   RefreshCw,
+  Share2,
   ShieldCheck,
   Trash2,
   Upload,
@@ -77,6 +78,12 @@ import {
   type DiveSiteCatalog,
 } from "@/lib/dive-site-catalog";
 import { validateDiveSitesFile } from "@/lib/dive-site-validation";
+import {
+  saveExportFile,
+  savedFileNotice,
+  shareExportFile,
+  type SavedExportFile,
+} from "@/lib/file-export";
 import { addDiveFrameSitesToSubsurface } from "@/lib/subsurface-site-export";
 import { useAppI18n } from "../AppI18nProvider";
 import { PwaInstallCard } from "../PwaInstall";
@@ -102,6 +109,9 @@ export function SettingsApp() {
   const [busy, setBusy] = useState(true);
   const [backupPreview, setBackupPreview] =
     useState<PreparedAppBackup | null>(null);
+  // Kept so the app can hand the freshly written backup to a share target;
+  // browsers already deliver the file through the download itself.
+  const [savedBackup, setSavedBackup] = useState<SavedExportFile | null>(null);
   const [encryptBackup, setEncryptBackup] = useState(false);
   const [exportPassword, setExportPassword] = useState("");
   const [exportPasswordConfirmation, setExportPasswordConfirmation] =
@@ -289,22 +299,26 @@ export function SettingsApp() {
       return;
     }
     setBusy(true);
+    setSavedBackup(null);
     setStatus(t("preparingBackup"));
     try {
       const backup = await createLocalAppBackup(
         encryptBackup ? exportPassword : undefined,
       );
       const date = new Date().toISOString().slice(0, 10);
-      downloadBlob(
+      setStatus(t("writingBackupFile"));
+      const saved = await saveExportFile(
         backup.blob,
         `diveframe-backup${backup.encrypted ? "-encrypted" : ""}-${date}.json`,
+        "application/json",
       );
+      setSavedBackup(saved.target === "device" ? saved : null);
       if (backup.encrypted) {
         setEncryptBackup(false);
         setExportPassword("");
         setExportPasswordConfirmation("");
       }
-      setStatus(t("backupComplete", backup.counts));
+      setStatus(withSavedFileNotice(t("backupComplete", backup.counts), saved));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("backupFailed"));
     } finally {
@@ -566,17 +580,21 @@ export function SettingsApp() {
       }
       const baseName =
         file.name.replace(/\.(?:ssrf|xml)$/i, "") || "subsurface-log";
-      downloadBlob(
+      const saved = await saveExportFile(
         new Blob([result.xml], { type: "application/xml;charset=utf-8" }),
         `${baseName}-diveframe-updated.ssrf`,
+        "application/xml",
       );
       setStatus(
-        t("subsurfaceExportComplete", {
-          dives: result.updatedDives,
-          sites: result.addedSites,
-          buddies: result.updatedBuddies,
-          notes: result.updatedNotes,
-        }),
+        withSavedFileNotice(
+          t("subsurfaceExportComplete", {
+            dives: result.updatedDives,
+            sites: result.addedSites,
+            buddies: result.updatedBuddies,
+            notes: result.updatedNotes,
+          }),
+          saved,
+        ),
       );
     } catch (error) {
       setStatus(
@@ -592,7 +610,7 @@ export function SettingsApp() {
     [catalog, reviewedSites],
   );
 
-  function exportAddedSiteLog() {
+  async function exportAddedSiteLog() {
     const includedSites = reviewedSites.filter((site) => site.name.trim());
     const payload = {
       schemaVersion: 1,
@@ -601,18 +619,56 @@ export function SettingsApp() {
         "Dive sites typed into DiveFrame. Review before adding them to data/dive-sites.json.",
       sites: includedSites.map(contributionForExport),
     };
-    downloadJson(payload, "diveframe-added-sites.json");
-    setStatus(t("reviewedSitesExported", { count: includedSites.length, suffix: includedSites.length === 1 ? "" : "s" }));
+    try {
+      const saved = await saveJson(payload, "diveframe-added-sites.json");
+      setStatus(
+        withSavedFileNotice(
+          t("reviewedSitesExported", {
+            count: includedSites.length,
+            suffix: includedSites.length === 1 ? "" : "s",
+          }),
+          saved,
+        ),
+      );
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("backupFailed"));
+    }
   }
 
-  function downloadMergedCatalog() {
-    downloadJson(mergePreview.catalog, "dive-sites.json");
-    setStatus(t("mergedCatalogDownloaded", {
-      added: mergePreview.added,
-      addedSuffix: mergePreview.added === 1 ? "" : "s",
-      skipped: mergePreview.skipped,
-      skippedSuffix: mergePreview.skipped === 1 ? "" : "s",
-    }));
+  async function downloadMergedCatalog() {
+    try {
+      const saved = await saveJson(mergePreview.catalog, "dive-sites.json");
+      setStatus(
+        withSavedFileNotice(
+          t("mergedCatalogDownloaded", {
+            added: mergePreview.added,
+            addedSuffix: mergePreview.added === 1 ? "" : "s",
+            skipped: mergePreview.skipped,
+            skippedSuffix: mergePreview.skipped === 1 ? "" : "s",
+          }),
+          saved,
+        ),
+      );
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("backupFailed"));
+    }
+  }
+
+  async function shareSavedBackup() {
+    if (!savedBackup) return;
+    try {
+      await shareExportFile(savedBackup, {
+        mimeType: "application/json",
+        title: savedBackup.fileName,
+      });
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("shareExportFailed"));
+    }
+  }
+
+  function withSavedFileNotice(message: string, saved: SavedExportFile) {
+    const notice = savedFileNotice(saved, t);
+    return notice ? `${message} ${notice}` : message;
   }
 
   async function chooseCatalog(event: ChangeEvent<HTMLInputElement>) {
@@ -867,7 +923,7 @@ export function SettingsApp() {
             <button
               type="button"
               className="button button-secondary"
-              onClick={exportAddedSiteLog}
+              onClick={() => void exportAddedSiteLog()}
               disabled={busy || reviewedSites.length === 0}
             >
               <Download size={16} /> {t("exportAdditionLog")}
@@ -875,7 +931,7 @@ export function SettingsApp() {
             <button
               type="button"
               className="button button-primary"
-              onClick={downloadMergedCatalog}
+              onClick={() => void downloadMergedCatalog()}
               disabled={busy || reviewedSites.length === 0}
             >
               <Download size={16} /> {t("downloadMergedCatalog")}
@@ -940,6 +996,16 @@ export function SettingsApp() {
             <button type="button" className="button button-primary" onClick={exportAppData} disabled={busy}>
               <Download size={16} /> {t("exportAppData")}
             </button>
+            {savedBackup?.target === "device" && savedBackup.shareable && (
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => void shareSavedBackup()}
+                disabled={busy}
+              >
+                <Share2 size={16} /> {t("shareExportedFile")}
+              </button>
+            )}
             <label className="button button-secondary">
               <RefreshCw size={16} /> {t("importAppData")}
               <input
@@ -1731,17 +1797,9 @@ function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function downloadJson(value: unknown, fileName: string) {
+function saveJson(value: unknown, fileName: string) {
   const blob = new Blob([JSON.stringify(value, null, 2)], {
     type: "application/json",
   });
-  downloadBlob(blob, fileName);
-}
-
-function downloadBlob(blob: Blob, fileName: string) {
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = fileName;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  return saveExportFile(blob, fileName, "application/json");
 }

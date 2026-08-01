@@ -23,6 +23,7 @@ import {
   reusableComposerSettings,
 } from "@/lib/composer-presets";
 import { exportComposition } from "@/lib/exporter";
+import { savedFileNotice } from "@/lib/file-export";
 import { loadPhoto, renderComposition } from "@/lib/image-composer";
 import type { AppTranslate, AppTranslationKey } from "@/lib/app-i18n";
 import {
@@ -402,8 +403,13 @@ export function ComposerApp() {
     setExporting(true);
     setStatus(t("renderingImage"));
     try {
-      await exportComposition(bitmap, normalized, settings, logo ?? undefined);
-      setStatus(t("exportReady"));
+      const saved = await exportComposition(
+        bitmap,
+        normalized,
+        settings,
+        logo ?? undefined,
+      );
+      setStatus(savedFileNotice(saved, t) ?? t("exportReady"));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("exportFailed"));
     } finally {
