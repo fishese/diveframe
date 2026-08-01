@@ -730,14 +730,8 @@ button {
 }
 
 .dive-row-checkbox {
+  color: var(--teal);
   display: flex;
-}
-
-.dive-row-checkbox input {
-  accent-color: var(--teal);
-  height: 15px;
-  pointer-events: none;
-  width: 15px;
 }
 
 .dive-row-trip-member {

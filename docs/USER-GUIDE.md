@@ -293,9 +293,9 @@ pin. When both exist, the map prefers computer coordinates; when only user GPS
 is set, the map uses that pin; when neither is present, the approximate
 name-based lookup still applies.
 
-In **Edit dive details**, enter latitude and longitude under **User GPS**, then
-**Save user GPS**, or choose **Clear user GPS** to remove the pin. **Use
-location from photo…** scans attached JPEG photos for EXIF coordinates and,
+On the dive's map card, tap **Edit location** to enter latitude and longitude,
+then **Save location**, or choose **Clear location** to remove the pin. **Use
+location from photo** scans attached JPEG photos for EXIF coordinates and,
 when found, saves them with a photo-exif source. Photos without GPS or
 unsupported formats are skipped with a status message.
 

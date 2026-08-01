@@ -22,6 +22,7 @@ import {
   Settings,
   Share2,
   Sparkles,
+  Square,
   Thermometer,
   Upload,
   Users,
@@ -623,25 +624,11 @@ export function DiveFrameApp() {
     });
   }
 
-  useEffect(() => {
-    setSelectedDiveIds((current) => {
-      if (!current.size) return current;
-      const next = new Set<string>();
-      let changed = false;
-      for (const id of current) {
-        if (visibleDiveIds.has(id)) {
-          next.add(id);
-        } else {
-          changed = true;
-        }
-      }
-      return changed ? next : current;
-    });
-  }, [visibleDiveIds]);
-
   function visibleSelectedDiveIds() {
     return Array.from(selectedDiveIds).filter((id) => visibleDiveIds.has(id));
   }
+
+  const visibleSelectedCount = visibleSelectedDiveIds().length;
 
   async function createTripFromSelection(name: string) {
     const ids = visibleSelectedDiveIds();
@@ -760,10 +747,11 @@ export function DiveFrameApp() {
 
   async function removeTrip(tripId: string) {
     const assignedCount = dives.filter((dive) => dive.tripId === tripId).length;
+    const tripName = trips.find((trip) => trip.id === tripId)?.name ?? "";
     const confirmed = window.confirm(
       assignedCount > 0
-        ? t("deleteTripConfirmWithDives", { count: assignedCount })
-        : t("deleteTripConfirm"),
+        ? t("deleteTripConfirmWithDives", { name: tripName, count: assignedCount })
+        : t("deleteTripConfirm", { name: tripName }),
     );
     if (!confirmed) return false;
     setBusy(true);
@@ -1086,7 +1074,7 @@ export function DiveFrameApp() {
                 {selectMode ? (
                   <div className="select-action-bar">
                     <span className="select-action-count">
-                      {t("selectedCount", { count: selectedDiveIds.size })}
+                      {t("selectedCount", { count: visibleSelectedCount })}
                     </span>
                     <div className="select-action-buttons">
                       {newTripFormOpen ? (
@@ -1107,7 +1095,7 @@ export function DiveFrameApp() {
                           <button
                             type="submit"
                             className="button button-secondary"
-                            disabled={busy || !newTripNameDraft.trim() || !selectedDiveIds.size}
+                            disabled={busy || !newTripNameDraft.trim() || !visibleSelectedCount}
                           >
                             {t("createTrip")}
                           </button>
@@ -1127,7 +1115,7 @@ export function DiveFrameApp() {
                           type="button"
                           className="button button-secondary"
                           onClick={() => setNewTripFormOpen(true)}
-                          disabled={busy || !selectedDiveIds.size}
+                          disabled={busy || !visibleSelectedCount}
                         >
                           {t("newTripOption")}
                         </button>
@@ -1139,7 +1127,7 @@ export function DiveFrameApp() {
                           setAddToTripDraft(value);
                           if (value) void addSelectionToTrip(value);
                         }}
-                        disabled={busy || !selectedDiveIds.size || !trips.length}
+                        disabled={busy || !visibleSelectedCount || !trips.length}
                         aria-label={t("addToExistingTrip")}
                       >
                         <option value="">{t("addToExistingTrip")}</option>
@@ -1153,7 +1141,7 @@ export function DiveFrameApp() {
                         type="button"
                         className="button button-quiet"
                         onClick={() => void removeSelectionFromTrip()}
-                        disabled={busy || !selectedDiveIds.size}
+                        disabled={busy || !visibleSelectedCount}
                       >
                         {t("removeFromTrip")}
                       </button>
@@ -1340,7 +1328,7 @@ function DiveRowButton({
     >
       {selectMode ? (
         <span className="dive-row-checkbox" aria-hidden="true">
-          <input type="checkbox" checked={isChecked} readOnly tabIndex={-1} />
+          {isChecked ? <CheckSquare size={15} /> : <Square size={15} />}
         </span>
       ) : null}
       <span className="dive-number">
@@ -1463,6 +1451,7 @@ function DiveDetail({
     )
     .join(", ");
   const mapCoordinates = resolveDiveMapCoordinates(dive);
+  const hasResolvedGps = mapCoordinates !== null;
   const [geocodeResult, setGeocodeResult] = useState<{
     query: string;
     location: MapLocation | null;
@@ -1632,9 +1621,8 @@ function DiveDetail({
   }
 
   useEffect(() => {
-    const latitude = dive.gpsEntryLat;
-    const longitude = dive.gpsEntryLng;
-    if (latitude === null || longitude === null) return;
+    if (!mapCoordinates) return;
+    const { latitude, longitude } = mapCoordinates;
     const sessionSites = nearbySessionCatalogSites(
       loadSessionDiveSiteCatalog()?.catalog ?? null,
       latitude,
@@ -1662,7 +1650,7 @@ function DiveDetail({
         }
       });
     return () => controller.abort();
-  }, [dive.gpsEntryLat, dive.gpsEntryLng, hasGps]);
+  }, [mapCoordinates?.latitude, mapCoordinates?.longitude]);
 
   return (
     <div className="detail-content">
@@ -2010,14 +1998,16 @@ function DiveDetail({
                       >
                         {t("renameTrip")}
                       </button>
-                      <button
-                        type="button"
-                        className="button button-quiet"
-                        disabled={busy}
-                        onClick={() => void onDeleteTrip(tripDraft)}
-                      >
-                        {t("deleteTrip")}
-                      </button>
+                      {tripDraft === (dive.tripId ?? "") ? (
+                        <button
+                          type="button"
+                          className="button button-quiet"
+                          disabled={busy}
+                          onClick={() => void onDeleteTrip(dive.tripId as string)}
+                        >
+                          {t("deleteTrip")}
+                        </button>
+                      ) : null}
                     </div>
                   )
                 ) : null}
@@ -2140,7 +2130,7 @@ function DiveDetail({
         </section>
       </div>
 
-      {hasGps && !dive.site && (
+      {hasResolvedGps && !dive.site && (
         <details
           className="card site-picker-card"
           open={sitePickerOpen}

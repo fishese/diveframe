@@ -23,6 +23,8 @@ export type DiveListItem = {
   resolvedLocation?: string | null;
   gpsEntryLat?: number | null;
   gpsEntryLng?: number | null;
+  userGpsLat?: number | null;
+  userGpsLng?: number | null;
   buddy?: string | null;
   notes?: string | null;
   sources?: string[];
@@ -109,13 +111,7 @@ export function diveMatchesListFilters(
     return false;
   }
 
-  if (
-    gpsOnly &&
-    (dive.gpsEntryLat === null ||
-      dive.gpsEntryLat === undefined ||
-      dive.gpsEntryLng === null ||
-      dive.gpsEntryLng === undefined)
-  ) {
+  if (gpsOnly && !diveHasGps(dive)) {
     return false;
   }
 
@@ -250,6 +246,19 @@ function diveTimestamp(value: string | null) {
 function diveDateDay(value: string | null) {
   if (!value) return null;
   return value.slice(0, 10);
+}
+
+function diveHasGps(dive: DiveListItem): boolean {
+  return (
+    (dive.gpsEntryLat !== null &&
+      dive.gpsEntryLat !== undefined &&
+      dive.gpsEntryLng !== null &&
+      dive.gpsEntryLng !== undefined) ||
+    (dive.userGpsLat !== null &&
+      dive.userGpsLat !== undefined &&
+      dive.userGpsLng !== null &&
+      dive.userGpsLng !== undefined)
+  );
 }
 
 function numberFrom(value: unknown) {

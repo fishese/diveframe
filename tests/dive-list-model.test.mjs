@@ -34,6 +34,8 @@ function dive(overrides = {}) {
     resolvedLocation: null,
     gpsEntryLat: null,
     gpsEntryLng: null,
+    userGpsLat: null,
+    userGpsLng: null,
     buddy: null,
     notes: null,
     sources: [],
@@ -91,6 +93,27 @@ test("dateFrom/dateTo and computerModel filter predicates", () => {
         computerModel: null,
       }),
     ),
+    false,
+  );
+});
+
+test("gpsOnly filter matches dives with only user GPS", () => {
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ userGpsLat: 22.1, userGpsLng: 114.1 }),
+      defaultFilters({ gpsOnly: true }),
+    ),
+    true,
+  );
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ gpsEntryLat: 22.1, gpsEntryLng: 114.1 }),
+      defaultFilters({ gpsOnly: true }),
+    ),
+    true,
+  );
+  assert.equal(
+    diveMatchesListFilters(dive(), defaultFilters({ gpsOnly: true })),
     false,
   );
 });
