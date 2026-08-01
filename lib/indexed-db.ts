@@ -12,6 +12,7 @@ import {
 } from "./dive-identity";
 import { normalizeShearwaterPressurePair } from "./gas-calculations";
 import { withOptimizedJpeg } from "./media-optimization";
+import type { DiveSiteCatalog } from "./dive-site-catalog";
 import {
   ALL_STORE_NAMES,
   STORE_NAMES,
@@ -194,6 +195,13 @@ export type LocalComposerPreset = {
   updatedAt: string;
 };
 
+export type LocalSupplementaryCatalog = {
+  id: "default";
+  label: string;
+  catalog: DiveSiteCatalog;
+  updatedAt: string;
+};
+
 export type LocalSiteContribution = {
   id: string;
   diveId: string;
@@ -228,12 +236,13 @@ export type LocalBackupSnapshot = {
   rawDiveRecords: LocalRawDiveRecord[];
   deviceCheckpoints: LocalDeviceCheckpoint[];
   trips: LocalTrip[];
+  supplementaryCatalog: LocalSupplementaryCatalog[];
 };
 
 export type BackupImportMode = "merge" | "replace";
 
 const DATABASE_NAME = "diveframe-local";
-export const DATABASE_VERSION = 8;
+export const DATABASE_VERSION = 9;
 const DIVES_STORE = STORE_NAMES.dives;
 const SOURCES_STORE = STORE_NAMES.sourceRecords;
 const ATTACHMENTS_STORE = STORE_NAMES.attachments;
@@ -246,6 +255,7 @@ const APP_PREFERENCES_STORE = STORE_NAMES.appPreferences;
 const RAW_DIVE_RECORDS_STORE = STORE_NAMES.rawDiveRecords;
 const DEVICE_CHECKPOINTS_STORE = STORE_NAMES.deviceCheckpoints;
 const TRIPS_STORE = STORE_NAMES.trips;
+const SUPPLEMENTARY_CATALOG_STORE = STORE_NAMES.supplementaryCatalog;
 
 export async function listLocalDives() {
   const database = await openDatabase();
@@ -749,6 +759,46 @@ export async function saveLocalAppPreferences(
   return saved;
 }
 
+export async function getLocalSupplementaryCatalog() {
+  const database = await openDatabase();
+  return request<LocalSupplementaryCatalog | undefined>(
+    database
+      .transaction(SUPPLEMENTARY_CATALOG_STORE)
+      .objectStore(SUPPLEMENTARY_CATALOG_STORE)
+      .get("default"),
+  ).then((record) => record ?? null);
+}
+
+export async function saveLocalSupplementaryCatalog(
+  label: string,
+  catalog: DiveSiteCatalog,
+) {
+  const saved: LocalSupplementaryCatalog = {
+    id: "default",
+    label: label.trim(),
+    catalog,
+    updatedAt: new Date().toISOString(),
+  };
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    SUPPLEMENTARY_CATALOG_STORE,
+    "readwrite",
+  );
+  transaction.objectStore(SUPPLEMENTARY_CATALOG_STORE).put(saved);
+  await transactionComplete(transaction);
+  return saved;
+}
+
+export async function clearLocalSupplementaryCatalog() {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    SUPPLEMENTARY_CATALOG_STORE,
+    "readwrite",
+  );
+  transaction.objectStore(SUPPLEMENTARY_CATALOG_STORE).delete("default");
+  await transactionComplete(transaction);
+}
+
 export async function updateLocalDiveSite(
   id: string,
   selection: {
@@ -1141,6 +1191,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     rawDiveRecords,
     deviceCheckpoints,
     trips,
+    supplementaryCatalog,
   ] = await Promise.all([
     request<LocalDive[]>(transaction.objectStore(DIVES_STORE).getAll()),
     request<SourceRecord[]>(transaction.objectStore(SOURCES_STORE).getAll()),
@@ -1168,6 +1219,9 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
       transaction.objectStore(DEVICE_CHECKPOINTS_STORE).getAll(),
     ),
     request<LocalTrip[]>(transaction.objectStore(TRIPS_STORE).getAll()),
+    request<LocalSupplementaryCatalog[]>(
+      transaction.objectStore(SUPPLEMENTARY_CATALOG_STORE).getAll(),
+    ),
   ]);
   return {
     dives: dives.map(hydrateDive),
@@ -1182,6 +1236,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     rawDiveRecords,
     deviceCheckpoints,
     trips,
+    supplementaryCatalog,
   };
 }
 
@@ -1204,6 +1259,7 @@ export async function importLocalBackupSnapshot(
     [RAW_DIVE_RECORDS_STORE, snapshot.rawDiveRecords],
     [DEVICE_CHECKPOINTS_STORE, snapshot.deviceCheckpoints],
     [TRIPS_STORE, snapshot.trips],
+    [SUPPLEMENTARY_CATALOG_STORE, snapshot.supplementaryCatalog],
   ];
   if (mode === "replace") {
     for (const [storeName] of recordsByStore) {
@@ -1733,14 +1789,17 @@ function openDatabase() {
     operation.onupgradeneeded = (event) => {
       const database = operation.result;
       const previousVersion = event.oldVersion;
-      // Solo-beta clean reset: delete every v7 (and older) store, then recreate
-      // the complete v8 schema. No record backfill.
-      if (previousVersion > 0 && previousVersion < DATABASE_VERSION) {
+      if (previousVersion > 0 && previousVersion < 8) {
         for (const storeName of Array.from(database.objectStoreNames)) {
           database.deleteObjectStore(storeName);
         }
+        createV8ObjectStores(database);
+      } else if (previousVersion === 0) {
+        createV8ObjectStores(database);
       }
-      createV8ObjectStores(database);
+      if (previousVersion < 9) {
+        createV9ObjectStores(database);
+      }
     };
     operation.onsuccess = () => resolve(operation.result);
     operation.onerror = () =>
@@ -1802,6 +1861,12 @@ function createV8ObjectStores(database: IDBDatabase) {
   }
   if (!database.objectStoreNames.contains(TRIPS_STORE)) {
     database.createObjectStore(TRIPS_STORE, { keyPath: "id" });
+  }
+}
+
+function createV9ObjectStores(database: IDBDatabase) {
+  if (!database.objectStoreNames.contains(SUPPLEMENTARY_CATALOG_STORE)) {
+    database.createObjectStore(SUPPLEMENTARY_CATALOG_STORE, { keyPath: "id" });
   }
 }
 

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 test("ships the DiveFrame import, map, photo, and composer workflow", async () => {
-  const [app, settings, about, composer, chart, imageComposer, templates, composerSettings, composerPresets, backup, fonts, i18n, gasCalculations, shearwater, subsurface, subsurfaceExport, uddf, fit, matching, storage, hosting, manifest, serviceWorker, pwaInstall, catalog, userGuide, license] = await Promise.all([
+  const [app, settings, about, composer, chart, imageComposer, templates, composerSettings, composerPresets, backup, fonts, i18n, gasCalculations, shearwater, subsurface, subsurfaceExport, uddf, fit, matching, storage, storeManifest, hosting, manifest, serviceWorker, pwaInstall, catalog, userGuide, license] = await Promise.all([
     readFile("app/DiveFrameApp.tsx", "utf8"),
     readFile("app/settings/SettingsApp.tsx", "utf8"),
     readFile("app/about/AboutApp.tsx", "utf8"),
@@ -24,6 +24,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     readFile("lib/parsers/fit.ts", "utf8"),
     readFile("lib/dive-matching.ts", "utf8"),
     readFile("lib/indexed-db.ts", "utf8"),
+    readFile("lib/store-manifest.ts", "utf8"),
     readFile(".openai/hosting.json", "utf8"),
     readFile("public/manifest.webmanifest", "utf8"),
     readFile("public/sw.js", "utf8"),
@@ -210,9 +211,24 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composerPresets, /selectedPhotoId/);
   assert.match(composerPresets, /photoOffsetX/);
   assert.match(storage, /composerPresets/);
-  assert.match(storage, /DATABASE_VERSION = 8/);
+  assert.match(storage, /DATABASE_VERSION = 9/);
+  assert.match(storage, /previousVersion < 8/);
+  assert.match(storage, /supplementaryCatalog/);
+  assert.doesNotMatch(
+    storage,
+    /previousVersion > 0 && previousVersion < DATABASE_VERSION/,
+  );
+  assert.match(storeManifest, /supplementaryCatalog/);
+  assert.match(
+    storeManifest,
+    /supplementaryCatalog:[\s\S]*eraseAllData: true[\s\S]*eraseDiveDataOnly: false/,
+  );
   assert.match(storage, /createV8ObjectStores/);
+  assert.match(storage, /createV9ObjectStores/);
   assert.match(storage, /deleteObjectStore/);
+  assert.match(storage, /getLocalSupplementaryCatalog/);
+  assert.match(storage, /saveLocalSupplementaryCatalog/);
+  assert.match(storage, /clearLocalSupplementaryCatalog/);
   assert.match(storage, /persistBleImport/);
   assert.match(storage, /getLocalDeviceCheckpoint/);
   assert.match(storage, /clearLocalDeviceCheckpoint/);

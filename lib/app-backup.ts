@@ -108,6 +108,7 @@ export async function createLocalAppBackup(password?: string) {
         snapshot.deviceCheckpoints.map(encodeDeviceCheckpoint),
       ),
       trips: snapshot.trips,
+      supplementaryCatalog: snapshot.supplementaryCatalog,
     },
   } satisfies Omit<BackupDocument, "integrity">;
   const document: BackupDocument = {
@@ -233,6 +234,7 @@ async function decodeSnapshot(document: BackupDocument): Promise<LocalBackupSnap
       (document.stores.deviceCheckpoints ?? []).map(decodeDeviceCheckpoint),
     ),
     trips: document.stores.trips ?? [],
+    supplementaryCatalog: document.stores.supplementaryCatalog ?? [],
   };
 }
 
@@ -383,6 +385,7 @@ function validateBackupDocument(value: unknown): BackupDocument {
     ["raw dive records", stores.rawDiveRecords ?? [], "id"],
     ["device checkpoints", stores.deviceCheckpoints ?? [], "id"],
     ["trips", stores.trips ?? [], "id"],
+    ["supplementary catalog", stores.supplementaryCatalog ?? [], "id"],
   ];
   for (const [label, records, key] of keyedStores) {
     const keys = records.map((record) =>
@@ -507,6 +510,8 @@ function arraysPresent(stores: Partial<EncodedStores>) {
     (stores.rawDiveRecords === undefined || Array.isArray(stores.rawDiveRecords)) &&
     (stores.deviceCheckpoints === undefined ||
       Array.isArray(stores.deviceCheckpoints)) &&
-    (stores.trips === undefined || Array.isArray(stores.trips))
+    (stores.trips === undefined || Array.isArray(stores.trips)) &&
+    (stores.supplementaryCatalog === undefined ||
+      Array.isArray(stores.supplementaryCatalog))
   );
 }

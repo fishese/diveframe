@@ -11,6 +11,7 @@ export const STORE_NAMES = {
   rawDiveRecords: "rawDiveRecords",
   deviceCheckpoints: "deviceCheckpoints",
   trips: "trips",
+  supplementaryCatalog: "supplementaryCatalog",
 } as const;
 
 export type StoreName = (typeof STORE_NAMES)[keyof typeof STORE_NAMES];
@@ -36,6 +37,7 @@ export const STORE_MANIFEST: Record<StoreName, StoreErasePolicy> = {
   rawDiveRecords: { eraseAllData: true, eraseDiveDataOnly: true },
   deviceCheckpoints: { eraseAllData: true, eraseDiveDataOnly: true },
   trips: { eraseAllData: true, eraseDiveDataOnly: true },
+  supplementaryCatalog: { eraseAllData: true, eraseDiveDataOnly: false },
 };
 
 export const ALL_STORE_NAMES: StoreName[] = Object.values(STORE_NAMES);
