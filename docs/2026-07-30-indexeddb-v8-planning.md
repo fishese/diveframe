@@ -5,8 +5,10 @@ destructive upgrade that deletes and recreates all stores. Backup format is v3.
 Store coverage lives in `lib/store-manifest.ts`. BLE persistence helpers are in
 `lib/ble-persist.ts` (`persistBleImport` / fixture prepare / incremental
 captured-dive prepare). Product Android BLE download into the logbook is
-shipped (`BleImportPanel`); trip/user-GPS editors can still land later. The
-native spike shell remains non-persisting for research.
+shipped (`BleImportPanel`). Trip assignment, user GPS editing (manual + JPEG
+EXIF), catalog alias display, and date/computer list filters shipped on the
+shared web/Android UI (2026-08-01). The native spike shell remains
+non-persisting for research.
 
 Capture status (2026-08): Shearwater classic BLE download + `dc_parser`
 summaries work on real Peregrine and Perdix 2 hardware, including multi-dive

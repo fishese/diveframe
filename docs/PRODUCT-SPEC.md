@@ -2,7 +2,7 @@
 
 Status: beta / pre-release review
 
-Last updated: 2026-07-30
+Last updated: 2026-08-01
 
 ## Review brief
 
@@ -80,9 +80,15 @@ weakening the web app or requiring a second logbook implementation.
   that.
 - Edit site, broader location, buddy, notes, category, cylinder choice, and
   manual start/end pressure.
+- Assign dives to trips from **Edit dive details** or bulk **Select dives** on
+  the logbook list (grouped trip blocks, session-only expand/collapse).
+- Set user GPS manually or from attached JPEG EXIF without overwriting computer
+  GPS; map display resolves computer → user → name geocode.
 - Select a nearby site from the bundled, session-loaded, or OpenStreetMap
-  suggestions.
+  suggestions, including choosing a catalog alias as the displayed site name.
 - Attach dive-specific photos.
+- Filter the logbook by date range, computer model, and existing chips; reset
+  clears filter controls but not the search box.
 
 ### Create a share image
 
@@ -236,13 +242,16 @@ normalized model. Profiles, pressure samples, cylinders, events, extensions,
 and unknown fields remain in the supplied document. DiveFrame does not
 currently write modified Shearwater, UDDF, or FIT files.
 
-**Planned (not implemented):** after IndexedDB v8 retains per-dive raw capture
-bytes and user overlays (see `docs/2026-07-30-indexeddb-v8-planning.md`),
-DiveFrame should be able to **generate** a new Subsurface `.ssrf` and possibly
-UDDF file from reparsed raw data plus DiveFrame overlays (site, buddy, notes,
-optional user GPS via `exportGpsPreference`, trip metadata as appropriate).
-That generator is separate from today's pass-through tool and must not mutate
-stored raw records.
+IndexedDB v8 retains per-dive raw capture bytes and user overlays (see
+`docs/2026-07-30-indexeddb-v8-planning.md`). Trip assignment, user GPS editing,
+and catalog alias display are productized in the shared web/Android UI.
+`exportGpsPreference` remains at default `"computer"` with no settings UI yet.
+
+**Planned (not implemented):** DiveFrame should be able to **generate** a new
+Subsurface `.ssrf` and possibly UDDF file from reparsed raw data plus DiveFrame
+overlays (site, buddy, notes, optional user GPS via `exportGpsPreference`, trip
+metadata as appropriate). That generator is separate from today's pass-through
+tool and must not mutate stored raw records.
 
 ## Licensing boundary
 

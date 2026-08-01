@@ -54,8 +54,11 @@ Validated on device:
 1. Smoke-test cancel-with-summary / crash-keeps-dives on device when convenient
    (do not `adb install` while a download is running).
 2. Next product steps:
-   - Trip / user-GPS editors (v8 fields exist; editors not productized)
-   - Site display: pick a catalog alias or type a custom name
+   - Trip / user-GPS editors — **done** on `feature/trip-user-gps-editors`
+     (list blocks, select mode, details assignment, user GPS + JPEG EXIF, alias
+     chips, date/computer filters + reset)
+   - Site display: pick a catalog alias or type a custom name — **done** on
+     same branch (alias expand-in-picker)
    - BLE hardening / failure matrix / privacy–LGPL release work
    - About copy: classic Shearwater BLE only (not Perdix 3)
 3. Parked / lower priority: pinned in-app download strip; PC Web Bluetooth;

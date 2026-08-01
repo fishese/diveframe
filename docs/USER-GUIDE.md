@@ -123,6 +123,40 @@ The normal search box also accepts two advanced source-matching operators:
 An operator can be followed by normal search words, such as
 `source:subsurface-only Maldives`.
 
+The search box also matches the dive computer model name when present.
+
+### Trips
+
+Use **Select dives** on the logbook list to assign multiple dives to a trip at
+once. While select mode is on, checkboxes appear on each dive row; tap a row to
+toggle its checkbox instead of opening the dive. The action bar offers **New
+trip…**, **Add to existing…**, and **Remove from trip**. Leaving select mode
+clears the selection. Actions apply only to dives that are currently visible
+after any active filters or search.
+
+Assigned dives appear under a trip header in the list. Members are indented
+beneath the header. Tap the header to expand or collapse the block for this
+session only; collapse state is not saved between reloads. Trip blocks and
+unassigned dives are ordered together using the current sort option.
+
+Open **Edit dive details** on a dive to assign or change its trip, create a
+new trip, rename the selected trip, or delete a trip. Deleting a trip that still
+has dives requires confirmation and clears those assignments first.
+
+### List filters
+
+Below the existing **Named**, **GPS**, and **Set in App** chips, open
+**Filters** for a collapsible panel with **From** and **To** date bounds
+(inclusive on dive date; leave a bound empty for no limit) and a **Computer**
+dropdown listing distinct computer models in the logbook.
+
+**Reset filters** clears the date range, computer choice, and chip filters. It
+does not clear the search box; use the search clear control for typed queries.
+
+When search or filters are active, a trip header appears only if at least one
+member matches. Non-matching members in that trip are hidden until filters and
+search clear.
+
 ## Dive profiles and gas use
 
 When a source log contains samples, each dive page shows a compact depth
@@ -251,6 +285,27 @@ present in the local logbook. For a dive with GPS, the separate site picker
 continues to offer the bundled catalog and OpenStreetMap results. A manually
 entered location is used by the existing approximate map lookup when the dive
 has no GPS.
+
+### User GPS and maps
+
+Computer GPS from an import (`gpsEntry*` fields) is never replaced by a user
+pin. When both exist, the map prefers computer coordinates; when only user GPS
+is set, the map uses that pin; when neither is present, the approximate
+name-based lookup still applies.
+
+In **Edit dive details**, enter latitude and longitude under **User GPS**, then
+**Save user GPS**, or choose **Clear user GPS** to remove the pin. **Use
+location from photo…** scans attached JPEG photos for EXIF coordinates and,
+when found, saves them with a photo-exif source. Photos without GPS or
+unsupported formats are skipped with a status message.
+
+### Catalog alias names
+
+In the nearby site picker, each catalog suggestion shows its main name. Tap the
+main control to save that name. Use the aliases control on that row to expand
+alias chips for the same catalog entry; choosing a chip saves the alias as the
+displayed site name while keeping the catalog link. Only one site's aliases are
+expanded at a time. Manual typing in **Edit dive details** remains unchanged.
 
 ## Available exports
 
