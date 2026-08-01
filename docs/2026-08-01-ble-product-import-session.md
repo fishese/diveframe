@@ -62,8 +62,8 @@ Validated on device:
 - All exports go through it: backup, added-site log, merged catalog, updated
   Subsurface file, composer image, share card. Status lines report the saved
   file name, and **Send a copy** opens the Android share sheet after a backup.
-- The install card becomes a storage-only card (**This device's logbook**)
-  inside the app, so the PWA install blurb no longer shows on the APK.
+- Settings now omits the browser install/storage card inside the APK, so the
+  PWA install blurb and the former **This device's logbook** card do not show.
 
 ## Dive-computer GPS (Shearwater GNSS)
 

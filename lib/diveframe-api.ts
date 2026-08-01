@@ -1,5 +1,8 @@
 import { Capacitor } from "@capacitor/core";
 
+/** Canonical hosted origin used for public, cross-origin app feeds. */
+export const DIVEFRAME_PRODUCTION_ORIGIN = "https://divelog.fishese.cc";
+
 /**
  * Absolute origin for same-site API helpers when the app is not served from
  * the Cloudflare Worker (Capacitor static shell, etc.). Empty means use
@@ -22,4 +25,9 @@ export function diveFrameApiOrigin(): string {
 export function diveFrameApiUrl(path: string) {
   const normalized = path.startsWith("/") ? path : `/${path}`;
   return `${diveFrameApiOrigin()}${normalized}`;
+}
+
+export function diveFrameProductionApiUrl(path: string) {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${DIVEFRAME_PRODUCTION_ORIGIN}${normalized}`;
 }

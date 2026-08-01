@@ -230,8 +230,12 @@ checksum are identified as legacy backups. Nothing is written until you choose:
   current device. When an ID matches, the complete backup record replaces the
   local record rather than merging individual fields. Photos with different
   IDs are both kept; an exact matching photo ID is replaced by the backup copy.
-- **Replace with backup** atomically clears DiveFrame's current local stores
-  and restores exactly what is in the backup. Review the preview and
+- **Replace dives with backup** replaces the dive-domain records (dives, source
+  mappings, site contributions, BLE raw/checkpoint records, and trips) while
+  keeping dive photos, composer settings and presets, reusable backgrounds,
+  logo, app preferences, and supplementary catalogs.
+- **Replace all data with backup** atomically clears DiveFrame's current local
+  stores and restores exactly what is in the backup. Review the preview and
   confirmation carefully because device-only records are removed.
 
 After import, the status message reports new, matching, retained, or removed
@@ -257,14 +261,12 @@ The Settings danger zone has three reset choices:
   no logbook information.
 
 Settings also shows estimated stored-media and exported-backup sizes.
-The storage card — **Install DiveFrame** on the web, **This device's logbook**
-in the Android app, which has no install prompt — reports whether browser
-storage is **persistent** or **best effort**. Best-effort browser data can be
-evicted under storage pressure, so keep a recent exported backup. In the
-Android app the card instead explains that the logbook lives in DiveFrame’s
-private app data (not Chrome site storage); uninstalling the app, using
-Android’s Clear storage / Clear data, or a factory reset will wipe it. The
-displayed quota is only an estimate.
+On the web, the **Install DiveFrame** card reports whether browser storage is
+**persistent** or **best effort**. Best-effort browser data can be evicted under
+storage pressure, so keep a recent exported backup. The Android APK omits this
+browser install/storage card; its logbook lives in private app data, and
+uninstalling the app, using Android’s Clear storage / Clear data, or a factory
+reset will wipe it.
 **Optimize stored photos** converts eligible dive photos and reusable
 backgrounds to JPEG at 88% quality, with a maximum longest edge of 2560 pixels.
 An image is only replaced when the result is smaller. This is a lossy,
@@ -355,13 +357,13 @@ can research public sources. Review the generated JSON before loading it.
 
 ### What's new
 
-Open **Settings → What's new** for recent DiveFrame updates. When online,
-DiveFrame fetches the latest feed and caches it on the device so the last
-saved entries remain visible offline. Each entry can include structured
-download links, such as an **Download Android APK** button that opens in a
-new browser tab. Expand the section to mark updates as seen; an indicator
-appears when a newer feed version is available than the last time you opened
-it.
+The global notice surfaces the latest unread update version. Open **Settings →
+What's new** to expand its one-line entry and mark it as seen. When online,
+DiveFrame fetches the latest feed from the hosted production site and caches it
+on the device so an unread entry remains available offline. Each entry can
+include structured download links, such as an **Download Android APK** button
+that opens in a new browser tab. Once marked seen, the What's new card is hidden
+until a newer version is available.
 
 ## Cropping a share image
 
@@ -384,8 +386,12 @@ name updates that preset. Presets are included in app-data backup and restore.
 The collapsed **Personal presets** section appears immediately below the
 template selector.
 
-If a dive has no attached or reusable photo, the included **Bubbles**
-background is selected automatically so the image can be composed immediately.
+The composer shows attached photos, reusable backgrounds, and the included
+**Bubbles** background as thumbnail choices. The first real image is selected
+automatically so the image can be composed immediately; click the selected
+thumbnail again to use a transparent background for an overlay-only export.
+When a dive has no attached photos, its gallery offers the same reusable and
+included backgrounds as quick-start tiles.
 It is also shown explicitly in **Settings → Reusable diving backgrounds**.
 Removing it there or from the composer saves a device-local preference, so it
 stays out of the composer until **Restore included Bubbles background** is

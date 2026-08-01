@@ -192,12 +192,14 @@ does not lock normal use of the local app.
 
 Import validates the structure, record keys, important dive references,
 encoded image data, and checksum before showing a non-destructive preview. The
-user then explicitly chooses **merge** or **replace**. During merge, the
-incoming complete record replaces the local record when their primary keys
-match, while destination-only records remain. Photos added separately on two
-devices normally have different IDs and are both kept; an exact matching photo
-ID is replaced by the backup copy. Replace atomically clears all local stores
-before writing the backup.
+user then explicitly chooses **merge**, **replace dives**, or **replace all
+data**. During merge, the incoming complete record replaces the local record
+when their primary keys match, while destination-only records remain. Photos
+added separately on two devices normally have different IDs and are both kept;
+an exact matching photo ID is replaced by the backup copy. Replace dives
+atomically clears only dive-domain stores while retaining photos, composer
+settings/presets, backgrounds, branding, preferences, and supplementary
+catalogs. Replace all data clears all local stores before writing the backup.
 
 Deterministic dive IDs prevent duplicate dives when two devices imported the
 same source logs. A collapsed manual review tool also identifies conservative
@@ -282,6 +284,11 @@ The included Bubbles starter image appears as an explicit item in the Settings
 background library. Removing it stores an app preference, excludes it from
 future composer sessions, and is covered by backup/restore. Settings provides a
 restore action; the bundled asset itself is not copied into IndexedDB.
+The composer presents dive photos, reusable backgrounds, and the bundled starter
+image as thumbnail choices, with a transparent background option for overlay-only
+exports.
+When a dive has no attached photos, the gallery offers reusable and bundled
+backgrounds as quick-start tiles into the composer.
 
 The composer provides five original templates, including two horizontal 16:9
 layouts. Templates are data-driven. Available controls include:
@@ -309,18 +316,21 @@ without the necessary pressure and cylinder inputs.
 - The composer keeps a reduced live preview visible while controls scroll.
 - Native controls, labels, status regions, keyboard-accessible buttons, and
   reduced-motion CSS are used where available.
-- A global beta notice warns that workflows may change and links directly to
-  the backup tools. Schema upgrades after IndexedDB v8 keep existing data.
+- A compact global beta notice remains as a fallback when there is no unread
+  release update. Schema upgrades after IndexedDB v8 keep existing data.
 - DiveFrame can be installed as a PWA. An Android debug Capacitor APK ships the
   same web UI with optional classic Shearwater BLE import. It is not yet an
   iOS app or store-distributed application.
 - The Android WebView ignores `<a download>` blob URLs, so every export
   (backup, added-site log, merged catalog, Subsurface copy, composer image,
   share card) is streamed through a native plugin into the phone's public
-  Downloads folder, with an optional share-sheet handoff. The install card is
-  replaced by a storage-only card inside the app.
-- **What's new** in Settings fetches a versioned JSON feed from
-  `/api/whats-new` (with Capacitor CORS intended on the hosted origin; deploy
+  Downloads folder, with an optional share-sheet handoff. Settings omits the
+  browser install/storage card inside the APK.
+- The global notice surfaces the latest unread **What's new** version; Settings
+  shows the compact unread entry and hides it after it is marked seen.
+  Settings fetches a versioned JSON feed from
+  `https://divelog.fishese.cc/api/whats-new` (with Capacitor CORS intended on
+  the hosted origin; deploy
   that header if the production worker still omits it), caches it in
   app preferences, and renders entries with optional structured links such as
   APK downloads. Offline use shows the last cached feed.
@@ -347,7 +357,8 @@ that build as store-ready or fully hardened:
 
 ### Completed trust and recoverability work
 
-1. Backup import preview with explicit **merge** and **replace** choices.
+1. Backup import preview with explicit **merge**, **replace dives**, and
+   **replace all data** choices.
 2. SHA-256 checksums, structural validation, and clear validation failures.
 3. Import reporting for added, matching, retained, and removed records.
 4. Manual duplicate comparison with user-directed merge or keep-separate

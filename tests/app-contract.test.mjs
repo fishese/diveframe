@@ -88,6 +88,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(backup, /restorePreparedAppBackup/);
   assert.match(settings, /restoreAppData\("merge"\)/);
   assert.match(settings, /restoreAppData\("replace"\)/);
+  assert.match(settings, /restoreAppData\("replace-dives"\)/);
+  assert.match(storage, /BackupImportMode = "merge" \| "replace" \| "replace-dives"/);
+  assert.match(storage, /storeNamesForErase\("dive-data-only"\)/);
   assert.match(storage, /attachmentsStore\.put\(\{ \.\.\.attachment, diveId: nextId \}\)/);
   assert.match(matching, /normalizeSerial/);
   assert.match(matching, /secondsApart > 300/);
@@ -200,6 +203,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(settings, /BundledBackgroundTile/);
   assert.match(composer, /loadBundledBackground/);
   assert.match(composer, /removeBundledBackground/);
+  assert.match(composer, /photo-choice-grid/);
+  assert.match(composer, /transparentPhotoChoice/);
   assert.match(composer, /personalComposerPresets/);
   assert.match(composer, /<option value="ja">/);
   assert.match(composer, /lastComposerOutputSize/);

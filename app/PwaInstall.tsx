@@ -2,7 +2,7 @@
 
 import { Capacitor } from "@capacitor/core";
 import { Check, Download, Share2, Smartphone } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   getLocalStoragePersistenceStatus,
   type LocalStoragePersistenceStatus,
@@ -22,6 +22,11 @@ declare global {
 
 const INSTALL_AVAILABLE_EVENT = "diveframe-install-available";
 const APP_INSTALLED_EVENT = "diveframe-app-installed";
+const subscribeToPlatform = () => () => undefined;
+const getClientMounted = () => true;
+const getServerMounted = () => false;
+const getClientNative = () => Capacitor.isNativePlatform();
+const getServerNative = () => false;
 
 function isInstalledApp() {
   if (typeof window === "undefined") return false;
@@ -97,13 +102,18 @@ export function PwaInstallCard() {
   );
   const [installed, setInstalled] = useState(isInstalledApp);
   const [isIos] = useState(isIosDevice);
-  const [isNative, setIsNative] = useState(false);
+  const mounted = useSyncExternalStore(
+    subscribeToPlatform,
+    getClientMounted,
+    getServerMounted,
+  );
+  const isNative = useSyncExternalStore(
+    subscribeToPlatform,
+    getClientNative,
+    getServerNative,
+  );
   const [storageStatus, setStorageStatus] =
     useState<LocalStoragePersistenceStatus | null>(null);
-
-  useEffect(() => {
-    setIsNative(Capacitor.isNativePlatform());
-  }, []);
 
   useEffect(() => {
     const showInstall = () => setCanInstall(true);
@@ -135,6 +145,10 @@ export function PwaInstallCard() {
       );
   }, []);
 
+  // Native builds intentionally skip this browser card; native storage copy
+  // (storageNativeApp) remains available to any future native-only surface.
+  if (!mounted || isNative) return null;
+
   async function install() {
     const prompt = window.__diveFrameInstallPrompt;
     if (!prompt) return;
@@ -165,10 +179,8 @@ export function PwaInstallCard() {
           <h2>{isNative ? t("deviceStorageTitle") : t("installDiveFrame")}</h2>
         </div>
       </div>
-      {!isNative && (
-        <p className="settings-note">{t("installDiveFrameDescription")}</p>
-      )}
-      {isNative ? null : installed ? (
+      <p className="settings-note">{t("installDiveFrameDescription")}</p>
+      {installed ? (
         <p className="pwa-install-status">
           <Check size={17} /> {t("appAlreadyInstalled")}
         </p>
@@ -184,25 +196,21 @@ export function PwaInstallCard() {
         <p className="settings-note">{t("installBrowserInstructions")}</p>
       )}
       <p className="settings-note pwa-data-note">
-        {isNative ? t("nativeDataNote") : t("installedDataNote")}
+        {t("installedDataNote")}
       </p>
       {storageStatus && (
         <div
-          className={`storage-persistence ${isNative ? "app" : storageStatus.mode}`}
+          className={`storage-persistence ${storageStatus.mode}`}
         >
           <strong>
-            {isNative
-              ? t("storageNativeApp")
-              : storageStatus.mode === "persistent"
+            {storageStatus.mode === "persistent"
                 ? t("storagePersistent")
                 : storageStatus.mode === "best-effort"
                   ? t("storageBestEffort")
                   : t("storagePersistenceUnavailable")}
           </strong>
           <span>
-            {isNative
-              ? t("storageNativeAppDescription")
-              : storageStatus.mode === "persistent"
+            {storageStatus.mode === "persistent"
                 ? t("storagePersistentDescription")
                 : storageStatus.mode === "best-effort"
                   ? t("storageBestEffortDescription")
@@ -210,7 +218,7 @@ export function PwaInstallCard() {
           </span>
           {storageStatus.usage !== null && storageStatus.quota !== null && (
             <small>
-              {t(isNative ? "appStorageUsage" : "browserStorageUsage", {
+              {t("browserStorageUsage", {
                 used: formatStorage(storageStatus.usage),
                 quota: formatStorage(storageStatus.quota),
               })}

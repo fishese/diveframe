@@ -5,6 +5,7 @@ import {
   Archive,
   ArrowLeft,
   Camera,
+  ChevronDown,
   Database,
   Download,
   FileJson,
@@ -24,6 +25,7 @@ import {
   type ChangeEvent,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import bundledCatalog from "@/data/dive-sites.json";
@@ -116,6 +118,7 @@ export function SettingsApp() {
   const [busy, setBusy] = useState(true);
   const [backupPreview, setBackupPreview] =
     useState<PreparedAppBackup | null>(null);
+  const backupPreviewRef = useRef<HTMLDivElement>(null);
   // Kept so the app can hand the freshly written backup to a share target;
   // browsers already deliver the file through the download itself.
   const [savedBackup, setSavedBackup] = useState<SavedExportFile | null>(null);
@@ -142,7 +145,34 @@ export function SettingsApp() {
   const [lastSeenWhatsNewVersion, setLastSeenWhatsNewVersion] = useState<
     string | null
   >(null);
-  const [whatsNewUnavailable, setWhatsNewUnavailable] = useState(false);
+
+  useEffect(() => {
+    if (!backupPreview) return;
+    const frame = window.requestAnimationFrame(() => {
+      backupPreviewRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [backupPreview]);
+
+  async function refreshWhatsNew() {
+    if (!navigator.onLine) {
+      return;
+    }
+
+    try {
+      const document = await fetchWhatsNewDocument();
+      setWhatsNew(document);
+      await saveLocalAppPreferences({
+        whatsNewCache: document,
+        whatsNewFetchedAt: new Date().toISOString(),
+      });
+    } catch {
+      // Cached What's new content remains available when the feed is offline.
+    }
+  }
 
   useEffect(() => {
     const migrated = takeSessionSupplementaryCatalogMigration();
@@ -196,28 +226,14 @@ export function SettingsApp() {
       .finally(() => setBusy(false));
   }, [t]);
 
-  async function refreshWhatsNew() {
-    if (!navigator.onLine) {
-      setWhatsNewUnavailable(true);
-      return;
-    }
-
-    try {
-      const document = await fetchWhatsNewDocument();
-      setWhatsNew(document);
-      setWhatsNewUnavailable(false);
-      await saveLocalAppPreferences({
-        whatsNewCache: document,
-        whatsNewFetchedAt: new Date().toISOString(),
-      });
-    } catch {
-      setWhatsNewUnavailable(true);
-    }
-  }
-
   async function markWhatsNewSeen() {
     if (!whatsNew || whatsNew.version === lastSeenWhatsNewVersion) return;
     setLastSeenWhatsNewVersion(whatsNew.version);
+    window.dispatchEvent(
+      new CustomEvent("diveframe-whats-new-seen", {
+        detail: { version: whatsNew.version },
+      }),
+    );
     try {
       await saveLocalAppPreferences({
         lastSeenWhatsNewVersion: whatsNew.version,
@@ -438,9 +454,16 @@ export function SettingsApp() {
     }
   }
 
-  async function restoreAppData(mode: "merge" | "replace") {
+  async function restoreAppData(mode: "merge" | "replace" | "replace-dives") {
     if (!backupPreview) return;
-    if (mode === "replace" && !window.confirm(t("replaceBackupConfirm"))) return;
+    if (
+      (mode === "replace" || mode === "replace-dives") &&
+      !window.confirm(
+        t(mode === "replace" ? "replaceBackupConfirm" : "replaceDivesBackupConfirm"),
+      )
+    ) {
+      return;
+    }
     setBusy(true);
     setStatus(t("restoringBackup"));
     try {
@@ -477,7 +500,9 @@ export function SettingsApp() {
       setStatus(
         mode === "merge"
           ? t("importMergeComplete", result)
-          : t("importReplaceComplete", result),
+          : mode === "replace-dives"
+            ? t("importReplaceDivesComplete", result)
+            : t("importReplaceComplete", result),
       );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("importBackupFailed"));
@@ -812,49 +837,34 @@ export function SettingsApp() {
           <p>{t("settingsDescription")}</p>
         </section>
 
-        <PwaInstallCard />
-
-        <section className="settings-card whats-new-settings">
-          <details
-            onToggle={(event) => {
-              if (event.currentTarget.open) void markWhatsNewSeen();
-            }}
-          >
-            <summary className="whats-new-summary">
-              <div className="settings-card-heading">
+        {whatsNew && whatsNew.version !== lastSeenWhatsNewVersion ? (
+          <section className="settings-card whats-new-settings">
+            <details
+              onToggle={(event) => {
+                if (event.currentTarget.open) void markWhatsNewSeen();
+              }}
+            >
+              <summary className="whats-new-summary">
                 <div>
-                  <h2>{t("whatsNew")}</h2>
-                  <p className="settings-note">{t("whatsNewDescription")}</p>
+                  <p className="eyebrow">{t("whatsNew")}</p>
+                  <strong>{whatsNew.entries[whatsNew.entries.length - 1]?.title ?? whatsNew.version}</strong>
+                  <small>v{whatsNew.version}</small>
                 </div>
-              </div>
-              {whatsNew &&
-                whatsNew.version !== lastSeenWhatsNewVersion && (
-                  <span className="whats-new-badge" aria-label={t("whatsNew")} />
-                )}
-            </summary>
-            <div className="whats-new-list">
-              {whatsNew ? (
-                whatsNew.entries.map((entry) => (
+                <span className="whats-new-badge" aria-label={t("whatsNew")} />
+              </summary>
+              <div className="whats-new-list">
+                {whatsNew.entries.map((entry) => (
                   <article className="whats-new-entry" key={entry.id}>
                     <h3>{entry.title}</h3>
-                    {entry.date && (
-                      <p className="settings-note">{entry.date}</p>
-                    )}
+                    {entry.date && <p className="settings-note">{entry.date}</p>}
                     <p className="settings-note">
                       {renderWhatsNewBody(entry.body).map((part, index) =>
                         part.type === "link" ? (
-                          <a
-                            href={part.href}
-                            key={`${entry.id}-body-${index}`}
-                            rel="noopener noreferrer"
-                            target="_blank"
-                          >
+                          <a href={part.href} key={`${entry.id}-body-${index}`} rel="noopener noreferrer" target="_blank">
                             {part.label}
                           </a>
                         ) : (
-                          <span key={`${entry.id}-body-${index}`}>
-                            {part.text}
-                          </span>
+                          <span key={`${entry.id}-body-${index}`}>{part.text}</span>
                         ),
                       )}
                     </p>
@@ -863,13 +873,7 @@ export function SettingsApp() {
                         {entry.links.map((link) => {
                           const href = sanitizeWhatsNewHref(link.href);
                           return href ? (
-                            <a
-                              className="button button-secondary"
-                              href={href}
-                              key={`${entry.id}-${href}`}
-                              rel="noopener noreferrer"
-                              target="_blank"
-                            >
+                            <a className="button button-secondary" href={href} key={`${entry.id}-${href}`} rel="noopener noreferrer" target="_blank">
                               {link.label}
                             </a>
                           ) : null;
@@ -877,17 +881,11 @@ export function SettingsApp() {
                       </div>
                     )}
                   </article>
-                ))
-              ) : (
-                <p className="settings-note">
-                  {whatsNewUnavailable
-                    ? t("whatsNewOffline")
-                    : t("whatsNewUpdated")}
-                </p>
-              )}
-            </div>
-          </details>
-        </section>
+                ))}
+              </div>
+            </details>
+          </section>
+        ) : null}
 
         <section className="settings-card language-settings">
           <div className="settings-card-heading">
@@ -912,6 +910,361 @@ export function SettingsApp() {
             </select>
           </label>
         </section>
+
+        <PwaInstallCard />
+
+        <section className="settings-card backup-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><Archive size={21} /></span>
+            <div>
+              <p className="eyebrow">{t("backupAndTransfer")}</p>
+              <h2>{t("backupTitle")}</h2>
+            </div>
+          </div>
+          <p className="settings-note">
+            {t("backupDescription")}
+          </p>
+          <label className="backup-encryption-toggle">
+            <input
+              type="checkbox"
+              checked={encryptBackup}
+              onChange={(event) => setEncryptBackup(event.target.checked)}
+              disabled={busy}
+            />
+            <span>
+              <strong>{t("passwordProtectBackup")}</strong>
+              <small>{t("passwordProtectBackupDescription")}</small>
+            </span>
+          </label>
+          {encryptBackup && (
+            <div className="backup-password-fields">
+              <label>
+                <span>{t("backupPassword")}</span>
+                <input
+                  type="password"
+                  value={exportPassword}
+                  autoComplete="new-password"
+                  onChange={(event) => setExportPassword(event.target.value)}
+                  disabled={busy}
+                />
+              </label>
+              <label>
+                <span>{t("confirmBackupPassword")}</span>
+                <input
+                  type="password"
+                  value={exportPasswordConfirmation}
+                  autoComplete="new-password"
+                  onChange={(event) => setExportPasswordConfirmation(event.target.value)}
+                  disabled={busy}
+                />
+              </label>
+            </div>
+          )}
+          <div className="settings-actions">
+            <button type="button" className="button button-primary" onClick={exportAppData} disabled={busy}>
+              <Download size={16} /> {t("exportAppData")}
+            </button>
+            {savedBackup?.target === "device" && savedBackup.shareable && (
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => void shareSavedBackup()}
+                disabled={busy}
+              >
+                <Share2 size={16} /> {t("shareExportedFile")}
+              </button>
+            )}
+            <label className="button button-secondary">
+              <RefreshCw size={16} /> {t("importAppData")}
+              <input
+                type="file"
+                accept=".json,application/json"
+                onChange={importAppData}
+                className="visually-hidden"
+                disabled={busy}
+              />
+            </label>
+          </div>
+          <p className="settings-note">
+            {t("importMergeNote")}
+          </p>
+          {encryptedBackupFile && (
+            <div className="encrypted-backup-unlock">
+              <ShieldCheck size={19} />
+              <div>
+                <strong>{t("unlockEncryptedBackup")}</strong>
+                <small>{encryptedBackupFile.name}</small>
+              </div>
+              <label>
+                <span>{t("backupPassword")}</span>
+                <input
+                  type="password"
+                  value={importPassword}
+                  autoComplete="current-password"
+                  onChange={(event) => setImportPassword(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") void unlockEncryptedBackup();
+                  }}
+                  disabled={busy}
+                />
+              </label>
+              <div className="settings-actions">
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={() => void unlockEncryptedBackup()}
+                  disabled={busy || !importPassword}
+                >
+                  {t("unlockBackup")}
+                </button>
+                <button
+                  type="button"
+                  className="button button-quiet"
+                  onClick={() => {
+                    setEncryptedBackupFile(null);
+                    setImportPassword("");
+                  }}
+                  disabled={busy}
+                >
+                  {t("cancel")}
+                </button>
+              </div>
+            </div>
+          )}
+          {backupPreview && (
+            <div
+              ref={backupPreviewRef}
+              className="backup-preview"
+              role="region"
+              aria-label={t("backupPreview")}
+            >
+              <div className="backup-preview-heading">
+                <ShieldCheck size={19} />
+                <div>
+                  <strong>{t("backupPreview")}</strong>
+                  <small>{backupPreview.fileName}</small>
+                </div>
+                <span
+                  className={
+                    backupPreview.integrity === "verified"
+                      ? "integrity-badge verified"
+                      : "integrity-badge legacy"
+                  }
+                >
+                  {backupPreview.encryption === "encrypted"
+                    ? t("encryptedAndVerified")
+                    : backupPreview.integrity === "verified"
+                      ? t("checksumVerified")
+                      : t("legacyBackup")}
+                </span>
+              </div>
+              <p>
+                {t("backupExportedAt", {
+                  date: new Date(backupPreview.exportedAt).toLocaleString(),
+                })}
+              </p>
+              <div className="backup-counts">
+                <span><strong>{backupPreview.counts.dives}</strong>{t("backupDives")}</span>
+                <span><strong>{backupPreview.counts.photos}</strong>{t("backupPhotos")}</span>
+                <span><strong>{backupPreview.counts.backgrounds}</strong>{t("backupBackgrounds")}</span>
+                <span><strong>{backupPreview.counts.presets}</strong>{t("backupPresets")}</span>
+              </div>
+              <p className="settings-note">
+                {t("backupImpact", backupImpact(backupPreview))}
+              </p>
+              <p className="settings-note">
+                {t("backupMergeConflictRule")}
+              </p>
+              <p className="settings-note">
+                {t("replaceDivesBackupDescription")}
+              </p>
+              <div className="settings-actions">
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={() => void restoreAppData("merge")}
+                  disabled={busy}
+                >
+                  <GitMerge size={16} /> {t("mergeBackup")}
+                </button>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  onClick={() => void restoreAppData("replace-dives")}
+                  disabled={busy}
+                >
+                  <RefreshCw size={16} /> {t("replaceDivesWithBackup")}
+                </button>
+                <button
+                  type="button"
+                  className="button button-danger-secondary"
+                  onClick={() => void restoreAppData("replace")}
+                  disabled={busy}
+                >
+                  <RefreshCw size={16} /> {t("replaceWithBackup")}
+                </button>
+                <button
+                  type="button"
+                  className="button button-quiet"
+                  onClick={() => setBackupPreview(null)}
+                  disabled={busy}
+                >
+                  {t("cancel")}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="settings-card dive-defaults-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><Gauge size={21} /></span>
+            <div>
+              <p className="eyebrow">{t("diveDefaults")}</p>
+              <h2>{t("defaultTankSize")}</h2>
+            </div>
+          </div>
+          <p className="settings-note">{t("defaultTankDescription")}</p>
+          <label className="language-select">
+            <span>{t("tankSize")}</span>
+            <select
+              value={defaultCylinderPresetId}
+              onChange={(event) =>
+                void chooseDefaultCylinder(event.target.value)
+              }
+            >
+              {CYLINDER_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </section>
+
+        <div className="settings-group composer-settings-group">
+          <div className="settings-group-heading">
+            <span className="settings-icon"><ImageIcon size={21} /></span>
+            <div>
+              <p className="eyebrow">{t("imageComposer")}</p>
+              <h2>{t("imageComposerSettings")}</h2>
+            </div>
+          </div>
+
+          <section className="settings-card branding-settings">
+            <div className="settings-card-heading">
+              <span className="settings-icon"><ImageIcon size={21} /></span>
+              <div>
+                <p className="eyebrow">{t("imageComposer")}</p>
+                <h2>{t("overlayLogo")}</h2>
+              </div>
+            </div>
+            <p className="settings-note">
+              {t("overlayLogoDescription")}
+            </p>
+            {logo ? (
+              <div className="logo-settings-row">
+                <LogoPreview logo={logo} />
+                <div className="logo-settings-details">
+                  <strong>{logo.fileName}</strong>
+                  <small>{Math.max(1, Math.round(logo.size / 1024))} KB</small>
+                  <div className="settings-actions">
+                    <label className="button button-secondary">
+                      <Upload size={16} /> {t("replaceLogo")}
+                      <input
+                        type="file"
+                        accept=".png,.svg,image/png,image/svg+xml"
+                        onChange={chooseLogo}
+                        className="visually-hidden"
+                        disabled={busy}
+                      />
+                    </label>
+                    <button type="button" className="button button-quiet" onClick={removeLogo} disabled={busy}>
+                      <Trash2 size={16} /> {t("remove")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <label className="button button-primary branding-upload">
+                <Upload size={16} /> {t("addLogo")}
+                <input
+                  type="file"
+                  accept=".png,.svg,image/png,image/svg+xml"
+                  onChange={chooseLogo}
+                  className="visually-hidden"
+                  disabled={busy}
+                />
+              </label>
+            )}
+          </section>
+
+          <section className="settings-card background-settings">
+            <div className="settings-card-heading">
+              <span className="settings-icon"><Camera size={21} /></span>
+              <div>
+                <p className="eyebrow">{t("imageComposer")}</p>
+                <h2>{t("reusableBackgrounds")}</h2>
+              </div>
+            </div>
+            <p className="settings-note">
+              {t("reusableBackgroundsDescription")}
+            </p>
+            <label className="button button-primary">
+              <Upload size={16} /> {t("addBackgrounds")}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={chooseBackgrounds}
+                className="visually-hidden"
+                disabled={busy}
+              />
+            </label>
+            {bundledBackgroundVisible || backgrounds.length > 0 ? (
+              <div className="background-library">
+                {bundledBackgroundVisible && (
+                  <BundledBackgroundTile
+                    onRemove={() => void removeBundledBackground()}
+                  />
+                )}
+                {backgrounds.map((background) => (
+                  <BackgroundTile
+                    key={background.id}
+                    background={background}
+                    onRemove={() => removeBackground(background.id)}
+                    onRename={(name) => renameBackground(background.id, name)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="empty-compact">{t("noBackgrounds")}</p>
+            )}
+            {!bundledBackgroundVisible && (
+              <button
+                type="button"
+                className="button button-quiet restore-bundled-background"
+                onClick={() => void restoreBundledBackground()}
+                disabled={busy}
+              >
+                <RefreshCw size={16} /> {t("restoreIncludedBackground")}
+              </button>
+            )}
+          </section>
+        </div>
+
+        <details className="settings-advanced">
+          <summary className="settings-advanced-summary">
+            <div className="settings-card-heading">
+              <span className="settings-icon"><Database size={21} /></span>
+              <div>
+                <p className="eyebrow">{t("advancedSettings")}</p>
+                <h2>{t("advancedSettingsTitle")}</h2>
+              </div>
+            </div>
+            <span className="settings-advanced-toggle">{t("advancedSettingsDescription")} <ChevronDown size={17} /></span>
+          </summary>
+          <div className="settings-advanced-body">
 
         <section className="settings-card catalog-settings">
           <div className="settings-card-heading">
@@ -1080,195 +1433,6 @@ export function SettingsApp() {
           </p>
         </section>
 
-        <section className="settings-card backup-settings">
-          <div className="settings-card-heading">
-            <span className="settings-icon"><Archive size={21} /></span>
-            <div>
-              <p className="eyebrow">{t("portableBackup")}</p>
-              <h2>{t("backupTitle")}</h2>
-            </div>
-          </div>
-          <p className="settings-note">
-            {t("backupDescription")}
-          </p>
-          <label className="backup-encryption-toggle">
-            <input
-              type="checkbox"
-              checked={encryptBackup}
-              onChange={(event) => setEncryptBackup(event.target.checked)}
-              disabled={busy}
-            />
-            <span>
-              <strong>{t("passwordProtectBackup")}</strong>
-              <small>{t("passwordProtectBackupDescription")}</small>
-            </span>
-          </label>
-          {encryptBackup && (
-            <div className="backup-password-fields">
-              <label>
-                <span>{t("backupPassword")}</span>
-                <input
-                  type="password"
-                  value={exportPassword}
-                  autoComplete="new-password"
-                  onChange={(event) => setExportPassword(event.target.value)}
-                  disabled={busy}
-                />
-              </label>
-              <label>
-                <span>{t("confirmBackupPassword")}</span>
-                <input
-                  type="password"
-                  value={exportPasswordConfirmation}
-                  autoComplete="new-password"
-                  onChange={(event) =>
-                    setExportPasswordConfirmation(event.target.value)
-                  }
-                  disabled={busy}
-                />
-              </label>
-            </div>
-          )}
-          <div className="settings-actions">
-            <button type="button" className="button button-primary" onClick={exportAppData} disabled={busy}>
-              <Download size={16} /> {t("exportAppData")}
-            </button>
-            {savedBackup?.target === "device" && savedBackup.shareable && (
-              <button
-                type="button"
-                className="button button-secondary"
-                onClick={() => void shareSavedBackup()}
-                disabled={busy}
-              >
-                <Share2 size={16} /> {t("shareExportedFile")}
-              </button>
-            )}
-            <label className="button button-secondary">
-              <RefreshCw size={16} /> {t("importAppData")}
-              <input
-                type="file"
-                accept=".json,application/json"
-                onChange={importAppData}
-                className="visually-hidden"
-                disabled={busy}
-              />
-            </label>
-          </div>
-          <p className="settings-note">
-            {t("importMergeNote")}
-          </p>
-          {encryptedBackupFile && (
-            <div className="encrypted-backup-unlock">
-              <ShieldCheck size={19} />
-              <div>
-                <strong>{t("unlockEncryptedBackup")}</strong>
-                <small>{encryptedBackupFile.name}</small>
-              </div>
-              <label>
-                <span>{t("backupPassword")}</span>
-                <input
-                  type="password"
-                  value={importPassword}
-                  autoComplete="current-password"
-                  onChange={(event) => setImportPassword(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") void unlockEncryptedBackup();
-                  }}
-                  disabled={busy}
-                />
-              </label>
-              <div className="settings-actions">
-                <button
-                  type="button"
-                  className="button button-primary"
-                  onClick={() => void unlockEncryptedBackup()}
-                  disabled={busy || !importPassword}
-                >
-                  {t("unlockBackup")}
-                </button>
-                <button
-                  type="button"
-                  className="button button-quiet"
-                  onClick={() => {
-                    setEncryptedBackupFile(null);
-                    setImportPassword("");
-                  }}
-                  disabled={busy}
-                >
-                  {t("cancel")}
-                </button>
-              </div>
-            </div>
-          )}
-          {backupPreview && (
-            <div className="backup-preview" role="region" aria-label={t("backupPreview")}>
-              <div className="backup-preview-heading">
-                <ShieldCheck size={19} />
-                <div>
-                  <strong>{t("backupPreview")}</strong>
-                  <small>{backupPreview.fileName}</small>
-                </div>
-                <span
-                  className={
-                    backupPreview.integrity === "verified"
-                      ? "integrity-badge verified"
-                      : "integrity-badge legacy"
-                  }
-                >
-                  {backupPreview.encryption === "encrypted"
-                    ? t("encryptedAndVerified")
-                    : backupPreview.integrity === "verified"
-                      ? t("checksumVerified")
-                    : t("legacyBackup")}
-                </span>
-              </div>
-              <p>
-                {t("backupExportedAt", {
-                  date: new Date(backupPreview.exportedAt).toLocaleString(),
-                })}
-              </p>
-              <div className="backup-counts">
-                <span><strong>{backupPreview.counts.dives}</strong>{t("backupDives")}</span>
-                <span><strong>{backupPreview.counts.photos}</strong>{t("backupPhotos")}</span>
-                <span><strong>{backupPreview.counts.backgrounds}</strong>{t("backupBackgrounds")}</span>
-                <span><strong>{backupPreview.counts.presets}</strong>{t("backupPresets")}</span>
-              </div>
-              <p className="settings-note">
-                {t("backupImpact", backupImpact(backupPreview))}
-              </p>
-              <p className="settings-note">
-                {t("backupMergeConflictRule")}
-              </p>
-              <div className="settings-actions">
-                <button
-                  type="button"
-                  className="button button-primary"
-                  onClick={() => void restoreAppData("merge")}
-                  disabled={busy}
-                >
-                  <GitMerge size={16} /> {t("mergeBackup")}
-                </button>
-                <button
-                  type="button"
-                  className="button button-danger-secondary"
-                  onClick={() => void restoreAppData("replace")}
-                  disabled={busy}
-                >
-                  <RefreshCw size={16} /> {t("replaceWithBackup")}
-                </button>
-                <button
-                  type="button"
-                  className="button button-quiet"
-                  onClick={() => setBackupPreview(null)}
-                  disabled={busy}
-                >
-                  {t("cancel")}
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-
         <section className="settings-card duplicate-settings">
           <div className="settings-card-heading">
             <span className="settings-icon"><GitMerge size={21} /></span>
@@ -1423,133 +1587,6 @@ export function SettingsApp() {
           </p>
         </section>
 
-        <section className="settings-card dive-defaults-settings">
-          <div className="settings-card-heading">
-            <span className="settings-icon"><Gauge size={21} /></span>
-            <div>
-              <p className="eyebrow">{t("diveDefaults")}</p>
-              <h2>{t("defaultTankSize")}</h2>
-            </div>
-          </div>
-          <p className="settings-note">{t("defaultTankDescription")}</p>
-          <label className="language-select">
-            <span>{t("tankSize")}</span>
-            <select
-              value={defaultCylinderPresetId}
-              onChange={(event) =>
-                void chooseDefaultCylinder(event.target.value)
-              }
-            >
-              {CYLINDER_PRESETS.map((preset) => (
-                <option key={preset.id} value={preset.id}>
-                  {preset.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </section>
-
-        <section className="settings-card branding-settings">
-          <div className="settings-card-heading">
-            <span className="settings-icon"><ImageIcon size={21} /></span>
-            <div>
-              <p className="eyebrow">{t("imageComposer")}</p>
-              <h2>{t("overlayLogo")}</h2>
-            </div>
-          </div>
-          <p className="settings-note">
-            {t("overlayLogoDescription")}
-          </p>
-          {logo ? (
-            <div className="logo-settings-row">
-              <LogoPreview logo={logo} />
-              <div className="logo-settings-details">
-                <strong>{logo.fileName}</strong>
-                <small>{Math.max(1, Math.round(logo.size / 1024))} KB</small>
-                <div className="settings-actions">
-                  <label className="button button-secondary">
-                    <Upload size={16} /> {t("replaceLogo")}
-                    <input
-                      type="file"
-                      accept=".png,.svg,image/png,image/svg+xml"
-                      onChange={chooseLogo}
-                      className="visually-hidden"
-                      disabled={busy}
-                    />
-                  </label>
-                  <button type="button" className="button button-quiet" onClick={removeLogo} disabled={busy}>
-                    <Trash2 size={16} /> {t("remove")}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <label className="button button-primary branding-upload">
-              <Upload size={16} /> {t("addLogo")}
-              <input
-                type="file"
-                accept=".png,.svg,image/png,image/svg+xml"
-                onChange={chooseLogo}
-                className="visually-hidden"
-                disabled={busy}
-              />
-            </label>
-          )}
-        </section>
-
-        <section className="settings-card background-settings">
-          <div className="settings-card-heading">
-            <span className="settings-icon"><Camera size={21} /></span>
-            <div>
-              <p className="eyebrow">{t("imageComposer")}</p>
-              <h2>{t("reusableBackgrounds")}</h2>
-            </div>
-          </div>
-          <p className="settings-note">
-            {t("reusableBackgroundsDescription")}
-          </p>
-          <label className="button button-primary">
-            <Upload size={16} /> {t("addBackgrounds")}
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={chooseBackgrounds}
-              className="visually-hidden"
-              disabled={busy}
-            />
-          </label>
-          {bundledBackgroundVisible || backgrounds.length > 0 ? (
-            <div className="background-library">
-              {bundledBackgroundVisible && (
-                <BundledBackgroundTile
-                  onRemove={() => void removeBundledBackground()}
-                />
-              )}
-              {backgrounds.map((background) => (
-                <BackgroundTile
-                  key={background.id}
-                  background={background}
-                  onRemove={() => removeBackground(background.id)}
-                  onRename={(name) => renameBackground(background.id, name)}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="empty-compact">{t("noBackgrounds")}</p>
-          )}
-          {!bundledBackgroundVisible && (
-            <button
-              type="button"
-              className="button button-quiet restore-bundled-background"
-              onClick={() => void restoreBundledBackground()}
-              disabled={busy}
-            >
-              <RefreshCw size={16} /> {t("restoreIncludedBackground")}
-            </button>
-          )}
-        </section>
-
         <section className="settings-card storage-settings">
           <div className="settings-card-heading">
             <span className="settings-icon"><Database size={21} /></span>
@@ -1634,6 +1671,9 @@ export function SettingsApp() {
             </div>
           </div>
         </section>
+
+          </div>
+        </details>
 
         <div className="settings-status" role="status">
           {busy && <LoaderCircle size={15} className="spin" />}

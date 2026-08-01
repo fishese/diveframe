@@ -23,6 +23,16 @@ const {
   renderWhatsNewBody,
 } = whatsNew;
 
+test("fetches the release feed from the hosted production origin", async () => {
+  const whatsNewSource = await readFile("lib/whats-new.ts", "utf8");
+  assert.match(
+    whatsNewSource,
+    /diveFrameProductionApiUrl\("\/api\/whats-new"\)/,
+  );
+  const apiSource = await readFile("lib/diveframe-api.ts", "utf8");
+  assert.match(apiSource, /https:\/\/divelog\.fishese\.cc/);
+});
+
 test("accepts document with APK download link", () => {
   const doc = validateWhatsNewDocument({
     version: "2026-08-01",

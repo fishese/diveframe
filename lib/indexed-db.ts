@@ -243,7 +243,7 @@ export type LocalBackupSnapshot = {
   supplementaryCatalog: LocalSupplementaryCatalog[];
 };
 
-export type BackupImportMode = "merge" | "replace";
+export type BackupImportMode = "merge" | "replace" | "replace-dives";
 
 const DATABASE_NAME = "diveframe-local";
 export const DATABASE_VERSION = 9;
@@ -879,6 +879,33 @@ export async function updateLocalDiveSite(
   return updated;
 }
 
+export async function clearLocalDiveSiteOverride(id: string) {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [DIVES_STORE, SITE_CONTRIBUTIONS_STORE],
+    "readwrite",
+  );
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
+  const dive = await request<LocalDive | undefined>(divesStore.get(id));
+  if (!dive) {
+    transaction.abort();
+    throw new Error("Dive not found in this browser.");
+  }
+
+  const updated: LocalDive = {
+    ...dive,
+    userSite: null,
+    userSiteSource: null,
+    userSiteCatalogId: null,
+    userSiteUpdatedAt: null,
+  };
+  divesStore.put(updated);
+  contributionsStore.delete(id);
+  await transactionComplete(transaction);
+  return updated;
+}
+
 export async function updateLocalDiveDetails(
   id: string,
   details: {
@@ -1280,24 +1307,41 @@ export async function importLocalBackupSnapshot(
     [TRIPS_STORE, snapshot.trips],
     [SUPPLEMENTARY_CATALOG_STORE, snapshot.supplementaryCatalog],
   ];
-  if (mode === "replace") {
-    for (const [storeName] of recordsByStore) {
+  const replacedStoreNames = new Set(
+    mode === "replace"
+      ? ALL_STORE_NAMES
+      : mode === "replace-dives"
+        ? storeNamesForErase("dive-data-only")
+        : [],
+  );
+  const storesToImport =
+    mode === "replace-dives"
+      ? recordsByStore.filter(([storeName]) => replacedStoreNames.has(storeName as (typeof ALL_STORE_NAMES)[number]))
+      : recordsByStore;
+  if (replacedStoreNames.size > 0) {
+    for (const storeName of replacedStoreNames) {
       transaction.objectStore(storeName).clear();
     }
   }
-  for (const [storeName, records] of recordsByStore) {
+  for (const [storeName, records] of storesToImport) {
     const store = transaction.objectStore(storeName);
     records.forEach((record) => store.put(record));
   }
   await transactionComplete(transaction);
+  const importedStore = (storeName: string) =>
+    storesToImport.some(([name]) => name === storeName);
   return {
     mode,
     dives: snapshot.dives.length,
-    photos: snapshot.attachments.length,
-    backgrounds: snapshot.backgrounds.length,
-    siteContributions: snapshot.siteContributions.length,
-    rawDiveRecords: snapshot.rawDiveRecords.length,
-    trips: snapshot.trips.length,
+    photos: importedStore(ATTACHMENTS_STORE) ? snapshot.attachments.length : 0,
+    backgrounds: importedStore(BACKGROUNDS_STORE) ? snapshot.backgrounds.length : 0,
+    siteContributions: importedStore(SITE_CONTRIBUTIONS_STORE)
+      ? snapshot.siteContributions.length
+      : 0,
+    rawDiveRecords: importedStore(RAW_DIVE_RECORDS_STORE)
+      ? snapshot.rawDiveRecords.length
+      : 0,
+    trips: importedStore(TRIPS_STORE) ? snapshot.trips.length : 0,
   };
 }
 

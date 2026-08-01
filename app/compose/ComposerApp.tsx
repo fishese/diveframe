@@ -51,11 +51,12 @@ import { useAppI18n } from "../AppI18nProvider";
 type PhotoChoice = {
   id: string;
   label: string;
-  source: "dive" | "library" | "bundled";
+  source: "dive" | "library" | "bundled" | "transparent";
   blob: Blob;
 };
 
 const BUNDLED_BACKGROUND_ID = "bundled:bubbles";
+const TRANSPARENT_BACKGROUND_ID = "background:transparent";
 
 const positions: BlockPosition[] = [
   "top-left", "top-centre", "top-right", "above-graph", "inside-panel",
@@ -133,6 +134,7 @@ export function ComposerApp() {
         ...(bundledBackground && !appPreferences?.bundledBackgroundHidden
           ? [bundledBackground]
           : []),
+        transparentPhotoChoice(),
       ];
       const initial = { ...defaultComposerSettings(selectedDive.id), ...saved };
       if (!saved) {
@@ -149,12 +151,17 @@ export function ComposerApp() {
         if (saved && !("showLogo" in saved)) initial.showLogo = false;
       }
       initial.categoryOverride = selectedDive.category;
+      const defaultPhotoId =
+        choices.find((item) => item.source !== "transparent")?.id ??
+        TRANSPARENT_BACKGROUND_ID;
       initial.selectedPhotoId =
         requestedPhoto && choices.some((item) => item.id === requestedPhoto)
           ? requestedPhoto
+          : saved && saved.selectedPhotoId === null
+            ? null
           : initial.selectedPhotoId && choices.some((item) => item.id === initial.selectedPhotoId)
             ? initial.selectedPhotoId
-            : choices[0]?.id ?? null;
+            : defaultPhotoId;
       setDive(selectedDive);
       setPhotos(choices);
       setPresets(savedPresets);
@@ -168,18 +175,23 @@ export function ComposerApp() {
     () => photos.find((photo) => photo.id === settings?.selectedPhotoId) ?? null,
     [photos, settings?.selectedPhotoId],
   );
+  const transparentPhoto = useMemo(
+    () => photos.find((photo) => photo.source === "transparent") ?? null,
+    [photos],
+  );
+  const activePhoto = selectedPhoto ?? transparentPhoto;
   const normalized = useMemo(() => dive ? toNormalizedDive(dive) : null, [dive]);
   const lastOutputSize = settings?.outputSize;
   const lastOutputFormat = settings?.format;
   const lastJpegQuality = settings?.jpegQuality;
   useEffect(() => {
-    if (!selectedPhoto) return;
+    if (!activePhoto) return;
     let cancelled = false;
-    loadPhoto(selectedPhoto.blob).then((loaded) => {
+    loadPhoto(activePhoto.blob).then((loaded) => {
       if (!cancelled) setBitmap(loaded);
     }).catch(() => setStatus(t("photoDecodeFailed")));
     return () => { cancelled = true; };
-  }, [selectedPhoto, t]);
+  }, [activePhoto, t]);
 
   useEffect(() => {
     if (!canvasRef.current || !bitmap || !normalized || !settings) return;
@@ -273,7 +285,10 @@ export function ComposerApp() {
     const remaining = photos.filter((photo) => photo.id !== BUNDLED_BACKGROUND_ID);
     setPhotos(remaining);
     if (settings?.selectedPhotoId === BUNDLED_BACKGROUND_ID) {
-      update("selectedPhotoId", remaining[0]?.id ?? null);
+      update(
+        "selectedPhotoId",
+        remaining.find((photo) => photo.source !== "transparent")?.id ?? null,
+      );
       if (!remaining.length) setBitmap(null);
     }
     try {
@@ -470,7 +485,23 @@ export function ComposerApp() {
 
         <aside className="composer-controls">
           <ControlSection title={t("photo")} initialOpen>
-            <select value={settings.selectedPhotoId ?? ""} onChange={(event) => update("selectedPhotoId", event.target.value)}>
+            <div className="photo-choice-grid" role="listbox" aria-label={t("photo")}>
+              {photos.map((photo) => (
+                <PhotoChoiceTile
+                  key={photo.id}
+                  photo={photo}
+                  selected={settings.selectedPhotoId === photo.id}
+                  onSelect={() =>
+                    update(
+                      "selectedPhotoId",
+                      settings.selectedPhotoId === photo.id ? null : photo.id,
+                    )
+                  }
+                  t={t}
+                />
+              ))}
+            </div>
+            <select className="photo-choice-select" value={settings.selectedPhotoId ?? ""} onChange={(event) => update("selectedPhotoId", event.target.value)}>
               {photos.map((photo) => (
                 <option key={photo.id} value={photo.id}>
                   {photo.source === "library"
@@ -483,6 +514,8 @@ export function ComposerApp() {
               ))}
             </select>
             <p className="control-hint">
+              {selectedPhoto ? t("photoChoiceHint") : t("transparentPhotoSelected")}
+              {" Â· "}
               <Link href="/settings">{t("manageBackgrounds")}</Link>
               {selectedPhoto?.source === "bundled" ? (
                 <>
@@ -717,6 +750,64 @@ export function ComposerApp() {
   );
 }
 
+function PhotoChoiceTile({
+  photo,
+  selected,
+  onSelect,
+  t,
+}: {
+  photo: PhotoChoice;
+  selected: boolean;
+  onSelect: () => void;
+  t: AppTranslate;
+}) {
+  const objectUrl = useMemo(
+    () =>
+      photo.source === "transparent" ? null : URL.createObjectURL(photo.blob),
+    [photo.blob, photo.source],
+  );
+  useEffect(
+    () => () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    },
+    [objectUrl],
+  );
+  const label =
+    photo.source === "transparent"
+      ? t("transparentBackground")
+      : photo.label;
+  const sourceLabel =
+    photo.source === "library"
+      ? t("libraryPhoto")
+      : photo.source === "bundled"
+        ? t("includedBackground")
+        : photo.source === "transparent"
+          ? t("transparentBackground")
+          : t("divePhoto");
+  return (
+    <button
+      type="button"
+      className={`photo-choice-tile ${selected ? "selected" : ""} ${photo.source !== "dive" ? "shared" : ""}`}
+      onClick={onSelect}
+      aria-pressed={selected}
+      title={selected ? t("clearPhotoSelection") : label}
+    >
+      <span className="photo-choice-thumb">
+        {photo.source === "transparent" ? (
+          <span className="photo-choice-transparent" aria-hidden="true" />
+        ) : objectUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={objectUrl} alt="" />
+        ) : null}
+        {photo.source !== "dive" ? (
+          <span className="photo-choice-source">{sourceLabel}</span>
+        ) : null}
+      </span>
+      <small>{label}</small>
+    </button>
+  );
+}
+
 function ControlSection({
   title,
   children,
@@ -774,6 +865,20 @@ function backgroundChoice(photo: LocalBackground): PhotoChoice {
     label: photo.displayName || photo.fileName,
     source: "library",
     blob: photo.blob,
+  };
+}
+
+function transparentPhotoChoice(): PhotoChoice {
+  return {
+    id: TRANSPARENT_BACKGROUND_ID,
+    label: "Transparent",
+    source: "transparent",
+    blob: new Blob(
+      [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900"><rect width="1600" height="900" fill="none"/></svg>',
+      ],
+      { type: "image/svg+xml" },
+    ),
   };
 }
 

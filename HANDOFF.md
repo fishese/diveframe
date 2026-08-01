@@ -95,7 +95,7 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `app/globals.css` — responsive application styling.
 - `app/PwaInstall.tsx` — global service-worker registration and the
   browser/iOS-aware install control shown in Settings.
-- `app/BetaNotice.tsx` — global trilingual beta notice and Settings backup link.
+- `app/BetaNotice.tsx` — global trilingual beta / unread What's new notice.
 - `public/manifest.webmanifest`, `public/sw.js`, and `public/icons/` —
   installable-web-app metadata, cached app shell, and header-mark app icons.
 - `tests/` — product contract, deterministic identity, catalog, composer, gas,
@@ -202,9 +202,13 @@ backup versions (1–2) still import with empty BLE/trips stores.
 
 Import validates and previews the backup before writing. **Merge** replaces
 matching complete records while retaining destination-only records; separately
-added photos usually have different random IDs and both survive. **Replace**
-atomically clears all covered stores before restoring the backup. An exact
-matching photo ID is replaced by the backup copy in either mode.
+added photos usually have different random IDs and both survive. **Replace all
+data with backup** atomically clears all covered stores before restoring the
+backup. **Replace dives with backup** clears only the dive-domain stores
+(`dives`, source mappings, site contributions, BLE raw/checkpoint records, and
+trips), retaining photos, composer settings/presets, backgrounds, branding,
+app preferences, and supplementary catalogs. An exact matching photo ID is
+replaced by the backup copy in merge/full replace mode.
 
 The danger zone exposes three deletion scopes. `clearLocalDivePhotos()` removes
 per-dive attachments while keeping dives and reusable assets.
@@ -217,9 +221,10 @@ their deterministic canonical IDs. `clearAllLocalData()` clears every store in
 the manifest. The Settings action also clears the supplementary catalog;
 service-worker application caches are intentionally kept.
 
-On Android, the install card is replaced by a storage-only card that describes
-private app data (not Chromium site storage). The WebView does not grant
-`navigator.storage.persist()`, so the app does not ask for it there.
+On Android, Settings omits the browser install/storage card entirely because
+the APK is already installed and uses private app data (not Chromium site
+storage). The WebView does not grant `navigator.storage.persist()`, so the app
+does not ask for it there.
 
 On mobile, an open dive shows a compact home control in the global top bar.
 The composer preview pane becomes a short sticky panel below its top bar so
@@ -388,7 +393,10 @@ locations feed the existing geocoder/map flow.
 ## Image composer
 
 The composer route is `/compose?dive=<canonical-id>&photo=<attachment-id>`.
-Each photo tile links to it. It also lists reusable backgrounds from Settings.
+Each photo tile links to it. It lists dive photos, reusable backgrounds, the
+bundled starter image, and a transparent background as thumbnail choices.
+When a dive has no attached photos, its gallery also shows shared-background
+tiles that open the composer with that background selected.
 Reusable backgrounds have an optional `displayName` stored with their IndexedDB
 record and included automatically in app backup/restore; the composer falls
 back to the original filename for older records. Per-dive photos are unchanged.
@@ -405,9 +413,10 @@ version-1 backups without the optional array still import as an empty preset
 collection.
 
 The collapsed Personal presets section sits directly below Templates. A bundled
-`public/backgrounds/bubbles-bg.jpg` choice is appended to the photo selector,
-so it becomes the automatic image only when no dive photo or saved reusable
-background is available. Removing it affects only the current composer session.
+`public/backgrounds/bubbles-bg.jpg` is shown as an explicit shared-image tile.
+The first available real image is selected automatically; clicking a selected
+tile again switches to the transparent background for overlay-only exports.
+Removing the bundled image affects only the current composer session.
 The image is excluded from the GPL software license; redistributors must follow
 `ASSET-LICENSES.md` and remove, replace, or obtain permission for it.
 
@@ -509,7 +518,8 @@ the recommended gate before store packaging or treating BLE as fully hardened.
 Backup hardening remains the highest-priority part of that gate.
 
 The portable backup/import implementation includes optional password
-encryption, checksums, explicit merge/replace choices, and an import preview.
+encryption, checksums, explicit merge/replace-dives/replace-all choices, and an
+import preview.
 The JSON format remains appropriate while DiveFrame is used with small,
 purpose-specific photo sets.
 
