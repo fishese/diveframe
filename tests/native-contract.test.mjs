@@ -237,6 +237,39 @@ test("BLE normalizer exists and is wired into the spike without persistence", as
   assert.doesNotMatch(sessionJava, /Math\.min\(limit, 50\)/);
 });
 
+test("Shearwater GNSS survives the sample callback into the dive record", async () => {
+  const [nativeC, nativeJava, javaPlugin, capability, normalizer, persist] =
+    await Promise.all([
+      readFile(
+        new URL("../android/app/src/main/cpp/diveframe_dc.c", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL(
+          "../android/app/src/main/java/cc/fishese/divelog/DiveComputerNative.java",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+      readFile(files.javaPlugin, "utf8"),
+      readFile(files.capability, "utf8"),
+      readFile(new URL("../lib/ble-dive-normalizer.ts", import.meta.url), "utf8"),
+      readFile(new URL("../lib/ble-persist.ts", import.meta.url), "utf8"),
+    ]);
+
+  // libdivecomputer reports Shearwater GPS as a sample, not a parser field.
+  assert.match(nativeC, /DC_SAMPLE_LOCATION/);
+  assert.match(nativeC, /value->location\.latitude/);
+  assert.match(nativeC, /setEntryLocation/);
+  assert.match(nativeC, /setExitLocation/);
+  assert.match(nativeJava, /void setEntryLocation\(double latitude, double longitude\)/);
+  assert.match(javaPlugin, /put(OptionalDouble)?\(out, "gpsEntryLat"/);
+  assert.match(capability, /gpsEntryLat\?: number/);
+  assert.match(normalizer, /gpsEntryLat: entryFix\?\.latitude \?\? null/);
+  assert.match(persist, /gpsEntryLat: preview\.gpsEntryLat/);
+  assert.doesNotMatch(persist, /gpsEntryLat: null/);
+});
+
 test("exports are written natively because the WebView drops blob downloads", async () => {
   const [plugin, mainActivity, helper, settings, app, composer, exporter, pwa] =
     await Promise.all([
@@ -278,6 +311,8 @@ test("exports are written natively because the WebView drops blob downloads", as
   assert.match(exporter, /saveExportFile\(/);
   assert.match(pwa, /Capacitor\.isNativePlatform\(\)/);
   assert.match(pwa, /isNative \? t\("deviceStorageTitle"\)/);
+  assert.match(pwa, /storageNativeApp/);
+  assert.match(pwa, /getLocalStoragePersistenceStatus\(!native\)/);
 });
 
 function major(versionRange) {

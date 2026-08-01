@@ -301,6 +301,11 @@ final class DiveComputerNative {
         double atmosphericBar = Double.NaN;
         String diveMode = "";
         int sampleCount;
+        // Shearwater GNSS fixes, emitted as location samples by libdivecomputer.
+        double entryLatitude = Double.NaN;
+        double entryLongitude = Double.NaN;
+        double exitLatitude = Double.NaN;
+        double exitLongitude = Double.NaN;
         final List<GasMix> gasmixes = new ArrayList<>();
         final List<TankInfo> tanks = new ArrayList<>();
         final List<ProfilePoint> profile = new ArrayList<>();
@@ -350,6 +355,16 @@ final class DiveComputerNative {
 
         void setSampleCount(int count) {
             sampleCount = count;
+        }
+
+        void setEntryLocation(double latitude, double longitude) {
+            entryLatitude = latitude;
+            entryLongitude = longitude;
+        }
+
+        void setExitLocation(double latitude, double longitude) {
+            exitLatitude = latitude;
+            exitLongitude = longitude;
         }
 
         void addGasMix(double oxygen, double helium, double nitrogen) {

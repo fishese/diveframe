@@ -445,6 +445,17 @@ typedef struct {
     unsigned int times[PROFILE_CAPTURE_MAX];
     double depths[PROFILE_CAPTURE_MAX];
     unsigned int n_points;
+    /*
+     * Shearwater GPS arrives as a sample rather than a parser field, on the
+     * first and last sample of the dive. Keep the first as the entry fix and
+     * the most recent as the exit fix.
+     */
+    int has_entry_location;
+    int has_exit_location;
+    double entry_latitude;
+    double entry_longitude;
+    double exit_latitude;
+    double exit_longitude;
 } sample_collect_t;
 
 static void
@@ -458,6 +469,19 @@ sample_cb(dc_sample_type_t type, const dc_sample_value_t *value, void *userdata)
     if (type == DC_SAMPLE_TIME) {
         state->last_time_ms = value->time;
         state->sample_count++;
+        return;
+    }
+
+    if (type == DC_SAMPLE_LOCATION) {
+        if (!state->has_entry_location) {
+            state->has_entry_location = 1;
+            state->entry_latitude = value->location.latitude;
+            state->entry_longitude = value->location.longitude;
+        } else {
+            state->has_exit_location = 1;
+            state->exit_latitude = value->location.latitude;
+            state->exit_longitude = value->location.longitude;
+        }
         return;
     }
 
@@ -542,11 +566,16 @@ parse_dive(
         env, parsed_class, "addTank", "(DDI)V");
     jmethodID add_profile = (*env)->GetMethodID(
         env, parsed_class, "addProfilePoint", "(ID)V");
+    jmethodID set_entry_location = (*env)->GetMethodID(
+        env, parsed_class, "setEntryLocation", "(DD)V");
+    jmethodID set_exit_location = (*env)->GetMethodID(
+        env, parsed_class, "setExitLocation", "(DD)V");
 
     if (!parsed_ctor || !set_status || !set_datetime || !set_divetime
         || !set_maxdepth || !set_avgdepth || !set_tmin || !set_tmax
         || !set_tsurf || !set_atm || !set_mode || !set_samples
-        || !add_gas || !add_tank || !add_profile) {
+        || !add_gas || !add_tank || !add_profile
+        || !set_entry_location || !set_exit_location) {
         return NULL;
     }
 
@@ -674,6 +703,22 @@ parse_dive(
     if (status == DC_STATUS_SUCCESS) {
         (*env)->CallVoidMethod(env, parsed, set_samples, (jint) samples.sample_count);
         append_profile_points(env, parsed, add_profile, &samples);
+        if (samples.has_entry_location) {
+            (*env)->CallVoidMethod(
+                env,
+                parsed,
+                set_entry_location,
+                (jdouble) samples.entry_latitude,
+                (jdouble) samples.entry_longitude);
+        }
+        if (samples.has_exit_location) {
+            (*env)->CallVoidMethod(
+                env,
+                parsed,
+                set_exit_location,
+                (jdouble) samples.exit_latitude,
+                (jdouble) samples.exit_longitude);
+        }
     }
 
     jstring ok_message = (*env)->NewStringUTF(env, status_message(status));

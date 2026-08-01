@@ -38,6 +38,11 @@ export type BleParsedDiveInput = {
     gasmixIndex: number;
   }>;
   profile: Array<{ timeMs: number; depthM: number }>;
+  /** Shearwater GNSS fix; only present with a satellite lock (log version 17+). */
+  gpsEntryLat?: number;
+  gpsEntryLng?: number;
+  gpsExitLat?: number;
+  gpsExitLng?: number;
 };
 
 export type BleRawDiveInput = {
@@ -82,6 +87,15 @@ export type BleNormalizedDivePreview = {
    */
   samples: DiveSample[];
   sampleCountReported: number;
+  /**
+   * Dive-computer GNSS fix when the computer recorded one. Shearwater only
+   * stores this from log version 17 and only with a satellite lock, so most
+   * dives legitimately have none.
+   */
+  gpsEntryLat: number | null;
+  gpsEntryLng: number | null;
+  gpsExitLat: number | null;
+  gpsExitLng: number | null;
   rawSize: number;
   fingerprintHex: string;
   device: {
@@ -108,7 +122,7 @@ export function normalizeBleDivePreview(
   const omissions: string[] = [
     "full-resolution profile samples retained in rawDiveRecords until reparse",
     "Shearwater Cloud DiveId / dive number",
-    "site, location, buddy, notes, GPS from computer when absent in parser",
+    "site, location, buddy, notes",
   ];
 
   if (!parsed || !parseOk) {
@@ -136,6 +150,10 @@ export function normalizeBleDivePreview(
       tankPressuresEndBar: [],
       samples: [],
       sampleCountReported: 0,
+      gpsEntryLat: null,
+      gpsEntryLng: null,
+      gpsExitLat: null,
+      gpsExitLng: null,
       rawSize: dive.size,
       fingerprintHex,
       device: {
@@ -210,6 +228,10 @@ export function normalizeBleDivePreview(
     );
   }
 
+  const entryFix = coordinatePair(parsed.gpsEntryLat, parsed.gpsEntryLng);
+  const exitFix = coordinatePair(parsed.gpsExitLat, parsed.gpsExitLng);
+  if (!entryFix) omissions.push("computer GPS (no satellite fix recorded)");
+
   return {
     contractVersion: BLE_NORMALIZER_CONTRACT_VERSION,
     provisionalSource: "shearwater-ble",
@@ -234,6 +256,10 @@ export function normalizeBleDivePreview(
     tankPressuresEndBar,
     samples,
     sampleCountReported: parsed.sampleCount,
+    gpsEntryLat: entryFix?.latitude ?? null,
+    gpsEntryLng: entryFix?.longitude ?? null,
+    gpsExitLat: exitFix?.latitude ?? null,
+    gpsExitLng: exitFix?.longitude ?? null,
     rawSize: dive.size,
     fingerprintHex,
     device: {
@@ -261,6 +287,14 @@ function proposedId(sourceId: string) {
 
 function unsignedSerialHex(serial: number) {
   return (serial >>> 0).toString(16).toUpperCase().padStart(8, "0");
+}
+
+function coordinatePair(latitude?: number, longitude?: number) {
+  if (latitude == null || longitude == null) return null;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
+  if (latitude === 0 && longitude === 0) return null;
+  return { latitude, longitude };
 }
 
 function categoryFromDiveMode(

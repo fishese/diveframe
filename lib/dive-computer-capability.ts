@@ -64,6 +64,11 @@ export type DiveComputerParsedDive = {
   atmosphericBar?: number;
   diveMode: string;
   sampleCount: number;
+  /** Shearwater GNSS fix, present only with a satellite lock (log version 17+). */
+  gpsEntryLat?: number;
+  gpsEntryLng?: number;
+  gpsExitLat?: number;
+  gpsExitLng?: number;
   gasmixes: DiveComputerGasMix[];
   tanks: DiveComputerTank[];
   profile: DiveComputerProfilePoint[];

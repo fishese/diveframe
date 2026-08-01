@@ -174,6 +174,10 @@ export function DiveFrameApp() {
   > | null>(null);
   const importInput = useRef<HTMLInputElement>(null);
   const enrichingLocations = useRef(false);
+  const gpsNameAttemptedRef = useRef(new Set<string>());
+  const [gpsNameAttempted, setGpsNameAttempted] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [supplementaryCatalog, setSupplementaryCatalog] = useState<{
     catalog: DiveSiteCatalog;
   } | null>(null);
@@ -252,37 +256,54 @@ export function DiveFrameApp() {
         dive.gpsEntryLat !== null &&
         dive.gpsEntryLng !== null &&
         !dive.location &&
-        !dive.resolvedLocation,
+        !dive.resolvedLocation &&
+        !gpsNameAttemptedRef.current.has(dive.id),
     );
     if (!pending.length || enrichingLocations.current) return;
     enrichingLocations.current = true;
 
     const controller = new AbortController();
+    let cancelled = false;
     void (async () => {
       try {
         const updates = new Map<string, Dive>();
         for (const [index, dive] of pending.entries()) {
-          const response = await fetch(
-            diveFrameApiUrl(
-              `/api/geocode?lat=${encodeURIComponent(String(dive.gpsEntryLat))}&lng=${encodeURIComponent(String(dive.gpsEntryLng))}`,
-            ),
-            { signal: controller.signal },
-          );
-          const payload = (await response.json()) as {
-            location?: {
-              label: string;
-              city: string | null;
-              country: string | null;
-            } | null;
-          };
-          if (response.ok && payload.location) {
-            const updated = await updateLocalDiveLocation(dive.id, payload.location);
-            updates.set(updated.id, updated);
+          if (cancelled) return;
+          try {
+            const response = await fetch(
+              diveFrameApiUrl(
+                `/api/geocode?lat=${encodeURIComponent(String(dive.gpsEntryLat))}&lng=${encodeURIComponent(String(dive.gpsEntryLng))}`,
+              ),
+              { signal: controller.signal },
+            );
+            const payload = (await response.json()) as {
+              location?: {
+                label: string;
+                city: string | null;
+                country: string | null;
+              } | null;
+            };
+            if (response.ok && payload.location) {
+              const updated = await updateLocalDiveLocation(
+                dive.id,
+                payload.location,
+              );
+              updates.set(updated.id, updated);
+            }
+          } catch (error) {
+            if ((error as DOMException)?.name === "AbortError") throw error;
+            // Network/CORS failures still count as attempted so the UI does not
+            // stay on “Resolving…” forever.
+          } finally {
+            gpsNameAttemptedRef.current.add(dive.id);
+            setGpsNameAttempted(new Set(gpsNameAttemptedRef.current));
           }
           if (index < pending.length - 1) await delay(1100);
         }
-        if (updates.size) {
-          setDives((current) => current.map((item) => updates.get(item.id) ?? item));
+        if (!cancelled && updates.size) {
+          setDives((current) =>
+            current.map((item) => updates.get(item.id) ?? item),
+          );
         }
       } catch (error) {
         if ((error as DOMException)?.name !== "AbortError") {
@@ -293,7 +314,11 @@ export function DiveFrameApp() {
       }
     })();
 
-    return () => controller.abort();
+    return () => {
+      cancelled = true;
+      controller.abort();
+      enrichingLocations.current = false;
+    };
   }, [dives, t]);
 
   useEffect(() => {
@@ -1231,6 +1256,7 @@ export function DiveFrameApp() {
                   dive={selected}
                   attachments={attachments}
                   busy={busy}
+                  gpsNameAttempted={gpsNameAttempted.has(selected.id)}
                   onUpload={uploadPhotos}
                   onShare={sharePhoto}
                   onSaveSite={saveDiveSite}
@@ -1378,6 +1404,7 @@ function DiveDetail({
   dive,
   attachments,
   busy,
+  gpsNameAttempted,
   onUpload,
   onShare,
   onSaveSite,
@@ -1395,6 +1422,7 @@ function DiveDetail({
   dive: Dive;
   attachments: Attachment[];
   busy: boolean;
+  gpsNameAttempted: boolean;
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onShare: (attachment: Attachment) => void;
   onSaveSite: (site: SiteSelection) => Promise<boolean>;
@@ -1693,7 +1721,12 @@ function DiveDetail({
         <div className="detail-hero-actions">
           <p>
             <MapPin size={16} />
-            {displayLocation(dive) || (hasGps ? t("resolvingGps") : t("locationNotEntered"))}
+            {displayLocation(dive) ||
+              (hasGps
+                ? gpsNameAttempted
+                  ? t("gpsNameUnavailable")
+                  : t("resolvingGps")
+                : t("locationNotEntered"))}
           </p>
           <Link
             href={`/compose?dive=${encodeURIComponent(dive.id)}`}

@@ -492,6 +492,10 @@ public class DiveComputerPlugin extends Plugin {
         putOptionalDouble(out, "atmosphericBar", parsed.atmosphericBar);
         out.put("diveMode", parsed.diveMode);
         out.put("sampleCount", parsed.sampleCount);
+        putOptionalDouble(out, "gpsEntryLat", parsed.entryLatitude);
+        putOptionalDouble(out, "gpsEntryLng", parsed.entryLongitude);
+        putOptionalDouble(out, "gpsExitLat", parsed.exitLatitude);
+        putOptionalDouble(out, "gpsExitLng", parsed.exitLongitude);
 
         JSArray gasmixes = new JSArray();
         for (DiveComputerNative.GasMix mix : parsed.gasmixes) {

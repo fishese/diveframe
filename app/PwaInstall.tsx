@@ -120,7 +120,11 @@ export function PwaInstallCard() {
   }, []);
 
   useEffect(() => {
-    getLocalStoragePersistenceStatus(true)
+    const native = Capacitor.isNativePlatform();
+    // Chromium WebView almost never grants navigator.storage.persist(), and
+    // asking only produces a false "best-effort browser" reading that is wrong
+    // for an installed APK. Skip the request on native and use app-storage copy.
+    getLocalStoragePersistenceStatus(!native)
       .then(setStorageStatus)
       .catch(() =>
         setStorageStatus({
@@ -183,24 +187,30 @@ export function PwaInstallCard() {
         {isNative ? t("nativeDataNote") : t("installedDataNote")}
       </p>
       {storageStatus && (
-        <div className={`storage-persistence ${storageStatus.mode}`}>
+        <div
+          className={`storage-persistence ${isNative ? "app" : storageStatus.mode}`}
+        >
           <strong>
-            {storageStatus.mode === "persistent"
-              ? t("storagePersistent")
-              : storageStatus.mode === "best-effort"
-                ? t("storageBestEffort")
-                : t("storagePersistenceUnavailable")}
+            {isNative
+              ? t("storageNativeApp")
+              : storageStatus.mode === "persistent"
+                ? t("storagePersistent")
+                : storageStatus.mode === "best-effort"
+                  ? t("storageBestEffort")
+                  : t("storagePersistenceUnavailable")}
           </strong>
           <span>
-            {storageStatus.mode === "persistent"
-              ? t("storagePersistentDescription")
-              : storageStatus.mode === "best-effort"
-                ? t("storageBestEffortDescription")
-                : t("storagePersistenceUnavailableDescription")}
+            {isNative
+              ? t("storageNativeAppDescription")
+              : storageStatus.mode === "persistent"
+                ? t("storagePersistentDescription")
+                : storageStatus.mode === "best-effort"
+                  ? t("storageBestEffortDescription")
+                  : t("storagePersistenceUnavailableDescription")}
           </span>
           {storageStatus.usage !== null && storageStatus.quota !== null && (
             <small>
-              {t("browserStorageUsage", {
+              {t(isNative ? "appStorageUsage" : "browserStorageUsage", {
                 used: formatStorage(storageStatus.usage),
                 quota: formatStorage(storageStatus.quota),
               })}
