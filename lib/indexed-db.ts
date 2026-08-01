@@ -13,6 +13,7 @@ import {
 import { normalizeShearwaterPressurePair } from "./gas-calculations";
 import { withOptimizedJpeg } from "./media-optimization";
 import type { DiveSiteCatalog } from "./dive-site-catalog";
+import type { WhatsNewDocument } from "./whats-new";
 import {
   ALL_STORE_NAMES,
   STORE_NAMES,
@@ -184,6 +185,9 @@ export type LocalAppPreferences = {
   lastComposerJpegQuality?: number;
   dismissedDuplicatePairs?: string[];
   bundledBackgroundHidden?: boolean;
+  whatsNewCache?: WhatsNewDocument | null;
+  whatsNewFetchedAt?: string | null;
+  lastSeenWhatsNewVersion?: string | null;
   updatedAt: string;
 };
 
@@ -723,6 +727,9 @@ export async function saveLocalAppPreferences(
       | "lastComposerJpegQuality"
       | "dismissedDuplicatePairs"
       | "bundledBackgroundHidden"
+      | "whatsNewCache"
+      | "whatsNewFetchedAt"
+      | "lastSeenWhatsNewVersion"
     >
   >,
 ) {
@@ -750,6 +757,18 @@ export async function saveLocalAppPreferences(
       preferences.bundledBackgroundHidden ??
       existing?.bundledBackgroundHidden ??
       false,
+    whatsNewCache:
+      preferences.whatsNewCache !== undefined
+        ? preferences.whatsNewCache
+        : existing?.whatsNewCache ?? null,
+    whatsNewFetchedAt:
+      preferences.whatsNewFetchedAt !== undefined
+        ? preferences.whatsNewFetchedAt
+        : existing?.whatsNewFetchedAt ?? null,
+    lastSeenWhatsNewVersion:
+      preferences.lastSeenWhatsNewVersion !== undefined
+        ? preferences.lastSeenWhatsNewVersion
+        : existing?.lastSeenWhatsNewVersion ?? null,
     updatedAt: new Date().toISOString(),
   };
   const database = await openDatabase();

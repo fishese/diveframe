@@ -1,0 +1,13 @@
+{
+  "version": "2026-08-01",
+  "updatedAt": "2026-08-01T12:00:00.000Z",
+  "entries": [
+    {
+      "id": "2026-08-01-catalog-offline",
+      "title": "Offline site catalog",
+      "body": "The bundled dive-site catalog works offline. Import a regional supplement in Settings; it is saved on this device and included in backups.",
+      "date": "2026-08-01",
+      "links": []
+    }
+  ]
+}
