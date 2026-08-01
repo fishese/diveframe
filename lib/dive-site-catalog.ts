@@ -80,6 +80,13 @@ export function clearSessionDiveSiteCatalog() {
   sessionStorage.removeItem(SESSION_CATALOG_LABEL_KEY);
 }
 
+export function takeSessionSupplementaryCatalogMigration() {
+  const existing = loadSessionDiveSiteCatalog();
+  if (!existing) return null;
+  clearSessionDiveSiteCatalog();
+  return existing;
+}
+
 export function combineDiveSiteCatalogs(
   bundled: DiveSiteCatalog,
   additional: DiveSiteCatalog | null,
@@ -99,6 +106,13 @@ export function combineDiveSiteCatalogs(
     schemaVersion: Math.max(bundled.schemaVersion, additional.schemaVersion),
     sites,
   };
+}
+
+export function resolveActiveDiveSiteCatalog(
+  bundled: DiveSiteCatalog,
+  supplementary: DiveSiteCatalog | null,
+) {
+  return combineDiveSiteCatalogs(bundled, supplementary);
 }
 
 export function nearbySessionCatalogSites(

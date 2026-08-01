@@ -93,3 +93,36 @@ test("stores and removes a catalog for the current tab session", () => {
   assert.equal(catalogTools.loadSessionDiveSiteCatalog(), null);
   delete globalThis.sessionStorage;
 });
+
+const additional = {
+  ...catalog,
+  sites: [
+    {
+      ...catalog.sites[0],
+      id: "jp-extra-site",
+      name: "Additional Site",
+      coordinates: { latitude: 34.68, longitude: 138.94 },
+    },
+  ],
+};
+
+test("resolveActiveDiveSiteCatalog combines bundled with supplementary", () => {
+  const combined = catalogTools.resolveActiveDiveSiteCatalog(catalog, additional);
+  assert.equal(combined.sites.length, 2);
+});
+
+test("takeSessionSupplementaryCatalogMigration copies then clears session keys", () => {
+  const values = new Map();
+  globalThis.sessionStorage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, String(value)),
+    removeItem: (key) => values.delete(key),
+  };
+
+  catalogTools.saveSessionDiveSiteCatalog(catalog, "extra.json");
+  const once = catalogTools.takeSessionSupplementaryCatalogMigration();
+  assert.equal(once.label, "extra.json");
+  assert.equal(catalogTools.loadSessionDiveSiteCatalog(), null);
+  assert.equal(catalogTools.takeSessionSupplementaryCatalogMigration(), null);
+  delete globalThis.sessionStorage;
+});
