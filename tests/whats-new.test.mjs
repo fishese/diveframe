@@ -17,7 +17,11 @@ const whatsNew = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`
 );
 
-const { validateWhatsNewDocument, sanitizeWhatsNewHref } = whatsNew;
+const {
+  validateWhatsNewDocument,
+  sanitizeWhatsNewHref,
+  renderWhatsNewBody,
+} = whatsNew;
 
 test("accepts document with APK download link", () => {
   const doc = validateWhatsNewDocument({
@@ -35,4 +39,15 @@ test("accepts document with APK download link", () => {
 
 test("rejects javascript: links", () => {
   assert.equal(sanitizeWhatsNewHref("javascript:alert(1)"), null);
+});
+
+test("renderWhatsNewBody parses inline markdown links", () => {
+  const parts = renderWhatsNewBody(
+    "See [notes](https://example.com/notes) for details.",
+  );
+  assert.deepEqual(parts, [
+    { type: "text", text: "See " },
+    { type: "link", label: "notes", href: "https://example.com/notes" },
+    { type: "text", text: " for details." },
+  ]);
 });

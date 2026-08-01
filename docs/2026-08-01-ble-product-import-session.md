@@ -63,13 +63,74 @@ Validated on device:
 - The install card becomes a storage-only card (**This device's logbook**)
   inside the app, so the PWA install blurb no longer shows on the APK.
 
+## Dive-computer GPS (Shearwater GNSS)
+
+Symptom: the GPS list filter matched nothing even though some Perdix 2 dives had
+coordinates in Shearwater's own log.
+
+Root cause was ours, not the download. libdivecomputer does not expose Shearwater
+GPS as a parser field — `shearwater_predator_parser.c` has no `DC_FIELD_LOCATION`
+case and instead emits `DC_SAMPLE_LOCATION` from `dc_parser_samples_foreach`, on
+the first and last sample. `sample_cb` in `diveframe_dc.c` only handled
+`DC_SAMPLE_TIME` / `DC_SAMPLE_DEPTH`, so the fix was discarded and
+`previewToImportedDive` hardcoded `gpsEntryLat: null`.
+
+Verified against the on-device backup: of 128 raw records (log versions 13 ×10,
+14 ×86, 17 ×32), 4 dives carried a real 3D fix and 1 also had an exit fix. GNSS
+needs log version ≥ 17 *and* a satellite lock, so most dives having none is
+expected.
+
+Fixes:
+
+- Native `sample_cb` keeps the first location as entry and the latest as exit,
+  passed via `ParsedDive.setEntryLocation` / `setExitLocation` and
+  `gpsEntryLat/Lng` + `gpsExitLat/Lng` in the plugin JSON.
+- The one-time Settings backfill button was run on this device and then removed
+  from the shipped app. The raw-bytes extractor and offline backup repair CLI
+  live under `scripts/archive/shearwater-gps-backfill/` for reuse if another
+  missing field needs the same pattern later.
+
+## Place names / nearby sites on the APK
+
+Symptom: dive detail stuck on “Resolving GPS location…”, site title stays
+unnamed, map still shows the pin.
+
+Cause: the APK calls `https://divelog.fishese.cc/api/geocode` (and nearby-sites).
+Production returns 200 JSON but **no** `Access-Control-Allow-Origin` for
+Capacitor (`https://localhost`), so the WebView drops the response. Local
+`vinext` already sends CORS via `lib/api-cors.ts` — that code is simply not on
+the live worker yet.
+
+Mitigations in tree:
+
+- Bundled `dive-sites.json` is queried client-side for nearby suggestions so the
+  site picker works without the hosted API.
+- Failed reverse-geocode attempts stop the perpetual “Resolving…” spinner.
+- Native builds can override the API origin with
+  `NEXT_PUBLIC_DIVEFRAME_API_ORIGIN` (debug APK currently pointed at the LAN
+  `vinext` server for verification). Deploying CORS to production is the
+  lasting fix.
+
+## Offline catalog + What's new (2026-08-01)
+
+Persistent supplementary `dive-sites.json` (IndexedDB v9, backup/restore) and
+Settings **What's new** (API feed, cached preferences, APK download links) are
+documented in `USER-GUIDE.md` / `PRODUCT-SPEC.md`. Plan:
+`docs/superpowers/plans/2026-08-01-offline-catalog-whats-new.md`.
+
+Manual smoke (web + APK) remains on the release checklist in that plan.
+
 ## Resume checklist
 
 1. Smoke-test cancel-with-summary / crash-keeps-dives on device when convenient
    (do not `adb install` while a download is running).
    Also smoke-test **Export app data** in the APK: the file must appear in
    Downloads and re-import cleanly before editing trips / GPS on device.
-2. Next product steps:
+2. Device GPS filter should show the 4 Perdix 2 dives recovered earlier
+   (2026-03-17 Palau, 2026-05-17 ×2 and 2026-05-31 Hong Kong). The one-time
+   Settings recover button is gone; archive tooling is under
+   `scripts/archive/shearwater-gps-backfill/`.
+3. Next product steps:
    - Trip / user-GPS editors — **done** on `feature/trip-user-gps-editors`
      (list blocks, select mode, details assignment, user GPS + JPEG EXIF, alias
      chips, date/computer filters + reset)
@@ -77,7 +138,7 @@ Validated on device:
      same branch (alias expand-in-picker)
    - BLE hardening / failure matrix / privacy–LGPL release work
    - About copy: classic Shearwater BLE only (not Perdix 3)
-3. Parked / lower priority: pinned in-app download strip; PC Web Bluetooth;
+4. Parked / lower priority: pinned in-app download strip; PC Web Bluetooth;
    background notification / foreground service
 
 ## Known leftovers

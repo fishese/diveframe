@@ -68,6 +68,11 @@ Bluetooth, scan, connect, then:
   the button. Below that, **Get more history** stays visible with the same
   quantity options for catch-up downloads.
 
+If your Shearwater recorded a satellite fix, its coordinates are imported as
+dive-computer GPS. Shearwater only stores a fix from log version 17 onwards and
+only when the computer actually locked on, so older dives having no coordinates
+is normal rather than a fault.
+
 Dives are identified by per-dive fingerprints, so a later fuller download that
 re-sends recent dives merges them instead of duplicating logbook entries. Each
 dive is saved as it arrives, so Cancel (or an interrupted transfer) keeps
@@ -245,15 +250,19 @@ The Settings danger zone has three reset choices:
   preferences. Re-import the same source logs so their deterministic IDs
   reconnect the retained per-dive photos and composer settings.
 - **Erase all local logbook data** removes every DiveFrame record and image
-  from the current browser and removes the temporary regional site catalog.
-  Offline application files remain cached because they contain no logbook
-  information.
+  from the current browser, including any supplementary dive-site catalog saved
+  on the device. Offline application files remain cached because they contain
+  no logbook information.
 
 Settings also shows estimated stored-media and exported-backup sizes.
 The storage card — **Install DiveFrame** on the web, **This device's logbook**
-in the Android app, which has no install prompt — reports whether storage is **persistent** or
-**best effort**. Best-effort data can be evicted under storage pressure, so
-keep a recent exported backup. The displayed browser quota is only an estimate.
+in the Android app, which has no install prompt — reports whether browser
+storage is **persistent** or **best effort**. Best-effort browser data can be
+evicted under storage pressure, so keep a recent exported backup. In the
+Android app the card instead explains that the logbook lives in DiveFrame’s
+private app data (not Chrome site storage); uninstalling the app, using
+Android’s Clear storage / Clear data, or a factory reset will wipe it. The
+displayed quota is only an estimate.
 **Optimize stored photos** converts eligible dive photos and reusable
 backgrounds to JPEG at 88% quality, with a maximum longest edge of 2560 pixels.
 An image is only replaced when the result is smaller. This is a lossy,
@@ -331,15 +340,26 @@ expanded at a time. Manual typing in **Edit dive details** remains unchanged.
 
 In **Settings**, choose a compatible `dive-sites.json` under **Dive-site
 catalog**. Its sites are added to—not substituted for—the catalog included
-with DiveFrame. The combined list is used for nearby-site suggestions
-throughout the current browser tab and for the existing merge/download tools.
-Duplicate IDs and identical name/coordinate entries retain the bundled entry.
-The additional file is not added to backups or permanent app storage, and can
-be removed from the same card at any time.
+with DiveFrame. The supplementary file is saved on this device in IndexedDB,
+survives reloads and app restarts, and is included in **Export app data**
+backups. The combined list is used for nearby-site suggestions and for the
+existing merge/download tools. Duplicate IDs and identical name/coordinate
+entries retain the bundled entry. Remove the additional catalog from the same
+card at any time.
 
 If you need a catalog for another region, download the AI catalog prompt from
 that card, replace the region placeholder, and give it to an AI assistant that
 can research public sources. Review the generated JSON before loading it.
+
+### What's new
+
+Open **Settings → What's new** for recent DiveFrame updates. When online,
+DiveFrame fetches the latest feed and caches it on the device so the last
+saved entries remain visible offline. Each entry can include structured
+download links, such as an **Download Android APK** button that opens in a
+new browser tab. Expand the section to mark updates as seen; an indicator
+appears when a newer feed version is available than the last time you opened
+it.
 
 ## Cropping a share image
 

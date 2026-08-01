@@ -84,8 +84,9 @@ weakening the web app or requiring a second logbook implementation.
   the logbook list (grouped trip blocks, session-only expand/collapse).
 - Set user GPS manually or from attached JPEG EXIF without overwriting computer
   GPS; map display resolves computer → user → name geocode.
-- Select a nearby site from the bundled, session-loaded, or OpenStreetMap
-  suggestions, including choosing a catalog alias as the displayed site name.
+- Select a nearby site from the bundled catalog, a user-loaded supplementary
+  catalog, or OpenStreetMap suggestions, including choosing a catalog alias as
+  the displayed site name.
 - Attach dive-specific photos.
 - Filter the logbook by date range, computer model, and existing chips; reset
   clears filter controls but not the search box.
@@ -162,13 +163,15 @@ by Haversine distance. OpenStreetMap is the fallback when no bundled entry is
 nearby.
 
 A user can load a compatible regional `dive-sites.json` in Settings. That
-catalog is stored in `sessionStorage` and combined additively with the bundled
-catalog. The combined entries participate in nearby suggestions throughout the
-current tab and form the base of the merged catalog download. Duplicate IDs or
-identical name/coordinate records retain the bundled entry. Removing the
-additional catalog does not change IndexedDB or backups. A downloadable prompt
-helps users ask an AI assistant to research a regional catalog, but generated
-data must be reviewed by a person.
+supplementary catalog is stored in IndexedDB (`supplementaryCatalog`, at most
+one record) and combined additively with the bundled catalog. The combined
+entries participate in nearby suggestions and form the base of the merged
+catalog download. Duplicate IDs or identical name/coordinate records retain the
+bundled entry. The supplementary catalog is included in app-data backups and
+removed with **Erase all local logbook data**. A one-time migration copies any
+legacy session-only catalog into IndexedDB on first load after upgrade. A
+downloadable prompt helps users ask an AI assistant to research a regional
+catalog, but generated data must be reviewed by a person.
 
 Manual GPS-backed sites create contribution records. Settings can review,
 rename, add aliases, exclude, export, or merge those candidates into a catalog
@@ -209,9 +212,9 @@ Three destructive controls exist:
 - **Erase dive data only** clears dives, source mappings, and site
   contributions while retaining images and settings that can reconnect after
   deterministic re-import.
-- **Erase all local logbook data** clears every DiveFrame IndexedDB store and
-  the temporary session dive-site catalog. Service-worker application caches
-  contain no logbook records and are deliberately retained.
+- **Erase all local logbook data** clears every DiveFrame IndexedDB store,
+  including the supplementary dive-site catalog. Service-worker application
+  caches contain no logbook records and are deliberately retained.
 
 The logbook calculates an estimated JSON backup size from normalized records
 plus Base64-expanded media. It adds a warning summary card at 150 MiB for
@@ -309,6 +312,10 @@ without the necessary pressure and cylinder inputs.
   share card) is streamed through a native plugin into the phone's public
   Downloads folder, with an optional share-sheet handoff. The install card is
   replaced by a storage-only card inside the app.
+- **What's new** in Settings fetches a versioned JSON feed from
+  `/api/whats-new` (with Capacitor CORS on the hosted origin), caches it in
+  app preferences, and renders entries with optional structured links such as
+  APK downloads. Offline use shows the last cached feed.
 
 Formal screen-reader, keyboard-only, contrast, and iOS/Android device matrices
 have not yet been completed.
@@ -462,7 +469,8 @@ other users are invited or hosted accounts are offered.
 
 - Are identity promotion and merge tolerances conservative enough?
 - Does the backup format need redesign before more users accumulate photos?
-- Is `sessionStorage` the right lifetime for user-supplied regional catalogs?
+- Is the single-record IndexedDB supplementary catalog the right persistence
+  model for user-supplied regional catalogs?
 - Which wrapper architecture best supports BLE, local files, and future iOS?
 - Do current IDs, serializers, and store boundaries leave a clean seam for
   Drive transport and optional account sync without coupling records to a
