@@ -237,6 +237,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /t\("newTripOption"\)/);
   assert.match(appI18n, /newTripOption/);
   assert.match(appI18n, /deleteTripConfirmWithDives/);
+  assert.match(app, /\[dive\.id, dive\.tripId, editingDetails\]/);
+  assert.match(app, /visibleDiveIds/);
+  assert.match(app, /function visibleSelectedDiveIds/);
+  assert.match(app, /const ids = visibleSelectedDiveIds\(\);/);
   assert.match(await readFile("lib/ble-import-session.ts", "utf8"), /nativeLimitForQuantity/);
   assert.match(await readFile("lib/ble-import-session.ts", "utf8"), /kind: "full"/);
   assert.match(app, /BleImportPanel/);

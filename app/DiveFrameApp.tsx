@@ -336,6 +336,11 @@ export function DiveFrameApp() {
     [visibleDives, trips, sortOption],
   );
 
+  const visibleDiveIds = useMemo(
+    () => new Set(visibleDives.map((dive) => dive.id)),
+    [visibleDives],
+  );
+
   const stats = useMemo(() => {
     const sacRates = dives
       .filter(
@@ -581,8 +586,28 @@ export function DiveFrameApp() {
     });
   }
 
+  useEffect(() => {
+    setSelectedDiveIds((current) => {
+      if (!current.size) return current;
+      const next = new Set<string>();
+      let changed = false;
+      for (const id of current) {
+        if (visibleDiveIds.has(id)) {
+          next.add(id);
+        } else {
+          changed = true;
+        }
+      }
+      return changed ? next : current;
+    });
+  }, [visibleDiveIds]);
+
+  function visibleSelectedDiveIds() {
+    return Array.from(selectedDiveIds).filter((id) => visibleDiveIds.has(id));
+  }
+
   async function createTripFromSelection(name: string) {
-    const ids = Array.from(selectedDiveIds);
+    const ids = visibleSelectedDiveIds();
     if (!ids.length || !name.trim()) return;
     setBusy(true);
     setStatus(t("savingTripAssignment"));
@@ -602,7 +627,7 @@ export function DiveFrameApp() {
   }
 
   async function addSelectionToTrip(tripId: string) {
-    const ids = Array.from(selectedDiveIds);
+    const ids = visibleSelectedDiveIds();
     if (!ids.length || !tripId) return;
     setBusy(true);
     setStatus(t("savingTripAssignment"));
@@ -620,7 +645,7 @@ export function DiveFrameApp() {
   }
 
   async function removeSelectionFromTrip() {
-    const ids = Array.from(selectedDiveIds);
+    const ids = visibleSelectedDiveIds();
     if (!ids.length) return;
     setBusy(true);
     setStatus(t("savingTripAssignment"));
@@ -1313,6 +1338,17 @@ function DiveDetail({
   const currentTrip = dive.tripId
     ? trips.find((trip) => trip.id === dive.tripId) ?? null
     : null;
+
+  // Re-sync trip drafts from the source of truth whenever the underlying dive's
+  // trip assignment changes (e.g. after a successful save, a trip delete elsewhere)
+  // or whenever the details editor is opened/closed, so stale sentinel values like
+  // "__new__" (or a deleted trip id) never survive into the next edit/save cycle.
+  useEffect(() => {
+    setTripDraft(dive.tripId ?? "");
+    setNewTripNameDraft("");
+    setTripRenameOpen(false);
+    setTripRenameDraft("");
+  }, [dive.id, dive.tripId, editingDetails]);
   const [defaultCylinderPresetId, setDefaultCylinderPresetId] = useState(
     DEFAULT_CYLINDER_PRESET_ID,
   );
