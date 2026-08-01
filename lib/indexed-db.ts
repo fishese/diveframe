@@ -383,12 +383,15 @@ export async function persistBleImport(options: {
   );
   const now = new Date().toISOString();
   const idBySourceId = new Map<string, string>();
+  let newCount = 0;
+  let alreadyPresentCount = 0;
 
   for (const incoming of options.dives) {
     const mappingKey = sourceKey(incoming.source, incoming.sourceId);
     const mappedId = sourceMappings.get(mappingKey);
     const matchedId =
       mappedId ?? findMatchingDive(incoming, [...divesById.values()]);
+    const existedBefore = Boolean(mappedId || matchedId);
     let canonicalId = matchedId ?? canonicalDiveId(incoming);
     if (
       !mappedId &&
@@ -426,6 +429,8 @@ export async function persistBleImport(options: {
       diveId: canonicalId,
       importedAt: now,
     } satisfies SourceRecord);
+    if (existedBefore) alreadyPresentCount += 1;
+    else newCount += 1;
   }
 
   for (const raw of options.rawRecords) {
@@ -440,8 +445,40 @@ export async function persistBleImport(options: {
   return {
     diveCount: options.dives.length,
     rawCount: options.rawRecords.length,
+    newCount,
+    alreadyPresentCount,
     checkpointAdvanced: Boolean(options.checkpoint),
   };
+}
+
+export async function listLocalDeviceCheckpoints() {
+  const database = await openDatabase();
+  return request<LocalDeviceCheckpoint[]>(
+    database
+      .transaction(DEVICE_CHECKPOINTS_STORE)
+      .objectStore(DEVICE_CHECKPOINTS_STORE)
+      .getAll(),
+  );
+}
+
+export async function getLocalDeviceCheckpoint(id: string) {
+  const database = await openDatabase();
+  return request<LocalDeviceCheckpoint | undefined>(
+    database
+      .transaction(DEVICE_CHECKPOINTS_STORE)
+      .objectStore(DEVICE_CHECKPOINTS_STORE)
+      .get(id),
+  );
+}
+
+export async function clearLocalDeviceCheckpoint(id: string) {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    DEVICE_CHECKPOINTS_STORE,
+    "readwrite",
+  );
+  transaction.objectStore(DEVICE_CHECKPOINTS_STORE).delete(id);
+  await transactionComplete(transaction);
 }
 
 async function rekeyDive(

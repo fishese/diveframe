@@ -1,4 +1,4 @@
-const CACHE_NAME = "diveframe-shell-v3";
+const CACHE_NAME = "diveframe-shell-v4";
 const APP_SHELL = [
   "/",
   "/settings",

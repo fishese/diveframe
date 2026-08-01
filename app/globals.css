@@ -2970,6 +2970,186 @@ button {
 
 }
 
+.ble-import-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(4, 18, 24, 0.72);
+}
+
+.ble-import-panel {
+  width: min(34rem, 100%);
+  max-height: min(90vh, 46rem);
+  overflow: auto;
+  border: 1px solid rgba(148, 196, 210, 0.22);
+  border-radius: 1rem;
+  background: linear-gradient(165deg, var(--panel-light), var(--panel));
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+}
+
+.ble-import-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.2rem 0.75rem;
+}
+
+.ble-import-header h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.35rem;
+}
+
+.ble-import-header .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.ble-import-body {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0 1.2rem 1.25rem;
+}
+
+.ble-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.ble-primary-sync {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.ble-primary-sync > .settings-note,
+.ble-more-history > .settings-note {
+  margin: 0;
+}
+
+.ble-device-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.ble-device-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  align-items: start;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(148, 196, 210, 0.18);
+  border-radius: 0.75rem;
+  background: rgba(8, 28, 36, 0.35);
+  cursor: pointer;
+}
+
+.ble-device-row strong,
+.ble-device-row small {
+  display: block;
+}
+
+.ble-device-row small {
+  margin-top: 0.2rem;
+  opacity: 0.78;
+}
+
+.ble-import-fieldset {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(148, 196, 210, 0.18);
+  border-radius: 0.75rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.ble-import-fieldset legend {
+  padding: 0 0.3rem;
+}
+
+.ble-radio {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem;
+  align-items: start;
+}
+
+.ble-radio small {
+  display: block;
+  margin-top: 0.2rem;
+  opacity: 0.78;
+}
+
+.ble-n-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.ble-n-stepper .button {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  justify-content: center;
+}
+
+.ble-n-input {
+  width: 4.5rem;
+  padding: 0.35rem 0.45rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(148, 196, 210, 0.28);
+  background: rgba(4, 18, 24, 0.55);
+  color: inherit;
+  text-align: center;
+}
+
+.ble-advanced {
+  margin-top: 0.25rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(148, 196, 210, 0.14);
+}
+
+.ble-advanced summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ble-more-history {
+  margin-top: 0.35rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(148, 196, 210, 0.18);
+  border-radius: 0.75rem;
+  background: rgba(8, 28, 36, 0.25);
+  display: grid;
+  gap: 0.55rem;
+}
+
+.ble-more-history h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.ble-full-warning {
+  margin-top: 0.45rem;
+}
+
+.ble-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -95,6 +95,52 @@ test("BLE persist helpers build shearwater-ble import + raw record ids", () => {
   );
 });
 
+test("prepareBlePersistFromDownload maps a live-shaped download result", async () => {
+  const download = {
+    status: 0,
+    message: "Success",
+    vendor: "Shearwater",
+    product: "Perdix 2",
+    family: 0,
+    model: 16,
+    firmware: 89,
+    serial: -1461490243,
+    serialHex: "A8E705BD",
+    cancelled: false,
+    persisted: false,
+    diveCount: 1,
+    newestFingerprintHex: "6A3FDA66",
+    logTail: "",
+    dives: [
+      {
+        size: 8,
+        fingerprintHex: "6A3FDA66",
+        dataBase64: "AQIDBAUGBwg=",
+        parsed: {
+          parseStatus: 0,
+          parseMessage: "Success",
+          datetime: "2026-06-27T14:12:54",
+          diveTimeSeconds: 100,
+          maxDepthM: 10,
+          diveMode: "OC",
+          sampleCount: 0,
+          gasmixes: [],
+          tanks: [],
+          profile: [],
+        },
+      },
+    ],
+  };
+  const payload = await persist.prepareBlePersistFromDownload(download, {
+    libdivecomputerVersion: "0.9-test",
+  });
+  assert.equal(payload.dives.length, 1);
+  assert.equal(payload.rawRecords.length, 1);
+  assert.equal(payload.failedParseCount, 0);
+  assert.equal(payload.dives[0].source, "shearwater-ble");
+  assert.ok(payload.checkpoint);
+});
+
 test("prepareBlePersistFromFixture maps fixture pairs when present", async () => {
   const preview = normalizer.normalizeBleDivePreview(
     {

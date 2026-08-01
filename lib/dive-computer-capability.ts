@@ -97,7 +97,10 @@ export type DiveComputerDownloadResult = {
 };
 
 export type DiveComputerDownloadOptions = {
-  /** Max dives to capture (native clamps to 1–50). Default 5. */
+  /**
+   * Max dives to capture. Positive values honor that count. `0` (or negative)
+   * means unlimited / full computer history. Default 5.
+   */
   limit?: number;
   /**
    * libdivecomputer checkpoint: stop when this dive is reached and do not

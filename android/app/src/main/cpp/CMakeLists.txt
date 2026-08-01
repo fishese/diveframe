@@ -46,3 +46,12 @@ find_library(ANDROID_LOG_LIB log)
 
 add_library(diveframe_dc SHARED diveframe_dc.c)
 target_link_libraries(diveframe_dc PRIVATE libdivecomputer ${ANDROID_LOG_LIB})
+
+# Android 15 devices may use 16 KB memory pages, and the loader rejects shared
+# libraries whose segments are aligned to the older 4 KB boundary.
+set(DIVEFRAME_PAGE_ALIGNMENT
+    "-Wl,-z,max-page-size=16384"
+    "-Wl,-z,common-page-size=16384"
+)
+target_link_options(libdivecomputer PRIVATE ${DIVEFRAME_PAGE_ALIGNMENT})
+target_link_options(diveframe_dc PRIVATE ${DIVEFRAME_PAGE_ALIGNMENT})

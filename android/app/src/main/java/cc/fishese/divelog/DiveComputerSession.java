@@ -265,8 +265,14 @@ final class DiveComputerSession {
 
         try {
             DiveComputerNative.installTransport(transport);
-            int bounded = Math.max(1, Math.min(limit, 50));
-            return DiveComputerNative.nativeDownload(productName, bounded, fingerprint);
+            // limit <= 0 means unlimited (full computer history); otherwise honor
+            // the requested count with no artificial upper clamp.
+            int effectiveLimit = limit <= 0 ? 0 : limit;
+            return DiveComputerNative.nativeDownload(
+                productName,
+                effectiveLimit,
+                fingerprint
+            );
         } finally {
             DiveComputerNative.setDownloadListener(null);
             DiveComputerNative.clearTransport();

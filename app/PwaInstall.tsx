@@ -1,5 +1,6 @@
 "use client";
 
+import { Capacitor } from "@capacitor/core";
 import { Check, Download, Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -41,7 +42,30 @@ function isIosDevice() {
 export function PwaManager() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+      if (Capacitor.isNativePlatform()) {
+        // The native shell already ships (or serves) its own assets, and the
+        // worker caches by URL, so keeping it only pins stale bundles.
+        void navigator.serviceWorker
+          .getRegistrations()
+          .then((registrations) => {
+            for (const registration of registrations) {
+              void registration.unregister();
+            }
+          })
+          .catch(() => undefined);
+        void caches
+          ?.keys()
+          .then((names) =>
+            Promise.all(
+              names
+                .filter((name) => name.startsWith("diveframe-"))
+                .map((name) => caches.delete(name)),
+            ),
+          )
+          .catch(() => undefined);
+      } else {
+        navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+      }
     }
 
     function captureInstallPrompt(event: Event) {

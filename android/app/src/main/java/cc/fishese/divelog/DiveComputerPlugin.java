@@ -271,7 +271,7 @@ public class DiveComputerPlugin extends Plugin {
                 );
                 result.put("cancelled", download.status == -10);
                 result.put("persisted", false);
-                result.put("limit", Math.max(1, Math.min(requestedLimit, 50)));
+                result.put("limit", requestedLimit);
                 result.put(
                     "fingerprintHexUsed",
                     fingerprintHex == null || fingerprintHex.isEmpty()

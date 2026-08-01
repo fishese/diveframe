@@ -211,9 +211,17 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /createV8ObjectStores/);
   assert.match(storage, /deleteObjectStore/);
   assert.match(storage, /persistBleImport/);
+  assert.match(storage, /getLocalDeviceCheckpoint/);
+  assert.match(storage, /clearLocalDeviceCheckpoint/);
   assert.match(storage, /rawDiveRecords/);
   assert.match(storage, /deviceCheckpoints/);
   assert.match(storage, /storeNamesForErase/);
+  assert.match(await readFile("lib/ble-import-session.ts", "utf8"), /nativeLimitForQuantity/);
+  assert.match(await readFile("lib/ble-import-session.ts", "utf8"), /kind: "full"/);
+  assert.match(app, /BleImportPanel/);
+  assert.match(app, /downloadFromComputer/);
+  assert.match(appI18n, /downloadFromComputer/);
+  assert.match(appI18n, /bleImportFullWarning/);
   assert.match(backup, /BACKUP_VERSION = 3/);
   assert.match(backup, /rawBytesBase64/);
   assert.match(backup, /fingerprintBase64/);

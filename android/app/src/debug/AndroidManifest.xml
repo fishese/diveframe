@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Debug builds can load the DiveFrame dev server from a plain http address
+      on the local network. Release builds keep Android's cleartext block.
+    -->
+    <application android:usesCleartextTraffic="true" />
+
+</manifest>

@@ -72,7 +72,9 @@ import { readSubsurfaceLog } from "@/lib/parsers/subsurface";
 import { readUddfLog } from "@/lib/parsers/uddf";
 import { readFitDive } from "@/lib/parsers/fit";
 import type { AppLanguage, AppTranslate } from "@/lib/app-i18n";
+import { diveComputerCapability } from "@/lib/dive-computer-capability";
 import { useAppI18n } from "./AppI18nProvider";
+import { BleImportPanel } from "./components/BleImportPanel";
 
 type Dive = LocalDive;
 type Attachment = LocalAttachment;
@@ -122,6 +124,10 @@ export function DiveFrameApp() {
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(false);
   const [mobileDetail, setMobileDetail] = useState(false);
+  const [bleImportOpen, setBleImportOpen] = useState(false);
+  // Resolved after mount: the server render and the static export both report
+  // the web platform, so checking during render would hide the control forever.
+  const [bleImportAvailable, setBleImportAvailable] = useState(false);
   const [storageEstimate, setStorageEstimate] = useState<Awaited<
     ReturnType<typeof getLocalBackupSizeEstimate>
   > | null>(null);
@@ -168,6 +174,10 @@ export function DiveFrameApp() {
         ),
       )
       .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    setBleImportAvailable(diveComputerCapability.isAvailable());
   }, []);
 
   const selected = useMemo(
@@ -541,6 +551,17 @@ export function DiveFrameApp() {
             <Settings size={16} />
             {t("settings")}
           </Link>
+          {bleImportAvailable ? (
+            <button
+              type="button"
+              className="button button-quiet"
+              onClick={() => setBleImportOpen(true)}
+              disabled={busy}
+            >
+              <ArrowDownToLine size={17} />
+              {t("downloadFromComputer")}
+            </button>
+          ) : null}
           <button
             type="button"
             className="button button-primary"
@@ -560,6 +581,16 @@ export function DiveFrameApp() {
           />
         </div>
       </header>
+
+      {bleImportOpen ? (
+        <BleImportPanel
+          t={t}
+          onClose={() => setBleImportOpen(false)}
+          onImported={async () => {
+            await refreshDives();
+          }}
+        />
+      ) : null}
 
       {dives.length === 0 ? (
         <EmptyState

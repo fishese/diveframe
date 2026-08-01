@@ -826,7 +826,8 @@ Java_cc_fishese_divelog_DiveComputerNative_nativeDownload(
     state.on_devinfo = on_devinfo;
     state.on_dive = on_dive;
     state.on_progress = on_progress;
-    state.dive_limit = limit > 0 ? (unsigned int) limit : 1;
+    /* limit <= 0 means unlimited (full import); positive values cap dive_cb. */
+    state.dive_limit = limit > 0 ? (unsigned int) limit : 0;
     state.dive_count = 0;
     state.cancelled = 0;
 

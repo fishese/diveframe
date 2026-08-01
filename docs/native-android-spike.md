@@ -20,7 +20,7 @@ spike still does not write the logbook; IndexedDB v8 stores and
 | Save full capture fixture (Downloads via MediaStore) | Working |
 | Offline BLE↔Cloud identity matcher (fixture-driven) | Working — 5/5 high matches on Perdix 2 |
 | IndexedDB v8 + raw/checkpoint/trips stores | **Shipped** (destructive upgrade; spike still non-persisting) |
-| Production Import UI | Not started |
+| Production Import UI | **Shipped** — `BleImportPanel` in main app; spike shell still separate |
 
 ### Hardware exercised
 
@@ -155,6 +155,32 @@ memory so incremental downloads can be exercised without persistence.
    returned `newestFingerprintHex` as the next checkpoint (in-memory only for
    this spike; not stored in IndexedDB).
 
+## Testing the product app on device
+
+The APK normally serves the spike bundle from `dist-native`. To exercise the
+real **Download from computer** flow with live reload, point the shell at a
+running dev server instead:
+
+1. `npm run dev:lan`
+2. `adb reverse tcp:3000 tcp:3000`
+3. `$env:DIVEFRAME_NATIVE_SERVER_URL="http://localhost:3000"; npx cap sync android`
+4. Rebuild and install the **debug** variant; only debug allows cleartext http.
+
+Use `http://localhost:3000` with `adb reverse` rather than a LAN address.
+`crypto.subtle` exists only in a secure context, and a LAN origin such as
+`http://192.168.x.x:3000` is not one, so raw-record hashing in
+`ble-persist.ts` fails with `Cannot read properties of undefined (reading
+'digest')` after a download completes. `http://localhost` is treated as
+trustworthy, and production Capacitor builds serve `https://localhost`, so
+neither hits this. Re-run `adb reverse` after the device reconnects.
+
+On native platforms the app unregisters the PWA service worker and clears its
+caches (`PwaManager`). The worker is cache-first on stable module URLs, which
+pinned stale BLE UI during LAN/dev testing.
+
+Clear `DIVEFRAME_NATIVE_SERVER_URL` and re-run `npm run native:sync` to go back
+to the bundled spike.
+
 The source pin is recorded in
 `android/app/src/main/cpp/libdivecomputer.pin`. Fetched dependency source and
 compiled artifacts are intentionally ignored by Git. The matching upstream
@@ -164,12 +190,11 @@ this workspace's space-containing path.
 
 ## Current boundary
 
-The bridge exposes capability inspection, permission requests, scan/connect
-control, multi-dive download with fingerprint checkpoints, progress events,
-`dc_parser` summaries, an import-shaped preview normalizer, and cancellation.
-It does **not** call `persistBleImport` / `upsertLocalDives`, advance a durable
-checkpoint store, or write the logbook from this research shell. IndexedDB v8
-and helpers are ready for the product import UI.
+The research spike still does **not** write the logbook (`persisted: false`).
+Product Android builds expose **Download from computer** in the main app
+(`BleImportPanel` → `runBleImportSession` → `persistBleImport`), including
+Last N / Last 200 / Full import and new-since-last-sync. Native `limit <= 0`
+means unlimited enumeration for full import.
 
 ## Licensing gate
 

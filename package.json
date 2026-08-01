@@ -8,12 +8,13 @@
   },
   "scripts": {
     "dev": "vinext dev",
+    "dev:lan": "vinext dev -H 0.0.0.0",
     "build": "vinext build",
     "start": "vinext start",
     "native:web": "vite build --config vite.native.config.mjs --configLoader native",
     "native:sync": "npm run native:web && cap sync android",
     "native:open": "cap open android",
-    "test": "npm run build && node --test tests/app-contract.test.mjs tests/backup-crypto.test.mjs tests/ble-capture-fixture.test.mjs tests/ble-dive-normalizer.test.mjs tests/ble-identity-offline.test.mjs tests/ble-persist.test.mjs tests/composer-output.test.mjs tests/composer-presets.test.mjs tests/dive-identity.test.mjs tests/dive-site-catalog.test.mjs tests/dive-site-validation.test.mjs tests/duplicate-dives.test.mjs tests/gas-calculations.test.mjs tests/geocode-query.test.mjs tests/import-shearwater.test.mjs tests/media-optimization.test.mjs tests/native-contract.test.mjs tests/subsurface-export.test.mjs",
+    "test": "npm run build && node --test tests/app-contract.test.mjs tests/backup-crypto.test.mjs tests/ble-capture-fixture.test.mjs tests/ble-dive-normalizer.test.mjs tests/ble-identity-offline.test.mjs tests/ble-import-session.test.mjs tests/ble-persist.test.mjs tests/composer-output.test.mjs tests/composer-presets.test.mjs tests/dive-identity.test.mjs tests/dive-site-catalog.test.mjs tests/dive-site-validation.test.mjs tests/duplicate-dives.test.mjs tests/gas-calculations.test.mjs tests/geocode-query.test.mjs tests/import-shearwater.test.mjs tests/media-optimization.test.mjs tests/native-contract.test.mjs tests/subsurface-export.test.mjs",
     "validate:sites": "tsx scripts/validate-dive-sites.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },

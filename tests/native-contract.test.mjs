@@ -140,26 +140,44 @@ test("download path uses dc_custom_open and does not claim persistence", async (
 });
 
 test("BLE normalizer exists and is wired into the spike without persistence", async () => {
-  const [normalizer, spike, docs, javaPlugin, persist] = await Promise.all([
-    readFile(new URL("../lib/ble-dive-normalizer.ts", import.meta.url), "utf8"),
-    readFile(new URL("../native-spike/src/main.ts", import.meta.url), "utf8"),
-    readFile(
-      new URL("../docs/native-android-spike.md", import.meta.url),
-      "utf8",
-    ),
-    readFile(files.javaPlugin, "utf8"),
-    readFile(new URL("../lib/ble-persist.ts", import.meta.url), "utf8"),
-  ]);
+  const [normalizer, spike, docs, javaPlugin, persist, session, sessionJava, nativeC] =
+    await Promise.all([
+      readFile(new URL("../lib/ble-dive-normalizer.ts", import.meta.url), "utf8"),
+      readFile(new URL("../native-spike/src/main.ts", import.meta.url), "utf8"),
+      readFile(
+        new URL("../docs/native-android-spike.md", import.meta.url),
+        "utf8",
+      ),
+      readFile(files.javaPlugin, "utf8"),
+      readFile(new URL("../lib/ble-persist.ts", import.meta.url), "utf8"),
+      readFile(new URL("../lib/ble-import-session.ts", import.meta.url), "utf8"),
+      readFile(
+        new URL(
+          "../android/app/src/main/java/cc/fishese/divelog/DiveComputerSession.java",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+      readFile(
+        new URL("../android/app/src/main/cpp/diveframe_dc.c", import.meta.url),
+        "utf8",
+      ),
+    ]);
 
   assert.match(normalizer, /shearwater-ble/);
   assert.match(persist, /previewToImportedDive/);
   assert.match(persist, /persistBleImport|prepareBlePersistFromFixture/);
+  assert.match(persist, /prepareBlePersistFromDownload/);
   assert.match(normalizer, /proposedCanonicalId/);
   assert.match(spike, /normalizeBleDownloadPreview/);
   assert.match(spike, /saveCaptureFixture|Save full capture|save-capture/);
   assert.match(javaPlugin, /saveCaptureFixture/);
   assert.match(docs, /import-shaped preview|normalize/i);
   assert.match(docs, /BLE_CAPTURE_FIXTURE|fixtures\/ble|MediaStore|Downloads/);
+  assert.match(session, /nativeLimitForQuantity/);
+  assert.match(sessionJava, /effectiveLimit = limit <= 0 \? 0 : limit/);
+  assert.match(nativeC, /dive_limit = limit > 0 \? \(unsigned int\) limit : 0/);
+  assert.doesNotMatch(sessionJava, /Math\.min\(limit, 50\)/);
 });
 
 function major(versionRange) {

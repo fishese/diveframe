@@ -498,8 +498,13 @@ may supplement but not replace hardware testing.
 4. **Normalizer:** ~~Map the approved v1 field inventory…~~ **Done for preview
    contract** (`lib/ble-dive-normalizer.ts` + fixture tests). Product upsert
    path uses `previewToImportedDive`.
-5. **Product UX:** Add permissions, scan/device choice, progress, cancellation,
-   recovery controls, summary, pairing help, and translations.
+5. **Product UX:** ~~Add permissions, scan/device choice…~~ **Done (2026-08):**
+   Android **Download from computer** panel (`BleImportPanel`) with folded sync
+   UX: primary **Download new dives** when a checkpoint exists; always-visible
+   **Get more history** (Last N with steppers, Last 200, Full under Advanced);
+   first-time layout is history quantities + **Download history**. Cancel,
+   summary, checkpoint reset, session adopt/release, EN/zh-Hant/ja strings.
+   Spike shell remains non-persisting. PC/Web Bluetooth deferred.
 6. **Hardening and release:** Run the failure/device matrix, complete privacy
    and LGPL compliance work, and update USER-GUIDE and PRODUCT-SPEC.
 7. **Later if justified:** iOS, additional Shearwater backends/models, other

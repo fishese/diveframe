@@ -1,6 +1,10 @@
 import type { BleCaptureFixture } from "./ble-capture-fixture";
 import type { BleNormalizedDivePreview } from "./ble-dive-normalizer";
-import { BLE_NORMALIZER_CONTRACT_VERSION } from "./ble-dive-normalizer";
+import {
+  BLE_NORMALIZER_CONTRACT_VERSION,
+  normalizeBleDownloadPreview,
+} from "./ble-dive-normalizer";
+import type { DiveComputerDownloadResult } from "./dive-computer-capability";
 import type {
   LocalDeviceCheckpoint,
   LocalImportedDive,
@@ -146,13 +150,24 @@ export function bleCaptureImportPairs(fixture: BleCaptureFixture) {
   };
 }
 
-/** Build import payload from a capture fixture (tests / offline tooling). */
-export async function prepareBlePersistFromFixture(fixture: BleCaptureFixture) {
-  const prepared = bleCaptureImportPairs(fixture);
+async function persistPayloadFromPairs(options: {
+  pairs: Array<{
+    preview: BleNormalizedDivePreview;
+    rawBytes: Blob;
+    fingerprintHex: string;
+  }>;
+  deviceDescriptor: string;
+  deviceSerial: string;
+  libdivecomputerVersion: string;
+  libdivecomputerCommit?: string;
+  capturedAt: string;
+  newestFingerprintHex?: string;
+  matched?: number;
+}) {
   const dives: LocalImportedDive[] = [];
   const rawRecords: LocalRawDiveRecord[] = [];
 
-  for (const pair of prepared.pairs) {
+  for (const pair of options.pairs) {
     const dive = previewToImportedDive(pair.preview);
     const checksum = await sha256Blob(pair.rawBytes);
     dives.push(dive);
@@ -160,28 +175,97 @@ export async function prepareBlePersistFromFixture(fixture: BleCaptureFixture) {
       buildRawDiveRecord({
         fingerprintHex: pair.fingerprintHex,
         diveId: dive.id,
-        deviceDescriptor: prepared.deviceDescriptor,
-        deviceSerial: prepared.deviceSerial,
-        libdivecomputerVersion: prepared.libdivecomputerVersion,
-        libdivecomputerCommit: prepared.libdivecomputerCommit,
-        capturedAt: prepared.capturedAt,
+        deviceDescriptor: options.deviceDescriptor,
+        deviceSerial: options.deviceSerial,
+        libdivecomputerVersion: options.libdivecomputerVersion,
+        libdivecomputerCommit: options.libdivecomputerCommit,
+        capturedAt: options.capturedAt,
         rawBytes: pair.rawBytes,
         checksum,
       }),
     );
   }
 
+  const newestFingerprintHex =
+    options.newestFingerprintHex ||
+    options.pairs[0]?.fingerprintHex ||
+    "";
   const checkpoint =
-    prepared.newestFingerprintHex && prepared.deviceSerial
+    newestFingerprintHex && options.deviceSerial
       ? buildDeviceCheckpoint({
-          descriptor: prepared.deviceDescriptor,
-          serialHex: prepared.deviceSerial,
-          newestFingerprintHex: prepared.newestFingerprintHex,
+          descriptor: options.deviceDescriptor,
+          serialHex: options.deviceSerial,
+          newestFingerprintHex,
           downloaded: dives.length,
+          matched: options.matched,
         })
       : null;
 
-  return { dives, rawRecords, checkpoint };
+  return { dives, rawRecords, checkpoint, failedParseCount: 0 };
+}
+
+/** Build import payload from a capture fixture (tests / offline tooling). */
+export async function prepareBlePersistFromFixture(fixture: BleCaptureFixture) {
+  const prepared = bleCaptureImportPairs(fixture);
+  return persistPayloadFromPairs(prepared);
+}
+
+/** Build import payload from a live native download result. */
+export async function prepareBlePersistFromDownload(
+  download: DiveComputerDownloadResult,
+  options?: {
+    libdivecomputerVersion?: string;
+    libdivecomputerCommit?: string;
+    capturedAt?: string;
+  },
+) {
+  const device = {
+    vendor: download.vendor,
+    product: download.product,
+    serial: download.serial,
+    serialHex: download.serialHex,
+    firmware: download.firmware,
+    model: download.model,
+  };
+  const previews = normalizeBleDownloadPreview(
+    device,
+    download.dives.map((dive) => ({
+      size: dive.size,
+      fingerprintHex: dive.fingerprintHex,
+      parsed: dive.parsed,
+    })),
+  );
+  const pairs: Array<{
+    preview: BleNormalizedDivePreview;
+    rawBytes: Blob;
+    fingerprintHex: string;
+  }> = [];
+  let failedParseCount = 0;
+
+  download.dives.forEach((dive, index) => {
+    const preview = previews[index];
+    if (!preview?.parseOk || typeof dive.dataBase64 !== "string") {
+      failedParseCount += 1;
+      return;
+    }
+    pairs.push({
+      preview,
+      rawBytes: base64ToBlob(dive.dataBase64),
+      fingerprintHex: dive.fingerprintHex,
+    });
+  });
+
+  const payload = await persistPayloadFromPairs({
+    pairs,
+    deviceDescriptor: download.product || "shearwater",
+    deviceSerial: (download.serialHex ?? "").toUpperCase(),
+    libdivecomputerVersion: options?.libdivecomputerVersion ?? "unknown",
+    libdivecomputerCommit: options?.libdivecomputerCommit,
+    capturedAt: options?.capturedAt ?? new Date().toISOString(),
+    newestFingerprintHex: download.newestFingerprintHex,
+  });
+
+  return { ...payload, failedParseCount };
 }
 
 export async function persistBleCaptureFromFixture(fixture: BleCaptureFixture) {
