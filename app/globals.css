@@ -599,6 +599,143 @@ button {
   justify-content: end;
 }
 
+.select-mode-toggle {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 5px;
+  margin-left: auto;
+  padding: 6px 8px;
+}
+
+.select-mode-toggle.active {
+  background: rgba(141, 235, 215, 0.14);
+  border-color: rgba(141, 235, 215, 0.42);
+  color: var(--teal);
+}
+
+.filter-row .select-mode-toggle {
+  margin-left: 0;
+}
+
+.select-action-bar {
+  align-items: center;
+  background: rgba(141, 235, 215, 0.06);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.select-action-count {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.select-action-buttons {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.select-action-buttons select {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--mist);
+  font-size: 11px;
+  padding: 8px 9px;
+}
+
+.select-new-trip-form {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.select-new-trip-form input {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #fff;
+  font-size: 12px;
+  padding: 8px 9px;
+}
+
+.dive-row-selectable {
+  grid-template-columns: 20px 46px minmax(0, 1fr) auto;
+}
+
+.dive-row-checkbox {
+  display: flex;
+}
+
+.dive-row-checkbox input {
+  accent-color: var(--teal);
+  height: 15px;
+  pointer-events: none;
+  width: 15px;
+}
+
+.dive-row-trip-member {
+  padding-left: 40px;
+}
+
+.trip-block {
+  border-bottom: 1px solid rgba(196, 233, 225, 0.07);
+}
+
+.trip-header {
+  align-items: center;
+  background: rgba(141, 235, 215, 0.04);
+  border: 0;
+  color: var(--mist);
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  padding: 11px 18px;
+  text-align: left;
+  width: 100%;
+}
+
+.trip-header:hover {
+  background: rgba(141, 235, 215, 0.08);
+}
+
+.trip-header-chevron {
+  transition: transform 160ms ease;
+}
+
+.trip-header-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+.trip-header-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 800;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trip-header-count {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .detail-panel {
   overflow-y: auto;
   background:
@@ -918,6 +1055,29 @@ button {
 
 .details-editor > .button {
   justify-self: start;
+}
+
+.trip-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.trip-rename-row,
+.trip-manage-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trip-rename-row input {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #fff;
+  flex: 1;
+  min-width: 120px;
+  padding: 8px 10px;
 }
 
 .site-picker-card {

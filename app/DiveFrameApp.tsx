@@ -4,7 +4,9 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowDownToLine,
+  Briefcase,
   Camera,
+  CheckSquare,
   ChevronDown,
   Clock3,
   Compass,
@@ -37,20 +39,32 @@ import {
 } from "react";
 import {
   addLocalPhotos,
+  createLocalTrip,
+  deleteLocalTrip,
   getLocalBackupSizeEstimate,
   getLocalAppPreferences,
   listLocalAttachments,
   listLocalDives,
+  listLocalTrips,
+  renameLocalTrip,
   requestPersistentLocalStorage,
+  setLocalDiveTripId,
+  setLocalDiveTripIds,
   type LocalAttachment,
   type LocalDive,
   type LocalImportedDive,
+  type LocalTrip,
   type DiveSource,
   updateLocalDiveLocation,
   updateLocalDiveDetails,
   updateLocalDiveSite,
   upsertLocalDives,
 } from "@/lib/indexed-db";
+import {
+  buildDiveListRows,
+  compareDives,
+  type DiveSortOption,
+} from "@/lib/dive-list-model";
 import { chartAvailability, renderDiveChart } from "@/lib/chart-renderer";
 import { defaultComposerSettings } from "@/lib/composer-settings";
 import {
@@ -112,6 +126,7 @@ const MINIMUM_AVERAGE_SAC_DURATION_SECONDS = 20 * 60;
 export function DiveFrameApp() {
   const { language, t } = useAppI18n();
   const [dives, setDives] = useState<Dive[]>([]);
+  const [trips, setTrips] = useState<LocalTrip[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [query, setQuery] = useState("");
@@ -122,6 +137,16 @@ export function DiveFrameApp() {
     DEFAULT_CYLINDER_PRESET_ID,
   );
   const [sortOption, setSortOption] = useState<DiveSortOption>("date-desc");
+  const [collapsedTripIds, setCollapsedTripIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedDiveIds, setSelectedDiveIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [newTripFormOpen, setNewTripFormOpen] = useState(false);
+  const [newTripNameDraft, setNewTripNameDraft] = useState("");
+  const [addToTripDraft, setAddToTripDraft] = useState("");
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(false);
   const [mobileDetail, setMobileDetail] = useState(false);
@@ -136,23 +161,26 @@ export function DiveFrameApp() {
   const enrichingLocations = useRef(false);
 
   const refreshDives = useCallback(async (preferredId?: string) => {
-    const [next, nextStorageEstimate] = await Promise.all([
+    const [next, nextStorageEstimate, nextTrips] = await Promise.all([
       listLocalDives(),
       getLocalBackupSizeEstimate(),
+      listLocalTrips(),
     ]);
     setDives(next);
     setStorageEstimate(nextStorageEstimate);
+    setTrips(nextTrips);
     setSelectedId((current) => preferredId ?? current ?? next[0]?.id ?? null);
     setStatus(next.length ? t("divesReady", { count: next.length }) : t("importDiveLog"));
   }, [t]);
 
   useEffect(() => {
     let active = true;
-    Promise.all([listLocalDives(), getLocalBackupSizeEstimate()])
-      .then(([next, nextStorageEstimate]) => {
+    Promise.all([listLocalDives(), getLocalBackupSizeEstimate(), listLocalTrips()])
+      .then(([next, nextStorageEstimate, nextTrips]) => {
         if (!active) return;
         setDives(next);
         setStorageEstimate(nextStorageEstimate);
+        setTrips(nextTrips);
         setSelectedId(next[0]?.id ?? null);
         setStatus(next.length ? t("divesReady", { count: next.length }) : t("importDiveLog"));
         void requestPersistentLocalStorage();
@@ -302,6 +330,11 @@ export function DiveFrameApp() {
       })
       .sort((a, b) => compareDives(a, b, sortOption));
   }, [appSiteOnly, dives, gpsOnly, namedOnly, query, sortOption]);
+
+  const diveListRows = useMemo(
+    () => buildDiveListRows(visibleDives, trips, sortOption),
+    [visibleDives, trips, sortOption],
+  );
 
   const stats = useMemo(() => {
     const sacRates = dives
@@ -509,6 +542,181 @@ export function DiveFrameApp() {
   function chooseDive(id: string) {
     setSelectedId(id);
     setMobileDetail(true);
+  }
+
+  function handleDiveRowClick(id: string) {
+    if (selectMode) {
+      toggleDiveSelected(id);
+    } else {
+      chooseDive(id);
+    }
+  }
+
+  function toggleTripCollapse(tripId: string) {
+    setCollapsedTripIds((current) => {
+      const next = new Set(current);
+      if (next.has(tripId)) next.delete(tripId);
+      else next.add(tripId);
+      return next;
+    });
+  }
+
+  function toggleDiveSelected(id: string) {
+    setSelectedDiveIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectMode() {
+    setSelectMode((value) => {
+      const next = !value;
+      if (!next) setSelectedDiveIds(new Set());
+      setNewTripFormOpen(false);
+      setNewTripNameDraft("");
+      setAddToTripDraft("");
+      return next;
+    });
+  }
+
+  async function createTripFromSelection(name: string) {
+    const ids = Array.from(selectedDiveIds);
+    if (!ids.length || !name.trim()) return;
+    setBusy(true);
+    setStatus(t("savingTripAssignment"));
+    try {
+      const trip = await createLocalTrip(name);
+      await setLocalDiveTripIds(ids, trip.id);
+      await refreshDives(selectedId ?? undefined);
+      setSelectedDiveIds(new Set());
+      setNewTripFormOpen(false);
+      setNewTripNameDraft("");
+      setStatus(t("tripAssignmentSaved"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("tripAssignmentFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function addSelectionToTrip(tripId: string) {
+    const ids = Array.from(selectedDiveIds);
+    if (!ids.length || !tripId) return;
+    setBusy(true);
+    setStatus(t("savingTripAssignment"));
+    try {
+      await setLocalDiveTripIds(ids, tripId);
+      await refreshDives(selectedId ?? undefined);
+      setSelectedDiveIds(new Set());
+      setAddToTripDraft("");
+      setStatus(t("tripAssignmentSaved"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("tripAssignmentFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeSelectionFromTrip() {
+    const ids = Array.from(selectedDiveIds);
+    if (!ids.length) return;
+    setBusy(true);
+    setStatus(t("savingTripAssignment"));
+    try {
+      await setLocalDiveTripIds(ids, null);
+      await refreshDives(selectedId ?? undefined);
+      setSelectedDiveIds(new Set());
+      setStatus(t("tripAssignmentSaved"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("tripAssignmentFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function assignDiveTrip(diveId: string, tripId: string | null) {
+    setBusy(true);
+    setStatus(t("savingTripAssignment"));
+    try {
+      const updated = await setLocalDiveTripId(diveId, tripId);
+      setDives((current) =>
+        current.map((dive) => (dive.id === updated.id ? updated : dive)),
+      );
+      setStatus(t("tripAssignmentSaved"));
+      return true;
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("tripAssignmentFailed"));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createTripForDive(diveId: string, name: string) {
+    setBusy(true);
+    setStatus(t("savingTripAssignment"));
+    try {
+      const trip = await createLocalTrip(name);
+      const updated = await setLocalDiveTripId(diveId, trip.id);
+      setTrips((current) =>
+        [...current, trip].sort((a, b) => a.name.localeCompare(b.name)),
+      );
+      setDives((current) =>
+        current.map((dive) => (dive.id === updated.id ? updated : dive)),
+      );
+      setStatus(t("tripAssignmentSaved"));
+      return true;
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("tripAssignmentFailed"));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function renameTrip(tripId: string, name: string) {
+    setBusy(true);
+    setStatus(t("savingTripAssignment"));
+    try {
+      const updated = await renameLocalTrip(tripId, name);
+      setTrips((current) =>
+        current
+          .map((trip) => (trip.id === updated.id ? updated : trip))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
+      setStatus(t("tripRenamed"));
+      return true;
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("tripAssignmentFailed"));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeTrip(tripId: string) {
+    const assignedCount = dives.filter((dive) => dive.tripId === tripId).length;
+    const confirmed = window.confirm(
+      assignedCount > 0
+        ? t("deleteTripConfirmWithDives", { count: assignedCount })
+        : t("deleteTripConfirm"),
+    );
+    if (!confirmed) return false;
+    setBusy(true);
+    setStatus(t("savingTripAssignment"));
+    try {
+      await deleteLocalTrip(tripId, { clearAssignments: assignedCount > 0 });
+      await refreshDives(selectedId ?? undefined);
+      setStatus(t("tripDeleted"));
+      return true;
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("tripDeleteFailed"));
+      return false;
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -753,33 +961,143 @@ export function DiveFrameApp() {
                   >
                     <X size={14} /> {t("clearFilter")}
                   </button>
-                </div>
-                {visibleDives.map((dive) => (
                   <button
                     type="button"
-                    key={dive.id}
-                    className={`dive-row ${dive.id === selectedId ? "active" : ""}`}
-                    onClick={() => chooseDive(dive.id)}
+                    className={`select-mode-toggle ${selectMode ? "active" : ""}`}
+                    onClick={toggleSelectMode}
+                    aria-pressed={selectMode}
                   >
-                    <span className="dive-number">
-                      <small>{t("dive").toUpperCase()}</small>
-                      {dive.diveNumber ?? "—"}
-                    </span>
-                    <span className="dive-summary">
-                      <strong>{displaySite(dive, t("unnamedDiveSite"))}</strong>
-                      <span>{formatDate(dive.diveDate, language, t("dateUnknown"))}</span>
-                    </span>
-                    <span className="dive-meta">
-                      <strong>{formatDepth(dive.depth)}</strong>
-                      <span title={t("diveTime")}>
-                        <Clock3 size={12} />
-                        {formatDuration(
-                          dive.durationSeconds ?? dive.lengthText,
-                        )}
-                      </span>
-                    </span>
+                    <CheckSquare size={14} />
+                    {selectMode ? t("exitSelectMode") : t("selectDives")}
                   </button>
-                ))}
+                </div>
+                {selectMode ? (
+                  <div className="select-action-bar">
+                    <span className="select-action-count">
+                      {t("selectedCount", { count: selectedDiveIds.size })}
+                    </span>
+                    <div className="select-action-buttons">
+                      {newTripFormOpen ? (
+                        <form
+                          className="select-new-trip-form"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            void createTripFromSelection(newTripNameDraft);
+                          }}
+                        >
+                          <input
+                            value={newTripNameDraft}
+                            onChange={(event) => setNewTripNameDraft(event.target.value)}
+                            placeholder={t("newTripNamePlaceholder")}
+                            maxLength={120}
+                            autoFocus
+                          />
+                          <button
+                            type="submit"
+                            className="button button-secondary"
+                            disabled={busy || !newTripNameDraft.trim() || !selectedDiveIds.size}
+                          >
+                            {t("createTrip")}
+                          </button>
+                          <button
+                            type="button"
+                            className="button button-quiet"
+                            onClick={() => {
+                              setNewTripFormOpen(false);
+                              setNewTripNameDraft("");
+                            }}
+                          >
+                            {t("cancel")}
+                          </button>
+                        </form>
+                      ) : (
+                        <button
+                          type="button"
+                          className="button button-secondary"
+                          onClick={() => setNewTripFormOpen(true)}
+                          disabled={busy || !selectedDiveIds.size}
+                        >
+                          {t("newTripOption")}
+                        </button>
+                      )}
+                      <select
+                        value={addToTripDraft}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setAddToTripDraft(value);
+                          if (value) void addSelectionToTrip(value);
+                        }}
+                        disabled={busy || !selectedDiveIds.size || !trips.length}
+                        aria-label={t("addToExistingTrip")}
+                      >
+                        <option value="">{t("addToExistingTrip")}</option>
+                        {trips.map((trip) => (
+                          <option key={trip.id} value={trip.id}>
+                            {trip.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="button button-quiet"
+                        onClick={() => void removeSelectionFromTrip()}
+                        disabled={busy || !selectedDiveIds.size}
+                      >
+                        {t("removeFromTrip")}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+                {diveListRows.map((row) =>
+                  row.kind === "solo" ? (
+                    <DiveRowButton
+                      key={row.dive.id}
+                      dive={row.dive}
+                      language={language}
+                      t={t}
+                      selected={row.dive.id === selectedId}
+                      selectMode={selectMode}
+                      isChecked={selectedDiveIds.has(row.dive.id)}
+                      onClick={() => handleDiveRowClick(row.dive.id)}
+                    />
+                  ) : (
+                    <div className="trip-block" key={row.trip.id}>
+                      <button
+                        type="button"
+                        className="trip-header"
+                        onClick={() => toggleTripCollapse(row.trip.id)}
+                        aria-expanded={!collapsedTripIds.has(row.trip.id)}
+                      >
+                        <ChevronDown
+                          size={15}
+                          className={`trip-header-chevron ${collapsedTripIds.has(row.trip.id) ? "collapsed" : ""}`}
+                        />
+                        <Briefcase size={14} />
+                        <span className="trip-header-name">{row.trip.name}</span>
+                        {collapsedTripIds.has(row.trip.id) ? (
+                          <span className="trip-header-count">
+                            {t("tripDiveCount", { count: row.dives.length })}
+                          </span>
+                        ) : null}
+                      </button>
+                      {collapsedTripIds.has(row.trip.id)
+                        ? null
+                        : row.dives.map((dive) => (
+                            <DiveRowButton
+                              key={dive.id}
+                              dive={dive}
+                              language={language}
+                              t={t}
+                              selected={dive.id === selectedId}
+                              selectMode={selectMode}
+                              isChecked={selectedDiveIds.has(dive.id)}
+                              onClick={() => handleDiveRowClick(dive.id)}
+                              member
+                            />
+                          ))}
+                    </div>
+                  ),
+                )}
               </div>
             </aside>
 
@@ -796,6 +1114,11 @@ export function DiveFrameApp() {
                   onSaveDetails={saveDiveDetails}
                   siteSuggestions={siteSuggestions}
                   locationSuggestions={locationSuggestions}
+                  trips={trips}
+                  onAssignTrip={assignDiveTrip}
+                  onCreateTrip={createTripForDive}
+                  onRenameTrip={renameTrip}
+                  onDeleteTrip={removeTrip}
                 />
               ) : (
                 <div className="no-selection">{t("chooseDive")}</div>
@@ -869,6 +1192,63 @@ function Stat({
   );
 }
 
+function DiveRowButton({
+  dive,
+  language,
+  t,
+  selected,
+  selectMode,
+  isChecked,
+  onClick,
+  member = false,
+}: {
+  dive: Dive;
+  language: AppLanguage;
+  t: AppTranslate;
+  selected: boolean;
+  selectMode: boolean;
+  isChecked: boolean;
+  onClick: () => void;
+  member?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      className={[
+        "dive-row",
+        member ? "dive-row-trip-member" : "",
+        selected ? "active" : "",
+        selectMode ? "dive-row-selectable" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onClick={onClick}
+      aria-pressed={selectMode ? isChecked : undefined}
+    >
+      {selectMode ? (
+        <span className="dive-row-checkbox" aria-hidden="true">
+          <input type="checkbox" checked={isChecked} readOnly tabIndex={-1} />
+        </span>
+      ) : null}
+      <span className="dive-number">
+        <small>{t("dive").toUpperCase()}</small>
+        {dive.diveNumber ?? "—"}
+      </span>
+      <span className="dive-summary">
+        <strong>{displaySite(dive, t("unnamedDiveSite"))}</strong>
+        <span>{formatDate(dive.diveDate, language, t("dateUnknown"))}</span>
+      </span>
+      <span className="dive-meta">
+        <strong>{formatDepth(dive.depth)}</strong>
+        <span title={t("diveTime")}>
+          <Clock3 size={12} />
+          {formatDuration(dive.durationSeconds ?? dive.lengthText)}
+        </span>
+      </span>
+    </button>
+  );
+}
+
 function DiveDetail({
   dive,
   attachments,
@@ -879,6 +1259,11 @@ function DiveDetail({
   onSaveDetails,
   siteSuggestions,
   locationSuggestions,
+  trips,
+  onAssignTrip,
+  onCreateTrip,
+  onRenameTrip,
+  onDeleteTrip,
 }: {
   dive: Dive;
   attachments: Attachment[];
@@ -897,6 +1282,11 @@ function DiveDetail({
   }) => Promise<boolean>;
   siteSuggestions: string[];
   locationSuggestions: string[];
+  trips: LocalTrip[];
+  onAssignTrip: (diveId: string, tripId: string | null) => Promise<boolean>;
+  onCreateTrip: (diveId: string, name: string) => Promise<boolean>;
+  onRenameTrip: (tripId: string, name: string) => Promise<boolean>;
+  onDeleteTrip: (tripId: string) => Promise<boolean>;
 }) {
   const { language, t } = useAppI18n();
   const calculated = safeJson(dive.calculatedJson);
@@ -916,6 +1306,13 @@ function DiveDetail({
   const [editingDetails, setEditingDetails] = useState(false);
   const [buddyDraft, setBuddyDraft] = useState(dive.buddy ?? "");
   const [notesDraft, setNotesDraft] = useState(dive.notes ?? "");
+  const [tripDraft, setTripDraft] = useState(dive.tripId ?? "");
+  const [newTripNameDraft, setNewTripNameDraft] = useState("");
+  const [tripRenameOpen, setTripRenameOpen] = useState(false);
+  const [tripRenameDraft, setTripRenameDraft] = useState("");
+  const currentTrip = dive.tripId
+    ? trips.find((trip) => trip.id === dive.tripId) ?? null
+    : null;
   const [defaultCylinderPresetId, setDefaultCylinderPresetId] = useState(
     DEFAULT_CYLINDER_PRESET_ID,
   );
@@ -1177,13 +1574,25 @@ function DiveDetail({
                   const siteName = siteDraft.trim();
                   const currentSite = (dive.userSite ?? dive.site ?? "").trim();
                   if (siteName && siteName !== currentSite) {
-                    const saved = await onSaveSite({
+                    const siteSaved = await onSaveSite({
                       name: siteName,
                       source: "manual",
                       latitude: hasGps ? dive.gpsEntryLat : null,
                       longitude: hasGps ? dive.gpsEntryLng : null,
                     });
-                    if (!saved) return;
+                    if (!siteSaved) return;
+                  }
+                  if (tripDraft === "__new__") {
+                    if (newTripNameDraft.trim()) {
+                      const tripSaved = await onCreateTrip(
+                        dive.id,
+                        newTripNameDraft.trim(),
+                      );
+                      if (!tripSaved) return;
+                    }
+                  } else if (tripDraft !== (dive.tripId ?? "")) {
+                    const tripSaved = await onAssignTrip(dive.id, tripDraft || null);
+                    if (!tripSaved) return;
                   }
                   const saved = await onSaveDetails({
                     location: locationDraft.trim() || null,
@@ -1229,6 +1638,91 @@ function DiveDetail({
                 </label>
               </div>
               <p>{t("siteLocationEditorHint")}</p>
+              <div className="trip-editor">
+                <label>
+                  <span>{t("trip")}</span>
+                  <select
+                    value={tripDraft}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setTripDraft(value);
+                      setTripRenameOpen(false);
+                      if (value !== "__new__") setNewTripNameDraft("");
+                    }}
+                  >
+                    <option value="">{t("noTrip")}</option>
+                    {trips.map((trip) => (
+                      <option key={trip.id} value={trip.id}>
+                        {trip.name}
+                      </option>
+                    ))}
+                    <option value="__new__">{t("newTripOption")}</option>
+                  </select>
+                </label>
+                {tripDraft === "__new__" ? (
+                  <input
+                    value={newTripNameDraft}
+                    onChange={(event) => setNewTripNameDraft(event.target.value)}
+                    placeholder={t("newTripNamePlaceholder")}
+                    maxLength={120}
+                  />
+                ) : null}
+                {tripDraft && tripDraft !== "__new__" ? (
+                  tripRenameOpen ? (
+                    <div className="trip-rename-row">
+                      <input
+                        value={tripRenameDraft}
+                        onChange={(event) => setTripRenameDraft(event.target.value)}
+                        maxLength={120}
+                      />
+                      <button
+                        type="button"
+                        className="button button-quiet"
+                        disabled={busy || !tripRenameDraft.trim()}
+                        onClick={() =>
+                          void (async () => {
+                            if (await onRenameTrip(tripDraft, tripRenameDraft)) {
+                              setTripRenameOpen(false);
+                            }
+                          })()
+                        }
+                      >
+                        {t("saveChanges")}
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-quiet"
+                        onClick={() => setTripRenameOpen(false)}
+                      >
+                        {t("cancel")}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="trip-manage-row">
+                      <button
+                        type="button"
+                        className="button button-quiet"
+                        disabled={busy}
+                        onClick={() => {
+                          const current = trips.find((trip) => trip.id === tripDraft);
+                          setTripRenameDraft(current?.name ?? "");
+                          setTripRenameOpen(true);
+                        }}
+                      >
+                        {t("renameTrip")}
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-quiet"
+                        disabled={busy}
+                        onClick={() => void onDeleteTrip(tripDraft)}
+                      >
+                        {t("deleteTrip")}
+                      </button>
+                    </div>
+                  )
+                ) : null}
+              </div>
               <label>
                 <span>{t("buddy")}</span>
                 <input
@@ -1296,6 +1790,10 @@ function DiveDetail({
             </form>
           ) : null}
           <dl className="details-list">
+            <div>
+              <dt><Briefcase size={16} /> {t("trip")}</dt>
+              <dd>{currentTrip?.name ?? t("noTrip")}</dd>
+            </div>
             <div>
               <dt><Users size={16} /> {t("buddy")}</dt>
               <dd>{dive.buddy || t("notEntered")}</dd>
@@ -1793,71 +2291,6 @@ function sourceDiveNumber(dive: Dive, source: string) {
     return dive.diveNumber;
   }
   return null;
-}
-
-type DiveSortOption =
-  | "date-desc"
-  | "date-asc"
-  | "duration-desc"
-  | "duration-asc"
-  | "depth-desc"
-  | "depth-asc";
-
-function compareDives(a: Dive, b: Dive, option: DiveSortOption) {
-  if (option.startsWith("duration")) {
-    return compareNullableNumbers(
-      a.durationSeconds,
-      b.durationSeconds,
-      option.endsWith("desc") ? "desc" : "asc",
-    ) || compareDivesByDate(a, b, "desc");
-  }
-  if (option.startsWith("depth")) {
-    return compareNullableNumbers(
-      a.maxDepthM ?? numberFrom(a.depth),
-      b.maxDepthM ?? numberFrom(b.depth),
-      option.endsWith("desc") ? "desc" : "asc",
-    ) || compareDivesByDate(a, b, "desc");
-  }
-  return compareDivesByDate(
-    a,
-    b,
-    option === "date-desc" ? "desc" : "asc",
-  );
-}
-
-function compareNullableNumbers(
-  a: number | null,
-  b: number | null,
-  direction: "desc" | "asc",
-) {
-  if (a === null && b !== null) return 1;
-  if (a !== null && b === null) return -1;
-  if (a === null || b === null || a === b) return 0;
-  return (a - b) * (direction === "desc" ? -1 : 1);
-}
-
-function compareDivesByDate(
-  a: Pick<Dive, "diveDate" | "diveNumber">,
-  b: Pick<Dive, "diveDate" | "diveNumber">,
-  direction: "desc" | "asc",
-) {
-  const aTime = diveTimestamp(a.diveDate);
-  const bTime = diveTimestamp(b.diveDate);
-  if (aTime === null && bTime !== null) return 1;
-  if (aTime !== null && bTime === null) return -1;
-  const multiplier = direction === "desc" ? -1 : 1;
-  if (aTime !== null && bTime !== null && aTime !== bTime) {
-    return (aTime - bTime) * multiplier;
-  }
-  if (a.diveNumber === null && b.diveNumber !== null) return 1;
-  if (a.diveNumber !== null && b.diveNumber === null) return -1;
-  return ((a.diveNumber ?? 0) - (b.diveNumber ?? 0)) * multiplier;
-}
-
-function diveTimestamp(value: string | null) {
-  if (!value) return null;
-  const timestamp = new Date(value.replace(" ", "T")).getTime();
-  return Number.isNaN(timestamp) ? null : timestamp;
 }
 
 function formatDistance(distanceKm: number) {
