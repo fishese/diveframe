@@ -73,6 +73,7 @@ import { readUddfLog } from "@/lib/parsers/uddf";
 import { readFitDive } from "@/lib/parsers/fit";
 import type { AppLanguage, AppTranslate } from "@/lib/app-i18n";
 import { diveComputerCapability } from "@/lib/dive-computer-capability";
+import { diveFrameApiUrl } from "@/lib/diveframe-api";
 import { useAppI18n } from "./AppI18nProvider";
 import { BleImportPanel } from "./components/BleImportPanel";
 
@@ -202,7 +203,9 @@ export function DiveFrameApp() {
         const updates = new Map<string, Dive>();
         for (const [index, dive] of pending.entries()) {
           const response = await fetch(
-            `/api/geocode?lat=${encodeURIComponent(String(dive.gpsEntryLat))}&lng=${encodeURIComponent(String(dive.gpsEntryLng))}`,
+            diveFrameApiUrl(
+              `/api/geocode?lat=${encodeURIComponent(String(dive.gpsEntryLat))}&lng=${encodeURIComponent(String(dive.gpsEntryLng))}`,
+            ),
             { signal: controller.signal },
           );
           const payload = (await response.json()) as {
@@ -939,7 +942,7 @@ function DiveDetail({
     if (hasGps || !locationQuery) return;
 
     const controller = new AbortController();
-    fetch(`/api/geocode?q=${encodeURIComponent(locationQuery)}`, {
+    fetch(diveFrameApiUrl(`/api/geocode?q=${encodeURIComponent(locationQuery)}`), {
       signal: controller.signal,
     })
       .then(async (response) => {
@@ -1017,7 +1020,9 @@ function DiveDetail({
     );
     const controller = new AbortController();
     fetch(
-      `/api/nearby-sites?lat=${encodeURIComponent(String(latitude))}&lng=${encodeURIComponent(String(longitude))}`,
+      diveFrameApiUrl(
+        `/api/nearby-sites?lat=${encodeURIComponent(String(latitude))}&lng=${encodeURIComponent(String(longitude))}`,
+      ),
       { signal: controller.signal },
     )
       .then(async (response) => {

@@ -1,4 +1,5 @@
 import diveSiteCatalog from "@/data/dive-sites.json";
+import { jsonWithCors, optionsWithCors } from "@/lib/api-cors";
 
 type OverpassElement = {
   id: number;
@@ -26,6 +27,10 @@ const LOCAL_DIVE_SITES = diveSiteCatalog.sites
     longitude: site.coordinates.longitude,
   }));
 
+export async function OPTIONS(request: Request) {
+  return optionsWithCors(request);
+}
+
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const latitude = Number(params.get("lat"));
@@ -36,7 +41,11 @@ export async function GET(request: Request) {
     Math.abs(latitude) > 90 ||
     Math.abs(longitude) > 180
   ) {
-    return Response.json({ error: "Supply valid GPS coordinates." }, { status: 400 });
+    return jsonWithCors(
+      request,
+      { error: "Supply valid GPS coordinates." },
+      { status: 400 },
+    );
   }
 
   const radiusKm = 30;
@@ -52,7 +61,7 @@ export async function GET(request: Request) {
     .filter((site) => site.distanceKm <= radiusKm)
     .sort((a, b) => a.distanceKm - b.distanceKm);
   if (catalogSites.length) {
-    return Response.json({
+    return jsonWithCors(request, {
       source: "catalog",
       sites: catalogSites.slice(0, 12).map((site) => ({
         id: `catalog-${site.id}`,
@@ -100,7 +109,7 @@ export async function GET(request: Request) {
     }
   }
   if (!response) {
-    return Response.json({
+    return jsonWithCors(request, {
       source: "openstreetmap",
       sites: await searchDivePlaces(latitude, longitude),
     });
@@ -131,7 +140,7 @@ export async function GET(request: Request) {
     .sort((a, b) => a.distanceKm - b.distanceKm)
     .slice(0, 12);
 
-  return Response.json({ source: "openstreetmap", sites });
+  return jsonWithCors(request, { source: "openstreetmap", sites });
 }
 
 async function searchDivePlaces(latitude: number, longitude: number) {

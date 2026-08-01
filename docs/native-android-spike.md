@@ -157,9 +157,13 @@ memory so incremental downloads can be exercised without persistence.
 
 ## Testing the product app on device
 
-The APK normally serves the spike bundle from `dist-native`. To exercise the
-real **Download from computer** flow with live reload, point the shell at a
-running dev server instead:
+The APK packages a **static export of the real DiveFrame app** into
+`dist-native` (`npm run native:web` -> `scripts/build-native-web.mjs`). The
+research spike remains available as `npm run native:spike`. Geocode /
+nearby-sites calls from the APK hit `https://divelog.fishese.cc` (CORS for
+Capacitor localhost origins). Logbook data stays on-device.
+
+Optional live-reload against a PC server:
 
 1. `npm run dev:lan`
 2. `adb reverse tcp:3000 tcp:3000`
@@ -179,7 +183,7 @@ caches (`PwaManager`). The worker is cache-first on stable module URLs, which
 pinned stale BLE UI during LAN/dev testing.
 
 Clear `DIVEFRAME_NATIVE_SERVER_URL` and re-run `npm run native:sync` to go back
-to the bundled spike.
+to the bundled product app.
 
 The source pin is recorded in
 `android/app/src/main/cpp/libdivecomputer.pin`. Fetched dependency source and

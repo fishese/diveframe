@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
+const isNativeStatic = process.env.DIVEFRAME_NATIVE_STATIC === "1";
+
 const nextConfig: NextConfig = {
+  ...(isNativeStatic ? { output: "export" as const } : {}),
   experimental: {
     serverActions: {
       // Vinext applies this request limit to multipart route handlers as well.

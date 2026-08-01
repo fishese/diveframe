@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import ts from "typescript";
 
-const source = await readFile("app/api/geocode/route.ts", "utf8");
+const source = await readFile("lib/geocode-query.ts", "utf8");
 const javascript = ts.transpileModule(source, {
   compilerOptions: {
     module: ts.ModuleKind.ESNext,

@@ -54,21 +54,23 @@ Validated on device:
 
 ## Resume checklist (when you return)
 
-1. Confirm `npm run dev:lan` is running and `adb reverse tcp:3000 tcp:3000` is
-   listed (`adb reverse --list`). Rebuild only if Capacitor server URL changed.
-2. Optional: commit the uncommitted tree (large — ask before committing).
-3. Likely next product steps (pick when you are back):
-   - Package the real app into the APK (static export / option C) so testing
-     does not need the PC dev server
+1. Product APK packaging: `npm run native:sync` builds a static DiveFrame export
+   into `dist-native` (no PC server required). Optional LAN live-reload still
+   uses `DIVEFRAME_NATIVE_SERVER_URL` + `adb reverse`.
+2. Commit packaging follow-ups if still uncommitted.
+3. Likely next product steps:
    - Hardening / failure matrix / privacy–LGPL release work from the BLE plan
    - Trip / user-GPS editors (v8 fields exist; editors not productized)
    - PC Web Bluetooth remains deferred
 
 ## Known leftovers
 
-- Spike shell (`native-spike/`, `dist-native`) is still the default packaged
-  webDir; product path is via `DIVEFRAME_NATIVE_SERVER_URL` in debug.
-- Creating a root `vite.config.ts` breaks vinext’s production build entry —
-  do not use that to ignore `android/` watch noise.
+- Spike shell remains as `npm run native:spike` for research; default
+  `native:web` / `native:sync` ship the product app.
+- Creating a *replacement* root `vite.config.ts` that drops vinext/cloudflare
+  plugins breaks the production build — keep the existing vinext config.
 - Web Bluetooth / PC download: deliberately deferred; reuse
   `diveComputerCapability` + persist path later if wanted.
+- vinext static export on Windows may abort during Node teardown after a
+  successful prerender; `scripts/build-native-web.mjs` continues when
+  `dist/client/index.html` is valid.

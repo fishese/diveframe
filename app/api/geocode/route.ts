@@ -1,3 +1,8 @@
+import { jsonWithCors, optionsWithCors } from "@/lib/api-cors";
+import { locationQueries } from "@/lib/geocode-query";
+
+export { locationQueries };
+
 type NominatimSearchResult = {
   display_name?: string;
   lat?: string;
@@ -9,20 +14,26 @@ type NominatimReverseResult = {
   address?: Record<string, string | undefined>;
 };
 
+export async function OPTIONS(request: Request) {
+  return optionsWithCors(request);
+}
+
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const latitude = nullableCoordinate(params.get("lat"));
   const longitude = nullableCoordinate(params.get("lng"));
 
   if (latitude !== null && longitude !== null) {
-    return reverseGeocode(latitude, longitude);
+    return reverseGeocode(request, latitude, longitude);
   }
 
   const query = params.get("q")?.trim();
   if (!query || query.length < 2 || query.length > 200) {
-    return Response.json({ error: "Supply a valid location or GPS coordinate." }, {
-      status: 400,
-    });
+    return jsonWithCors(
+      request,
+      { error: "Supply a valid location or GPS coordinate." },
+      { status: 400 },
+    );
   }
 
   const queries = locationQueries(query);
@@ -32,7 +43,8 @@ export async function GET(request: Request) {
     if (index > 0) await delay(1_050);
     const result = await searchLocation(queries[index]);
     if (result === "unavailable") {
-      return Response.json(
+      return jsonWithCors(
+        request,
         { error: "Map lookup is temporarily unavailable." },
         { status: 502 },
       );
@@ -50,10 +62,10 @@ export async function GET(request: Request) {
     !Number.isFinite(matchLatitude) ||
     !Number.isFinite(matchLongitude)
   ) {
-    return Response.json({ location: null });
+    return jsonWithCors(request, { location: null });
   }
 
-  return Response.json({
+  return jsonWithCors(request, {
     location: {
       latitude: matchLatitude,
       longitude: matchLongitude,
@@ -74,19 +86,17 @@ async function searchLocation(query: string) {
   return ((await response.json()) as NominatimSearchResult[])[0] ?? null;
 }
 
-export function locationQueries(query: string) {
-  const parts = query
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  const normalized = parts.join(", ");
-  const broader = parts.length > 1 ? parts.slice(1).join(", ") : null;
-  return broader && broader !== normalized ? [normalized, broader] : [normalized];
-}
-
-async function reverseGeocode(latitude: number, longitude: number) {
+async function reverseGeocode(
+  request: Request,
+  latitude: number,
+  longitude: number,
+) {
   if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
-    return Response.json({ error: "Supply valid GPS coordinates." }, { status: 400 });
+    return jsonWithCors(
+      request,
+      { error: "Supply valid GPS coordinates." },
+      { status: 400 },
+    );
   }
 
   const url = new URL("https://nominatim.openstreetmap.org/reverse");
@@ -98,7 +108,8 @@ async function reverseGeocode(latitude: number, longitude: number) {
 
   const response = await fetch(url, { headers: nominatimHeaders() });
   if (!response.ok) {
-    return Response.json(
+    return jsonWithCors(
+      request,
       { error: "GPS location lookup is temporarily unavailable." },
       { status: 502 },
     );
@@ -119,7 +130,7 @@ async function reverseGeocode(latitude: number, longitude: number) {
     match.display_name ||
     `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
 
-  return Response.json({ location: { label, city, country } });
+  return jsonWithCors(request, { location: { label, city, country } });
 }
 
 function nullableCoordinate(value: string | null) {

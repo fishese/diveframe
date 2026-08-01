@@ -274,7 +274,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v3/);
+  assert.match(serviceWorker, /diveframe-shell-v4/);
   assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);
   assert.match(serviceWorker, /examples\/dive-site-catalog-ai-prompt\.md/);
   assert.match(serviceWorker, /request\.mode === "navigate"/);
@@ -305,7 +305,12 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     "utf8",
   );
   assert.match(geocodeRoute, /locationQueries/);
-  assert.match(geocodeRoute, /parts\.slice\(1\)/);
+  assert.match(geocodeRoute, /@\/lib\/geocode-query/);
+  const geocodeQuery = await readFile(
+    new URL("../lib/geocode-query.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(geocodeQuery, /parts\.slice\(1\)/);
 
   const sites = JSON.parse(catalog);
   assert.equal(sites.schemaVersion, 1);
