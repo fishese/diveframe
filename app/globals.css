@@ -518,6 +518,59 @@ button {
   margin-left: auto;
 }
 
+.filter-toggle-chevron {
+  transition: transform 160ms ease;
+}
+
+.filter-toggle-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+.filter-panel {
+  background: rgba(4, 18, 24, 0.88);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 12px 14px;
+}
+
+.filter-panel-field {
+  display: grid;
+  gap: 5px;
+  min-width: 130px;
+}
+
+.filter-panel-field span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.filter-panel-field input,
+.filter-panel-field select {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--mist);
+  font-size: 12px;
+  outline: none;
+  padding: 6px 8px;
+}
+
+.filter-panel-field input:focus,
+.filter-panel-field select:focus {
+  border-color: rgba(141, 235, 215, 0.42);
+}
+
+.filter-panel-field input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.75);
+}
+
 .dive-list::-webkit-scrollbar {
   width: 8px;
 }

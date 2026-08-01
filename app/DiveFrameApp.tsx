@@ -65,6 +65,8 @@ import {
 import {
   buildDiveListRows,
   compareDives,
+  diveMatchesListFilters,
+  type DiveListFilters,
   type DiveSortOption,
 } from "@/lib/dive-list-model";
 import { resolveDiveMapCoordinates } from "@/lib/dive-gps";
@@ -137,6 +139,10 @@ export function DiveFrameApp() {
   const [namedOnly, setNamedOnly] = useState(false);
   const [gpsOnly, setGpsOnly] = useState(false);
   const [appSiteOnly, setAppSiteOnly] = useState(false);
+  const [dateFrom, setDateFrom] = useState<string | null>(null);
+  const [dateTo, setDateTo] = useState<string | null>(null);
+  const [computerFilter, setComputerFilter] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [defaultCylinderPresetId, setDefaultCylinderPresetId] = useState(
     DEFAULT_CYLINDER_PRESET_ID,
   );
@@ -285,55 +291,61 @@ export function DiveFrameApp() {
     };
   }, [selectedId]);
 
+  const computerModels = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          dives
+            .map((dive) => dive.computerModel)
+            .filter((model): model is string => Boolean(model)),
+        ),
+      ).sort((a, b) => a.localeCompare(b)),
+    [dives],
+  );
+
+  const hasActiveFilters =
+    namedOnly ||
+    gpsOnly ||
+    appSiteOnly ||
+    Boolean(dateFrom) ||
+    Boolean(dateTo) ||
+    Boolean(computerFilter);
+
+  const resetFilters = useCallback(() => {
+    setNamedOnly(false);
+    setGpsOnly(false);
+    setAppSiteOnly(false);
+    setDateFrom(null);
+    setDateTo(null);
+    setComputerFilter(null);
+  }, []);
+
   const visibleDives = useMemo(() => {
     const search = parseDiveSearch(query);
-    const needle = search.text.toLowerCase();
+    const filters: Partial<DiveListFilters> = {
+      namedOnly,
+      gpsOnly,
+      appSiteOnly,
+      dateFrom,
+      dateTo,
+      computerModel: computerFilter,
+      searchText: search.text,
+      sourceOnly: search.sourceOnly,
+    };
     return dives
-      .filter((dive) => {
-        if (
-          search.sourceOnly &&
-          !(
-            dive.sources.includes(search.sourceOnly) &&
-            !dive.sources.includes(
-              search.sourceOnly === "shearwater"
-                ? "subsurface"
-                : "shearwater",
-            )
-          )
-        ) {
-          return false;
-        }
-        if (
-          namedOnly &&
-          !(
-            dive.userSite ||
-            dive.site ||
-            dive.location ||
-            dive.resolvedLocation
-          )
-        ) {
-          return false;
-        }
-        if (gpsOnly && (dive.gpsEntryLat === null || dive.gpsEntryLng === null)) {
-          return false;
-        }
-        if (appSiteOnly && !dive.userSite) return false;
-        if (!needle) return true;
-        return [
-          dive.diveNumber,
-          ...Object.values(dive.sourceDiveNumbers ?? {}),
-          dive.userSite,
-          dive.site,
-          displayLocation(dive),
-          dive.buddy,
-          dive.notes,
-          dive.diveDate,
-        ]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(needle));
-      })
+      .filter((dive) => diveMatchesListFilters(dive, filters))
       .sort((a, b) => compareDives(a, b, sortOption));
-  }, [appSiteOnly, dives, gpsOnly, namedOnly, query, sortOption]);
+  }, [
+    appSiteOnly,
+    computerFilter,
+    dateFrom,
+    dateTo,
+    dives,
+    gpsOnly,
+    namedOnly,
+    query,
+    sortOption,
+  ]);
 
   const diveListRows = useMemo(
     () => buildDiveListRows(visibleDives, trips, sortOption),
@@ -1001,13 +1013,21 @@ export function DiveFrameApp() {
                   </button>
                   <button
                     type="button"
+                    className={`filter-toggle ${filtersOpen ? "active" : ""}`}
+                    onClick={() => setFiltersOpen((value) => !value)}
+                    aria-expanded={filtersOpen}
+                  >
+                    <ChevronDown
+                      size={14}
+                      className={`filter-toggle-chevron ${filtersOpen ? "" : "collapsed"}`}
+                    />
+                    {t("moreFilters")}
+                  </button>
+                  <button
+                    type="button"
                     className="filter-clear"
-                    onClick={() => {
-                      setNamedOnly(false);
-                      setGpsOnly(false);
-                      setAppSiteOnly(false);
-                    }}
-                    disabled={!namedOnly && !gpsOnly && !appSiteOnly}
+                    onClick={resetFilters}
+                    disabled={!hasActiveFilters}
                   >
                     <X size={14} /> {t("clearFilter")}
                   </button>
@@ -1021,6 +1041,48 @@ export function DiveFrameApp() {
                     {selectMode ? t("exitSelectMode") : t("selectDives")}
                   </button>
                 </div>
+                {filtersOpen ? (
+                  <div className="filter-panel">
+                    <label className="filter-panel-field">
+                      <span>{t("dateFrom")}</span>
+                      <input
+                        type="date"
+                        value={dateFrom ?? ""}
+                        onChange={(event) =>
+                          setDateFrom(event.target.value || null)
+                        }
+                        max={dateTo ?? undefined}
+                      />
+                    </label>
+                    <label className="filter-panel-field">
+                      <span>{t("dateTo")}</span>
+                      <input
+                        type="date"
+                        value={dateTo ?? ""}
+                        onChange={(event) =>
+                          setDateTo(event.target.value || null)
+                        }
+                        min={dateFrom ?? undefined}
+                      />
+                    </label>
+                    <label className="filter-panel-field">
+                      <span>{t("computerFilterLabel")}</span>
+                      <select
+                        value={computerFilter ?? ""}
+                        onChange={(event) =>
+                          setComputerFilter(event.target.value || null)
+                        }
+                      >
+                        <option value="">{t("allComputers")}</option>
+                        {computerModels.map((model) => (
+                          <option key={model} value={model}>
+                            {model}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                ) : null}
                 {selectMode ? (
                   <div className="select-action-bar">
                     <span className="select-action-count">

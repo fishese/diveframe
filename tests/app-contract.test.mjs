@@ -175,6 +175,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(settings, /setLanguage/);
   assert.match(settings, /<option value="ja">/);
   assert.match(appI18n, /const ja: Record<keyof typeof en, string>/);
+  assert.match(appI18n, /moreFilters:/);
+  assert.match(appI18n, /computerFilterLabel:/);
+  assert.match(appI18n, /allComputers:/);
   assert.match(settings, /getLocalAppPreferences/);
   assert.match(settings, /aliasesText/);
   assert.match(fonts, /Noto Sans TC/);
@@ -346,7 +349,25 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(app, /mobile-back/);
   assert.match(app, /from "@\/lib\/dive-list-model"/);
   assert.match(app, /buildDiveListRows/);
+  assert.match(app, /diveMatchesListFilters/);
   assert.doesNotMatch(app, /function compareDives\(/);
+  assert.match(app, /const \[dateFrom, setDateFrom\]/);
+  assert.match(app, /const \[computerFilter, setComputerFilter\]/);
+  assert.match(app, /const \[filtersOpen, setFiltersOpen\]/);
+  assert.match(app, /className="filter-panel"/);
+  assert.match(app, /t\("moreFilters"\)/);
+  assert.match(app, /t\("dateFrom"\)/);
+  assert.match(app, /t\("dateTo"\)/);
+  assert.match(app, /t\("computerFilterLabel"\)/);
+  assert.match(app, /t\("allComputers"\)/);
+  assert.match(app, /computerModels\.map/);
+  assert.match(app, /onClick=\{resetFilters\}/);
+  assert.match(app, /disabled=\{!hasActiveFilters\}/);
+  const resetFiltersBody =
+    app.match(/const resetFilters = useCallback\(\(\) => \{[\s\S]+?\}, \[\]\);/)?.[0] ?? "";
+  assert.match(resetFiltersBody, /setDateFrom\(null\)/);
+  assert.match(resetFiltersBody, /setComputerFilter\(null\)/);
+  assert.doesNotMatch(resetFiltersBody, /setQuery/);
   assert.match(app, /duration-desc/);
   assert.match(app, /depth-desc/);
   assert.match(app, /dive\.durationSeconds \?\? dive\.lengthText/);
