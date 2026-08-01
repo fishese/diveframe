@@ -886,6 +886,150 @@ export async function updateLocalDiveCategory(
   }));
 }
 
+export async function listLocalTrips() {
+  const database = await openDatabase();
+  const trips = await request<LocalTrip[]>(
+    database.transaction(TRIPS_STORE).objectStore(TRIPS_STORE).getAll(),
+  );
+  return trips.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function createLocalTrip(name: string) {
+  const normalizedName = name.trim();
+  if (!normalizedName) throw new Error("Enter a trip name.");
+  const trip: LocalTrip = {
+    id: crypto.randomUUID(),
+    name: normalizedName,
+    updatedAt: new Date().toISOString(),
+  };
+  const database = await openDatabase();
+  const transaction = database.transaction(TRIPS_STORE, "readwrite");
+  transaction.objectStore(TRIPS_STORE).put(trip);
+  await transactionComplete(transaction);
+  return trip;
+}
+
+export async function renameLocalTrip(id: string, name: string) {
+  const normalizedName = name.trim();
+  if (!normalizedName) throw new Error("Enter a trip name.");
+  const database = await openDatabase();
+  const transaction = database.transaction(TRIPS_STORE, "readwrite");
+  const store = transaction.objectStore(TRIPS_STORE);
+  const trip = await request<LocalTrip | undefined>(store.get(id));
+  if (!trip) {
+    transaction.abort();
+    throw new Error("Trip not found.");
+  }
+  const updated: LocalTrip = {
+    ...trip,
+    name: normalizedName,
+    updatedAt: new Date().toISOString(),
+  };
+  store.put(updated);
+  await transactionComplete(transaction);
+  return updated;
+}
+
+export async function deleteLocalTrip(
+  id: string,
+  options?: { clearAssignments?: boolean },
+) {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [TRIPS_STORE, DIVES_STORE],
+    "readwrite",
+  );
+  const tripsStore = transaction.objectStore(TRIPS_STORE);
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const trip = await request<LocalTrip | undefined>(tripsStore.get(id));
+  if (!trip) {
+    transaction.abort();
+    throw new Error("Trip not found.");
+  }
+  const assignedDives = await request<LocalDive[]>(
+    divesStore.index("tripId").getAll(id),
+  );
+  if (assignedDives.length > 0 && !options?.clearAssignments) {
+    transaction.abort();
+    throw new Error("Remove dives from this trip before deleting it.");
+  }
+  if (options?.clearAssignments) {
+    assignedDives.forEach((dive) =>
+      divesStore.put({ ...hydrateDive(dive), tripId: null }),
+    );
+  }
+  tripsStore.delete(id);
+  await transactionComplete(transaction);
+}
+
+export async function setLocalDiveTripId(
+  diveId: string,
+  tripId: string | null,
+) {
+  if (tripId !== null) {
+    const database = await openDatabase();
+    const trip = await request<LocalTrip | undefined>(
+      database.transaction(TRIPS_STORE).objectStore(TRIPS_STORE).get(tripId),
+    );
+    if (!trip) throw new Error("Trip not found.");
+  }
+  return updateDive(diveId, (dive) => ({ ...dive, tripId }));
+}
+
+export async function setLocalDiveTripIds(
+  diveIds: string[],
+  tripId: string | null,
+) {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [DIVES_STORE, TRIPS_STORE],
+    "readwrite",
+  );
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const tripsStore = transaction.objectStore(TRIPS_STORE);
+  if (tripId !== null) {
+    const trip = await request<LocalTrip | undefined>(tripsStore.get(tripId));
+    if (!trip) {
+      transaction.abort();
+      throw new Error("Trip not found.");
+    }
+  }
+  for (const diveId of diveIds) {
+    const dive = await request<LocalDive | undefined>(divesStore.get(diveId));
+    if (!dive) {
+      transaction.abort();
+      throw new Error("Dive not found in this browser.");
+    }
+    divesStore.put({ ...hydrateDive(dive), tripId });
+  }
+  await transactionComplete(transaction);
+}
+
+export async function updateLocalDiveUserGps(
+  id: string,
+  gps: { lat: number; lng: number; source: UserGpsSource } | null,
+) {
+  const now = new Date().toISOString();
+  return updateDive(id, (dive) => {
+    if (gps === null) {
+      return {
+        ...dive,
+        userGpsLat: null,
+        userGpsLng: null,
+        userGpsSource: null,
+        userGpsUpdatedAt: null,
+      };
+    }
+    return {
+      ...dive,
+      userGpsLat: gps.lat,
+      userGpsLng: gps.lng,
+      userGpsSource: gps.source,
+      userGpsUpdatedAt: now,
+    };
+  });
+}
+
 export async function getLocalComposerSettings(diveId: string) {
   const database = await openDatabase();
   return request<ComposerSettings | undefined>(

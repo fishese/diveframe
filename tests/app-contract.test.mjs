@@ -216,6 +216,12 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /rawDiveRecords/);
   assert.match(storage, /deviceCheckpoints/);
   assert.match(storage, /storeNamesForErase/);
+  assert.match(storage, /export async function listLocalTrips/);
+  assert.match(storage, /export async function createLocalTrip/);
+  assert.match(storage, /export async function renameLocalTrip/);
+  assert.match(storage, /export async function deleteLocalTrip/);
+  assert.match(storage, /export async function setLocalDiveTripIds/);
+  assert.match(storage, /export async function updateLocalDiveUserGps/);
   assert.match(await readFile("lib/ble-import-session.ts", "utf8"), /nativeLimitForQuantity/);
   assert.match(await readFile("lib/ble-import-session.ts", "utf8"), /kind: "full"/);
   assert.match(app, /BleImportPanel/);
