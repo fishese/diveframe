@@ -816,16 +816,17 @@ export function SettingsApp() {
 
         <section className="settings-card whats-new-settings">
           <details
-            className="whats-new-details"
             onToggle={(event) => {
               if (event.currentTarget.open) void markWhatsNewSeen();
             }}
           >
-            <summary>
-              <span>
-                <strong>{t("whatsNew")}</strong>
-                <small>{t("whatsNewDescription")}</small>
-              </span>
+            <summary className="whats-new-summary">
+              <div className="settings-card-heading">
+                <div>
+                  <h2>{t("whatsNew")}</h2>
+                  <p className="settings-note">{t("whatsNewDescription")}</p>
+                </div>
+              </div>
               {whatsNew &&
                 whatsNew.version !== lastSeenWhatsNewVersion && (
                   <span className="whats-new-badge" aria-label={t("whatsNew")} />
@@ -835,11 +836,11 @@ export function SettingsApp() {
               {whatsNew ? (
                 whatsNew.entries.map((entry) => (
                   <article className="whats-new-entry" key={entry.id}>
-                    <div>
-                      <h3>{entry.title}</h3>
-                      {entry.date && <time>{entry.date}</time>}
-                    </div>
-                    <p>
+                    <h3>{entry.title}</h3>
+                    {entry.date && (
+                      <p className="settings-note">{entry.date}</p>
+                    )}
+                    <p className="settings-note">
                       {renderWhatsNewBody(entry.body).map((part, index) =>
                         part.type === "link" ? (
                           <a
@@ -858,7 +859,7 @@ export function SettingsApp() {
                       )}
                     </p>
                     {entry.links.length > 0 && (
-                      <div className="whats-new-links">
+                      <div className="settings-actions">
                         {entry.links.map((link) => {
                           const href = sanitizeWhatsNewHref(link.href);
                           return href ? (

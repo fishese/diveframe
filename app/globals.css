@@ -2530,7 +2530,8 @@ button {
   padding: 13px;
 }
 
-.storage-persistence.persistent {
+.storage-persistence.persistent,
+.storage-persistence.app {
   background: rgba(141, 235, 215, 0.055);
   border-color: rgba(141, 235, 215, 0.2);
 }
@@ -2661,7 +2662,7 @@ button {
   order: 1;
 }
 
-.whats-new-details summary {
+.whats-new-summary {
   align-items: center;
   cursor: pointer;
   display: flex;
@@ -2670,32 +2671,18 @@ button {
   list-style: none;
 }
 
-.whats-new-details summary::-webkit-details-marker {
+.whats-new-summary::-webkit-details-marker {
   display: none;
 }
 
-.whats-new-details summary > span:first-child {
-  display: grid;
-  gap: 4px;
-}
-
-.whats-new-details summary strong {
-  font-size: 20px;
-  letter-spacing: -0.035em;
-}
-
-.whats-new-details summary small,
-.whats-new-entry time,
-.whats-new-entry p {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.6;
+.whats-new-summary .settings-note {
+  margin-top: 4px;
 }
 
 .whats-new-badge {
   background: var(--coral);
   border-radius: 999px;
-  box-shadow: 0 0 0 3px rgba(255, 143, 118, 0.12);
+  flex-shrink: 0;
   height: 9px;
   width: 9px;
 }
@@ -2715,35 +2702,8 @@ button {
   padding-bottom: 0;
 }
 
-.whats-new-entry h3,
-.whats-new-entry p {
-  margin: 0;
-}
-
 .whats-new-entry h3 {
-  font-size: 15px;
-}
-
-.whats-new-entry time {
-  display: block;
-  margin-top: 4px;
-}
-
-.whats-new-entry p {
-  margin-top: 10px;
-}
-
-.whats-new-entry p a {
-  color: var(--teal);
-  font-weight: 700;
-  text-underline-offset: 3px;
-}
-
-.whats-new-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-  margin-top: 14px;
+  margin: 0;
 }
 
 .settings-icon {
@@ -3323,8 +3283,7 @@ button {
   }
 
   .catalog-source > .button,
-  .settings-actions > .button,
-  .whats-new-links > .button {
+  .settings-actions > .button {
     width: 100%;
   }
 
