@@ -55,9 +55,11 @@ import {
   type LocalImportedDive,
   type LocalTrip,
   type DiveSource,
+  type UserGpsSource,
   updateLocalDiveLocation,
   updateLocalDiveDetails,
   updateLocalDiveSite,
+  updateLocalDiveUserGps,
   upsertLocalDives,
 } from "@/lib/indexed-db";
 import {
@@ -65,6 +67,8 @@ import {
   compareDives,
   type DiveSortOption,
 } from "@/lib/dive-list-model";
+import { resolveDiveMapCoordinates } from "@/lib/dive-gps";
+import { readJpegExifGps } from "@/lib/photo-exif-gps";
 import { chartAvailability, renderDiveChart } from "@/lib/chart-renderer";
 import { defaultComposerSettings } from "@/lib/composer-settings";
 import {
@@ -538,6 +542,27 @@ export function DiveFrameApp() {
       return true;
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("diveDetailsSaveFailed"));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveDiveUserGps(
+    id: string,
+    gps: { lat: number; lng: number; source: UserGpsSource } | null,
+  ) {
+    setBusy(true);
+    setStatus(gps ? t("savingLocation") : t("clearingLocation"));
+    try {
+      const updated = await updateLocalDiveUserGps(id, gps);
+      setDives((current) =>
+        current.map((dive) => (dive.id === updated.id ? updated : dive)),
+      );
+      setStatus(gps ? t("locationSaved") : t("locationCleared"));
+      return true;
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("locationSaveFailed"));
       return false;
     } finally {
       setBusy(false);
@@ -1137,6 +1162,7 @@ export function DiveFrameApp() {
                   onShare={sharePhoto}
                   onSaveSite={saveDiveSite}
                   onSaveDetails={saveDiveDetails}
+                  onSaveUserGps={saveDiveUserGps}
                   siteSuggestions={siteSuggestions}
                   locationSuggestions={locationSuggestions}
                   trips={trips}
@@ -1282,6 +1308,7 @@ function DiveDetail({
   onShare,
   onSaveSite,
   onSaveDetails,
+  onSaveUserGps,
   siteSuggestions,
   locationSuggestions,
   trips,
@@ -1305,6 +1332,10 @@ function DiveDetail({
     startPressureBar?: number | null;
     endPressureBar?: number | null;
   }) => Promise<boolean>;
+  onSaveUserGps: (
+    diveId: string,
+    gps: { lat: number; lng: number; source: UserGpsSource } | null,
+  ) => Promise<boolean>;
   siteSuggestions: string[];
   locationSuggestions: string[];
   trips: LocalTrip[];
@@ -1366,13 +1397,14 @@ function DiveDetail({
       Boolean(value && values.indexOf(value) === index),
     )
     .join(", ");
+  const mapCoordinates = resolveDiveMapCoordinates(dive);
   const [geocodeResult, setGeocodeResult] = useState<{
     query: string;
     location: MapLocation | null;
   } | null>(null);
 
   useEffect(() => {
-    if (hasGps || !locationQuery) return;
+    if (mapCoordinates || !locationQuery) return;
 
     const controller = new AbortController();
     fetch(diveFrameApiUrl(`/api/geocode?q=${encodeURIComponent(locationQuery)}`), {
@@ -1396,21 +1428,90 @@ function DiveDetail({
       });
 
     return () => controller.abort();
-  }, [dive.id, hasGps, locationQuery]);
+  }, [dive.id, mapCoordinates, locationQuery]);
 
   const resolvedLocation =
     geocodeResult?.query === locationQuery ? geocodeResult.location : null;
   const mapLookup =
-    hasGps || !locationQuery
+    mapCoordinates || !locationQuery
       ? "idle"
       : geocodeResult?.query !== locationQuery
         ? "loading"
         : resolvedLocation
           ? "found"
           : "missing";
-  const mapLatitude = hasGps ? dive.gpsEntryLat : resolvedLocation?.latitude ?? null;
-  const mapLongitude = hasGps ? dive.gpsEntryLng : resolvedLocation?.longitude ?? null;
+  const mapLatitude = mapCoordinates ? mapCoordinates.latitude : resolvedLocation?.latitude ?? null;
+  const mapLongitude = mapCoordinates ? mapCoordinates.longitude : resolvedLocation?.longitude ?? null;
   const hasMap = mapLatitude !== null && mapLongitude !== null;
+
+  const [gpsEditorOpen, setGpsEditorOpen] = useState(false);
+  const [userLatDraft, setUserLatDraft] = useState(
+    dive.userGpsLat !== null ? String(dive.userGpsLat) : "",
+  );
+  const [userLngDraft, setUserLngDraft] = useState(
+    dive.userGpsLng !== null ? String(dive.userGpsLng) : "",
+  );
+  const [photoGpsStatus, setPhotoGpsStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUserLatDraft(dive.userGpsLat !== null ? String(dive.userGpsLat) : "");
+    setUserLngDraft(dive.userGpsLng !== null ? String(dive.userGpsLng) : "");
+    setPhotoGpsStatus(null);
+    setGpsEditorOpen(false);
+  }, [dive.id, dive.userGpsLat, dive.userGpsLng]);
+
+  const userLatValue = Number(userLatDraft);
+  const userLngValue = Number(userLngDraft);
+  const userGpsDraftValid =
+    userLatDraft.trim() !== "" &&
+    userLngDraft.trim() !== "" &&
+    Number.isFinite(userLatValue) &&
+    Number.isFinite(userLngValue) &&
+    userLatValue >= -90 &&
+    userLatValue <= 90 &&
+    userLngValue >= -180 &&
+    userLngValue <= 180;
+
+  async function saveManualUserGps() {
+    if (!userGpsDraftValid) {
+      setPhotoGpsStatus(t("invalidLocationValues"));
+      return;
+    }
+    if (await onSaveUserGps(dive.id, { lat: userLatValue, lng: userLngValue, source: "manual" })) {
+      setGpsEditorOpen(false);
+    }
+  }
+
+  async function clearUserGps() {
+    if (await onSaveUserGps(dive.id, null)) {
+      setUserLatDraft("");
+      setUserLngDraft("");
+    }
+  }
+
+  async function useLocationFromPhoto() {
+    setPhotoGpsStatus(t("searchingPhotosForLocation"));
+    for (const attachment of attachments) {
+      if (!/jpe?g/i.test(attachment.contentType)) continue;
+      try {
+        const buffer = await attachment.blob.arrayBuffer();
+        const gps = await readJpegExifGps(buffer);
+        if (!gps) continue;
+        const saved = await onSaveUserGps(dive.id, {
+          lat: gps.latitude,
+          lng: gps.longitude,
+          source: "photo-exif",
+        });
+        setPhotoGpsStatus(saved ? null : t("photoLocationSaveFailed"));
+        if (saved) setGpsEditorOpen(false);
+        return;
+      } catch {
+        // Try the next photo.
+      }
+    }
+    setPhotoGpsStatus(t("noPhotoLocationFound"));
+  }
+
   const selectedCylinder = cylinderPreset(
     dive.cylinderPresetId ?? defaultCylinderPresetId,
   );
@@ -1539,13 +1640,15 @@ function DiveDetail({
             <div>
               <p className="eyebrow">{t("divePosition")}</p>
               <h3>
-                {hasGps
+                {mapCoordinates?.source === "computer"
                   ? t("entryLocation")
-                  : hasMap
-                    ? t("approximateLocation")
-                    : mapLookup === "loading"
-                      ? t("findingLocation")
-                      : t("noMapLocation")}
+                  : mapCoordinates?.source === "user"
+                    ? t("yourLocation")
+                    : hasMap
+                      ? t("approximateLocation")
+                      : mapLookup === "loading"
+                        ? t("findingLocation")
+                        : t("noMapLocation")}
               </h3>
             </div>
             {hasMap && (
@@ -1580,11 +1683,83 @@ function DiveDetail({
               </p>
             </div>
           )}
-          {!hasGps && resolvedLocation && (
+          {mapCoordinates?.source === "user" && (
+            <p className="map-source">
+              {dive.userGpsSource === "photo-exif"
+                ? t("locationSourcePhotoExif")
+                : t("locationSourceManual")}
+            </p>
+          )}
+          {!mapCoordinates && resolvedLocation && (
             <p className="map-source">
               {t("approximateMatch", { location: resolvedLocation.displayName })}
             </p>
           )}
+          <div className="user-gps-editor">
+            <button
+              type="button"
+              className="button button-quiet detail-edit-button"
+              onClick={() => setGpsEditorOpen((value) => !value)}
+              disabled={busy}
+            >
+              {gpsEditorOpen ? t("cancel") : t("editLocation")}
+            </button>
+            {gpsEditorOpen ? (
+              <div className="user-gps-editor-body">
+                <div className="details-editor-row">
+                  <label>
+                    <span>{t("latitude")}</span>
+                    <input
+                      type="number"
+                      step="any"
+                      min={-90}
+                      max={90}
+                      value={userLatDraft}
+                      onChange={(event) => setUserLatDraft(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    <span>{t("longitude")}</span>
+                    <input
+                      type="number"
+                      step="any"
+                      min={-180}
+                      max={180}
+                      value={userLngDraft}
+                      onChange={(event) => setUserLngDraft(event.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="user-gps-editor-actions">
+                  <button
+                    type="button"
+                    className="button button-primary"
+                    disabled={busy || !userGpsDraftValid}
+                    onClick={() => void saveManualUserGps()}
+                  >
+                    {t("saveManualLocation")}
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-quiet"
+                    disabled={busy || (dive.userGpsLat === null && dive.userGpsLng === null)}
+                    onClick={() => void clearUserGps()}
+                  >
+                    {t("clearLocation")}
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-quiet"
+                    disabled={busy || attachments.length === 0}
+                    onClick={() => void useLocationFromPhoto()}
+                  >
+                    {t("useLocationFromPhoto")}
+                  </button>
+                </div>
+                {photoGpsStatus ? <p className="photo-gps-status">{photoGpsStatus}</p> : null}
+              </div>
+            ) : null}
+          </div>
         </section>
 
         <section className="card log-card">
