@@ -86,6 +86,12 @@ import {
   type SavedExportFile,
 } from "@/lib/file-export";
 import { addDiveFrameSitesToSubsurface } from "@/lib/subsurface-site-export";
+import {
+  fetchWhatsNewDocument,
+  renderWhatsNewBody,
+  sanitizeWhatsNewHref,
+  type WhatsNewDocument,
+} from "@/lib/whats-new";
 import { useAppI18n } from "../AppI18nProvider";
 import { PwaInstallCard } from "../PwaInstall";
 
@@ -132,6 +138,11 @@ export function SettingsApp() {
   const [storageEstimate, setStorageEstimate] = useState<Awaited<
     ReturnType<typeof getLocalBackupSizeEstimate>
   > | null>(null);
+  const [whatsNew, setWhatsNew] = useState<WhatsNewDocument | null>(null);
+  const [lastSeenWhatsNewVersion, setLastSeenWhatsNewVersion] = useState<
+    string | null
+  >(null);
+  const [whatsNewUnavailable, setWhatsNewUnavailable] = useState(false);
 
   useEffect(() => {
     const migrated = takeSessionSupplementaryCatalogMigration();
@@ -165,6 +176,10 @@ export function SettingsApp() {
         );
         setDismissedDuplicates(preferences?.dismissedDuplicatePairs ?? []);
         setBundledBackgroundVisible(!preferences?.bundledBackgroundHidden);
+        setWhatsNew(preferences?.whatsNewCache ?? null);
+        setLastSeenWhatsNewVersion(
+          preferences?.lastSeenWhatsNewVersion ?? null,
+        );
         setDuplicateCandidates(findPotentialDuplicateDives(dives));
         setDives(dives);
         setStorageEstimate(estimate);
@@ -173,12 +188,44 @@ export function SettingsApp() {
             ? t("manualSitesReady", { count: items.length, suffix: items.length === 1 ? "" : "s" })
             : t("noManualSites"),
         );
+        void refreshWhatsNew();
       })
       .catch((error) => {
         setStatus(error instanceof Error ? error.message : t("settingsLoadFailed"));
       })
       .finally(() => setBusy(false));
   }, [t]);
+
+  async function refreshWhatsNew() {
+    if (!navigator.onLine) {
+      setWhatsNewUnavailable(true);
+      return;
+    }
+
+    try {
+      const document = await fetchWhatsNewDocument();
+      setWhatsNew(document);
+      setWhatsNewUnavailable(false);
+      await saveLocalAppPreferences({
+        whatsNewCache: document,
+        whatsNewFetchedAt: new Date().toISOString(),
+      });
+    } catch {
+      setWhatsNewUnavailable(true);
+    }
+  }
+
+  async function markWhatsNewSeen() {
+    if (!whatsNew || whatsNew.version === lastSeenWhatsNewVersion) return;
+    setLastSeenWhatsNewVersion(whatsNew.version);
+    try {
+      await saveLocalAppPreferences({
+        lastSeenWhatsNewVersion: whatsNew.version,
+      });
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("settingsSaveFailed"));
+    }
+  }
 
   async function chooseDefaultCylinder(presetId: string) {
     setDefaultCylinderPresetId(presetId);
@@ -766,6 +813,80 @@ export function SettingsApp() {
         </section>
 
         <PwaInstallCard />
+
+        <section className="settings-card whats-new-settings">
+          <details
+            className="whats-new-details"
+            onToggle={(event) => {
+              if (event.currentTarget.open) void markWhatsNewSeen();
+            }}
+          >
+            <summary>
+              <span>
+                <strong>{t("whatsNew")}</strong>
+                <small>{t("whatsNewDescription")}</small>
+              </span>
+              {whatsNew &&
+                whatsNew.version !== lastSeenWhatsNewVersion && (
+                  <span className="whats-new-badge" aria-label={t("whatsNew")} />
+                )}
+            </summary>
+            <div className="whats-new-list">
+              {whatsNew ? (
+                whatsNew.entries.map((entry) => (
+                  <article className="whats-new-entry" key={entry.id}>
+                    <div>
+                      <h3>{entry.title}</h3>
+                      {entry.date && <time>{entry.date}</time>}
+                    </div>
+                    <p>
+                      {renderWhatsNewBody(entry.body).map((part, index) =>
+                        part.type === "link" ? (
+                          <a
+                            href={part.href}
+                            key={`${entry.id}-body-${index}`}
+                            rel="noopener noreferrer"
+                            target="_blank"
+                          >
+                            {part.label}
+                          </a>
+                        ) : (
+                          <span key={`${entry.id}-body-${index}`}>
+                            {part.text}
+                          </span>
+                        ),
+                      )}
+                    </p>
+                    {entry.links.length > 0 && (
+                      <div className="whats-new-links">
+                        {entry.links.map((link) => {
+                          const href = sanitizeWhatsNewHref(link.href);
+                          return href ? (
+                            <a
+                              className="button button-secondary"
+                              href={href}
+                              key={`${entry.id}-${href}`}
+                              rel="noopener noreferrer"
+                              target="_blank"
+                            >
+                              {link.label}
+                            </a>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
+                  </article>
+                ))
+              ) : (
+                <p className="settings-note">
+                  {whatsNewUnavailable
+                    ? t("whatsNewOffline")
+                    : t("whatsNewUpdated")}
+                </p>
+              )}
+            </div>
+          </details>
+        </section>
 
         <section className="settings-card language-settings">
           <div className="settings-card-heading">

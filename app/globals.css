@@ -2260,7 +2260,8 @@ button {
 .language-settings,
 .duplicate-settings,
 .storage-settings,
-.danger-settings {
+.danger-settings,
+.whats-new-settings {
   margin-top: 14px;
   padding: 24px;
 }
@@ -2654,6 +2655,95 @@ button {
   font-size: 20px;
   letter-spacing: -0.035em;
   margin: 0;
+}
+
+.whats-new-settings {
+  order: 1;
+}
+
+.whats-new-details summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  list-style: none;
+}
+
+.whats-new-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.whats-new-details summary > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.whats-new-details summary strong {
+  font-size: 20px;
+  letter-spacing: -0.035em;
+}
+
+.whats-new-details summary small,
+.whats-new-entry time,
+.whats-new-entry p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.whats-new-badge {
+  background: var(--coral);
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px rgba(255, 143, 118, 0.12);
+  height: 9px;
+  width: 9px;
+}
+
+.whats-new-list {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+}
+
+.whats-new-entry {
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+}
+
+.whats-new-entry:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.whats-new-entry h3,
+.whats-new-entry p {
+  margin: 0;
+}
+
+.whats-new-entry h3 {
+  font-size: 15px;
+}
+
+.whats-new-entry time {
+  display: block;
+  margin-top: 4px;
+}
+
+.whats-new-entry p {
+  margin-top: 10px;
+}
+
+.whats-new-entry p a {
+  color: var(--teal);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
+.whats-new-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 14px;
 }
 
 .settings-icon {
@@ -3176,7 +3266,8 @@ button {
   .dive-defaults-settings,
   .subsurface-export-settings,
   .language-settings,
-  .catalog-settings {
+  .catalog-settings,
+  .whats-new-settings {
     padding: 18px;
   }
 
@@ -3232,7 +3323,8 @@ button {
   }
 
   .catalog-source > .button,
-  .settings-actions > .button {
+  .settings-actions > .button,
+  .whats-new-links > .button {
     width: 100%;
   }
 

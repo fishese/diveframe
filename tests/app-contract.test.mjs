@@ -425,6 +425,11 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(pwaInstall, /beforeinstallprompt/);
   assert.match(pwaInstall, /navigator\.serviceWorker\.register/);
   assert.match(settings, /PwaInstallCard/);
+  assert.match(
+    settings,
+    /fetchWhatsNewDocument|whatsNewCache|lastSeenWhatsNewVersion/,
+  );
+  assert.match(settings, /entry\.links|sanitizeWhatsNewHref/);
 
   const globalStyles = await readFile(
     new URL("../app/globals.css", import.meta.url),
