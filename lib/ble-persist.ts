@@ -268,6 +268,69 @@ export async function prepareBlePersistFromDownload(
   return { ...payload, failedParseCount };
 }
 
+/** One streamed dive from a rich `diveCaptured` event (no checkpoint). */
+export async function prepareBlePersistFromCapturedDive(options: {
+  product: string;
+  serialHex: string;
+  fingerprintHex: string;
+  dataBase64: string;
+  parsed?: DiveComputerDownloadResult["dives"][number]["parsed"];
+  serial?: number;
+  libdivecomputerVersion?: string;
+  libdivecomputerCommit?: string;
+  capturedAt?: string;
+}) {
+  const serialHex = options.serialHex.trim().toUpperCase();
+  const device = {
+    vendor: "Shearwater",
+    product: options.product || "shearwater",
+    serial: options.serial ?? (Number.parseInt(serialHex, 16) || 0),
+    serialHex,
+    firmware: 0,
+    model: 0,
+  };
+  const preview = normalizeBleDownloadPreview(device, [
+    {
+      size: Math.floor((options.dataBase64.length * 3) / 4),
+      fingerprintHex: options.fingerprintHex,
+      parsed: options.parsed,
+    },
+  ])[0];
+
+  if (!preview?.parseOk) {
+    return {
+      dives: [] as LocalImportedDive[],
+      rawRecords: [] as LocalRawDiveRecord[],
+      checkpoint: null,
+      failedParseCount: 1,
+      diveDate: null as string | null,
+    };
+  }
+
+  const payload = await persistPayloadFromPairs({
+    pairs: [
+      {
+        preview,
+        rawBytes: base64ToBlob(options.dataBase64),
+        fingerprintHex: options.fingerprintHex,
+      },
+    ],
+    deviceDescriptor: device.product,
+    deviceSerial: serialHex,
+    libdivecomputerVersion: options.libdivecomputerVersion ?? "unknown",
+    libdivecomputerCommit: options.libdivecomputerCommit,
+    capturedAt: options.capturedAt ?? new Date().toISOString(),
+  });
+
+  return {
+    dives: payload.dives,
+    rawRecords: payload.rawRecords,
+    checkpoint: null,
+    failedParseCount: 0,
+    diveDate: preview.diveDate,
+  };
+}
+
 export async function persistBleCaptureFromFixture(fixture: BleCaptureFixture) {
   const { persistBleImport } = await import("./indexed-db");
   const payload = await prepareBlePersistFromFixture(fixture);

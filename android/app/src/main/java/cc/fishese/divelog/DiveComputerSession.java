@@ -42,7 +42,14 @@ final class DiveComputerSession {
 
         void onDownloadProgress(int current, int maximum, int diveCount);
 
-        void onDiveCaptured(int index, int size, String fingerprintHex);
+        void onDiveCaptured(
+            int index,
+            int size,
+            String fingerprintHex,
+            String dataBase64,
+            DiveComputerNative.ParsedDive parsed,
+            int serial
+        );
     }
 
     private final Context appContext;
@@ -255,10 +262,24 @@ final class DiveComputerSession {
             }
 
             @Override
-            public void onDiveCaptured(int index, int size, String fingerprintHex) {
+            public void onDiveCaptured(
+                int index,
+                int size,
+                String fingerprintHex,
+                String dataBase64,
+                DiveComputerNative.ParsedDive parsed,
+                int serial
+            ) {
                 Listener active = listener;
                 if (active != null) {
-                    active.onDiveCaptured(index, size, fingerprintHex);
+                    active.onDiveCaptured(
+                        index,
+                        size,
+                        fingerprintHex,
+                        dataBase64,
+                        parsed,
+                        serial
+                    );
                 }
             }
         });

@@ -39,7 +39,14 @@ final class DiveComputerNative {
     interface DownloadListener {
         void onProgress(int current, int maximum, int diveCount);
 
-        void onDiveCaptured(int index, int size, String fingerprintHex);
+        void onDiveCaptured(
+            int index,
+            int size,
+            String fingerprintHex,
+            String dataBase64,
+            ParsedDive parsed,
+            int serial
+        );
     }
 
     private static volatile DownloadListener downloadListener;
@@ -55,10 +62,24 @@ final class DiveComputerNative {
         }
     }
 
-    static void emitDiveCaptured(int index, int size, String fingerprintHex) {
+    static void emitDiveCaptured(
+        int index,
+        int size,
+        String fingerprintHex,
+        String dataBase64,
+        ParsedDive parsed,
+        int serial
+    ) {
         DownloadListener listener = downloadListener;
         if (listener != null) {
-            listener.onDiveCaptured(index, size, fingerprintHex);
+            listener.onDiveCaptured(
+                index,
+                size,
+                fingerprintHex,
+                dataBase64 == null ? "" : dataBase64,
+                parsed,
+                serial
+            );
         }
     }
 

@@ -1,16 +1,20 @@
 package cc.fishese.divelog;
 
+import android.util.Base64;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Mutable download sink filled from JNI callbacks during a spike capture.
- * Forwards progress and per-dive notifications to {@link DiveComputerNative}'s
- * active download listener for the JavaScript bridge.
+ * Mutable download sink filled from JNI callbacks during a capture.
+ * Forwards progress and per-dive notifications (with raw + parsed payload)
+ * to {@link DiveComputerNative}'s active download listener for incremental
+ * IndexedDB persist on the JavaScript side.
  */
 final class DiveComputerDownloadCollector {
     private final List<byte[]> dives = new ArrayList<>();
     private final List<byte[]> fingerprints = new ArrayList<>();
+    private final List<DiveComputerNative.ParsedDive> parsedDives = new ArrayList<>();
     private int model;
     private int firmware;
     private int serial;
@@ -23,15 +27,19 @@ final class DiveComputerDownloadCollector {
         this.serial = serial;
     }
 
-    void onDive(byte[] data, byte[] fingerprint) {
+    void onDive(byte[] data, byte[] fingerprint, DiveComputerNative.ParsedDive parsed) {
         byte[] diveData = data == null ? new byte[0] : data;
         byte[] fp = fingerprint == null ? new byte[0] : fingerprint;
         dives.add(diveData);
         fingerprints.add(fp);
+        parsedDives.add(parsed);
         DiveComputerNative.emitDiveCaptured(
             dives.size(),
             diveData.length,
-            fingerprintHex(fp)
+            fingerprintHex(fp),
+            Base64.encodeToString(diveData, Base64.NO_WRAP),
+            parsed,
+            serial
         );
     }
 
@@ -51,6 +59,10 @@ final class DiveComputerDownloadCollector {
 
     byte[] fingerprintAt(int index) {
         return fingerprints.get(index);
+    }
+
+    DiveComputerNative.ParsedDive parsedAt(int index) {
+        return parsedDives.get(index);
     }
 
     int model() {

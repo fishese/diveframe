@@ -118,9 +118,11 @@ button {
   background: rgba(7, 24, 32, 0.84);
   border-bottom: 1px solid var(--line);
   display: flex;
-  height: 58px;
+  height: calc(
+    58px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
+  );
   justify-content: space-between;
-  padding: 0 4vw;
+  padding: var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) 4vw 0;
   position: sticky;
   top: 0;
   z-index: 50;
@@ -2659,8 +2661,10 @@ button {
 
 @media (max-width: 760px) {
   .topbar {
-    height: 52px;
-    padding: 0 12px;
+    height: calc(
+      52px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
+    );
+    padding: var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) 12px 0;
   }
 
   .brand-mark {
@@ -2976,7 +2980,16 @@ button {
   z-index: 80;
   display: grid;
   place-items: center;
-  padding: 1rem;
+  padding:
+    max(
+      1rem,
+      var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
+    )
+    1rem
+    max(
+      1rem,
+      var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+    );
   background: rgba(4, 18, 24, 0.72);
 }
 
@@ -3023,13 +3036,20 @@ button {
 }
 
 .ble-primary-sync {
-  display: grid;
-  gap: 0.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.85rem;
 }
 
 .ble-primary-sync > .settings-note,
 .ble-more-history > .settings-note {
   margin: 0;
+}
+
+.ble-last-synced {
+  flex: 1 1 8rem;
+  min-width: 0;
 }
 
 .ble-device-list {
@@ -3137,6 +3157,10 @@ button {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 650;
+}
+
+.ble-history-download {
+  box-shadow: 0 0 0 1px rgba(141, 235, 215, 0.2);
 }
 
 .ble-full-warning {

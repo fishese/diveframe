@@ -3,15 +3,15 @@
 Status: **implemented** (2026-08). IndexedDB `DATABASE_VERSION` is 8 with a
 destructive upgrade that deletes and recreates all stores. Backup format is v3.
 Store coverage lives in `lib/store-manifest.ts`. BLE persistence helpers are in
-`lib/ble-persist.ts` (`persistBleImport` / fixture prepare). Product UI for BLE
-download into the logbook and trip/user-GPS editors can still land later; the
-native spike remains non-persisting until that UI is wired.
+`lib/ble-persist.ts` (`persistBleImport` / fixture prepare / incremental
+captured-dive prepare). Product Android BLE download into the logbook is
+shipped (`BleImportPanel`); trip/user-GPS editors can still land later. The
+native spike shell remains non-persisting for research.
 
-Capture spike status (2026-08): Shearwater classic BLE download + `dc_parser`
+Capture status (2026-08): Shearwater classic BLE download + `dc_parser`
 summaries work on real Peregrine and Perdix 2 hardware, including multi-dive
-limits and fingerprint checkpoints. An import-shaped preview normalizer exists
-(`lib/ble-dive-normalizer.ts`) and can be persisted via `ble-persist` / IndexedDB
-v8. Full product download UI is still separate from the research spike.
+limits, fingerprint checkpoints, and per-dive incremental persist. Preview
+normalizer: `lib/ble-dive-normalizer.ts`.
 
 ## Why this is one version bump, not several
 

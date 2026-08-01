@@ -27,6 +27,10 @@ typedef struct {
     unsigned int dive_limit;
     unsigned int dive_count;
     int cancelled;
+    dc_context_t *context;
+    dc_descriptor_t *descriptor;
+    dc_device_t *device;
+    jclass parsed_class;
 } download_state_t;
 
 typedef struct {
@@ -37,6 +41,16 @@ typedef struct {
 static JavaVM *g_jvm = NULL;
 
 static const char *status_message(dc_status_t status);
+
+static jobject
+parse_dive(
+    JNIEnv *env,
+    dc_context_t *context,
+    dc_descriptor_t *descriptor,
+    dc_device_t *device,
+    const unsigned char *data,
+    size_t size,
+    jclass parsed_class);
 
 #define LOG_TAG "DiveFrameDC"
 #define LOG_TAIL_LINES 24
@@ -379,10 +393,25 @@ dive_cb(
             state->env, fp, 0, (jsize) fsize, (const jbyte *) fingerprint);
     }
 
+    jobject parsed = NULL;
+    if (state->context != NULL && state->descriptor != NULL && state->parsed_class != NULL) {
+        parsed = parse_dive(
+            state->env,
+            state->context,
+            state->descriptor,
+            state->device,
+            data,
+            (size_t) size,
+            state->parsed_class);
+    }
+
     (*state->env)->CallVoidMethod(
-        state->env, state->collector, state->on_dive, dive, fp);
+        state->env, state->collector, state->on_dive, dive, fp, parsed);
     (*state->env)->DeleteLocalRef(state->env, dive);
     (*state->env)->DeleteLocalRef(state->env, fp);
+    if (parsed) {
+        (*state->env)->DeleteLocalRef(state->env, parsed);
+    }
 
     state->dive_count++;
     if (state->dive_limit > 0 && state->dive_count >= state->dive_limit) {
@@ -789,19 +818,28 @@ Java_cc_fishese_divelog_DiveComputerNative_nativeDownload(
         env, arraylist_class, "add", "(Ljava/lang/Object;)Z");
     jmethodID collector_ctor = (*env)->GetMethodID(env, collector_class, "<init>", "()V");
     jmethodID on_devinfo = (*env)->GetMethodID(env, collector_class, "onDevInfo", "(III)V");
-    jmethodID on_dive = (*env)->GetMethodID(env, collector_class, "onDive", "([B[B)V");
+    jmethodID on_dive = (*env)->GetMethodID(
+        env,
+        collector_class,
+        "onDive",
+        "([B[BLcc/fishese/divelog/DiveComputerNative$ParsedDive;)V");
     jmethodID on_progress = (*env)->GetMethodID(env, collector_class, "onProgress", "(II)V");
     jmethodID dive_count_method = (*env)->GetMethodID(env, collector_class, "diveCount", "()I");
     jmethodID dive_at = (*env)->GetMethodID(env, collector_class, "diveAt", "(I)[B");
     jmethodID fp_at = (*env)->GetMethodID(env, collector_class, "fingerprintAt", "(I)[B");
+    jmethodID parsed_at = (*env)->GetMethodID(
+        env,
+        collector_class,
+        "parsedAt",
+        "(I)Lcc/fishese/divelog/DiveComputerNative$ParsedDive;");
     jmethodID model_get = (*env)->GetMethodID(env, collector_class, "model", "()I");
     jmethodID firmware_get = (*env)->GetMethodID(env, collector_class, "firmware", "()I");
     jmethodID serial_get = (*env)->GetMethodID(env, collector_class, "serial", "()I");
 
     if (!result_fail || !result_ctor || !raw_ctor || !arraylist_ctor || !arraylist_add
         || !collector_ctor || !on_devinfo || !on_dive || !on_progress
-        || !dive_count_method || !dive_at || !fp_at || !model_get || !firmware_get
-        || !serial_get) {
+        || !dive_count_method || !dive_at || !fp_at || !parsed_at || !model_get
+        || !firmware_get || !serial_get) {
         return NULL;
     }
 
@@ -830,6 +868,7 @@ Java_cc_fishese_divelog_DiveComputerNative_nativeDownload(
     state.dive_limit = limit > 0 ? (unsigned int) limit : 0;
     state.dive_count = 0;
     state.cancelled = 0;
+    state.parsed_class = parsed_class;
 
     dc_context_t *context = NULL;
     dc_descriptor_t *descriptor = NULL;
@@ -918,6 +957,10 @@ Java_cc_fishese_divelog_DiveComputerNative_nativeDownload(
         event_cb,
         &state);
 
+    state.context = context;
+    state.descriptor = descriptor;
+    state.device = device;
+
     status = dc_device_foreach(device, dive_cb, &state);
 
 finish:
@@ -928,23 +971,7 @@ finish:
     for (jint i = 0; i < count; ++i) {
         jbyteArray dive = (jbyteArray) (*env)->CallObjectMethod(env, collector, dive_at, i);
         jbyteArray fp = (jbyteArray) (*env)->CallObjectMethod(env, collector, fp_at, i);
-        jobject parsed = NULL;
-
-        if (dive != NULL && context != NULL && descriptor != NULL) {
-            jsize dive_size = (*env)->GetArrayLength(env, dive);
-            jbyte *dive_bytes = (*env)->GetByteArrayElements(env, dive, NULL);
-            if (dive_bytes != NULL) {
-                parsed = parse_dive(
-                    env,
-                    context,
-                    descriptor,
-                    device,
-                    (const unsigned char *) dive_bytes,
-                    (size_t) dive_size,
-                    parsed_class);
-                (*env)->ReleaseByteArrayElements(env, dive, dive_bytes, JNI_ABORT);
-            }
-        }
+        jobject parsed = (*env)->CallObjectMethod(env, collector, parsed_at, i);
 
         jobject raw = (*env)->NewObject(env, raw_dive_class, raw_ctor, dive, fp, parsed);
         (*env)->CallBooleanMethod(env, dive_list, arraylist_add, raw);

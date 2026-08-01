@@ -292,8 +292,9 @@ without the necessary pressure and cylinder inputs.
   reduced-motion CSS are used where available.
 - A global beta notice warns that updates may be incompatible or require
   clearing local data and links directly to the backup tools.
-- DiveFrame can be installed as a PWA. It is not yet an APK, native iOS app, or
-  store-distributed application.
+- DiveFrame can be installed as a PWA. An Android debug Capacitor APK ships the
+  same web UI with optional classic Shearwater BLE import. It is not yet an
+  iOS app or store-distributed application.
 
 Formal screen-reader, keyboard-only, contrast, and iOS/Android device matrices
 have not yet been completed.
@@ -394,10 +395,11 @@ native storage are planned.
 
 These are planned directions, not commitments for the current beta:
 
-- **BLE:** Keep the web app as the onboarding and general-use surface. A future
-  native app may add read-only BLE import, but downloaded dives must enter the
-  same normalized identity/merge pipeline and remain fully portable back to the
-  web app. Detailed protocol research remains parked separately.
+- **BLE:** Keep the web/PWA as the onboarding and general-use surface. The
+  Android app adds read-only classic Shearwater BLE import; downloaded dives
+  enter the same normalized identity/merge pipeline and remain fully portable
+  via backup. Perdix 3 and other brands stay out of scope for direct BLE.
+  PC/Web Bluetooth remains deferred.
 - **Google Drive:** Treat Drive as an optional transport for the versioned
   backup/snapshot model, not as a second database or a native-only record
   format.

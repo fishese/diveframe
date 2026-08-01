@@ -1,9 +1,8 @@
 # Android capture spike
 
-Status: **capture path validated on hardware** (research shell only). This is
-not a supported Bluetooth import feature in the production web app yet. The
-spike still does not write the logbook; IndexedDB v8 stores and
-`persistBleImport` exist for product wiring later.
+Status: **capture path validated on hardware** (research shell). Product
+Bluetooth import lives in the main DiveFrame Android app (`BleImportPanel`);
+this spike remains a non-persisting research shell (`npm run native:spike`).
 
 ## Current status (2026-08-01)
 

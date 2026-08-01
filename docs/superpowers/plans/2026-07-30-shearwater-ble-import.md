@@ -493,8 +493,8 @@ may supplement but not replace hardware testing.
    `lib/ble-cloud-identity.ts`, `scripts/report-ble-cloud-identity.mjs`.
 3. **Persistence design:** ~~Finalize raw-record and checkpoint schemas…~~
    **Done (IndexedDB v8, 2026-08):** Destructive recreate, store manifest,
-   backup v3, overlay fields, `persistBleImport` / `ble-persist` helpers. Product
-   download UI still not wired. Full Subsurface/UDDF generator still deferred.
+   backup v3, overlay fields, `persistBleImport` / `ble-persist` helpers.
+   Full Subsurface/UDDF generator still deferred.
 4. **Normalizer:** ~~Map the approved v1 field inventory…~~ **Done for preview
    contract** (`lib/ble-dive-normalizer.ts` + fixture tests). Product upsert
    path uses `previewToImportedDive`.
@@ -502,11 +502,14 @@ may supplement but not replace hardware testing.
    Android **Download from computer** panel (`BleImportPanel`) with folded sync
    UX: primary **Download new dives** when a checkpoint exists; always-visible
    **Get more history** (Last N with steppers, Last 200, Full under Advanced);
-   first-time layout is history quantities + **Download history**. Cancel,
-   summary, checkpoint reset, session adopt/release, EN/zh-Hant/ja strings.
-   Spike shell remains non-persisting. PC/Web Bluetooth deferred.
+   first-time layout is history quantities + **Download history**. Incremental
+   persist per `diveCaptured`; cancel keeps saved dives; checkpoint advances
+   only on success; transfer wake lock, safe-area, and panel lock polish.
+   Cancel, summary (computer + new-dive date range), checkpoint reset, session
+   adopt/release, EN/zh-Hant/ja strings. Spike shell remains non-persisting.
+   PC/Web Bluetooth deferred.
 6. **Hardening and release:** Run the failure/device matrix, complete privacy
-   and LGPL compliance work, and update USER-GUIDE and PRODUCT-SPEC.
+   and LGPL compliance work, and keep USER-GUIDE / PRODUCT-SPEC current.
 7. **Later if justified:** iOS, additional Shearwater backends/models, other
    brands, or background sync through the same high-level bridge contract.
 

@@ -1,9 +1,12 @@
 import {
+  buildDeviceCheckpoint,
   deviceCheckpointId,
+  prepareBlePersistFromCapturedDive,
   prepareBlePersistFromDownload,
 } from "./ble-persist";
 import {
   diveComputerCapability,
+  type DiveComputerDiveCapturedEvent,
   type DiveComputerDownloadResult,
 } from "./dive-computer-capability";
 import {
@@ -38,6 +41,11 @@ export type BleImportSessionResult = {
   failedParseCount: number;
   checkpointAdvanced: boolean;
   download: DiveComputerDownloadResult | null;
+  /** Human-facing date span of newly saved dives (not an identity key). */
+  newDiveDateEarliest: string | null;
+  newDiveDateLatest: string | null;
+  product: string;
+  serialHex: string;
 };
 
 export const BLE_LAST_N_DEFAULT = 15;
@@ -57,6 +65,30 @@ export function checkpointIdForDevice(
   serialHex: string,
 ) {
   return deviceCheckpointId(deviceDescriptor, serialHex);
+}
+
+/** Human-facing date span for newly saved dives (not an identity key). */
+export function summarizeNewDiveDates(dates: Array<string | null | undefined>) {
+  const valid = dates
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter(Boolean)
+    .sort();
+  if (valid.length === 0) {
+    return { earliest: null, latest: null };
+  }
+  return {
+    earliest: valid[0] ?? null,
+    latest: valid[valid.length - 1] ?? null,
+  };
+}
+
+/** Format dive-computer local timestamps for summary UI (no timezone shift). */
+export function formatBleDiveStamp(value: string) {
+  const match = value
+    .trim()
+    .match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})/);
+  if (!match) return value.trim();
+  return `${match[1]} ${match[2]}:${match[3]}`;
 }
 
 export async function loadCheckpointForDevice(
@@ -79,7 +111,8 @@ export async function resetCheckpointForDevice(
 
 /**
  * Download from the connected computer and persist into IndexedDB.
- * Call only after GATT is ready. Does not advance checkpoint if cancelled.
+ * Each streamed dive is saved as it arrives; the sync checkpoint advances
+ * only when the transfer finishes successfully (not cancelled).
  */
 export async function runBleImportSession(
   options: BleImportSessionOptions,
@@ -91,7 +124,9 @@ export async function runBleImportSession(
   }
 
   let fingerprintHex: string | undefined;
-  let limit = nativeLimitForQuantity(options.quantity ?? { kind: "last-n", n: BLE_LAST_N_DEFAULT });
+  let limit = nativeLimitForQuantity(
+    options.quantity ?? { kind: "last-n", n: BLE_LAST_N_DEFAULT },
+  );
 
   if (options.intent === "incremental") {
     const descriptor = options.deviceDescriptorHint?.trim();
@@ -112,51 +147,165 @@ export async function runBleImportSession(
     limit = 0;
   }
 
-  const download = await diveComputerCapability.downloadDives({
-    limit,
-    fingerprintHex,
-  });
+  let newCount = 0;
+  let alreadyPresentCount = 0;
+  let failedParseCount = 0;
+  let streamedPersistCount = 0;
+  const newDiveDates: string[] = [];
+  let product =
+    options.deviceDescriptorHint?.trim() ||
+    "";
+  let serialHex = options.serialHexHint?.trim().toUpperCase() || "";
+  let newestFingerprintHex = "";
+
+  let persistChain: Promise<void> = Promise.resolve();
+
+  const captureListener = await diveComputerCapability.addListener(
+    "diveCaptured",
+    (event: DiveComputerDiveCapturedEvent) => {
+      if (!event.dataBase64) return;
+      persistChain = persistChain.then(async () => {
+        if (event.product?.trim()) product = event.product.trim();
+        if (event.serialHex?.trim()) {
+          serialHex = event.serialHex.trim().toUpperCase();
+        }
+        if (!newestFingerprintHex && event.fingerprintHex) {
+          newestFingerprintHex = event.fingerprintHex.trim().toUpperCase();
+        }
+        try {
+          const payload = await prepareBlePersistFromCapturedDive({
+            product: product || "shearwater",
+            serialHex:
+              serialHex ||
+              event.serialHex?.trim().toUpperCase() ||
+              "",
+            fingerprintHex: event.fingerprintHex,
+            dataBase64: event.dataBase64!,
+            parsed: event.parsed,
+            serial: event.serial,
+            libdivecomputerVersion: options.libdivecomputerVersion,
+            libdivecomputerCommit: options.libdivecomputerCommit,
+          });
+          failedParseCount += payload.failedParseCount;
+          if (payload.dives.length === 0) return;
+          const persisted = await persistBleImport({
+            dives: payload.dives,
+            rawRecords: payload.rawRecords,
+            checkpoint: null,
+          });
+          streamedPersistCount += 1;
+          newCount += persisted.newCount;
+          alreadyPresentCount += persisted.alreadyPresentCount;
+          if (persisted.newCount > 0 && payload.diveDate) {
+            newDiveDates.push(payload.diveDate);
+          }
+        } catch {
+          failedParseCount += 1;
+        }
+      });
+    },
+  );
+
+  let download: DiveComputerDownloadResult;
+  try {
+    download = await diveComputerCapability.downloadDives({
+      limit,
+      fingerprintHex,
+    });
+    await persistChain;
+  } finally {
+    await captureListener.remove().catch(() => undefined);
+  }
+
+  if (download.product?.trim()) product = download.product.trim();
+  if (download.serialHex?.trim()) {
+    serialHex = download.serialHex.trim().toUpperCase();
+  }
+  if (download.newestFingerprintHex?.trim()) {
+    newestFingerprintHex = download.newestFingerprintHex.trim().toUpperCase();
+  }
+
+  const dateSpan = summarizeNewDiveDates(newDiveDates);
 
   if (download.cancelled) {
     return {
       cancelled: true,
-      received: download.diveCount,
-      persisted: 0,
-      newCount: 0,
-      alreadyPresentCount: 0,
-      failedParseCount: 0,
+      received: Math.max(download.diveCount, streamedPersistCount),
+      persisted: newCount + alreadyPresentCount,
+      newCount,
+      alreadyPresentCount,
+      failedParseCount,
       checkpointAdvanced: false,
       download,
+      newDiveDateEarliest: dateSpan.earliest,
+      newDiveDateLatest: dateSpan.latest,
+      product,
+      serialHex,
     };
   }
 
-  const payload = await prepareBlePersistFromDownload(download, {
-    libdivecomputerVersion: options.libdivecomputerVersion,
-    libdivecomputerCommit: options.libdivecomputerCommit,
-  });
-
-  if (payload.dives.length === 0) {
-    return {
-      cancelled: false,
-      received: download.diveCount,
-      persisted: 0,
-      newCount: 0,
-      alreadyPresentCount: 0,
-      failedParseCount: payload.failedParseCount,
-      checkpointAdvanced: false,
-      download,
-    };
+  // Fallback for older native builds that only emit metadata on diveCaptured.
+  if (streamedPersistCount === 0 && download.dives.length > 0) {
+    const payload = await prepareBlePersistFromDownload(download, {
+      libdivecomputerVersion: options.libdivecomputerVersion,
+      libdivecomputerCommit: options.libdivecomputerCommit,
+    });
+    failedParseCount += payload.failedParseCount;
+    if (payload.dives.length > 0) {
+      const persisted = await persistBleImport(payload);
+      newCount += persisted.newCount;
+      alreadyPresentCount += persisted.alreadyPresentCount;
+      for (const dive of payload.dives) {
+        if (dive.diveDate) newDiveDates.push(dive.diveDate);
+      }
+      const span = summarizeNewDiveDates(newDiveDates);
+      return {
+        cancelled: false,
+        received: download.diveCount,
+        persisted: persisted.diveCount,
+        newCount,
+        alreadyPresentCount,
+        failedParseCount,
+        checkpointAdvanced: persisted.checkpointAdvanced,
+        download,
+        newDiveDateEarliest: span.earliest,
+        newDiveDateLatest: span.latest,
+        product: download.product || product,
+        serialHex: (download.serialHex || serialHex).toUpperCase(),
+      };
+    }
   }
 
-  const persisted = await persistBleImport(payload);
+  let checkpointAdvanced = false;
+  if (newestFingerprintHex && product && serialHex) {
+    const checkpoint = buildDeviceCheckpoint({
+      descriptor: product,
+      serialHex,
+      newestFingerprintHex,
+      downloaded: Math.max(download.diveCount, streamedPersistCount),
+      matched: alreadyPresentCount,
+    });
+    await persistBleImport({
+      dives: [],
+      rawRecords: [],
+      checkpoint,
+    });
+    checkpointAdvanced = true;
+  }
+
+  const span = summarizeNewDiveDates(newDiveDates);
   return {
     cancelled: false,
-    received: download.diveCount,
-    persisted: persisted.diveCount,
-    newCount: persisted.newCount,
-    alreadyPresentCount: persisted.alreadyPresentCount,
-    failedParseCount: payload.failedParseCount,
-    checkpointAdvanced: persisted.checkpointAdvanced,
+    received: Math.max(download.diveCount, streamedPersistCount),
+    persisted: newCount + alreadyPresentCount,
+    newCount,
+    alreadyPresentCount,
+    failedParseCount,
+    checkpointAdvanced,
     download,
+    newDiveDateEarliest: span.earliest,
+    newDiveDateLatest: span.latest,
+    product,
+    serialHex,
   };
 }

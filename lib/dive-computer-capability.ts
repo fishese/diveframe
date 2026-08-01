@@ -138,6 +138,12 @@ export type DiveComputerDiveCapturedEvent = {
   index: number;
   size: number;
   fingerprintHex: string;
+  /** Present when native streams full payloads for incremental persist. */
+  dataBase64?: string;
+  parsed?: DiveComputerParsedDive;
+  serial?: number;
+  serialHex?: string;
+  product?: string;
 };
 
 export interface DiveComputerPlugin {

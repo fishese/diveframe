@@ -8,15 +8,17 @@ import {
   Radio,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { AppTranslate } from "@/lib/app-i18n";
 import {
   BLE_LAST_N_DEFAULT,
   BLE_LAST_N_MAX,
   BLE_LAST_N_MIN,
+  formatBleDiveStamp,
   resetCheckpointForDevice,
   runBleImportSession,
   type BleHistoryQuantity,
+  type BleImportSessionResult,
   type BleSyncIntent,
 } from "@/lib/ble-import-session";
 import {
@@ -48,7 +50,7 @@ type Phase =
 
 export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) {
   const [phase, setPhase] = useState<Phase>("idle");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<ReactNode>(null);
   const [devices, setDevices] = useState<DeviceRow[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [connectedName, setConnectedName] = useState("");
@@ -288,11 +290,39 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
         setConnectedProduct(product);
         setConnectedSerialHex(serial);
         await refreshCheckpoint(product, serial);
+      } else if (result.product || result.serialHex) {
+        if (result.product) setConnectedProduct(result.product);
+        if (result.serialHex) setConnectedSerialHex(result.serialHex);
+        await refreshCheckpoint(
+          result.product || connectedProduct || connectedName,
+          result.serialHex || connectedSerialHex,
+        );
       }
+
+      const failed =
+        result.failedParseCount > 0
+          ? t("bleImportFailedParse", { count: result.failedParseCount })
+          : "";
+      const detail =
+        result.newCount > 0 ? formatBleImportDetail(t, result) : null;
 
       if (result.cancelled) {
         setPhase("ready");
-        setStatus(t("bleImportCancelled"));
+        if (result.newCount > 0 || result.alreadyPresentCount > 0) {
+          await onImported();
+          setStatus(
+            <>
+              {t("bleImportCancelledSaved", {
+                newCount: result.newCount,
+                alreadyPresent: result.alreadyPresentCount,
+                failed,
+              })}
+              {detail}
+            </>,
+          );
+        } else {
+          setStatus(t("bleImportCancelled"));
+        }
         return;
       }
 
@@ -303,17 +333,17 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
       setStatus(
         result.received === 0 && result.newCount === 0
           ? t("bleImportNothingNew")
-          : t("bleImportSummary", {
-              received: result.received,
-              newCount: result.newCount,
-              alreadyPresent: result.alreadyPresentCount,
-              failed:
-                result.failedParseCount > 0
-                  ? t("bleImportFailedParse", {
-                      count: result.failedParseCount,
-                    })
-                  : "",
-            }),
+          : (
+              <>
+                {t("bleImportSummary", {
+                  received: result.received,
+                  newCount: result.newCount,
+                  alreadyPresent: result.alreadyPresentCount,
+                  failed,
+                })}
+                {detail}
+              </>
+            ),
       );
     } catch (error) {
       // A dropped link and a rejected request need different recovery, so ask
@@ -330,10 +360,29 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
     await diveComputerCapability.disconnect().catch(() => undefined);
     setConnectedName("");
     setPhase("idle");
-    setStatus("");
+    setStatus(null);
   }
 
   async function cancelDownload() {
+    if (!(await confirmStopDownload())) return;
+    await stopDownload();
+  }
+
+  /** Close / backdrop: during transfer, cancel only and stay open for the summary. */
+  async function requestClose() {
+    if (phase === "saving") return;
+    if (phase === "downloading") {
+      await cancelDownload();
+      return;
+    }
+    onClose();
+  }
+
+  function confirmStopDownload() {
+    return window.confirm(t("bleImportCancelConfirm"));
+  }
+
+  async function stopDownload() {
     try {
       await diveComputerCapability.cancel();
     } catch {
@@ -373,10 +422,11 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
               type="button"
               className="button button-quiet"
               aria-label={t("bleImportQuantityDecrease")}
-              onClick={() =>
-                setLastNText(String(Math.max(BLE_LAST_N_MIN, lastN - 1)))
-              }
-              disabled={quantityKind !== "last-n" || lastN <= BLE_LAST_N_MIN}
+              onClick={() => {
+                setQuantityKind("last-n");
+                setLastNText(String(Math.max(BLE_LAST_N_MIN, lastN - 1)));
+              }}
+              disabled={lastN <= BLE_LAST_N_MIN && quantityKind === "last-n"}
             >
               <Minus size={15} />
             </button>
@@ -388,18 +438,22 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
               max={BLE_LAST_N_MAX}
               value={lastNText}
               aria-label={t("bleImportQuantityLastNValue")}
-              onChange={(event) => setLastNText(event.target.value)}
+              onChange={(event) => {
+                setQuantityKind("last-n");
+                setLastNText(event.target.value);
+              }}
+              onFocus={() => setQuantityKind("last-n")}
               onBlur={() => setLastNText(String(lastN))}
-              disabled={quantityKind !== "last-n"}
             />
             <button
               type="button"
               className="button button-quiet"
               aria-label={t("bleImportQuantityIncrease")}
-              onClick={() =>
-                setLastNText(String(Math.min(BLE_LAST_N_MAX, lastN + 1)))
-              }
-              disabled={quantityKind !== "last-n" || lastN >= BLE_LAST_N_MAX}
+              onClick={() => {
+                setQuantityKind("last-n");
+                setLastNText(String(Math.min(BLE_LAST_N_MAX, lastN + 1)));
+              }}
+              disabled={lastN >= BLE_LAST_N_MAX && quantityKind === "last-n"}
             >
               <Plus size={15} />
             </button>
@@ -444,7 +498,13 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
   );
 
   return (
-    <div className="ble-import-backdrop" role="presentation" onClick={onClose}>
+    <div
+      className="ble-import-backdrop"
+      role="presentation"
+      onClick={() => {
+        void requestClose();
+      }}
+    >
       <div
         className="ble-import-panel"
         role="dialog"
@@ -463,8 +523,8 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
           <button
             type="button"
             className="button button-quiet"
-            onClick={onClose}
-            disabled={phase === "downloading" || phase === "saving"}
+            onClick={() => void requestClose()}
+            disabled={phase === "saving"}
           >
             <X size={16} />
             {t("bleImportClose")}
@@ -569,18 +629,16 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
           ) : hasCheckpoint ? (
             <>
               <div className="ble-primary-sync">
-                <div className="ble-import-actions">
-                  <button
-                    type="button"
-                    className="button button-primary"
-                    onClick={() => void startDownload("incremental")}
-                    disabled={!connectReady}
-                  >
-                    {t("bleImportDownloadNew")}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={() => void startDownload("incremental")}
+                  disabled={!connectReady}
+                >
+                  {t("bleImportDownloadNew")}
+                </button>
                 {checkpointSyncedAt ? (
-                  <p className="settings-note">
+                  <p className="settings-note ble-last-synced">
                     {t("bleImportLastSynced", {
                       when: formatSyncedAt(checkpointSyncedAt),
                     })}
@@ -594,7 +652,7 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
                 <div className="ble-import-actions">
                   <button
                     type="button"
-                    className="button button-quiet"
+                    className="button button-primary ble-history-download"
                     onClick={() => void startDownload("history")}
                     disabled={!connectReady}
                   >
@@ -617,7 +675,7 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
               <div className="ble-import-actions">
                 <button
                   type="button"
-                  className="button button-primary"
+                  className="button button-primary ble-history-download"
                   onClick={() => void startDownload("history")}
                   disabled={!connectReady}
                 >
@@ -647,5 +705,36 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
         </div>
       </div>
     </div>
+  );
+}
+
+function formatBleImportDetail(
+  t: AppTranslate,
+  result: BleImportSessionResult,
+): ReactNode {
+  const computer = [result.product, result.serialHex].filter(Boolean).join(" · ");
+  let dateRange: string | null = null;
+  if (result.newDiveDateEarliest && result.newDiveDateLatest) {
+    const earliest = formatBleDiveStamp(result.newDiveDateEarliest);
+    const latest = formatBleDiveStamp(result.newDiveDateLatest);
+    dateRange =
+      earliest === latest
+        ? t("bleImportDateSingle", { date: earliest })
+        : t("bleImportDateRange", { earliest, latest });
+  }
+  if (!computer && !dateRange) return null;
+  return (
+    <>
+      {" "}
+      {computer || "—"}
+      {dateRange ? (
+        <>
+          {" · "}
+          {t("bleImportNewDivesLabel")}{" "}
+          <strong>{dateRange}</strong>
+        </>
+      ) : null}
+      {t("bleImportSummaryFindHint")}
+    </>
   );
 }

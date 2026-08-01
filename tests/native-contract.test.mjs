@@ -12,6 +12,10 @@ const files = {
     "../android/app/src/main/java/cc/fishese/divelog/DiveComputerPlugin.java",
     import.meta.url,
   ),
+  mainActivity: new URL(
+    "../android/app/src/main/java/cc/fishese/divelog/MainActivity.java",
+    import.meta.url,
+  ),
   gatt: new URL(
     "../android/app/src/main/java/cc/fishese/divelog/DiveComputerGattClient.java",
     import.meta.url,
@@ -110,6 +114,56 @@ test("BLE permissions, scan, cancel, and classic GATT transport are wired", asyn
   assert.match(capability, /deviceFound/);
 });
 
+test("BLE downloads keep the Android screen awake only during transfer", async () => {
+  const javaPlugin = await readFile(files.javaPlugin, "utf8");
+
+  assert.match(javaPlugin, /FLAG_KEEP_SCREEN_ON/);
+  assert.match(javaPlugin, /addFlags\(WindowManager\.LayoutParams\.FLAG_KEEP_SCREEN_ON\)/);
+  assert.match(javaPlugin, /clearFlags\(WindowManager\.LayoutParams\.FLAG_KEEP_SCREEN_ON\)/);
+  assert.match(
+    javaPlugin,
+    /downloadExecutor\.execute\([\s\S]+setKeepScreenOn\(true\)[\s\S]+finally[\s\S]+setKeepScreenOn\(false\)/,
+  );
+});
+
+test("diveCaptured events carry payload for incremental IndexedDB persist", async () => {
+  const [javaPlugin, nativeJava, collector, capability, nativeC] =
+    await Promise.all([
+      readFile(files.javaPlugin, "utf8"),
+      readFile(
+        new URL(
+          "../android/app/src/main/java/cc/fishese/divelog/DiveComputerNative.java",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+      readFile(
+        new URL(
+          "../android/app/src/main/java/cc/fishese/divelog/DiveComputerDownloadCollector.java",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+      readFile(files.capability, "utf8"),
+      readFile(
+        new URL("../android/app/src/main/cpp/diveframe_dc.c", import.meta.url),
+        "utf8",
+      ),
+    ]);
+
+  assert.match(capability, /dataBase64/);
+  assert.match(
+    nativeJava,
+    /onDiveCaptured\(\s*int index,\s*int size,\s*String fingerprintHex,\s*String dataBase64/s,
+  );
+  assert.match(collector, /emitDiveCaptured\(/);
+  assert.match(collector, /dataBase64\(\)|Base64\.encodeToString/);
+  assert.match(javaPlugin, /put\("dataBase64"/);
+  assert.match(javaPlugin, /put\("parsed"/);
+  assert.match(nativeC, /state\.context/);
+  assert.match(nativeC, /parse_dive\(/);
+});
+
 test("download path uses dc_custom_open and does not claim persistence", async () => {
   const [nativeC, javaPlugin, docs] = await Promise.all([
     readFile(
@@ -168,6 +222,9 @@ test("BLE normalizer exists and is wired into the spike without persistence", as
   assert.match(persist, /previewToImportedDive/);
   assert.match(persist, /persistBleImport|prepareBlePersistFromFixture/);
   assert.match(persist, /prepareBlePersistFromDownload/);
+  assert.match(persist, /prepareBlePersistFromCapturedDive/);
+  assert.match(session, /prepareBlePersistFromCapturedDive/);
+  assert.match(session, /summarizeNewDiveDates/);
   assert.match(normalizer, /proposedCanonicalId/);
   assert.match(spike, /normalizeBleDownloadPreview/);
   assert.match(spike, /saveCaptureFixture|Save full capture|save-capture/);

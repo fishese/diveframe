@@ -54,22 +54,29 @@ The **Import log** button accepts one or more of:
 ### Android: Download from computer
 
 In the DiveFrame Android app (not the browser PWA), **Download from computer**
-appears next to **Import log**. Put a Shearwater computer in transfer mode,
-allow Bluetooth, scan, connect, then:
+appears next to **Import log**. Classic Shearwater BLE computers are supported
+(for example Peregrine and Perdix 2). Perdix 3 and other brands are not; import
+those via a file export instead. Put the computer in transfer mode, allow
+Bluetooth, scan, connect, then:
 
 - **First sync** (no checkpoint yet): choose **Last N** (stepper or typed
   count), **Last 200**, or — under **Advanced** — **Full import**, then
-  **Download history**.
+  **Download history**. Typing or using the Last N steppers selects that
+  option automatically.
 - **Later syncs**: the primary action is **Download new dives** (only dives
-  newer than the last successful sync). Below that, **Get more history** stays
-  visible with the same quantity options for catch-up downloads.
+  newer than the last successful sync), with the last-synced time shown beside
+  the button. Below that, **Get more history** stays visible with the same
+  quantity options for catch-up downloads.
 
 Dives are identified by per-dive fingerprints, so a later fuller download that
-re-sends recent dives merges them instead of duplicating logbook entries. Reset
-sync checkpoint (under **Get more history**) clears only the “new since last
-sync” marker; it does not erase dives already saved. Full import can take a
-very long time; keep the app open in the foreground. Cancel is available during
-a transfer.
+re-sends recent dives merges them instead of duplicating logbook entries. Each
+dive is saved as it arrives, so Cancel (or an interrupted transfer) keeps
+dives already received; the sync checkpoint advances only after a successful
+completion. Reset sync checkpoint (under **Get more history**) clears only the
+“new since last sync” marker; it does not erase dives already saved. Full
+import can take a very long time; keep the app open in the foreground (the
+screen stays awake during the transfer). Cancel is available during a
+transfer.
 
 When two source records can be matched safely, DiveFrame combines them into one
 canonical dive. It retains source-specific dive numbers and fills missing

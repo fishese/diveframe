@@ -1,11 +1,13 @@
 package cc.fishese.divelog;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.ContentValues;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.view.WindowManager;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -116,11 +118,29 @@ public class DiveComputerPlugin extends Plugin {
             }
 
             @Override
-            public void onDiveCaptured(int index, int size, String fingerprintHex) {
+            public void onDiveCaptured(
+                int index,
+                int size,
+                String fingerprintHex,
+                String dataBase64,
+                DiveComputerNative.ParsedDive parsed,
+                int serial
+            ) {
                 JSObject event = new JSObject();
                 event.put("index", index);
                 event.put("size", size);
                 event.put("fingerprintHex", fingerprintHex == null ? "" : fingerprintHex);
+                event.put("dataBase64", dataBase64 == null ? "" : dataBase64);
+                event.put("serial", Integer.toUnsignedLong(serial));
+                event.put("serialHex", String.format("%08X", serial));
+                String product = session != null ? session.connectedName() : "";
+                if (product == null) {
+                    product = "";
+                }
+                event.put("product", product);
+                if (parsed != null) {
+                    event.put("parsed", parsedToJson(parsed));
+                }
                 notifyListeners("diveCaptured", event);
             }
         });
@@ -253,6 +273,7 @@ public class DiveComputerPlugin extends Plugin {
         final byte[] checkpoint = fingerprint;
         final int requestedLimit = limit;
         downloadExecutor.execute(() -> {
+            setKeepScreenOn(true);
             try {
                 DiveComputerNative.DownloadResult download =
                     session.downloadDives(requestedLimit, checkpoint);
@@ -302,6 +323,26 @@ public class DiveComputerPlugin extends Plugin {
                 call.resolve(result);
             } catch (RuntimeException error) {
                 call.reject(error.getMessage(), "download_failed", error);
+            } finally {
+                setKeepScreenOn(false);
+            }
+        });
+    }
+
+    private void setKeepScreenOn(boolean enabled) {
+        Activity activity = getActivity();
+        if (activity == null) {
+            return;
+        }
+        activity.runOnUiThread(() -> {
+            if (enabled) {
+                activity
+                    .getWindow()
+                    .addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            } else {
+                activity
+                    .getWindow()
+                    .clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             }
         });
     }

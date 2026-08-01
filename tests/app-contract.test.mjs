@@ -222,6 +222,44 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /downloadFromComputer/);
   assert.match(appI18n, /downloadFromComputer/);
   assert.match(appI18n, /bleImportFullWarning/);
+  assert.match(appI18n, /bleImportCancelConfirm/);
+  assert.match(appI18n, /bleImportCancelledSaved/);
+  assert.match(appI18n, /bleImportNewDivesLabel/);
+  assert.match(appI18n, /bleImportSummaryFindHint/);
+  assert.match(
+    await readFile(new URL("../lib/ble-import-session.ts", import.meta.url), "utf8"),
+    /formatBleDiveStamp/,
+  );
+  assert.match(
+    await readFile(new URL("../lib/ble-import-session.ts", import.meta.url), "utf8"),
+    /prepareBlePersistFromCapturedDive/,
+  );
+  assert.match(
+    await readFile(new URL("../lib/ble-import-session.ts", import.meta.url), "utf8"),
+    /summarizeNewDiveDates/,
+  );
+  const bleImportPanel = await readFile(
+    new URL("../app/components/BleImportPanel.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(bleImportPanel, /async function requestClose/);
+  assert.match(bleImportPanel, /async function stopDownload/);
+  assert.match(
+    bleImportPanel,
+    /window\.confirm\(t\("bleImportCancelConfirm"\)\)/,
+  );
+  assert.match(
+    bleImportPanel,
+    /phase === "downloading"[\s\S]*await cancelDownload\(\);\s*return;/,
+  );
+  assert.doesNotMatch(
+    bleImportPanel,
+    /await stopDownload\(\);\s*\}?\s*onClose\(\)/,
+  );
+  assert.match(
+    bleImportPanel,
+    /className="button button-primary ble-history-download"/,
+  );
   assert.match(backup, /BACKUP_VERSION = 3/);
   assert.match(backup, /rawBytesBase64/);
   assert.match(backup, /fingerprintBase64/);
@@ -288,6 +326,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   );
   assert.match(globalStyles, /select option/);
   assert.match(globalStyles, /color-scheme: dark/);
+  assert.match(globalStyles, /env\(safe-area-inset-top/);
+  assert.match(globalStyles, /var\(--safe-area-inset-top/);
   assert.match(globalStyles, /\.mobile-home-button/);
   assert.match(globalStyles, /\.composer-preview-pane[\s\S]+position: sticky/);
   assert.match(globalStyles, /\.danger-option \.button[\s\S]+width: 100%/);
