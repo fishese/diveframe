@@ -3,8 +3,10 @@
 ## Where things stand
 
 Product Bluetooth download works on hardware (Peregrine, Perdix 2) through the
-main DiveFrame Android app. Incremental persist, transfer UX polish, and
-packaging the real app into the APK are committed on `main`.
+main DiveFrame Android app. Incremental persist, transfer UX polish, packaging
+the real app into the APK, trips / user GPS / filters, offline supplementary
+catalog + What's new, and Shearwater computer GPS from BLE samples are
+committed and pushed on `main` (`09e3d65` and earlier).
 
 Validated on device:
 
@@ -80,11 +82,12 @@ Verified against the on-device backup: of 128 raw records (log versions 13 ×10,
 needs log version ≥ 17 *and* a satellite lock, so most dives having none is
 expected.
 
-Fixes:
+Fixes (shipped on `main`):
 
 - Native `sample_cb` keeps the first location as entry and the latest as exit,
   passed via `ParsedDive.setEntryLocation` / `setExitLocation` and
   `gpsEntryLat/Lng` + `gpsExitLat/Lng` in the plugin JSON.
+- Normalizer + persist no longer force computer GPS to `null`.
 - The one-time Settings backfill button was run on this device and then removed
   from the shipped app. The raw-bytes extractor and offline backup repair CLI
   live under `scripts/archive/shearwater-gps-backfill/` for reuse if another
@@ -105,40 +108,33 @@ Mitigations in tree:
 
 - Bundled `dive-sites.json` is queried client-side for nearby suggestions so the
   site picker works without the hosted API.
-- Failed reverse-geocode attempts stop the perpetual “Resolving…” spinner.
+- Failed reverse-geocode attempts stop the perpetual “Resolving…” spinner and
+  show place-name unavailable.
 - Native builds can override the API origin with
-  `NEXT_PUBLIC_DIVEFRAME_API_ORIGIN` (debug APK currently pointed at the LAN
-  `vinext` server for verification). Deploying CORS to production is the
-  lasting fix.
+  `NEXT_PUBLIC_DIVEFRAME_API_ORIGIN` (LAN `vinext` for verification). Deploying
+  CORS to production is the lasting fix.
 
 ## Offline catalog + What's new (2026-08-01)
 
 Persistent supplementary `dive-sites.json` (IndexedDB v9, backup/restore) and
 Settings **What's new** (API feed, cached preferences, APK download links) are
-documented in `USER-GUIDE.md` / `PRODUCT-SPEC.md`. Plan:
+shipped on `main` and documented in `USER-GUIDE.md` / `PRODUCT-SPEC.md`. Plan:
 `docs/superpowers/plans/2026-08-01-offline-catalog-whats-new.md`.
-
-Manual smoke (web + APK) remains on the release checklist in that plan.
 
 ## Resume checklist
 
 1. Smoke-test cancel-with-summary / crash-keeps-dives on device when convenient
    (do not `adb install` while a download is running).
-   Also smoke-test **Export app data** in the APK: the file must appear in
-   Downloads and re-import cleanly before editing trips / GPS on device.
-2. Device GPS filter should show the 4 Perdix 2 dives recovered earlier
-   (2026-03-17 Palau, 2026-05-17 ×2 and 2026-05-31 Hong Kong). The one-time
-   Settings recover button is gone; archive tooling is under
-   `scripts/archive/shearwater-gps-backfill/`.
-3. Next product steps:
-   - Trip / user-GPS editors — **done** on `feature/trip-user-gps-editors`
-     (list blocks, select mode, details assignment, user GPS + JPEG EXIF, alias
-     chips, date/computer filters + reset)
-   - Site display: pick a catalog alias or type a custom name — **done** on
-     same branch (alias expand-in-picker)
+2. Re-verify **Export app data** and GPS filter on device after the GNSS persist
+   fix (new BLE imports should carry computer GPS when the computer recorded a
+   lock).
+3. Deploy production CORS for Capacitor origins on geocode / nearby / what's-new.
+4. Next product steps:
+   - Trip / user-GPS editors — **done** on `main`
+   - Site display alias chips — **done** on `main`
    - BLE hardening / failure matrix / privacy–LGPL release work
    - About copy: classic Shearwater BLE only (not Perdix 3)
-4. Parked / lower priority: pinned in-app download strip; PC Web Bluetooth;
+5. Parked / lower priority: pinned in-app download strip; PC Web Bluetooth;
    background notification / foreground service
 
 ## Known leftovers
@@ -150,6 +146,7 @@ Manual smoke (web + APK) remains on the release checklist in that plan.
 - vinext static export on Windows may abort during Node teardown after a
   successful prerender; `scripts/build-native-web.mjs` continues when
   `dist/client/index.html` is valid.
+- Production hosted APIs still need Capacitor CORS headers.
 - **About / product copy (later):** Bluetooth import supports classic
   Shearwater BLE computers only (not Perdix 3). Other brands: use Subsurface
   (or Shearwater Cloud DB, UDDF, FIT) and import that file into DiveFrame.

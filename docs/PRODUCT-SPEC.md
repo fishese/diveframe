@@ -9,16 +9,17 @@ Last updated: 2026-08-01
 DiveFrame is a device-local dive log companion. It imports compatible exports
 from dive-computer and logbook applications, conservatively combines records
 for the same dive, enriches them with locations and photos, and creates
-shareable images. It does not currently download directly from a dive computer
-or replace the source application's cloud backup. The current beta is
-deliberately local-first and may require a data reset while its schema and
-workflows are still being tested.
+shareable images. On the Android debug APK it can also download classic
+Shearwater dives over Bluetooth. It does not replace the source application's
+cloud backup. The current beta is deliberately local-first; schema upgrades
+after IndexedDB v8 are additive, but keep a recent backup while workflows are
+still being tested.
 
 This document is intended to support product, diving-domain, privacy,
-accessibility, and engineering review before larger platform projects are
-started:
+accessibility, and engineering review before larger platform projects continue:
 
-1. packaging DiveFrame in a native mobile wrapper with direct BLE import;
+1. hardening and distributing the Capacitor Android APK (BLE already present in
+   the debug build);
 2. optional user-controlled backup/sync through Google Drive; and
 3. optional accounts with hosted record and settings recovery.
 
@@ -52,9 +53,9 @@ weakening the web app or requiring a second logbook implementation.
 - **Local first.** Server routes are stateless lookup helpers, not log storage.
 - **Portable before synchronized.** Reliable export/import must precede any
   automatic cross-device sync.
-- **One model across surfaces.** Web, a future native wrapper, Drive transport,
-  and optional account sync must share record formats, validation, identity,
-  migrations, and merge behavior.
+- **One model across surfaces.** Web, the Android Capacitor shell, Drive
+  transport, and optional account sync must share record formats, validation,
+  identity, migrations, and merge behavior.
 - **Accounts remain optional.** Future sign-in may add recovery and sync, but
   anonymous local use must remain a complete supported workflow.
 
@@ -245,10 +246,16 @@ normalized model. Profiles, pressure samples, cylinders, events, extensions,
 and unknown fields remain in the supplied document. DiveFrame does not
 currently write modified Shearwater, UDDF, or FIT files.
 
-IndexedDB v8 retains per-dive raw capture bytes and user overlays (see
-`docs/2026-07-30-indexeddb-v8-planning.md`). Trip assignment, user GPS editing,
-and catalog alias display are productized in the shared web/Android UI.
-`exportGpsPreference` remains at default `"computer"` with no settings UI yet.
+IndexedDB v9 keeps per-dive raw capture bytes and user overlays from the v8
+schema (`docs/2026-07-30-indexeddb-v8-planning.md`) and adds a persistent
+`supplementaryCatalog` store without wiping existing data. Trip assignment,
+user GPS editing, and catalog alias display are productized in the shared
+web/Android UI. `exportGpsPreference` remains at default `"computer"` with no
+settings UI yet.
+
+Android BLE imports map Shearwater GNSS from libdivecomputer
+`DC_SAMPLE_LOCATION` samples into `gpsEntry*` / `gpsExit*` on the dive record
+when the computer recorded a satellite lock (log version 17+).
 
 **Planned (not implemented):** DiveFrame should be able to **generate** a new
 Subsurface `.ssrf` and possibly UDDF file from reparsed raw data plus DiveFrame
@@ -302,8 +309,8 @@ without the necessary pressure and cylinder inputs.
 - The composer keeps a reduced live preview visible while controls scroll.
 - Native controls, labels, status regions, keyboard-accessible buttons, and
   reduced-motion CSS are used where available.
-- A global beta notice warns that updates may be incompatible or require
-  clearing local data and links directly to the backup tools.
+- A global beta notice warns that workflows may change and links directly to
+  the backup tools. Schema upgrades after IndexedDB v8 keep existing data.
 - DiveFrame can be installed as a PWA. An Android debug Capacitor APK ships the
   same web UI with optional classic Shearwater BLE import. It is not yet an
   iOS app or store-distributed application.
@@ -313,7 +320,8 @@ without the necessary pressure and cylinder inputs.
   Downloads folder, with an optional share-sheet handoff. The install card is
   replaced by a storage-only card inside the app.
 - **What's new** in Settings fetches a versioned JSON feed from
-  `/api/whats-new` (with Capacitor CORS on the hosted origin), caches it in
+  `/api/whats-new` (with Capacitor CORS intended on the hosted origin; deploy
+  that header if the production worker still omits it), caches it in
   app preferences, and renders entries with optional structured links such as
   APK downloads. Offline use shows the last cached feed.
 
@@ -331,10 +339,11 @@ have not yet been completed.
 - Dive-planning, decompression advice, or safety-critical calculations.
 - Social network, public profiles, or shared community logbooks.
 
-## Recommended readiness gate before a native wrapper
+## Recommended readiness gate for store packaging / BLE hardening
 
-These items have higher leverage if completed while the app still has one
-browser-based implementation:
+A Capacitor Android debug APK already ships the shared web UI and classic
+Shearwater BLE import. These items still have higher leverage before treating
+that build as store-ready or fully hardened:
 
 ### Completed trust and recoverability work
 
@@ -478,7 +487,7 @@ other users are invited or hosted accounts are offered.
 - What telemetry, if any, can help diagnose failures without collecting dive
   or location data?
 
-## Release criteria for the current pre-wrapper phase
+## Release criteria for the current beta
 
 - Supported imports fail safely and never overwrite the selected source file.
 - Re-importing the same source records does not duplicate dives.
@@ -486,6 +495,7 @@ other users are invited or hosted accounts are offered.
   image blobs on a clean device.
 - Missing data remains visibly unavailable.
 - Subsurface pass-through changes only documented fields.
-- Core workflows work on mobile and desktop.
+- Core workflows work on mobile and desktop (and on the Android debug APK for
+  BLE and native export paths).
 - Documentation matches the implemented privacy and persistence boundaries.
 - Automated lint, type checking, production build, and regression tests pass.

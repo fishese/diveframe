@@ -4,15 +4,12 @@ DiveFrame is a device-local dive log companion. Your dive-computer apps remain
 the source and backup; DiveFrame brings those records together with Subsurface
 data, then adds maps, photos, site details, and shareable image overlays.
 
-> **Beta:** DiveFrame is under active development. Updates may be incompatible
-> or require clearing locally stored data. Keep the original dive-log exports
-> and a recent DiveFrame backup.
+> **Beta:** DiveFrame is under active development. Keep the original dive-log
+> exports and a recent DiveFrame backup.
 >
-> **IndexedDB v8 (destructive):** Opening this build upgrades local storage to
-> schema version 8 by erasing all DiveFrame records on this origin (dives,
-> photos, presets, branding, and settings). Re-import your source logs afterward
-> and recreate any non-source edits you still want. Export a backup first only
-> as an extra safety copy — it is not a v7→v8 migration path.
+> **IndexedDB:** Schema **v8** was a one-time destructive upgrade. Later
+> upgrades (including **v9**) are additive and keep existing logbook data.
+> Coming from a pre-v8 origin still requires re-import after that wipe.
 
 The web app is available at [divelog.fishese.cc](https://divelog.fishese.cc).
 
@@ -157,21 +154,23 @@ The installed app uses the same IndexedDB data as the browser for the same web
 address. Removing the app or clearing site data can remove the local logbook,
 so export an app-data backup first.
 
-The PWA is also a suitable base for a future Android wrapper, such as a Trusted
-Web Activity or Capacitor package. No APK wrapper or app-store signing is
-included yet.
+The PWA is also the base for the Capacitor **Android debug APK**, which ships
+the same UI plus classic Shearwater BLE import and native Downloads export.
+PWA and APK store data in separate origins — use **Export app data** to move a
+logbook between them. Store signing and iOS packaging are not included yet.
 
 ## Planned compatibility
 
-Direct BLE import, Google Drive synchronization, and user accounts are not in
-the current beta, but future changes should preserve room for them:
+Direct Bluetooth in the web/PWA, Google Drive synchronization, and user
+accounts are not in the current beta. The Android debug APK already feeds
+classic Shearwater BLE downloads into the same portable records and merge
+pipeline. Future changes should preserve room for:
 
-- the web app remains a first-class, account-optional onboarding and usage
-  surface;
-- a native BLE importer feeds the same portable records and merge pipeline;
-- Google Drive acts as an optional backup/sync transport rather than a separate
+- the web app as a first-class, account-optional onboarding and usage surface;
+- hardened native BLE import (and eventually other brands) on the same model;
+- Google Drive as an optional backup/sync transport rather than a separate
   data model; and
-- optional accounts synchronize the local IndexedDB model without making
+- optional accounts that synchronize the local IndexedDB model without making
   canonical dive IDs depend on an account, device, or storage provider.
 
 Portable backup export remains the provider-independent recovery path. See the

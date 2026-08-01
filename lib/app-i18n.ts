@@ -6,7 +6,7 @@ import {
 const en = {
   ...overlayTranslations.en,
   betaNoticeLabel: "Beta",
-  betaNoticeText: "DiveFrame is under active development. This IndexedDB v8 build erases local DiveFrame data on first open of this version — re-import your source logs afterward.",
+  betaNoticeText: "DiveFrame is under active development. Keep a recent backup — beta updates may still change workflows. Schema upgrades after IndexedDB v8 are additive and keep existing logbook data.",
   betaNoticeBackup: "Keep a recent backup.",
   diveLogCompanion: "Dive log companion",
   settingsAndData: "Settings & data tools",
@@ -534,7 +534,7 @@ const en = {
 const zhHant: Record<keyof typeof en, string> = {
   ...overlayTranslations["zh-Hant"],
   betaNoticeLabel: "測試版",
-  betaNoticeText: "DiveFrame 仍在積極開發中。此 IndexedDB v8 版本首次開啟時會清除本機 DiveFrame 資料，之後請重新匯入來源潛水紀錄。",
+  betaNoticeText: "DiveFrame 仍在積極開發中。請保留最新備份——測試版更新仍可能改變操作流程。IndexedDB v8 之後的結構升級為附加式，會保留現有潛水紀錄。",
   betaNoticeBackup: "請保留最新備份。",
   diveLogCompanion: "潛水紀錄工具",
   settingsAndData: "設定及資料工具",
@@ -1062,7 +1062,7 @@ const zhHant: Record<keyof typeof en, string> = {
 const ja: Record<keyof typeof en, string> = {
   ...overlayTranslations.ja,
   betaNoticeLabel: "ベータ版",
-  betaNoticeText: "DiveFrameは現在も開発中です。この IndexedDB v8 版を初めて開くとローカルの DiveFrame データが消去されます。その後、元のログを再読み込みしてください。",
+  betaNoticeText: "DiveFrameは現在も開発中です。最新のバックアップを保管してください——ベータ版の更新で操作が変わることがあります。IndexedDB v8 以降のスキーマ更新は追加のみで、既存のログブックは保持されます。",
   betaNoticeBackup: "最新のバックアップを保管してください。",
   diveLogCompanion: "ダイブログツール",
   settingsAndData: "設定とデータツール",

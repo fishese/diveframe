@@ -16,16 +16,46 @@ The current product is deliberately device-local:
 - Map search and nearby-site endpoints are stateless network helpers.
 - There is no cross-device synchronization yet.
 
-The app is explicitly marked beta in a global trilingual notice. Pre-release
-updates may require clearing local data; backup tools remain the recovery path.
+The app is explicitly marked beta in a global trilingual notice. Schema
+upgrades after IndexedDB v8 are additive; backup tools remain the recovery
+path if a future beta change does require a reset.
+
+The current install surfaces are:
+
+- the installable PWA at `https://divelog.fishese.cc`; and
+- a Capacitor **Android debug APK** that ships the same web UI plus classic
+  Shearwater BLE import, native file export, and private app storage.
+
+Both surfaces share the same normalized dive model and IndexedDB stores. The
+APK uses its own WebView origin (`https://localhost`), so PWA and APK data are
+separate partitions — transfer with an app-data backup. iOS packaging and
+store distribution are not started yet.
+
+## Current status (2026-08-01)
+
+Shipped on `main` (pushed):
+
+- IndexedDB **v9** additive stores: trips, user GPS overlays, BLE raw /
+  checkpoints (from v8), and persistent **supplementary** dive-site catalog
+- Trip list blocks, select mode, user GPS + JPEG EXIF, catalog alias display,
+  date/computer/GPS list filters
+- Android product BLE import with incremental persist; Shearwater computer GPS
+  via `DC_SAMPLE_LOCATION` sample callbacks
+- Native Downloads export plugin; Settings **What's new** feed with HTTPS CTAs
+- Official dive-site catalog remains build-bundled only (web deploy / new APK)
+
+Open follow-ups:
+
+- Deploy production CORS for `/api/geocode`, `/api/nearby-sites`, and
+  `/api/whats-new` so Capacitor `https://localhost` can use the hosted worker
+  without a LAN API override
+- BLE hardening / failure matrix / LGPL release checklist
+- About copy: classic Shearwater BLE only (not Perdix 3)
+- Pre-wrapper Priority C quality items in `docs/PRODUCT-SPEC.md`
+
+Session detail: `docs/2026-08-01-ble-product-import-session.md`.
 
 Deployment is managed by the repository's Cloudflare Worker integration.
-
-The current install surface is a PWA. It can later be wrapped for Android with
-a Trusted Web Activity or Capacitor without changing the normalized dive model
-or IndexedDB stores. Before packaging an APK, decide how the wrapper will keep
-the same production origin/storage partition and how signed-app updates will be
-distributed.
 
 ## Repository map
 
@@ -47,25 +77,34 @@ distributed.
   translations, overlay translations, and units.
 - `lib/composer-fonts.ts` — curated multilingual overlay fonts and export-time
   font loading.
-- `lib/dive-site-catalog.ts` — validation, tab-session persistence, and
-  proximity ranking for user-supplied regional catalogs.
-- `lib/indexed-db.ts` — device-local persistence and merge orchestration.
+- `lib/dive-site-catalog.ts` — validation, combine bundled + supplementary
+  catalogs, proximity ranking, and one-time session→IDB migration helper.
+- `lib/whats-new.ts` — What's new document model, link sanitization, and body
+  rendering helpers.
+- `lib/indexed-db.ts` — device-local persistence and merge orchestration
+  (schema v9).
 - `app/api/geocode/route.ts` — stateless OpenStreetMap/Nominatim lookup proxy.
 - `app/api/nearby-sites/route.ts` — local catalog and OpenStreetMap fallback.
+- `app/api/whats-new/route.ts` — CORS-aware What's new feed for web and APK.
 - `data/dive-sites.json` — curated source-controlled dive-site catalog.
+- `public/whats-new.json` — seed What's new document served by the API.
+- `android/` — Capacitor shell, JNI libdivecomputer bridge, BLE plugin, file
+  export plugin.
+- `scripts/archive/shearwater-gps-backfill/` — offline tooling to recover
+  computer GPS from raw BLE bytes / backups if needed again.
 - `app/globals.css` — responsive application styling.
 - `app/PwaInstall.tsx` — global service-worker registration and the
   browser/iOS-aware install control shown in Settings.
-- `app/BetaNotice.tsx` — global trilingual beta/data-reset warning and Settings
-  backup link.
+- `app/BetaNotice.tsx` — global trilingual beta notice and Settings backup link.
 - `public/manifest.webmanifest`, `public/sw.js`, and `public/icons/` —
   installable-web-app metadata, cached app shell, and header-mark app icons.
 - `tests/` — product contract, deterministic identity, catalog, composer, gas,
-  Subsurface pass-through, and optional real Shearwater fixture tests.
+  Subsurface pass-through, native bridge, What's new, and optional Shearwater
+  fixture tests.
 - `docs/USER-GUIDE.md` — supported-format and device-local workflow guide.
 - `docs/PRODUCT-SPEC.md` — authoritative current-state product specification,
-  pre-wrapper readiness gate, planned extension guardrails, and reviewer
-  questions.
+  readiness gate for store packaging / BLE hardening, planned extension
+  guardrails, and reviewer questions.
 - `LICENSE` — project notice for `GPL-3.0-or-later`.
 - `ASSET-LICENSES.md` — separate copyright boundary for the non-GPL Bubbles
   sample background.
@@ -114,7 +153,9 @@ real dive exports, photos, or generated share cards to the repository.
 
 Database: `diveframe-local`
 
-Version: `8` (destructive upgrade from 7: all stores deleted and recreated)
+Version: `9` (additive from 8: creates `supplementaryCatalog` and preference
+fields without deleting existing stores or records). Opening an origin still on
+schema **&lt; 8** still performs the destructive v8 wipe once, then applies v9.
 
 Object stores (see also `lib/store-manifest.ts`):
 
@@ -128,19 +169,20 @@ Object stores (see also `lib/store-manifest.ts`):
 | `composerPresets` | `id` | Named reusable composer layout and styling choices |
 | `backgrounds` | `id` | Reusable generic diving background image blobs |
 | `brandingAssets` | `id` | Device-local transparent PNG/SVG overlay logo |
-| `appPreferences` | `id` | Device-local interface language and future global preferences |
+| `appPreferences` | `id` | Language, What's new cache/seen markers, and other prefs |
 | `rawDiveRecords` | `id` | BLE/libdivecomputer raw capture blobs + parser provenance |
 | `deviceCheckpoints` | `id` | Per-computer download fingerprints (descriptor+serial) |
 | `trips` | `id` | Trip labels referenced by `dives.tripId` |
+| `supplementaryCatalog` | fixed | At most one user-loaded regional dive-site catalog |
 
-The optional regional dive-site catalog is deliberately stored in
-`sessionStorage`, not IndexedDB. `lib/dive-site-catalog.ts` validates it and
-adds active entries within 30 km to the same proximity-ranked dive picker used
-by the bundled catalog. It is available across Settings and dive-page
-navigation in the same tab, but is excluded from app backups and disappears
-when that tab session ends. Settings can remove it immediately. The
-downloadable prompt at `public/examples/dive-site-catalog-ai-prompt.md` helps
-users create regional catalogs for human review.
+The official dive-site catalog ships in `data/dive-sites.json` with each web
+deploy / APK build. A user-loaded **supplementary** catalog is stored in
+IndexedDB, combined additively with the bundled catalog for nearby suggestions,
+included in app-data backups, and cleared by erase-all (not by dive-only erase).
+A one-time helper migrates any legacy `sessionStorage` catalog into IndexedDB.
+`lib/dive-site-catalog.ts` validates catalogs and ranks sites within 30 km.
+The downloadable prompt at `public/examples/dive-site-catalog-ai-prompt.md`
+helps users create regional catalogs for human review.
 
 `attachments`, `sourceRecords`, and `rawDiveRecords` each have a `diveId`
 index. `dives` has a `tripId` index.
@@ -172,8 +214,12 @@ per-dive attachments while keeping dives and reusable assets.
 named composer presets, backgrounds, branding, and app preferences. Retained
 per-dive attachments/settings reconnect after the same source logs recreate
 their deterministic canonical IDs. `clearAllLocalData()` clears every store in
-the manifest. The Settings action also clears the session catalog; service-worker
-application caches are intentionally kept.
+the manifest. The Settings action also clears the supplementary catalog;
+service-worker application caches are intentionally kept.
+
+On Android, the install card is replaced by a storage-only card that describes
+private app data (not Chromium site storage). The WebView does not grant
+`navigator.storage.persist()`, so the app does not ask for it there.
 
 On mobile, an open dive shows a compact home control in the global top bar.
 The composer preview pane becomes a short sticky panel below its top bar so
@@ -453,11 +499,12 @@ requests into the browser and configure a static Next/Vite export. Verify the
 public OpenStreetMap services' browser CORS and usage-policy requirements
 before doing so.
 
-## Recommended next milestone: pre-wrapper hardening
+## Recommended next milestone: hardening after the debug APK
 
-`docs/PRODUCT-SPEC.md` is the canonical review document. Its Priority A
-trust-and-recoverability items are the recommended gate before treating a
-native wrapper or Bluetooth transfer as the next production milestone.
+`docs/PRODUCT-SPEC.md` is the canonical review document. A Capacitor Android
+debug APK already ships the shared UI and classic Shearwater BLE import.
+Remaining Priority A/C items and production CORS for Capacitor API calls are
+the recommended gate before store packaging or treating BLE as fully hardened.
 
 Backup hardening remains the highest-priority part of that gate.
 

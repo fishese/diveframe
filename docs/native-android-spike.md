@@ -18,8 +18,11 @@ this spike remains a non-persisting research shell (`npm run native:spike`).
 | Map BLE capture → import-shaped preview (no persist) | Working |
 | Save full capture fixture (Downloads via MediaStore) | Working |
 | Offline BLE↔Cloud identity matcher (fixture-driven) | Working — 5/5 high matches on Perdix 2 |
-| IndexedDB v8 + raw/checkpoint/trips stores | **Shipped** (destructive upgrade; spike still non-persisting) |
+| IndexedDB v8 + raw/checkpoint/trips stores | **Shipped** (destructive upgrade once; spike still non-persisting) |
+| IndexedDB v9 supplementary catalog + What's new prefs | **Shipped** (additive) |
 | Production Import UI | **Shipped** — `BleImportPanel` in main app; spike shell still separate |
+| Shearwater GNSS via `DC_SAMPLE_LOCATION` → dive GPS fields | **Shipped** in product BLE path |
+| Native Downloads export (`FileExportPlugin`) | **Shipped** |
 
 ### Hardware exercised
 

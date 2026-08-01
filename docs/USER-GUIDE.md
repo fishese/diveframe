@@ -8,17 +8,16 @@ profiles and statistics.
 It complements the original dive-computer or logbook application. It does not
 replace that application's cloud backup and does not write changes back to it.
 
-> **Beta:** Updates may be incompatible or require clearing data stored by
-> DiveFrame in this browser. Keep the original source exports and a recent app
-> backup. The notice shown throughout the app links to **Settings**, where
-> backups can be exported.
+> **Beta:** Updates may change workflows while DiveFrame is in active
+> development. Keep the original source exports and a recent app backup. The
+> notice shown throughout the app links to **Settings**, where backups can be
+> exported.
 >
-> **Schema v8 erase-reimport:** The first launch of this IndexedDB version
-> deletes every local DiveFrame store on this browser origin, then recreates an
-> empty v8 schema (including BLE raw records, device checkpoints, trips, and
-> user GPS overlay fields). Re-import Shearwater / Subsurface / UDDF / FIT
-> exports after upgrading. A pre-upgrade backup does not migrate into v8
-> automatically.
+> **Schema note:** The one-time IndexedDB **v8** upgrade erased local DiveFrame
+> data on first open of that version. Later upgrades (including **v9**) are
+> additive and keep existing dives, BLE raw records, trips, and overlays. A
+> pre-v8 backup still does not auto-migrate into v8 — re-import source logs if
+> you are coming from an older schema.
 
 The full interface and exported-image controls support English, Traditional
 Chinese (Hong Kong), and Japanese. Change the interface language in **Settings**
@@ -69,9 +68,12 @@ Bluetooth, scan, connect, then:
   quantity options for catch-up downloads.
 
 If your Shearwater recorded a satellite fix, its coordinates are imported as
-dive-computer GPS. Shearwater only stores a fix from log version 17 onwards and
+dive-computer GPS (from Cloud Desktop databases and from Android BLE download).
+Shearwater only stores a fix from log version 17 onwards and
 only when the computer actually locked on, so older dives having no coordinates
-is normal rather than a fault.
+is normal rather than a fault. When reverse geocoding cannot reach the DiveFrame
+API (for example before production CORS is deployed for the APK), the dive still
+keeps its pin and shows that a place name is unavailable instead of spinning.
 
 Dives are identified by per-dive fingerprints, so a later fuller download that
 re-sends recent dives merges them instead of duplicating logbook entries. Each
@@ -462,14 +464,14 @@ unless they have permission from the copyright holder. See
 ## Product review and roadmap
 
 The [product specification](PRODUCT-SPEC.md) describes the implemented
-behavior, known limits, privacy model, pre-wrapper readiness gate, and questions
-for outside reviewers. It is the best single
+behavior, known limits, privacy model, readiness gate for store packaging /
+BLE hardening, and questions for outside reviewers. It is the best single
 document to share when asking divers, accessibility/localization reviewers,
-privacy reviewers, or developers what should be addressed before native
-packaging and direct computer transfer.
+privacy reviewers, or developers what should be addressed next.
 
-Future directions include app-only BLE import, optional Google Drive
+Future directions include hardening and distributing the Android APK (classic
+Shearwater BLE import already works in the debug build), optional Google Drive
 backup/sync, and optional accounts for hosted record and settings recovery.
-None are part of the current beta. They are intended to reuse the same portable
-data and merge behavior, keep the web app fully supported, and preserve
-anonymous local use.
+Web/PWA Bluetooth and other computer brands remain out of the current beta.
+Those extensions are intended to reuse the same portable data and merge
+behavior, keep the web app fully supported, and preserve anonymous local use.
