@@ -44,6 +44,7 @@ import {
   deleteLocalTrip,
   getLocalBackupSizeEstimate,
   getLocalAppPreferences,
+  getLocalSupplementaryCatalog,
   listLocalAttachments,
   listLocalDives,
   listLocalTrips,
@@ -86,9 +87,11 @@ import {
 } from "@/lib/gas-calculations";
 import { toNormalizedDive } from "@/lib/normalize-dive";
 import {
-  loadSessionDiveSiteCatalog,
   nearbySessionCatalogSites,
+  resolveActiveDiveSiteCatalog,
+  type DiveSiteCatalog,
 } from "@/lib/dive-site-catalog";
+import bundledDiveSiteCatalog from "@/data/dive-sites.json";
 import { readShearwaterDatabase } from "@/lib/parsers/shearwater";
 import { readSubsurfaceLog } from "@/lib/parsers/subsurface";
 import { readUddfLog } from "@/lib/parsers/uddf";
@@ -171,6 +174,9 @@ export function DiveFrameApp() {
   > | null>(null);
   const importInput = useRef<HTMLInputElement>(null);
   const enrichingLocations = useRef(false);
+  const [supplementaryCatalog, setSupplementaryCatalog] = useState<{
+    catalog: DiveSiteCatalog;
+  } | null>(null);
 
   const refreshDives = useCallback(async (preferredId?: string) => {
     const [next, nextStorageEstimate, nextTrips] = await Promise.all([
@@ -187,12 +193,18 @@ export function DiveFrameApp() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([listLocalDives(), getLocalBackupSizeEstimate(), listLocalTrips()])
-      .then(([next, nextStorageEstimate, nextTrips]) => {
+    Promise.all([
+      listLocalDives(),
+      getLocalBackupSizeEstimate(),
+      listLocalTrips(),
+      getLocalSupplementaryCatalog(),
+    ])
+      .then(([next, nextStorageEstimate, nextTrips, nextSupplementaryCatalog]) => {
         if (!active) return;
         setDives(next);
         setStorageEstimate(nextStorageEstimate);
         setTrips(nextTrips);
+        setSupplementaryCatalog(nextSupplementaryCatalog);
         setSelectedId(next[0]?.id ?? null);
         setStatus(next.length ? t("divesReady", { count: next.length }) : t("importDiveLog"));
         void requestPersistentLocalStorage();
@@ -224,6 +236,14 @@ export function DiveFrameApp() {
   const selected = useMemo(
     () => dives.find((dive) => dive.id === selectedId) ?? null,
     [dives, selectedId],
+  );
+  const activeDiveSiteCatalog = useMemo(
+    () =>
+      resolveActiveDiveSiteCatalog(
+        bundledDiveSiteCatalog as DiveSiteCatalog,
+        supplementaryCatalog?.catalog ?? null,
+      ),
+    [supplementaryCatalog],
   );
 
   useEffect(() => {
@@ -1218,6 +1238,7 @@ export function DiveFrameApp() {
                   onSaveUserGps={saveDiveUserGps}
                   siteSuggestions={siteSuggestions}
                   locationSuggestions={locationSuggestions}
+                  localDiveSiteCatalog={activeDiveSiteCatalog}
                   trips={trips}
                   onAssignTrip={assignDiveTrip}
                   onCreateTrip={createTripForDive}
@@ -1364,6 +1385,7 @@ function DiveDetail({
   onSaveUserGps,
   siteSuggestions,
   locationSuggestions,
+  localDiveSiteCatalog,
   trips,
   onAssignTrip,
   onCreateTrip,
@@ -1391,6 +1413,7 @@ function DiveDetail({
   ) => Promise<boolean>;
   siteSuggestions: string[];
   locationSuggestions: string[];
+  localDiveSiteCatalog: DiveSiteCatalog;
   trips: LocalTrip[];
   onAssignTrip: (diveId: string, tripId: string | null) => Promise<boolean>;
   onCreateTrip: (diveId: string, name: string) => Promise<boolean>;
@@ -1626,11 +1649,15 @@ function DiveDetail({
   useEffect(() => {
     if (!mapCoordinates) return;
     const { latitude, longitude } = mapCoordinates;
-    const sessionSites = nearbySessionCatalogSites(
-      loadSessionDiveSiteCatalog()?.catalog ?? null,
+    const localCatalogSites = nearbySessionCatalogSites(
+      localDiveSiteCatalog,
       latitude,
       longitude,
     );
+    // Show the bundled plus supplementary catalog immediately for offline use.
+    setNearbySites(localCatalogSites);
+    if (localCatalogSites.length > 0) return;
+
     const controller = new AbortController();
     fetch(
       diveFrameApiUrl(
@@ -1646,14 +1673,14 @@ function DiveDetail({
         if (!response.ok) throw new Error(payload.error ?? "Nearby sites unavailable.");
         return payload.sites ?? [];
       })
-      .then((sites) => setNearbySites(mergeNearbySites(sessionSites, sites)))
+      .then((sites) => setNearbySites(mergeNearbySites(localCatalogSites, sites)))
       .catch((error) => {
         if ((error as DOMException)?.name !== "AbortError") {
-          setNearbySites(sessionSites);
+          setNearbySites(localCatalogSites);
         }
       });
     return () => controller.abort();
-  }, [mapCoordinates?.latitude, mapCoordinates?.longitude]);
+  }, [localDiveSiteCatalog, mapCoordinates?.latitude, mapCoordinates?.longitude]);
 
   return (
     <div className="detail-content">

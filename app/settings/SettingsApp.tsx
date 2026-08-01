@@ -45,15 +45,18 @@ import {
   getLocalAppPreferences,
   getLocalBackupSizeEstimate,
   getLocalOverlayLogo,
+  getLocalSupplementaryCatalog,
   listLocalBackgrounds,
   listLocalDives,
   listLocalSourceRecords,
   listLocalSiteContributions,
   mergeLocalDuplicateDives,
   optimizeLocalStoredPhotos,
+  saveLocalSupplementaryCatalog,
   saveLocalAppPreferences,
   saveLocalOverlayLogo,
   updateLocalBackgroundName,
+  clearLocalSupplementaryCatalog,
   type LocalBackground,
   type LocalBrandingAsset,
   type LocalDive,
@@ -69,10 +72,8 @@ import {
   DEFAULT_CYLINDER_PRESET_ID,
 } from "@/lib/gas-calculations";
 import {
-  clearSessionDiveSiteCatalog,
-  combineDiveSiteCatalogs,
-  loadSessionDiveSiteCatalog,
-  saveSessionDiveSiteCatalog,
+  resolveActiveDiveSiteCatalog,
+  takeSessionSupplementaryCatalogMigration,
   validateDiveSiteCatalog,
   type CatalogSite,
   type DiveSiteCatalog,
@@ -133,6 +134,7 @@ export function SettingsApp() {
   > | null>(null);
 
   useEffect(() => {
+    const migrated = takeSessionSupplementaryCatalogMigration();
     Promise.all([
       listLocalSiteContributions(),
       listLocalBackgrounds(),
@@ -140,17 +142,22 @@ export function SettingsApp() {
       getLocalAppPreferences(),
       listLocalDives(),
       getLocalBackupSizeEstimate(),
+      getLocalSupplementaryCatalog(),
     ])
-      .then(([items, savedBackgrounds, savedLogo, preferences, dives, estimate]) => {
-        const sessionCatalog = loadSessionDiveSiteCatalog();
+      .then(async ([items, savedBackgrounds, savedLogo, preferences, dives, estimate, savedCatalog]) => {
+        const supplementary =
+          migrated && !savedCatalog
+            ? await saveLocalSupplementaryCatalog(migrated.label, migrated.catalog)
+            : savedCatalog;
         setContributions(items);
         setReviewedSites(items.map(toSiteDraft));
-        if (sessionCatalog) {
-          setCatalog(
-            combineDiveSiteCatalogs(BUILT_IN_CATALOG, sessionCatalog.catalog),
-          );
-          setCatalogLabel(sessionCatalog.label);
-        }
+        setCatalog(
+          resolveActiveDiveSiteCatalog(
+            BUILT_IN_CATALOG,
+            supplementary?.catalog ?? null,
+          ),
+        );
+        setCatalogLabel(supplementary?.label ?? null);
         setBackgrounds(savedBackgrounds);
         setLogo(savedLogo ?? null);
         setDefaultCylinderPresetId(
@@ -515,7 +522,6 @@ export function SettingsApp() {
     setBusy(true);
     try {
       await clearAllLocalData();
-      clearSessionDiveSiteCatalog();
       setContributions([]);
       setReviewedSites([]);
       setDuplicateCandidates([]);
@@ -693,9 +699,11 @@ export function SettingsApp() {
         );
       }
       const validated = validateDiveSiteCatalog(validation.catalog);
-      saveSessionDiveSiteCatalog(validated, file.name);
-      setCatalog(combineDiveSiteCatalogs(BUILT_IN_CATALOG, validated));
-      setCatalogLabel(file.name);
+      const saved = await saveLocalSupplementaryCatalog(file.name, validated);
+      setCatalog(
+        resolveActiveDiveSiteCatalog(BUILT_IN_CATALOG, saved.catalog),
+      );
+      setCatalogLabel(saved.label);
       setStatus(
         validation.warningCount > 0
           ? t("usingCatalogWithWarnings", {
@@ -715,11 +723,18 @@ export function SettingsApp() {
     }
   }
 
-  function removeSessionCatalog() {
-    clearSessionDiveSiteCatalog();
-    setCatalog(BUILT_IN_CATALOG);
-    setCatalogLabel(null);
-    setStatus(t("sessionCatalogRemoved"));
+  async function removeSessionCatalog() {
+    setBusy(true);
+    try {
+      await clearLocalSupplementaryCatalog();
+      setCatalog(BUILT_IN_CATALOG);
+      setCatalogLabel(null);
+      setStatus(t("sessionCatalogRemoved"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("catalogReadFailed"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   const visibleDuplicates = duplicateCandidates.filter(
@@ -896,7 +911,7 @@ export function SettingsApp() {
                 <button
                   type="button"
                   className="button button-quiet"
-                  onClick={removeSessionCatalog}
+                  onClick={() => void removeSessionCatalog()}
                   disabled={busy}
                 >
                   <Trash2 size={16} /> {t("removeSessionCatalog")}

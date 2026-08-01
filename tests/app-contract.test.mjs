@@ -364,11 +364,12 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(subsurfaceExport, /"notes"/);
   assert.match(storage, /listLocalSourceRecords/);
   assert.match(storage, /"en" \| "zh-Hant" \| "ja"/);
-  assert.match(settings, /saveSessionDiveSiteCatalog/);
   assert.match(settings, /removeSessionCatalog/);
   assert.match(settings, /dive-site-catalog-ai-prompt\.md/);
   assert.match(settings, /catalogSharingInvitation/);
-  assert.match(app, /nearbySessionCatalogSites/);
+  assert.match(settings, /saveLocalSupplementaryCatalog|getLocalSupplementaryCatalog/);
+  assert.doesNotMatch(settings, /saveSessionDiveSiteCatalog/);
+  assert.match(app, /resolveActiveDiveSiteCatalog|getLocalSupplementaryCatalog/);
   assert.match(catalogTools, /sessionStorage/);
   assert.match(catalogTools, /combineDiveSiteCatalogs/);
   assert.match(catalogTools, /nearbySessionCatalogSites/);
