@@ -85,12 +85,27 @@ Single IndexedDB store, e.g. `supplementaryCatalog`, with one record:
   entries: Array<{
     id: string;
     title: string;
-    body: string;        // plain text or simple markdown subset
+    body: string;        // plain text supporting inline links (see below)
     date?: string;
+    links?: Array<{
+      label: string;     // e.g. "Download Android APK"
+      href: string;      // https URL to APK, release notes, etc.
+    }>;
   }>;
 }
 ```
 
+- **Links are first-class:** each entry may list zero or more `links` rendered
+  as tappable actions (not merely plain text). Typical use: point at a new
+  Android APK (or release page) so the user can download and install without
+  hunting for the file.
+- `body` may also contain markdown-style `[label](https://…)` links; the UI
+  renders them as anchors. Prefer the structured `links` array for primary
+  CTAs (APK download) so the app can style them as buttons.
+- Only `http:` / `https:` URLs are opened; other schemes are ignored.
+- On Android, tapping an APK or HTTPS link uses the system browser / downloader
+  (`window.open` or an intent via Capacitor Browser if already in the project);
+  DiveFrame does not side-load silently.
 - Settings shows a **What’s new** card (same place users already look for
   catalog and storage notes).
 - When online, fetch via `diveFrameApiUrl("/whats-new.json")` (same origin on
@@ -99,7 +114,9 @@ Single IndexedDB store, e.g. `supplementaryCatalog`, with one record:
   route if static assets omit ACAO).
 - Cache last successful payload on `appPreferences` (or a tiny dedicated
   preferences-adjacent record) so offline reads still work and erase/backup
-  follow preferences policy.
+  follow preferences policy. Cached entries keep their links for offline
+  display; opening a link still needs network unless the file is already on
+  the device.
 - Track `lastSeenWhatsNewVersion` in preferences; badge/highlight when fetched
   `version` is newer until the user opens the card.
 - **Does not** mutate dive-site catalogs.
@@ -147,7 +164,9 @@ Old backups without `supplementaryCatalog` restore cleanly (treat as empty).
 
 **What’s new card** (Settings)
 
-- List cached entries; status line for last refresh / offline.
+- List cached entries with titles, body (including inline links), and CTA
+  buttons from `links` (e.g. **Download Android APK**).
+- Status line for last refresh / offline.
 - Opening the card marks the current version as seen.
 
 ## Testing
@@ -171,3 +190,5 @@ Old backups without `supplementaryCatalog` restore cleanly (treat as empty).
 - No dual official DB on the APK.
 - Web freshness = deploy new site assets, not a catalog sync channel.
 - BLE / existing backups protected by additive v9 migration.
+- What’s new supports structured HTTPS links (and inline markdown links) so a
+  new APK can be linked for download/install.
