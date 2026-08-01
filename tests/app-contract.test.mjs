@@ -39,6 +39,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     readFile("public/examples/dive-site-catalog-ai-prompt.md", "utf8"),
     readFile("ASSET-LICENSES.md", "utf8"),
   ]);
+  const importGuide = await readFile("app/components/ImportGuide.tsx", "utf8");
 
   assert.match(shearwater, /GnssEntryLocation/);
   assert.match(shearwater, /StoredDiveComputer/);
@@ -48,6 +49,13 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /readSubsurfaceLog/);
   assert.match(app, /readUddfLog/);
   assert.match(app, /readFitDive/);
+  assert.match(app, /setImportGuideOpen/);
+  assert.match(importGuide, /importGuidePreferredLabel/);
+  assert.match(importGuide, /importGuideSubsurfaceName/);
+  assert.match(importGuide, /importGuideCombineBullet/);
+  assert.match(importGuide, /importGuideSubsurfaceLabel/);
+  assert.match(appI18n, /Perdix 3/);
+  assert.match(importGuide, /supported-dive-computers/);
   assert.match(app, /href="\/about"/);
   assert.match(app, /status !== t\("importDiveLog"\)/);
   assert.match(about, /t\("aboutImportsTitle"\)/);
@@ -216,7 +224,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composerPresets, /selectedPhotoId/);
   assert.match(composerPresets, /photoOffsetX/);
   assert.match(storage, /composerPresets/);
-  assert.match(storage, /DATABASE_VERSION = 9/);
+  assert.match(storage, /DATABASE_VERSION = 10/);
   assert.match(storage, /previousVersion < 8/);
   assert.match(storage, /supplementaryCatalog/);
   assert.doesNotMatch(
@@ -230,6 +238,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   );
   assert.match(storage, /createV8ObjectStores/);
   assert.match(storage, /createV9ObjectStores/);
+  assert.match(storage, /createV10ObjectStores/);
   assert.match(storage, /deleteObjectStore/);
   assert.match(storage, /getLocalSupplementaryCatalog/);
   assert.match(storage, /saveLocalSupplementaryCatalog/);
@@ -254,6 +263,12 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /"user-gps-editor"/);
   assert.match(app, /t\("editLocation"\)/);
   assert.match(app, /t\("useLocationFromPhoto"\)/);
+  assert.match(app, /attachment\.blob\.arrayBuffer\(\)/);
+  assert.match(app, /requestMediaLocationPermission/);
+  assert.match(app, /photoLocationPermissionDenied/);
+  assert.match(app, /photoGpsBusy/);
+  assert.match(app, /nearbySitesLoading/);
+  assert.match(app, /setTimeout\(\(\) => controller\.abort\(\), 10000\)/);
   assert.match(app, /source: "manual"/);
   assert.match(app, /source: "photo-exif"/);
   assert.doesNotMatch(app, /exportGpsPreference/);

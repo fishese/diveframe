@@ -84,10 +84,13 @@ test("BLE permissions, scan, cancel, and classic GATT transport are wired", asyn
 
   assert.match(manifest, /android\.permission\.BLUETOOTH_SCAN/);
   assert.match(manifest, /android\.permission\.BLUETOOTH_CONNECT/);
+  assert.match(manifest, /android\.permission\.ACCESS_MEDIA_LOCATION/);
   assert.match(manifest, /neverForLocation/);
   assert.match(manifest, /android\.hardware\.bluetooth_le/);
 
   assert.match(javaPlugin, /requestPermissions/);
+  assert.match(javaPlugin, /requestMediaLocationPermission/);
+  assert.match(javaPlugin, /ACCESS_MEDIA_LOCATION/);
   assert.match(javaPlugin, /startScan/);
   assert.match(javaPlugin, /stopScan/);
   assert.match(javaPlugin, /connect/);
@@ -105,6 +108,7 @@ test("BLE permissions, scan, cancel, and classic GATT transport are wired", asyn
   );
 
   assert.match(capability, /requestPermissions/);
+  assert.match(capability, /requestMediaLocationPermission/);
   assert.match(capability, /startScan/);
   assert.match(capability, /connect/);
   assert.match(capability, /downloadDives/);

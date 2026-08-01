@@ -14,8 +14,9 @@ replace that application's cloud backup and does not write changes back to it.
 > exported.
 >
 > **Schema note:** The one-time IndexedDB **v8** upgrade erased local DiveFrame
-> data on first open of that version. Later upgrades (including **v9**) are
-> additive and keep existing dives, BLE raw records, trips, and overlays. A
+> data on first open of that version. Later upgrades (including **v9** and the
+> v10 repair migration) are additive and keep existing dives, BLE raw records,
+> trips, and overlays. A
 > pre-v8 backup still does not auto-migrate into v8 — re-import source logs if
 > you are coming from an older schema.
 

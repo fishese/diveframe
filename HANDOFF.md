@@ -35,8 +35,9 @@ store distribution are not started yet.
 
 Shipped on `main` (pushed):
 
-- IndexedDB **v9** additive stores: trips, user GPS overlays, BLE raw /
-  checkpoints (from v8), and persistent **supplementary** dive-site catalog
+- IndexedDB **v10** additive schema: trips, user GPS overlays, BLE raw /
+  checkpoints (from v8), persistent **supplementary** dive-site catalog, and a
+  repair migration that recreates any missing stores without deleting data
 - Trip list blocks, select mode, user GPS + JPEG EXIF, catalog alias display,
   date/computer/GPS list filters
 - Android product BLE import with incremental persist; Shearwater computer GPS
@@ -82,7 +83,7 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `lib/whats-new.ts` — What's new document model, link sanitization, and body
   rendering helpers.
 - `lib/indexed-db.ts` — device-local persistence and merge orchestration
-  (schema v9).
+  (schema v10; v10 repairs missing stores additively).
 - `app/api/geocode/route.ts` — stateless OpenStreetMap/Nominatim lookup proxy.
 - `app/api/nearby-sites/route.ts` — local catalog and OpenStreetMap fallback.
 - `app/api/whats-new/route.ts` — CORS-aware What's new feed for web and APK.
@@ -153,9 +154,10 @@ real dive exports, photos, or generated share cards to the repository.
 
 Database: `diveframe-local`
 
-Version: `9` (additive from 8: creates `supplementaryCatalog` and preference
-fields without deleting existing stores or records). Opening an origin still on
-schema **&lt; 8** still performs the destructive v8 wipe once, then applies v9.
+Version: `10` (v9 added `supplementaryCatalog`; v10 repairs any missing stores
+without deleting existing stores or records). Opening an origin still on schema
+**&lt; 8** still performs the destructive v8 wipe once, then applies the
+additive v9/v10 migrations.
 
 Object stores (see also `lib/store-manifest.ts`):
 

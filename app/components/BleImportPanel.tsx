@@ -519,6 +519,7 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
               Shearwater BLE
             </p>
             <h2 id="ble-import-title">{t("bleImportTitle")}</h2>
+            <p className="settings-note ble-import-support-note">{t("bleImportSupportNote")}</p>
           </div>
           <button
             type="button"

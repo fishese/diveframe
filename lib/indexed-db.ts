@@ -246,7 +246,7 @@ export type LocalBackupSnapshot = {
 export type BackupImportMode = "merge" | "replace" | "replace-dives";
 
 const DATABASE_NAME = "diveframe-local";
-export const DATABASE_VERSION = 9;
+export const DATABASE_VERSION = 10;
 const DIVES_STORE = STORE_NAMES.dives;
 const SOURCES_STORE = STORE_NAMES.sourceRecords;
 const ATTACHMENTS_STORE = STORE_NAMES.attachments;
@@ -1863,6 +1863,12 @@ function openDatabase() {
       if (previousVersion < 9) {
         createV9ObjectStores(database);
       }
+      // v9 was additive, but some origins may have been opened by a build
+      // that recorded version 9 before every store was present. Repair only
+      // missing stores on v10; never delete or rewrite existing data.
+      if (previousVersion < 10) {
+        createV10ObjectStores(database);
+      }
     };
     operation.onsuccess = () => resolve(operation.result);
     operation.onerror = () =>
@@ -1931,6 +1937,11 @@ function createV9ObjectStores(database: IDBDatabase) {
   if (!database.objectStoreNames.contains(SUPPLEMENTARY_CATALOG_STORE)) {
     database.createObjectStore(SUPPLEMENTARY_CATALOG_STORE, { keyPath: "id" });
   }
+}
+
+function createV10ObjectStores(database: IDBDatabase) {
+  createV8ObjectStores(database);
+  createV9ObjectStores(database);
 }
 
 function request<T>(operation: IDBRequest<T>) {

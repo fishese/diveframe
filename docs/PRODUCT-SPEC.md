@@ -248,9 +248,10 @@ normalized model. Profiles, pressure samples, cylinders, events, extensions,
 and unknown fields remain in the supplied document. DiveFrame does not
 currently write modified Shearwater, UDDF, or FIT files.
 
-IndexedDB v9 keeps per-dive raw capture bytes and user overlays from the v8
-schema (`docs/2026-07-30-indexeddb-v8-planning.md`) and adds a persistent
-`supplementaryCatalog` store without wiping existing data. Trip assignment,
+IndexedDB v10 keeps per-dive raw capture bytes and user overlays from the v8
+schema (`docs/2026-07-30-indexeddb-v8-planning.md`), adds a persistent
+`supplementaryCatalog` store, and repairs any missing stores without wiping
+existing data. Trip assignment,
 user GPS editing, and catalog alias display are productized in the shared
 web/Android UI. `exportGpsPreference` remains at default `"computer"` with no
 settings UI yet.

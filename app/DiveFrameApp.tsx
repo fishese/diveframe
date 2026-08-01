@@ -105,6 +105,7 @@ import { diveComputerCapability } from "@/lib/dive-computer-capability";
 import { diveFrameApiUrl } from "@/lib/diveframe-api";
 import { useAppI18n } from "./AppI18nProvider";
 import { BleImportPanel } from "./components/BleImportPanel";
+import { ImportGuide } from "./components/ImportGuide";
 
 type Dive = LocalDive;
 type Attachment = LocalAttachment;
@@ -182,6 +183,7 @@ export function DiveFrameApp() {
   const [busy, setBusy] = useState(false);
   const [mobileDetail, setMobileDetail] = useState(false);
   const [bleImportOpen, setBleImportOpen] = useState(false);
+  const [importGuideOpen, setImportGuideOpen] = useState(false);
   // Resolved after mount: the server render and the static export both report
   // the web platform, so checking during render would hide the control forever.
   const [bleImportAvailable, setBleImportAvailable] = useState(false);
@@ -519,6 +521,7 @@ export function DiveFrameApp() {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     if (!files.length) return;
+    setImportGuideOpen(false);
     setBusy(true);
     setStatus(t("readingExtract"));
     try {
@@ -922,7 +925,10 @@ export function DiveFrameApp() {
           <button
             type="button"
             className="button button-primary"
-            onClick={() => importInput.current?.click()}
+            onClick={() => {
+              setBleImportOpen(false);
+              setImportGuideOpen(true);
+            }}
             disabled={busy}
           >
             <Upload size={17} />
@@ -939,7 +945,7 @@ export function DiveFrameApp() {
         </div>
       </header>
 
-      {bleImportOpen ? (
+      {bleImportOpen && !importGuideOpen ? (
         <BleImportPanel
           t={t}
           onClose={() => setBleImportOpen(false)}
@@ -949,10 +955,17 @@ export function DiveFrameApp() {
         />
       ) : null}
 
-      {dives.length === 0 ? (
+      {importGuideOpen ? (
+        <ImportGuide
+          busy={busy}
+          onBack={() => setImportGuideOpen(false)}
+          onChooseFiles={() => importInput.current?.click()}
+          t={t}
+        />
+      ) : dives.length === 0 ? (
         <EmptyState
           busy={busy}
-          onImport={() => importInput.current?.click()}
+          onImport={() => setImportGuideOpen(true)}
           status={status}
         />
       ) : (
@@ -1515,7 +1528,8 @@ function DiveDetail({
   const [manualSite, setManualSite] = useState(dive.userSite ?? dive.site ?? "");
   const [locationDraft, setLocationDraft] = useState(dive.location ?? "");
   const [sharedBackgrounds, setSharedBackgrounds] = useState<SharedBackgroundChoice[]>([]);
-  const [nearbySites, setNearbySites] = useState<NearbySite[] | null>(null);
+  const [nearbySites, setNearbySites] = useState<NearbySite[]>([]);
+  const [nearbySitesLoading, setNearbySitesLoading] = useState(false);
   const [expandedAliasSiteId, setExpandedAliasSiteId] = useState<string | null>(
     null,
   );
@@ -1658,6 +1672,11 @@ function DiveDetail({
     if (mapCoordinates || !locationQuery) return;
 
     const controller = new AbortController();
+    let timedOut = false;
+    const timeout = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 10000);
     fetch(diveFrameApiUrl(`/api/geocode?q=${encodeURIComponent(locationQuery)}`), {
       signal: controller.signal,
     })
@@ -1673,12 +1692,18 @@ function DiveDetail({
         setGeocodeResult({ query: locationQuery, location });
       })
       .catch((error) => {
-        if ((error as DOMException)?.name !== "AbortError") {
+        if ((error as DOMException)?.name !== "AbortError" || timedOut) {
           setGeocodeResult({ query: locationQuery, location: null });
         }
+      })
+      .finally(() => {
+        window.clearTimeout(timeout);
       });
 
-    return () => controller.abort();
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
   }, [dive.id, mapCoordinates, locationQuery]);
 
   const resolvedLocation =
@@ -1703,11 +1728,13 @@ function DiveDetail({
     dive.userGpsLng !== null ? String(dive.userGpsLng) : "",
   );
   const [photoGpsStatus, setPhotoGpsStatus] = useState<string | null>(null);
+  const [photoGpsBusy, setPhotoGpsBusy] = useState(false);
 
   useEffect(() => {
     setUserLatDraft(dive.userGpsLat !== null ? String(dive.userGpsLat) : "");
     setUserLngDraft(dive.userGpsLng !== null ? String(dive.userGpsLng) : "");
     setPhotoGpsStatus(null);
+    setPhotoGpsBusy(false);
     setGpsEditorOpen(false);
   }, [dive.id, dive.userGpsLat, dive.userGpsLng]);
 
@@ -1741,26 +1768,47 @@ function DiveDetail({
   }
 
   async function findLocationFromPhoto() {
+    if (photoGpsBusy) return;
+    setPhotoGpsBusy(true);
     setPhotoGpsStatus(t("searchingPhotosForLocation"));
-    for (const attachment of attachments) {
-      if (!/jpe?g/i.test(attachment.contentType)) continue;
-      try {
-        const buffer = await attachment.blob.arrayBuffer();
-        const gps = await readJpegExifGps(buffer);
-        if (!gps) continue;
-        const saved = await onSaveUserGps(dive.id, {
-          lat: gps.latitude,
-          lng: gps.longitude,
-          source: "photo-exif",
-        });
-        setPhotoGpsStatus(saved ? null : t("photoLocationSaveFailed"));
-        if (saved) setGpsEditorOpen(false);
-        return;
-      } catch {
-        // Try the next photo.
+    try {
+      if (diveComputerCapability.isAvailable()) {
+        try {
+          const permission =
+            await diveComputerCapability.requestMediaLocationPermission();
+          if (permission.mediaLocation.toLowerCase() !== "granted") {
+            setPhotoGpsStatus(t("photoLocationPermissionDenied"));
+            return;
+          }
+        } catch {
+          setPhotoGpsStatus(t("photoLocationPermissionDenied"));
+          return;
+        }
       }
+      // Do not trust the MIME type here. Android's system picker and older
+      // backups can expose a JPEG as image/* or application/octet-stream;
+      // the EXIF reader safely rejects non-JPEG blobs after checking bytes.
+      for (const attachment of attachments) {
+        try {
+          const buffer = await attachment.blob.arrayBuffer();
+          const gps = await readJpegExifGps(buffer);
+          if (!gps) continue;
+          const saved = await onSaveUserGps(dive.id, {
+            lat: gps.latitude,
+            lng: gps.longitude,
+            source: "photo-exif",
+          });
+          setPhotoGpsStatus(saved ? null : t("photoLocationSaveFailed"));
+          if (saved) setGpsEditorOpen(false);
+          return;
+        } catch {
+          // Try the next photo.
+        }
+      }
+      setPhotoGpsStatus(t("noPhotoLocationFound"));
+    } finally {
+      setPhotoGpsBusy(false);
     }
-    setPhotoGpsStatus(t("noPhotoLocationFound"));
   }
 
   const selectedCylinder = cylinderPreset(
@@ -1859,9 +1907,15 @@ function DiveDetail({
     );
     // Show the bundled plus supplementary catalog immediately for offline use.
     setNearbySites(localCatalogSites);
-    if (localCatalogSites.length > 0) return;
+    if (localCatalogSites.length > 0) {
+      setNearbySitesLoading(false);
+      return;
+    }
 
     const controller = new AbortController();
+    let active = true;
+    const timeout = window.setTimeout(() => controller.abort(), 10000);
+    setNearbySitesLoading(true);
     fetch(
       diveFrameApiUrl(
         `/api/nearby-sites?lat=${encodeURIComponent(String(latitude))}&lng=${encodeURIComponent(String(longitude))}`,
@@ -1881,8 +1935,16 @@ function DiveDetail({
         if ((error as DOMException)?.name !== "AbortError") {
           setNearbySites(localCatalogSites);
         }
+      })
+      .finally(() => {
+        window.clearTimeout(timeout);
+        if (active) setNearbySitesLoading(false);
       });
-    return () => controller.abort();
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
   }, [localDiveSiteCatalog, mapCoordinates?.latitude, mapCoordinates?.longitude]);
 
   return (
@@ -2045,7 +2107,7 @@ function DiveDetail({
           </form>
 
           {mapCoordinates ? (
-            nearbySites === null ? (
+            nearbySitesLoading ? (
               <div className="site-loading">
                 <LoaderCircle size={18} className="spin" /> {t("lookingForSites")}
               </div>
@@ -2187,10 +2249,11 @@ function DiveDetail({
                   <button
                     type="button"
                     className="button button-quiet"
-                    disabled={busy || attachments.length === 0}
+                    disabled={busy || photoGpsBusy || attachments.length === 0}
                     onClick={() => void findLocationFromPhoto()}
                   >
-                    {t("useLocationFromPhoto")}
+                    {photoGpsBusy ? <LoaderCircle size={16} className="spin" /> : null}
+                    {photoGpsBusy ? t("searchingPhotosForLocation") : t("useLocationFromPhoto")}
                   </button>
                 </div>
                 {photoGpsStatus ? <p className="photo-gps-status">{photoGpsStatus}</p> : null}
@@ -2596,7 +2659,7 @@ function DiveDetail({
             </span>
           </summary>
           <div className="site-picker-body">
-            {nearbySites === null ? (
+            {nearbySitesLoading ? (
               <div className="site-loading">
                 <LoaderCircle size={18} className="spin" /> {t("lookingForSites")}
               </div>

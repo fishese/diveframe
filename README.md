@@ -8,7 +8,8 @@ data, then adds maps, photos, site details, and shareable image overlays.
 > exports and a recent DiveFrame backup.
 >
 > **IndexedDB:** Schema **v8** was a one-time destructive upgrade. Later
-> upgrades (including **v9**) are additive and keep existing logbook data.
+> upgrades (including **v9** and the v10 repair migration) are additive and keep
+> existing logbook data.
 > Coming from a pre-v8 origin still requires re-import after that wipe.
 
 The web app is available at [divelog.fishese.cc](https://divelog.fishese.cc).
