@@ -249,6 +249,13 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /setLocalDiveTripIds\(ids, trip\.id\)/);
   assert.match(app, /setLocalDiveTripIds\(ids, null\)/);
   assert.match(app, /deleteLocalTrip\(tripId, \{ clearAssignments: assignedCount > 0 \}\)/);
+  assert.match(app, /expandedAliasSiteId/);
+  assert.match(app, /toggleSiteAliasExpand/);
+  assert.match(app, /className="site-alias-expand"/);
+  assert.match(app, /className="site-alias-chip"/);
+  assert.match(app, /t\("showSiteAliases"\)/);
+  assert.match(appI18n, /showSiteAliases/);
+  assert.match(appI18n, /chooseSiteAlias/);
   assert.match(app, /t\("trip"\)/);
   assert.match(app, /t\("noTrip"\)/);
   assert.match(app, /t\("newTripOption"\)/);

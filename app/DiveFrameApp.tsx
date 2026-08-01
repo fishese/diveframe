@@ -1358,6 +1358,9 @@ function DiveDetail({
   const [siteDraft, setSiteDraft] = useState(dive.userSite ?? dive.site ?? "");
   const [locationDraft, setLocationDraft] = useState(dive.location ?? "");
   const [nearbySites, setNearbySites] = useState<NearbySite[] | null>(null);
+  const [expandedAliasSiteId, setExpandedAliasSiteId] = useState<string | null>(
+    null,
+  );
   const [sitePickerOpen, setSitePickerOpen] = useState(!dive.userSite);
   const [editingDetails, setEditingDetails] = useState(false);
   const [buddyDraft, setBuddyDraft] = useState(dive.buddy ?? "");
@@ -1539,8 +1542,31 @@ function DiveDetail({
     if (await onSaveSite(selection)) {
       setManualSite(selection.name);
       setSiteDraft(selection.name);
+      setExpandedAliasSiteId(null);
       setSitePickerOpen(false);
     }
+  }
+
+  function nearbySiteCatalogId(site: NearbySite) {
+    return site.catalogId ?? site.id.replace(/^(?:session-)?catalog-/, "");
+  }
+
+  function nearbySiteSelection(
+    site: NearbySite,
+    name: string,
+  ): SiteSelection {
+    return {
+      name,
+      source: site.source === "catalog" ? "catalog" : "suggestion",
+      catalogId:
+        site.source === "catalog" ? nearbySiteCatalogId(site) : undefined,
+      latitude: site.latitude,
+      longitude: site.longitude,
+    };
+  }
+
+  function toggleSiteAliasExpand(siteId: string) {
+    setExpandedAliasSiteId((current) => (current === siteId ? null : siteId));
   }
 
   useEffect(() => {
@@ -2075,39 +2101,79 @@ function DiveDetail({
               </div>
             ) : nearbySites.length ? (
               <div className="site-suggestions">
-                {nearbySites.map((site) => (
-                  <button
-                    type="button"
-                    key={site.id}
-                    onClick={() =>
-                      void saveSiteAndCollapse({
-                        name: site.name,
-                        source: site.source === "catalog" ? "catalog" : "suggestion",
-                        catalogId:
-                          site.source === "catalog"
-                            ? site.catalogId ?? site.id.replace(/^(?:session-)?catalog-/, "")
-                            : undefined,
-                        latitude: site.latitude,
-                        longitude: site.longitude,
-                      })
-                    }
-                    disabled={busy}
-                    aria-pressed={
-                      dive.userSiteCatalogId ===
-                      (site.catalogId ?? site.id.replace(/^(?:session-)?catalog-/, ""))
-                    }
-                  >
-                    <span>{site.name}</span>
-                    {site.aliases?.length ? (
-                      <em>{site.aliases.join(" / ")}</em>
-                    ) : null}
-                    <small>
-                      {formatDistance(site.distanceKm)}
-                      {" · "}
-                      {site.source === "catalog" ? t("catalogSource") : t("mapFallback")}
-                    </small>
-                  </button>
-                ))}
+                {nearbySites.map((site) => {
+                  const catalogId = nearbySiteCatalogId(site);
+                  const aliasesExpanded = expandedAliasSiteId === site.id;
+                  return (
+                    <div className="site-suggestion-item" key={site.id}>
+                      <div className="site-suggestion-main">
+                        <button
+                          type="button"
+                          className="site-suggestion-name"
+                          onClick={() =>
+                            void saveSiteAndCollapse(
+                              nearbySiteSelection(site, site.name),
+                            )
+                          }
+                          disabled={busy}
+                          aria-pressed={dive.userSiteCatalogId === catalogId}
+                        >
+                          <span>{site.name}</span>
+                          {site.aliases?.length ? (
+                            <em>{site.aliases.join(" / ")}</em>
+                          ) : null}
+                          <small>
+                            {formatDistance(site.distanceKm)}
+                            {" · "}
+                            {site.source === "catalog"
+                              ? t("catalogSource")
+                              : t("mapFallback")}
+                          </small>
+                        </button>
+                        {site.aliases?.length ? (
+                          <button
+                            type="button"
+                            className="site-alias-expand"
+                            onClick={() => toggleSiteAliasExpand(site.id)}
+                            disabled={busy}
+                            aria-expanded={aliasesExpanded}
+                            aria-label={
+                              aliasesExpanded
+                                ? t("hideSiteAliases")
+                                : t("showSiteAliases")
+                            }
+                          >
+                            <ChevronDown size={16} />
+                          </button>
+                        ) : null}
+                      </div>
+                      {aliasesExpanded && site.aliases?.length ? (
+                        <div className="site-alias-chips">
+                          {site.aliases.map((alias) => (
+                            <button
+                              type="button"
+                              key={alias}
+                              className="site-alias-chip"
+                              onClick={() =>
+                                void saveSiteAndCollapse(
+                                  nearbySiteSelection(site, alias),
+                                )
+                              }
+                              disabled={busy}
+                              aria-pressed={
+                                dive.userSiteCatalogId === catalogId &&
+                                dive.userSite === alias
+                              }
+                              title={t("chooseSiteAlias", { name: alias })}
+                            >
+                              {alias}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="site-empty">

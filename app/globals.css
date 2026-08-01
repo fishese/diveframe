@@ -1142,7 +1142,20 @@ button {
   padding: 0 20px 20px;
 }
 
-.site-suggestions button {
+.site-suggestion-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.site-suggestion-main {
+  display: flex;
+  gap: 6px;
+  min-height: 72px;
+}
+
+.site-suggestion-name {
   align-items: flex-start;
   background: rgba(141, 235, 215, 0.06);
   border: 1px solid rgba(141, 235, 215, 0.14);
@@ -1150,26 +1163,85 @@ button {
   color: var(--mist);
   cursor: pointer;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 6px;
-  min-height: 72px;
+  min-width: 0;
   padding: 12px;
   text-align: left;
 }
 
-.site-suggestions button:hover {
+.site-suggestion-name:hover {
   background: rgba(141, 235, 215, 0.12);
   border-color: rgba(141, 235, 215, 0.32);
 }
 
-.site-suggestions button[aria-pressed="true"] {
+.site-suggestion-name[aria-pressed="true"] {
   background: rgba(141, 235, 215, 0.17);
   border-color: rgba(141, 235, 215, 0.5);
 }
 
-.site-suggestions button:disabled {
+.site-suggestion-name:disabled,
+.site-alias-expand:disabled,
+.site-alias-chip:disabled {
   cursor: wait;
   opacity: 0.55;
+}
+
+.site-alias-expand {
+  align-items: center;
+  align-self: stretch;
+  background: rgba(141, 235, 215, 0.06);
+  border: 1px solid rgba(141, 235, 215, 0.14);
+  border-radius: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  padding: 0 10px;
+  width: 36px;
+}
+
+.site-alias-expand:hover {
+  background: rgba(141, 235, 215, 0.12);
+  border-color: rgba(141, 235, 215, 0.32);
+  color: var(--mist);
+}
+
+.site-alias-expand[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.site-alias-expand svg {
+  transition: transform 160ms ease;
+}
+
+.site-alias-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.site-alias-chip {
+  background: rgba(141, 235, 215, 0.08);
+  border: 1px solid rgba(141, 235, 215, 0.2);
+  border-radius: 999px;
+  color: var(--mist);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1.3;
+  padding: 6px 10px;
+}
+
+.site-alias-chip:hover {
+  background: rgba(141, 235, 215, 0.14);
+  border-color: rgba(141, 235, 215, 0.36);
+}
+
+.site-alias-chip[aria-pressed="true"] {
+  background: rgba(141, 235, 215, 0.2);
+  border-color: rgba(141, 235, 215, 0.5);
 }
 
 .site-suggestions span {
