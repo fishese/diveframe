@@ -70,16 +70,47 @@ Extend the existing form (web + Android same component tree):
   string and keeps the catalog id.
 - Manual typing in Edit dive details unchanged (`source: "manual"`).
 
+### Dive list — trip presentation
+
+Trips are intended as short consecutive outings (pack gear, dive a few days).
+**No hard consecutive-date limit** on assignment — rely on UI grouping and
+user habit. Soft validation is out of scope.
+
+List layout (same layer for trip headers and unassigned dives):
+
+```
+Sharp Island 2026-08-01          ← unassigned dive (top-level)
+Maldives 2026                    ← trip header (top-level, expanded by default)
+  Shark Point 2026-07-21         ← member (indented)
+  Banana Reef 2026-07-20         ← member (indented)
+```
+
+- **Block model:** each trip is one contiguous block. Unassigned dives never
+  appear between members of the same trip.
+- **Block order:** sort trip blocks and solo dives together using an **anchor**
+  derived from the trip’s visible members under the current sort option
+  (for date sort: newest member when sorting newest-first, oldest when
+  oldest-first; for duration/depth sort: the member that would rank first
+  under that comparator).
+- **In-trip order:** members are sorted with the **same comparator** as the
+  current list sort (date / duration / max depth, ASC or DESC) — not date-only
+  when the list is sorted by another field.
+- **Expand/collapse:** trips start **expanded**. Collapse is session-only and
+  resets to expanded on reload (not persisted).
+- Collapsed header shows the trip name (and optionally a dive count); members
+  are hidden until expanded again.
+
 ### Dive list — Select mode (trips)
 
 - **Select** toggle enables checkboxes; normal tap-to-open is disabled while
   selecting.
 - Action bar: **New trip…** / **Add to existing…** / **Remove from trip**.
 - Leaving Select mode clears the selection.
-- Optional read-only trip name cue on rows when assigned.
+- Trip headers are not themselves selectable targets for opening a dive;
+  selection applies to dive rows (including indented members).
 - Actions apply to the **currently visible** (filtered) selection.
 
-### Dive list — Filters
+### Dive list — Filters and search vs trips
 
 - Existing chips (Named / GPS / Set in app) stay.
 - Collapsible **Filters** panel (collapsed by default):
@@ -91,15 +122,22 @@ Extend the existing form (web + Android same component tree):
   filters whenever any of those are active. Search keeps its own clear control
   so typed queries are not wiped by Reset.
 
+**Partial matches (approach A):** when search or filters are active, if any
+dive in a trip matches, show that trip’s header and **only matching members**
+(still indented, still sorted by the current list comparator). Non-matching
+siblings are hidden until filters/search clear. Matching unassigned dives stay
+top-level. When nothing is filtering, show full trip blocks.
+
 ## Implementation approach
 
 Shared web UI only (approach 1 from brainstorming). Ordered delivery inside
 one implementation plan:
 
-1. Trip CRUD helpers + Edit dive details assignment + list Select mode  
+1. Trip CRUD helpers + list block presentation + Edit dive details assignment +
+   list Select mode  
 2. User GPS editors + map resolution helper + EXIF from attached JPEG  
 3. Alias expand-in-picker  
-4. Date/computer filters + Reset  
+4. Date/computer filters + Reset + partial-match trip display (A)  
 5. i18n (EN / zh-Hant / ja), USER-GUIDE / PRODUCT-SPEC notes, tests  
 
 ## Edge cases
@@ -108,11 +146,15 @@ one implementation plan:
 - EXIF with no GPS: status only; no write.  
 - Unsupported image types: skip gracefully.  
 - Alias expand: collapsing when another site expands or after save.  
-- Select mode + filters: only visible dives are selectable/actionable.
+- Select mode + filters: only visible dives are selectable/actionable.  
+- Filtered trip with one matching member: header + that member only.  
+- Collapse state must not be written to IndexedDB or preferences.
 
 ## Testing
 
 - IndexedDB: create/rename/delete trip; assign/clear `tripId` (single + bulk).  
+- List grouping helper: contiguous blocks, anchor ordering, in-trip sort under
+  each sort option; partial-match (A) hides non-matching members.  
 - User GPS update; resolution helper (computer > user > geocode).  
 - Filter predicates: date range, computer model, reset.  
 - Site save with alias string + catalog id.  
