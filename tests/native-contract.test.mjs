@@ -123,7 +123,7 @@ test("BLE permissions, scan, cancel, and classic GATT transport are wired", asyn
   assert.match(capability, /deviceFound/);
 });
 
-test("Android photo picker requests unredacted EXIF and releases temporary photos", async () => {
+test("Android location-photo picker requests original MediaStore EXIF and releases temporary photos", async () => {
   const [manifest, plugin, capability, mainActivity, gradle] = await Promise.all([
     readFile(files.manifest, "utf8"),
     readFile(files.photoLocationPlugin, "utf8"),
@@ -135,8 +135,10 @@ test("Android photo picker requests unredacted EXIF and releases temporary photo
   assert.match(manifest, /android\.permission\.ACCESS_MEDIA_LOCATION/);
   assert.match(plugin, /name = "PhotoLocation"/);
   assert.match(plugin, /requestPermissionForAlias/);
+  assert.match(plugin, /Intent\.ACTION_PICK/);
+  assert.match(plugin, /MediaStore\.Images\.Media\.EXTERNAL_CONTENT_URI/);
   assert.match(plugin, /MediaStore\.setRequireOriginal/);
-  assert.match(plugin, /REQUEST_LOCATION_METADATA_ACCESS/);
+  assert.doesNotMatch(plugin, /MediaStore\.ACTION_PICK_IMAGES/);
   assert.match(plugin, /new ExifInterface\(stream\)\.getLatLong\(\)/);
   assert.match(plugin, /includePhoto/);
   assert.match(plugin, /releasePickedPhoto/);

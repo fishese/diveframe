@@ -123,18 +123,21 @@ shipped on `main` and documented in `USER-GUIDE.md` / `PRODUCT-SPEC.md`. Plan:
 
 ## Resume checklist
 
-1. Smoke-test cancel-with-summary / crash-keeps-dives on device when convenient
+1. Before every push, apply `docs/WEB-APK-SYNC.md`: classify the change as
+   web-only or APK-affecting, and rebuild/publish `diveframe-debug.apk` from the
+   same commit for shared client or native changes.
+2. Smoke-test cancel-with-summary / crash-keeps-dives on device when convenient
    (do not `adb install` while a download is running).
-2. Re-verify **Export app data** and GPS filter on device after the GNSS persist
+3. Re-verify **Export app data** and GPS filter on device after the GNSS persist
    fix (new BLE imports should carry computer GPS when the computer recorded a
    lock).
-3. Deploy production CORS for Capacitor origins on geocode / nearby / what's-new.
-4. Next product steps:
+4. Deploy production CORS for Capacitor origins on geocode / nearby / what's-new.
+5. Next product steps:
    - Trip / user-GPS editors — **done** on `main`
    - Site display alias chips — **done** on `main`
    - BLE hardening / failure matrix / privacy–LGPL release work
    - About copy: classic Shearwater BLE only (not Perdix 3)
-5. Parked / lower priority: pinned in-app download strip; PC Web Bluetooth;
+6. Parked / lower priority: pinned in-app download strip; PC Web Bluetooth;
    background notification / foreground service
 
 ## Known leftovers

@@ -1,5 +1,6 @@
 import diveSiteCatalog from "@/data/dive-sites.json";
 import { jsonWithCors, optionsWithCors } from "@/lib/api-cors";
+import { NEARBY_SITE_RADIUS_KM } from "@/lib/dive-site-catalog";
 
 type OverpassElement = {
   id: number;
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const radiusKm = 30;
+  const radiusKm = NEARBY_SITE_RADIUS_KM;
   const catalogSites = LOCAL_DIVE_SITES.map((site) => ({
     ...site,
     distanceKm: distanceKm(
@@ -111,7 +112,7 @@ export async function GET(request: Request) {
   if (!response) {
     return jsonWithCors(request, {
       source: "openstreetmap",
-      sites: await searchDivePlaces(latitude, longitude),
+      sites: await searchDivePlaces(latitude, longitude, radiusKm),
     });
   }
 
@@ -143,7 +144,11 @@ export async function GET(request: Request) {
   return jsonWithCors(request, { source: "openstreetmap", sites });
 }
 
-async function searchDivePlaces(latitude: number, longitude: number) {
+async function searchDivePlaces(
+  latitude: number,
+  longitude: number,
+  radiusKm: number,
+) {
   const delta = 0.35;
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("q", "scuba diving");
@@ -171,12 +176,14 @@ async function searchDivePlaces(latitude: number, longitude: number) {
       const lng = Number(place.lon);
       const name = place.name?.trim() || place.display_name?.split(",")[0]?.trim();
       if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) return [];
+      const siteDistanceKm = distanceKm(latitude, longitude, lat, lng);
+      if (siteDistanceKm > radiusKm) return [];
       return [{
         id: `osm-place-${place.place_id}`,
         name,
         latitude: lat,
         longitude: lng,
-        distanceKm: distanceKm(latitude, longitude, lat, lng),
+        distanceKm: siteDistanceKm,
         source: "openstreetmap",
       }];
     }).sort((a, b) => a.distanceKm - b.distanceKm);

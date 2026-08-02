@@ -84,9 +84,10 @@ weakening the web app or requiring a second logbook implementation.
 - Assign dives to trips from **Edit dive details** or bulk **Select dives** on
   the logbook list (grouped trip blocks, session-only expand/collapse).
 - Set user GPS from one comma-separated decimal coordinate pair or from a
-  selected photo's EXIF without overwriting computer GPS; keeping that photo
-  on the dive is optional. Map display resolves computer → user → name
-  geocode.
+  selected JPEG photo's EXIF without overwriting computer GPS; keeping that
+  photo on the dive is optional. The Android APK uses a MediaStore picker and
+  `ACCESS_MEDIA_LOCATION`; browser pickers remain subject to browser metadata
+  privacy behavior. Map display resolves computer → user → name geocode.
 - Select a nearby site from the bundled catalog, a user-loaded supplementary
   catalog, or OpenStreetMap suggestions, including choosing a catalog alias as
   the displayed site name.
@@ -161,9 +162,10 @@ composer state. Conversion to imperial units happens only at display/export.
 
 ## Dive-site data
 
-The app bundles `data/dive-sites.json`. Active entries within 30 km are ranked
-by Haversine distance. OpenStreetMap is the fallback when no bundled entry is
-nearby.
+The app bundles `data/dive-sites.json`. Active entries within 12 km are ranked
+by Haversine distance. The same 12 km cutoff applies to the supplementary
+catalog and OpenStreetMap fallback; OpenStreetMap is queried only when no
+bundled or supplementary entry is nearby.
 
 A user can load a compatible regional `dive-sites.json` in Settings. That
 supplementary catalog is stored in IndexedDB (`supplementaryCatalog`, at most
@@ -328,6 +330,15 @@ without the necessary pressure and cylinder inputs.
   APK's classic Shearwater Bluetooth scope, Android media-location and
   Bluetooth permissions, native Downloads behavior, and the current decision
   to use Subsurface PC exports instead of a separate PC wrapper.
+- iPhone users can use the PWA in Safari. JPEG location extraction depends on
+  Safari's photo-picker metadata choice; HEIC EXIF extraction and a broader
+  iPhone compatibility pass remain planned. Native iOS packaging is still out
+  of scope.
+- Web and APK runtime parity, intentional platform differences, and the
+  maintainer release process are specified in `docs/WEB-APK-SYNC.md`. Every
+  push to `main` must be checked for APK impact; shared client or native changes
+  require a new APK built and published from that same commit. A Cloudflare web
+  deployment does not update the GitHub APK or installed copies.
 - The Android WebView ignores `<a download>` blob URLs, so every export
   (backup, added-site log, merged catalog, Subsurface copy, composer image,
   share card) is streamed through a native plugin into the phone's public

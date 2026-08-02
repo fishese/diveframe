@@ -199,6 +199,11 @@ source logs again before creating a new transferable backup.
 
 Use Node.js 22 or newer.
 
+> **Push/release reminder:** a push updates the hosted web app but never the
+> downloadable or installed APK. Before every push, use the
+> [web/APK parity and release checklist](docs/WEB-APK-SYNC.md) to decide whether
+> the Android build must be rebuilt, tested, and published from the same commit.
+
 ```sh
 npm install
 npm run dev

@@ -31,7 +31,7 @@ APK uses its own WebView origin (`https://localhost`), so PWA and APK data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-01)
+## Current status (2026-08-02)
 
 Shipped on `main` (pushed):
 
@@ -42,17 +42,20 @@ Shipped on `main` (pushed):
   date/computer/GPS list filters
 - Android product BLE import with incremental persist; Shearwater computer GPS
   via `DC_SAMPLE_LOCATION` sample callbacks
+- Photo GPS extraction: the APK uses the MediaStore picker with
+  `ACCESS_MEDIA_LOCATION`; web/PWA extraction supports JPEG EXIF. Keeping the
+  selected location photo is opt-in. Nearby site suggestions are limited to
+  12 km from the available GPS coordinates.
 - Native Downloads export plugin; Settings **What's new** feed with HTTPS CTAs
 - Official dive-site catalog remains build-bundled only (web deploy / new APK)
+- Web-only Android download page and GitHub `v0.1.0-debug` release containing
+  `diveframe-debug.apk`; the stable download URL uses `releases/latest`
 
 Open follow-ups:
 
-- Photo EXIF location lookup was rebuilt with a real web/PWA JPEG picker, a
-  dedicated Android picker that requests unredacted media location, and a
-  single comma-separated coordinate field. Keeping the selected location
-  photo is opt-in. The Android picker still needs a device smoke test.
-- Import-guide detail cards need a formatting pass: icon/title indentation and
-  whether the title starts on the next line are currently inconsistent.
+- iPhone/Safari photo-location verification and HEIC EXIF support remain open.
+  Existing iPhone photos may need Safari's picker option to share location;
+  taking a new photo directly from the browser can strip GPS metadata.
 - Deploy production CORS for `/api/geocode`, `/api/nearby-sites`, and
   `/api/whats-new` so Capacitor `https://localhost` can use the hosted worker
   without a LAN API override
@@ -61,6 +64,13 @@ Open follow-ups:
 - Pre-wrapper Priority C quality items in `docs/PRODUCT-SPEC.md`
 
 Session detail: `docs/2026-08-01-ble-product-import-session.md`.
+
+Web/APK parity and release checklist: `docs/WEB-APK-SYNC.md`.
+
+> **Push reminder:** every push to `main` must be classified as web-only or
+> APK-affecting. Shared client/native changes require a new APK built from the
+> same commit and published as the latest `diveframe-debug.apk` release asset.
+> A web push never updates an installed or downloadable APK by itself.
 
 Deployment is managed by the repository's Cloudflare Worker integration.
 
@@ -115,6 +125,8 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `docs/PRODUCT-SPEC.md` — authoritative current-state product specification,
   readiness gate for store packaging / BLE hardening, planned extension
   guardrails, and reviewer questions.
+- `docs/WEB-APK-SYNC.md` — canonical web-versus-APK parity boundaries,
+  push triage matrix, and APK build/publication checklist.
 - `LICENSE` — project notice for `GPL-3.0-or-later`.
 - `ASSET-LICENSES.md` — separate copyright boundary for the non-GPL Bubbles
   sample background.
@@ -191,7 +203,7 @@ deploy / APK build. A user-loaded **supplementary** catalog is stored in
 IndexedDB, combined additively with the bundled catalog for nearby suggestions,
 included in app-data backups, and cleared by erase-all (not by dive-only erase).
 A one-time helper migrates any legacy `sessionStorage` catalog into IndexedDB.
-`lib/dive-site-catalog.ts` validates catalogs and ranks sites within 30 km.
+`lib/dive-site-catalog.ts` validates catalogs and ranks sites within 12 km.
 The downloadable prompt at `public/examples/dive-site-catalog-ai-prompt.md`
 helps users create regional catalogs for human review.
 
@@ -332,8 +344,9 @@ labelled approximate.
 ## Dive-site catalog and contribution log
 
 `data/dive-sites.json` is the primary nearby-site source. Active entries within
-30 km are returned nearest-first; OpenStreetMap is queried only when the local
-catalog has no nearby match.
+12 km are returned nearest-first; OpenStreetMap is queried only when the local
+catalog has no nearby match. The same cutoff is applied to bundled,
+supplementary, and online fallback results.
 
 Catalog entries deliberately do not contain or display curator/reliability
 notes.

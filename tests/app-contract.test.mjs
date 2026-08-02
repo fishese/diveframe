@@ -276,6 +276,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /photoLocationPermissionDenied/);
   assert.match(app, /photoGpsBusy/);
   assert.match(app, /nearbySitesLoading/);
+  assert.match(app, /site\.distanceKm <= NEARBY_SITE_RADIUS_KM/);
   assert.match(app, /setTimeout\(\(\) => controller\.abort\(\), 10000\)/);
   assert.match(app, /source: "manual"/);
   assert.match(app, /source: "photo-exif"/);
@@ -485,6 +486,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(nearbyRoute, /LOCAL_DIVE_SITES/);
   assert.match(nearbyRoute, /dive-sites\.json/);
   assert.match(nearbyRoute, /source: "openstreetmap"/);
+  assert.match(nearbyRoute, /radiusKm = NEARBY_SITE_RADIUS_KM/);
 
   const geocodeRoute = await readFile(
     new URL("../app/api/geocode/route.ts", import.meta.url),

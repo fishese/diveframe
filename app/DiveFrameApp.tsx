@@ -97,6 +97,7 @@ import {
 } from "@/lib/gas-calculations";
 import { toNormalizedDive } from "@/lib/normalize-dive";
 import {
+  NEARBY_SITE_RADIUS_KM,
   nearbySessionCatalogSites,
   resolveActiveDiveSiteCatalog,
   type DiveSiteCatalog,
@@ -3184,6 +3185,7 @@ function displayLocation(
 function mergeNearbySites(sessionSites: NearbySite[], fetchedSites: NearbySite[]) {
   const seen = new Set<string>();
   return [...sessionSites, ...fetchedSites]
+    .filter((site) => site.distanceKm <= NEARBY_SITE_RADIUS_KM)
     .filter((site) => {
       const key = `${site.name.trim().toLocaleLowerCase("en")}\u0000${site.latitude.toFixed(4)}\u0000${site.longitude.toFixed(4)}`;
       if (seen.has(key)) return false;

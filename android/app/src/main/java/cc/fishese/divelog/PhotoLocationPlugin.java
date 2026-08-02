@@ -43,8 +43,6 @@ import java.util.concurrent.Executors;
     }
 )
 public class PhotoLocationPlugin extends Plugin {
-    private static final String PHOTO_PICKER_LOCATION_EXTRA =
-        "android.provider.extra.REQUEST_LOCATION_METADATA_ACCESS";
     private static final String CACHE_DIRECTORY = "photo-location";
 
     private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
@@ -75,20 +73,15 @@ public class PhotoLocationPlugin extends Plugin {
     }
 
     private void launchPhotoPicker(PluginCall call) {
-        final Intent intent;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
-            intent.setType("image/*");
-            // Newer picker revisions require this explicit request before they
-            // offer the user a choice to share location metadata.
-            intent.putExtra(PHOTO_PICKER_LOCATION_EXTRA, true);
-        } else {
-            intent = new Intent(
-                Intent.ACTION_PICK,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-            );
-            intent.setType("image/*");
-        }
+        // This workflow deliberately uses the MediaStore picker rather than
+        // Android's privacy-focused Photo Picker. The returned MediaStore URI
+        // can be marked require-original below so EXIF GPS is not redacted.
+        // Dive gallery and overlay photos continue to use their regular picker.
+        final Intent intent = new Intent(
+            Intent.ACTION_PICK,
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        );
+        intent.setType("image/*");
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivityForResult(call, intent, "photoPickerResult");
     }
@@ -117,8 +110,8 @@ public class PhotoLocationPlugin extends Plugin {
             try {
                 readUri = MediaStore.setRequireOriginal(selectedUri);
             } catch (IllegalArgumentException | SecurityException ignored) {
-                // Photo Picker URIs are not always MediaStore URIs. The picker
-                // location-extra above can still make the selected URI original.
+                // Keep a defensive fallback for vendor picker implementations
+                // that return a non-standard URI despite the MediaStore intent.
                 readUri = selectedUri;
             }
         }
@@ -129,8 +122,8 @@ public class PhotoLocationPlugin extends Plugin {
                 coordinates = readExifCoordinates(readUri);
             } catch (IllegalArgumentException | SecurityException | UnsupportedOperationException error) {
                 if (readUri.equals(selectedUri)) throw error;
-                // Some Photo Picker providers grant location through the
-                // picker URI itself and reject MediaStore's original marker.
+                // Some vendor media providers reject the original marker even
+                // when direct access to the selected URI is still allowed.
                 readUri = selectedUri;
                 coordinates = readExifCoordinates(readUri);
             }
