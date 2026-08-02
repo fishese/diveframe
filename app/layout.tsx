@@ -24,6 +24,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
+      { url: "/icons/diveframe-icon.svg", type: "image/svg+xml" },
       { url: "/icons/diveframe-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/diveframe-512.png", sizes: "512x512", type: "image/png" },
     ],

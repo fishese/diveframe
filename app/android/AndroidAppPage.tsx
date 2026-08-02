@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   Smartphone,
   Settings,
-  Waves,
 } from "lucide-react";
 import { useAppI18n } from "../AppI18nProvider";
 
@@ -27,7 +26,7 @@ export function AndroidAppPage() {
       <header className="topbar">
         <Link href="/" className="brand" aria-label={t("backToDives")}>
           <span className="brand-mark">
-            <Waves size={19} strokeWidth={2.4} />
+            <img src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" />
           </span>
           <span>
             <strong>DiveFrame</strong>

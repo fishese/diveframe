@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BookmarkPlus, ChevronDown, Crop, Download, House, ImagePlus, LoaderCircle, RotateCcw, Trash2, Waves } from "lucide-react";
+import { ArrowLeft, BookmarkPlus, ChevronDown, Crop, Download, House, ImagePlus, LoaderCircle, RotateCcw, Trash2 } from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -441,7 +441,9 @@ export function ComposerApp() {
     <main className="composer-page">
       <header className="composer-topbar">
         <Link href={`/?dive=${encodeURIComponent(dive.id)}`} className="brand">
-          <span className="brand-mark"><Waves size={18} /></span>
+          <span className="brand-mark">
+            <img src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" />
+          </span>
           <span><strong>DiveFrame</strong><small>{t("composer")}</small></span>
         </Link>
         <div className="composer-top-actions">

@@ -59,7 +59,7 @@ select option {
   gap: 9px;
   justify-content: center;
   line-height: 1.45;
-  padding: 8px 4vw;
+  padding: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))) 4vw 8px;
 }
 
 .beta-notice > svg {
@@ -127,13 +127,11 @@ button {
   background: rgba(7, 24, 32, 0.84);
   border-bottom: 1px solid var(--line);
   display: flex;
-  height: calc(
-    58px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
-  );
+  height: 58px;
   justify-content: space-between;
-  padding: var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) 4vw 0;
+  padding: 0 4vw;
   position: sticky;
-  top: 0;
+  top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
   z-index: 50;
 }
 
@@ -149,15 +147,17 @@ button {
 }
 
 .brand-mark {
-  align-items: center;
-  background: var(--teal);
   border-radius: 9px;
-  color: var(--ink);
-  display: flex;
+  display: block;
   height: 32px;
-  justify-content: center;
-  transform: rotate(-4deg);
+  object-fit: contain;
   width: 32px;
+}
+
+.brand-mark img {
+  display: block;
+  height: 100%;
+  width: 100%;
 }
 
 .brand strong {
@@ -1304,6 +1304,49 @@ button {
 
 .photo-gps-status {
   margin: 0;
+}
+
+.photo-location-help-backdrop {
+  align-items: center;
+  background: rgba(4, 18, 24, 0.72);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding:
+    max(1rem, var(--safe-area-inset-top, env(safe-area-inset-top, 0px)))
+    1rem
+    max(1rem, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  position: fixed;
+  z-index: 80;
+}
+
+.photo-location-help-panel {
+  background: linear-gradient(165deg, var(--panel-light), var(--panel));
+  border: 1px solid rgba(148, 196, 210, 0.22);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+  max-width: 28rem;
+  padding: 1.15rem 1.2rem 1.2rem;
+  width: 100%;
+}
+
+.photo-location-help-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.photo-location-help-header h2 {
+  font-size: 1.15rem;
+  margin: 0.2rem 0 0;
+}
+
+.photo-location-help-panel p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 14px 0 18px;
 }
 
 .site-picker-card .card-heading > span {
@@ -3816,10 +3859,8 @@ button {
 
 @media (max-width: 760px) {
   .topbar {
-    height: calc(
-      52px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
-    );
-    padding: var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) 12px 0;
+    height: 52px;
+    padding: 0 12px;
   }
 
   .brand-mark {

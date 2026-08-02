@@ -284,7 +284,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /t\("editLocation"\)/);
   assert.match(app, /t\("useLocationFromPhoto"\)/);
   assert.match(app, /file\.arrayBuffer\(\)/);
-  assert.match(app, /accept="\.jpg,\.jpeg,\.heic,\.heif,image\/jpeg,image\/heic,image\/heif"/);
+  assert.match(app, /LOCATION_PHOTO_EXTENSIONS/);
+  assert.match(app, /photoLocationUnsupportedFile/);
+  assert.match(app, /photo-location-help-backdrop/);
   assert.match(app, /addLocationPhotoToDive/);
   assert.match(app, /photoLocationPermissionDenied/);
   assert.match(app, /photoGpsBusy/);
@@ -469,7 +471,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v5/);
+  assert.match(serviceWorker, /diveframe-shell-v6/);
   assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);
   assert.match(serviceWorker, /examples\/dive-site-catalog-ai-prompt\.md/);
   assert.match(serviceWorker, /request\.mode === "navigate"/);

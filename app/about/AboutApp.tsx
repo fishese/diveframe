@@ -23,7 +23,7 @@ export function AboutApp() {
       <header className="topbar">
         <Link href="/" className="brand" aria-label={t("backToDives")}>
           <span className="brand-mark">
-            <Waves size={19} strokeWidth={2.4} />
+            <img src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" />
           </span>
           <span>
             <strong>DiveFrame</strong>

@@ -19,7 +19,6 @@ import {
   ShieldCheck,
   Trash2,
   Upload,
-  Waves,
 } from "lucide-react";
 import {
   type ChangeEvent,
@@ -847,7 +846,7 @@ export function SettingsApp() {
       <header className="topbar settings-topbar">
         <Link href="/" className="brand settings-brand" aria-label={t("backToDives")}>
           <span className="brand-mark">
-            <Waves size={19} strokeWidth={2.4} />
+            <img src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" />
           </span>
           <span>
             <strong>DiveFrame</strong>

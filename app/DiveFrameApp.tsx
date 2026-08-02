@@ -118,6 +118,23 @@ import { ImportGuide } from "./components/ImportGuide";
 type Dive = LocalDive;
 type Attachment = LocalAttachment;
 
+const LOCATION_PHOTO_EXTENSIONS = /\.(?:jpe?g|heic|heif)$/i;
+const LOCATION_PHOTO_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/heic",
+  "image/heif",
+  "image/heic-sequence",
+  "image/heif-sequence",
+]);
+
+function isLocationPhotoFile(file: File) {
+  return (
+    LOCATION_PHOTO_MIME_TYPES.has(file.type.toLowerCase()) ||
+    LOCATION_PHOTO_EXTENSIONS.test(file.name)
+  );
+}
+
 type MapLocation = {
   latitude: number;
   longitude: number;
@@ -890,7 +907,7 @@ export function DiveFrameApp() {
           aria-label={t("home")}
         >
           <span className="brand-mark">
-            <Waves size={24} strokeWidth={2.4} />
+            <img src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" />
           </span>
           <span>
             <strong>DiveFrame</strong>
@@ -1752,6 +1769,7 @@ function DiveDetail({
   );
   const [photoGpsStatus, setPhotoGpsStatus] = useState<string | null>(null);
   const [photoGpsBusy, setPhotoGpsBusy] = useState(false);
+  const [photoLocationHelpOpen, setPhotoLocationHelpOpen] = useState(false);
   const [addLocationPhotoToDive, setAddLocationPhotoToDive] = useState(false);
   const photoLocationInputRef = useRef<HTMLInputElement>(null);
 
@@ -1759,6 +1777,7 @@ function DiveDetail({
     setUserGpsDraft(formatCoordinatePair(dive.userGpsLat, dive.userGpsLng));
     setPhotoGpsStatus(null);
     setPhotoGpsBusy(false);
+    setPhotoLocationHelpOpen(false);
     setAddLocationPhotoToDive(false);
     setGpsEditorOpen(false);
   }, [dive.id, dive.userGpsLat, dive.userGpsLng]);
@@ -1824,6 +1843,7 @@ function DiveDetail({
     } else {
       setPhotoGpsStatus(t("noPhotoLocationFound"));
     }
+    if (!gps) setPhotoLocationHelpOpen(true);
   }
 
   async function handleWebPhotoLocationSelection(
@@ -1832,6 +1852,10 @@ function DiveDetail({
     const file = event.target.files?.[0] ?? null;
     event.target.value = "";
     if (!file || photoGpsBusy) return;
+    if (!isLocationPhotoFile(file)) {
+      setPhotoGpsStatus(t("photoLocationUnsupportedFile"));
+      return;
+    }
     setPhotoGpsBusy(true);
     setPhotoGpsStatus(t("searchingPhotosForLocation"));
     try {
@@ -2359,7 +2383,6 @@ function DiveDetail({
                 <input
                   ref={photoLocationInputRef}
                   type="file"
-                  accept=".jpg,.jpeg,.heic,.heif,image/jpeg,image/heic,image/heif"
                   onChange={(event) => void handleWebPhotoLocationSelection(event)}
                   className="visually-hidden"
                   tabIndex={-1}
@@ -2923,6 +2946,45 @@ function DiveDetail({
           </Link>
         </div>
       </section>
+
+      {photoLocationHelpOpen ? (
+        <div
+          className="photo-location-help-backdrop"
+          role="presentation"
+          onClick={() => setPhotoLocationHelpOpen(false)}
+        >
+          <section
+            className="photo-location-help-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`photo-location-help-title-${dive.id}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="photo-location-help-header">
+              <h2 id={`photo-location-help-title-${dive.id}`}>
+                {t("photoLocationHelpTitle")}
+              </h2>
+              <button
+                type="button"
+                className="button button-quiet"
+                onClick={() => setPhotoLocationHelpOpen(false)}
+                aria-label={t("photoLocationHelpClose")}
+                title={t("photoLocationHelpClose")}
+              >
+                <X size={16} />
+              </button>
+            </header>
+            <p>{t("photoLocationHelpBody")}</p>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={() => setPhotoLocationHelpOpen(false)}
+            >
+              {t("photoLocationHelpClose")}
+            </button>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
