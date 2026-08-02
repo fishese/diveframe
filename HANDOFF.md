@@ -47,6 +47,10 @@ Shipped on `main` (pushed):
 
 Open follow-ups:
 
+- Photo EXIF location lookup is still a WIP: the web flow can remain stuck on
+  its loading spinner, and the Android flow still needs device testing.
+- Import-guide detail cards need a formatting pass: icon/title indentation and
+  whether the title starts on the next line are currently inconsistent.
 - Deploy production CORS for `/api/geocode`, `/api/nearby-sites`, and
   `/api/whats-new` so Capacitor `https://localhost` can use the hosted worker
   without a LAN API override

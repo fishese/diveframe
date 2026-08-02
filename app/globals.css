@@ -2280,19 +2280,36 @@ button {
   padding: 14px;
 }
 
+.import-guide-step,
+.import-guide-note {
+  align-items: start;
+  display: grid;
+  column-gap: 10px;
+  grid-template-columns: 18px minmax(0, 1fr);
+}
+
 .import-guide-step > svg,
 .import-guide-note > svg {
   color: var(--teal);
   flex: 0 0 auto;
+  grid-column: 1;
+  grid-row: 1 / span 2;
   height: 18px;
+  margin-top: 1px;
   width: 18px;
+}
+
+.import-guide-step > h2,
+.import-guide-step > p,
+.import-guide-note > div {
+  grid-column: 2;
 }
 
 .import-guide-step h2,
 .import-guide-note h2 {
   font-size: 13px;
   line-height: 1.3;
-  margin: 8px 0 5px;
+  margin: 0 0 5px;
 }
 
 .import-guide-step p,
@@ -2305,25 +2322,11 @@ button {
 }
 
 .import-guide-database-step {
-  align-items: flex-start;
-  display: flex;
-  gap: 10px;
   margin-top: 10px;
-}
-
-.import-guide-database-step h2 {
-  margin-top: 0;
 }
 
 .import-guide-note {
-  align-items: flex-start;
-  display: flex;
-  gap: 10px;
   margin-top: 10px;
-}
-
-.import-guide-note h2 {
-  margin-top: 0;
 }
 
 .import-guide-support {
