@@ -2357,6 +2357,43 @@ button {
   max-width: 820px;
 }
 
+.import-guide-hero {
+  align-items: start;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+}
+
+.import-guide-backup-card {
+  align-items: start;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 16px;
+}
+
+.import-guide-backup-card > svg {
+  color: var(--teal);
+}
+
+.import-guide-backup-card p {
+  color: var(--mist);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.import-guide-backup-card .button {
+  justify-self: start;
+}
+
+#backup-transfer {
+  scroll-margin-top: 24px;
+}
+
 .import-guide-intro {
   color: var(--muted);
   font-size: 14px;
@@ -4334,6 +4371,15 @@ button {
 }
 
 @media (max-width: 900px) {
+  .import-guide-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .import-guide-backup-card {
+    margin: 0 0 22px;
+    max-width: 420px;
+  }
+
   .import-guide-steps {
     grid-template-columns: 1fr;
   }

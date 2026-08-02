@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Archive,
   Bluetooth,
   Database,
   FileText,
@@ -64,37 +65,52 @@ export function ImportGuide({
   return (
     <section className="import-guide-page">
       <div className="import-guide-shell">
-        <p className="eyebrow">{t("importDiveLog")}</p>
-        <h1>{t("importGuideTitle")}</h1>
-        <p className="import-guide-intro">{t("importGuideIntro")}</p>
-        <ul className="import-guide-summary">
-          <li>
-            <strong>{t("importGuidePreferredLabel")}</strong>{" "}
-            <a
-              href="https://subsurface-divelog.org/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t("importGuideSubsurfaceName")}
-            </a>
-            {t("importGuidePreferredOtherSources")}
-          </li>
-          <li>
-            <strong>{t("importGuideAcceptedLabel")}</strong>{" "}
-            {t("importGuideAcceptedBody")}
-          </li>
-          <li>{t("importGuideCombineBullet")}</li>
-        </ul>
+        <div className="import-guide-hero">
+          <div className="import-guide-primary">
+            <p className="eyebrow">{t("importDiveLog")}</p>
+            <h1>{t("importGuideTitle")}</h1>
+            <p className="import-guide-intro">{t("importGuideIntro")}</p>
+            <ul className="import-guide-summary">
+              <li>
+                <strong>{t("importGuidePreferredLabel")}</strong>{" "}
+                <a
+                  href="https://subsurface-divelog.org/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t("importGuideSubsurfaceName")}
+                </a>
+                {t("importGuidePreferredOtherSources")}
+              </li>
+              <li>
+                <strong>{t("importGuideAcceptedLabel")}</strong>{" "}
+                {t("importGuideAcceptedBody")}
+              </li>
+              <li>{t("importGuideCombineBullet")}</li>
+            </ul>
 
-        <button
-          type="button"
-          className="button button-primary button-large import-guide-action"
-          onClick={onChooseFiles}
-          disabled={busy}
-        >
-          <Upload size={18} />
-          {t("importGuideChooseFiles")}
-        </button>
+            <button
+              type="button"
+              className="button button-primary button-large import-guide-action"
+              onClick={onChooseFiles}
+              disabled={busy}
+            >
+              <Upload size={18} />
+              {t("importGuideChooseFiles")}
+            </button>
+          </div>
+
+          <aside className="import-guide-backup-card">
+            <Archive size={20} aria-hidden="true" />
+            <p>{t("importGuideBackupPrompt")}</p>
+            <a
+              className="button button-secondary"
+              href="/settings#backup-transfer"
+            >
+              {t("openBackupTools")}
+            </a>
+          </aside>
+        </div>
 
         <div className="import-guide-steps">
           <article className="import-guide-step">

@@ -917,7 +917,10 @@ export function SettingsApp() {
 
         <PwaInstallCard />
 
-        <section className="settings-card backup-settings">
+        <section
+          id="backup-transfer"
+          className="settings-card backup-settings"
+        >
           <div className="settings-card-heading">
             <span className="settings-icon"><Archive size={21} /></span>
             <div>
@@ -1646,7 +1649,7 @@ export function SettingsApp() {
                 onClick={() => void eraseDivePhotos()}
                 disabled={busy}
               >
-                <Trash2 size={16} /> {t("eraseDivePhotos")}
+                <Trash2 size={16} /> {t("eraseDivePhotosAction")}
               </button>
             </div>
             <div className="danger-option">
@@ -1670,7 +1673,7 @@ export function SettingsApp() {
                 onClick={() => void eraseAllData()}
                 disabled={busy}
               >
-                <Trash2 size={16} /> {t("eraseAllData")}
+                <Trash2 size={16} /> {t("eraseAllDataAction")}
               </button>
             </div>
           </div>
