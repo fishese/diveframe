@@ -52,10 +52,11 @@ export function AboutApp() {
           <AboutCard icon={<Database size={23} />} title={t("aboutImportsTitle")}>
             <p>{t("aboutImportsDescription")}</p>
             <ul>
-              <li>{t("aboutImportShearwater")}</li>
               <li>{t("aboutImportSubsurface")}</li>
               <li>{t("aboutImportUddf")}</li>
+              <li>{t("aboutImportBluetooth")}</li>
               <li>{t("aboutImportFit")}</li>
+              <li>{t("aboutImportShearwater")}</li>
             </ul>
           </AboutCard>
 

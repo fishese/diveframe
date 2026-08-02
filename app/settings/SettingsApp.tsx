@@ -923,13 +923,13 @@ export function SettingsApp() {
           <div className="settings-card-heading">
             <span className="settings-icon"><Languages size={21} /></span>
             <div>
-              <p className="eyebrow">{t("settings")}</p>
+              <p className="eyebrow">{t("language")}</p>
               <h2>{t("appLanguage")}</h2>
             </div>
           </div>
           <p className="settings-note">{t("appLanguageDescription")}</p>
           <label className="language-select">
-            <span>{t("appLanguage")}</span>
+            <span className="visually-hidden">{t("appLanguage")}</span>
             <select
               value={language}
               onChange={(event) =>
@@ -1190,7 +1190,6 @@ export function SettingsApp() {
             <div className="settings-card-heading">
               <span className="settings-icon"><ImageIcon size={21} /></span>
               <div>
-                <p className="eyebrow">{t("imageComposer")}</p>
                 <h2>{t("overlayLogo")}</h2>
               </div>
             </div>
@@ -1238,7 +1237,6 @@ export function SettingsApp() {
             <div className="settings-card-heading">
               <span className="settings-icon"><Camera size={21} /></span>
               <div>
-                <p className="eyebrow">{t("imageComposer")}</p>
                 <h2>{t("reusableBackgrounds")}</h2>
               </div>
             </div>
