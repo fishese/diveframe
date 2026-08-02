@@ -41,7 +41,7 @@ export const translations = {
     resetCrop: "Reset crop",
     cropInstructions:
       "Drag the preview to reposition the photo. Use the mouse wheel or Zoom control to scale it.",
-    useLogSite: "Use log, app, or GPS name",
+    useLogSite: "Site name from GPS or log",
     fitMode: "Photo fit",
     fill: "Fill",
     fit: "Fit",
@@ -155,7 +155,7 @@ export const translations = {
     resetCrop: "重設裁切",
     cropInstructions:
       "拖曳預覽以調整相片位置。使用滑鼠滾輪或「縮放」調整大小。",
-    useLogSite: "使用紀錄、DiveFrame 或 GPS 提供的名稱",
+    useLogSite: "使用 GPS 或紀錄中的潛點名稱",
     fitMode: "相片顯示方式",
     fill: "填滿",
     fit: "完整顯示",
@@ -269,7 +269,7 @@ export const translations = {
     resetCrop: "トリミングをリセット",
     cropInstructions:
       "プレビューをドラッグして写真の位置を調整します。マウスホイールまたは「ズーム」で拡大・縮小できます。",
-    useLogSite: "ログ、DiveFrame、GPSの名称を使用",
+    useLogSite: "GPSまたはログのサイト名",
     fitMode: "写真の表示方法",
     fill: "枠を埋める",
     fit: "全体を表示",
