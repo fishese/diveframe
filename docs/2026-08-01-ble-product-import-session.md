@@ -169,5 +169,8 @@ location data from uploads, links to the Android app download page, and warns
 that images received through WhatsApp, Signal, or social media generally have
 no location data. Dive-photo and composer-asset pickers are unchanged.
 
+The matching Android debug APK was rebuilt from the shared commit and published
+as GitHub release `v0.1.0-debug.7` (`versionName 1.0.7`, `versionCode 8`).
+
 Possible future experiments are a map picker for entering GPS coordinates and
 optional image ZIP uploads for batch/original-file workflows.

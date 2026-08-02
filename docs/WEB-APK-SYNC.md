@@ -135,7 +135,7 @@ as a GitHub Release asset.
 8. Copy/rename the Gradle output before uploading it as the release asset:
 
    ```powershell
-   $releaseTag = "v0.1.0-debug.5"
+   $releaseTag = "v0.1.0-debug.7"
    $releaseCommit = git rev-parse HEAD
    $releaseHash = (Get-FileHash `
      android\app\build\outputs\apk\debug\app-debug.apk `
@@ -165,15 +165,15 @@ as a GitHub Release asset.
 
 ## Current distribution boundary
 
-As of 2026-08-02, the published Android build is an arm64 debug APK for manual
+As of 2026-08-03, the published Android build is an arm64 debug APK for manual
 installation. It is not a Play Store, signed production, or F-Droid release.
 The current GitHub release is:
 
-- release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.5`
+- release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.7`
 - asset: `diveframe-debug.apk`
-- source commit: `61aa3427c98e6badcbb1e457fa803ae0b422d31f`
+- source commit: `30e269b7f2db9753e3c71234185cf6f705fea88d`
 - SHA-256:
-  `FD9732B5CAAF30F55665C5B00B2BF346B9CD849E73737EDD551589E94DC9ECB4`
+  `44A84960468031276020CBE59929B54EB501F70FFCFD80B92F724C2CB293967C`
 
 The debug APK is still signed by Android's debug tooling. An in-place Android
 update requires the same application ID, a compatible/higher `versionCode`,
