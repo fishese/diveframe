@@ -55,11 +55,15 @@ Shipped on `main` (pushed):
   translations plus fixed PWA metadata in `4f3eb05`; the tagline is now
   “Your logs, enhanced.” The import-guide backup link now uses client-side
   navigation and waits for Settings layout hydration before scrolling.
-- Android debug APK **1.0.4** (`versionCode 5`) was rebuilt from shared-client
-  commit `c059bcf` and published as GitHub release `v0.1.0-debug.4`, containing
+- Compact Settings language/composer presentation and clearer trilingual
+  About/import guidance shipped in `61aa342`. FIT import is implemented but
+  labelled untested; Shearwater Cloud databases are described as basic-only,
+  while detailed classic Shearwater Bluetooth import is Android-only.
+- Android debug APK **1.0.5** (`versionCode 6`) was rebuilt from shared-client
+  commit `61aa342` and published as GitHub release `v0.1.0-debug.5`, containing
   `diveframe-debug.apk`; the stable download URL uses `releases/latest`
-- Current dogfooding pause: the user is testing the hosted web/PWA and the
-  updated Android APK; no new feature work is queued until further feedback.
+- Current dogfooding state: the updated hosted web/PWA and Android APK are
+  ready for continued testing; no additional feature work is queued.
 
 Open follow-ups:
 
@@ -74,7 +78,6 @@ Open follow-ups:
   `/api/whats-new` so Capacitor `https://localhost` can use the hosted worker
   without a LAN API override
 - BLE hardening / failure matrix / LGPL release checklist
-- About copy: classic Shearwater BLE only (not Perdix 3)
 - Pre-wrapper Priority C quality items in `docs/PRODUCT-SPEC.md`
 
 Session detail: `docs/2026-08-01-ble-product-import-session.md`.
