@@ -109,6 +109,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /indexedDB\.open/);
   assert.match(storage, /attachmentStore\.createIndex\("diveId"/);
   assert.match(storage, /blob: file\.slice/);
+  assert.match(storage, /export async function deleteLocalAttachment/);
   assert.match(storage, /BACKGROUNDS_STORE/);
   assert.match(storage, /BRANDING_ASSETS_STORE/);
   assert.match(storage, /saveLocalOverlayLogo/);
@@ -125,7 +126,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(diveOnlyReset, /COMPOSER_SETTINGS_STORE/);
   assert.match(backup, /diveframe-local-backup/);
   assert.match(backup, /blobBase64/);
-  assert.match(app, /createShareCard/);
+  assert.match(app, /deleteLocalAttachment/);
+  assert.match(app, /onDeletePhoto/);
   assert.match(app, /t\("addPhotos"\)/);
   assert.match(app, /t\("createShareImage"\)/);
   assert.match(app, /\/compose\?dive=/);
@@ -161,7 +163,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /showLogo/);
   assert.match(composer, /logoOffsetX/);
   assert.match(composer, /logoOffsetY/);
-  assert.match(composer, /composer-back-to-dives/);
+  assert.match(composer, /composer-home-link/);
+  assert.match(composer, /composer-back-link/);
+  assert.doesNotMatch(composer, /AndroidAppLink/);
   assert.doesNotMatch(composer, /className="composer-back"/);
   assert.match(composerSettings, /logoOffsetX: 0/);
   assert.match(composerSettings, /logoOffsetY: 0/);

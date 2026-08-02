@@ -609,6 +609,30 @@ export async function addLocalPhotos(diveId: string, files: File[]) {
   return additions;
 }
 
+export async function deleteLocalAttachment(diveId: string, attachmentId: string) {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [ATTACHMENTS_STORE, DIVES_STORE],
+    "readwrite",
+  );
+  const attachmentsStore = transaction.objectStore(ATTACHMENTS_STORE);
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const [attachment, dive] = await Promise.all([
+    request<LocalAttachment | undefined>(attachmentsStore.get(attachmentId)),
+    request<LocalDive | undefined>(divesStore.get(diveId)),
+  ]);
+  if (!attachment || attachment.diveId !== diveId || !dive) {
+    transaction.abort();
+    throw new Error("Photo not found in this dive.");
+  }
+  attachmentsStore.delete(attachmentId);
+  divesStore.put({
+    ...dive,
+    photoCount: Math.max(0, (dive.photoCount ?? 0) - 1),
+  });
+  await transactionComplete(transaction);
+}
+
 export async function listLocalBackgrounds() {
   const database = await openDatabase();
   const backgrounds = await request<LocalBackground[]>(
@@ -826,6 +850,7 @@ export async function updateLocalDiveSite(
     catalogId?: string;
     latitude: number | null;
     longitude: number | null;
+    location?: string | null;
   },
 ) {
   const database = await openDatabase();
@@ -844,6 +869,10 @@ export async function updateLocalDiveSite(
   const now = new Date().toISOString();
   const updated: LocalDive = {
     ...dive,
+    location:
+      selection.location === undefined
+        ? dive.location
+        : selection.location?.trim() || null,
     userSite: selection.name,
     userSiteSource: selection.source,
     userSiteCatalogId: selection.catalogId ?? null,

@@ -26,6 +26,7 @@ export type NearbyCatalogSite = {
   aliases: string[];
   latitude: number;
   longitude: number;
+  location: string | null;
   distanceKm: number;
   source: "catalog";
 };
@@ -133,6 +134,7 @@ export function nearbySessionCatalogSites(
       aliases: site.aliases,
       latitude: site.coordinates.latitude,
       longitude: site.coordinates.longitude,
+      location: site.place.country ?? site.place.region ?? site.place.locality,
       distanceKm: distanceKm(
         latitude,
         longitude,

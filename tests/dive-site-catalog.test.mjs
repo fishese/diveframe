@@ -45,6 +45,7 @@ test("validates and finds nearby session catalog sites", () => {
   assert.equal(nearby.length, 1);
   assert.equal(nearby[0].catalogId, "hk-sharp-island-test-site");
   assert.equal(nearby[0].source, "catalog");
+  assert.equal(nearby[0].location, "Hong Kong");
 });
 
 test("defaults nearby catalog suggestions to a 12 km radius", () => {

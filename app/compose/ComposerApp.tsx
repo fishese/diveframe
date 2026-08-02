@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BookmarkPlus, ChevronDown, Crop, Download, ImagePlus, LoaderCircle, RotateCcw, Settings as SettingsIcon, Trash2, Waves } from "lucide-react";
+import { ArrowLeft, BookmarkPlus, ChevronDown, Crop, Download, House, ImagePlus, LoaderCircle, RotateCcw, Trash2, Waves } from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -47,7 +47,6 @@ import {
 import { toNormalizedDive } from "@/lib/normalize-dive";
 import { TEMPLATES } from "@/lib/templates";
 import { useAppI18n } from "../AppI18nProvider";
-import { AndroidAppLink } from "../components/AndroidAppLink";
 
 type PhotoChoice = {
   id: string;
@@ -447,13 +446,21 @@ export function ComposerApp() {
         </Link>
         <div className="composer-top-actions">
           <Link
-            href={`/?dive=${encodeURIComponent(dive.id)}`}
-            className="button button-quiet composer-back-to-dives"
+            href="/"
+            className="button button-quiet composer-home-link"
+            aria-label={t("home")}
+            title={t("home")}
           >
-            <ArrowLeft size={16} /> {t("backToDives")}
+            <House size={17} />
           </Link>
-          <Link href="/settings" className="button button-quiet composer-settings-link"><SettingsIcon size={16} /> {t("settings")}</Link>
-          <AndroidAppLink />
+          <Link
+            href={`/?dive=${encodeURIComponent(dive.id)}`}
+            className="button button-quiet composer-back-link"
+            aria-label={t("backToDives")}
+            title={t("backToDives")}
+          >
+            <ArrowLeft size={17} />
+          </Link>
           <button className="button button-primary" onClick={exportImage} disabled={!bitmap || exporting}>
             {exporting ? <LoaderCircle size={16} className="spin" /> : <Download size={16} />} {t("exportImage")}
           </button>

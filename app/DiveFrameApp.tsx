@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowDownToLine,
+  ArrowLeft,
   Briefcase,
   Bluetooth,
   Camera,
@@ -45,6 +46,7 @@ import {
   addLocalPhotos,
   clearLocalDiveSiteOverride,
   createLocalTrip,
+  deleteLocalAttachment,
   deleteLocalTrip,
   getLocalBackupSizeEstimate,
   getLocalAppPreferences,
@@ -81,7 +83,6 @@ import {
   formatCoordinatePair,
   parseCoordinatePair,
 } from "@/lib/coordinate-input";
-import { saveExportFile, savedFileNotice } from "@/lib/file-export";
 import { readPhotoExifGps } from "@/lib/photo-exif-gps";
 import { photoLocationCapability } from "@/lib/photo-location-capability";
 import { chartAvailability, renderDiveChart } from "@/lib/chart-renderer";
@@ -132,6 +133,7 @@ type NearbySite = {
   aliases?: string[];
   latitude: number;
   longitude: number;
+  location?: string | null;
   distanceKm: number;
   source: "catalog" | "openstreetmap";
 };
@@ -142,6 +144,7 @@ type SiteSelection = {
   catalogId?: string;
   latitude: number | null;
   longitude: number | null;
+  location?: string | null;
 };
 
 type SiteLocationSuggestion = {
@@ -234,7 +237,10 @@ export function DiveFrameApp() {
         setStorageEstimate(nextStorageEstimate);
         setTrips(nextTrips);
         setSupplementaryCatalog(nextSupplementaryCatalog);
-        setSelectedId(next[0]?.id ?? null);
+        const requestedDiveId = new URLSearchParams(window.location.search).get("dive");
+        const requestedDive = next.find((dive) => dive.id === requestedDiveId);
+        setSelectedId(requestedDive?.id ?? next[0]?.id ?? null);
+        setMobileDetail(Boolean(requestedDive));
         setStatus(next.length ? t("divesReady", { count: next.length }) : t("importDiveLog"));
         void requestPersistentLocalStorage();
       })
@@ -257,6 +263,18 @@ export function DiveFrameApp() {
       )
       .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    const requestedDiveId = new URLSearchParams(window.location.search).get("dive");
+    if (!requestedDiveId || requestedDiveId !== selectedId || !mobileDetail) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("dive-detail")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [mobileDetail, selectedId]);
 
   useEffect(() => {
     setBleImportAvailable(diveComputerCapability.isAvailable());
@@ -569,36 +587,17 @@ export function DiveFrameApp() {
     await savePhotoFiles(files);
   }
 
-  async function sharePhoto(attachment: Attachment) {
-    if (!selected) return;
+  async function deletePhoto(attachment: Attachment) {
+    if (!selected || !window.confirm(t("deletePhotoConfirm"))) return;
     setBusy(true);
-    setStatus(t("creatingShareCard"));
+    setStatus(t("deletingPhoto"));
     try {
-      const blob = await createShareCard(
-        selected,
-        attachment,
-        language,
-        t("dive"),
-        t("diveTime"),
-      );
-      const fileName = `dive-${selected.diveNumber ?? "log"}-share.png`;
-      const file = new File([blob], fileName, { type: "image/png" });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: displaySite(selected, t("unnamedDiveSite")),
-          text: `${t("dive")} ${selected.diveNumber ?? ""} · ${formatDate(selected.diveDate, language, t("dateUnknown"))}`,
-        });
-        setStatus(t("shareCardReady"));
-      } else {
-        const saved = await saveExportFile(blob, fileName, "image/png");
-        const notice = savedFileNotice(saved, t);
-        setStatus(notice ?? t("shareCardReady"));
-      }
+      await deleteLocalAttachment(selected.id, attachment.id);
+      setAttachments((current) => current.filter((item) => item.id !== attachment.id));
+      await refreshDives(selected.id);
+      setStatus(t("photoDeleted"));
     } catch (error) {
-      if ((error as DOMException)?.name !== "AbortError") {
-        setStatus(error instanceof Error ? error.message : t("shareCardFailed"));
-      }
+      setStatus(error instanceof Error ? error.message : t("photoDeleteFailed"));
     } finally {
       setBusy(false);
     }
@@ -899,7 +898,17 @@ export function DiveFrameApp() {
           </span>
         </button>
         <div className="topbar-actions">
-          {mobileDetail ? (
+          {importGuideOpen ? (
+            <button
+              type="button"
+              className="topbar-back-button"
+              onClick={() => setImportGuideOpen(false)}
+              aria-label={t("importGuideBack")}
+              title={t("importGuideBack")}
+            >
+              <ArrowLeft size={17} />
+            </button>
+          ) : mobileDetail ? (
             <button
               type="button"
               className="mobile-home-button"
@@ -973,7 +982,6 @@ export function DiveFrameApp() {
       {importGuideOpen ? (
         <ImportGuide
           busy={busy}
-          onBack={() => setImportGuideOpen(false)}
           onChooseFiles={() => importInput.current?.click()}
           t={t}
         />
@@ -1325,7 +1333,7 @@ export function DiveFrameApp() {
               </div>
             </aside>
 
-            <section className="detail-panel">
+            <section id="dive-detail" className="detail-panel">
               {selected ? (
                 <DiveDetail
                   key={selected.id}
@@ -1335,7 +1343,7 @@ export function DiveFrameApp() {
                   gpsNameAttempted={gpsNameAttempted.has(selected.id)}
                   onUpload={uploadPhotos}
                   onAddPhotoFiles={savePhotoFiles}
-                  onShare={sharePhoto}
+                  onDeletePhoto={deletePhoto}
                   onSaveSite={saveDiveSite}
                   onClearSiteOverride={clearDiveSiteOverride}
                   onSaveDetails={saveDiveDetails}
@@ -1486,7 +1494,7 @@ function DiveDetail({
   gpsNameAttempted,
   onUpload,
   onAddPhotoFiles,
-  onShare,
+  onDeletePhoto,
   onSaveSite,
   onClearSiteOverride,
   onSaveDetails,
@@ -1507,7 +1515,7 @@ function DiveDetail({
   gpsNameAttempted: boolean;
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onAddPhotoFiles: (files: File[]) => Promise<boolean>;
-  onShare: (attachment: Attachment) => void;
+  onDeletePhoto: (attachment: Attachment) => void;
   onSaveSite: (site: SiteSelection) => Promise<boolean>;
   onClearSiteOverride: () => Promise<boolean>;
   onSaveDetails: (details: {
@@ -1912,6 +1920,7 @@ function DiveDetail({
   async function saveSiteAndCollapse(selection: SiteSelection) {
     if (await onSaveSite(selection)) {
       setManualSite(selection.name);
+      if (selection.location) setLocationDraft(selection.location);
       setExpandedAliasSiteId(null);
       setSitePickerOpen(false);
     }
@@ -1965,6 +1974,7 @@ function DiveDetail({
         site.source === "catalog" ? nearbySiteCatalogId(site) : undefined,
       latitude: site.latitude,
       longitude: site.longitude,
+      location: site.location,
     };
   }
 
@@ -2270,14 +2280,19 @@ function DiveDetail({
           )}
 
           <div className="user-gps-editor">
-            <button
-              type="button"
-              className="button button-quiet detail-edit-button"
-              onClick={() => setGpsEditorOpen((value) => !value)}
-              disabled={busy}
-            >
-              {gpsEditorOpen ? t("cancel") : t("editLocation")}
-            </button>
+            <div className="user-gps-editor-header">
+              <div>
+                <p className="eyebrow">{t("location")}</p>
+              </div>
+              <button
+                type="button"
+                className="button button-quiet detail-edit-button"
+                onClick={() => setGpsEditorOpen((value) => !value)}
+                disabled={busy}
+              >
+                {gpsEditorOpen ? t("cancel") : t("editLocation")}
+              </button>
+            </div>
             {gpsEditorOpen ? (
               <div className="user-gps-editor-body">
                 <label className="coordinate-pair-field">
@@ -2296,9 +2311,7 @@ function DiveDetail({
                     autoComplete="off"
                     spellCheck={false}
                   />
-                  <small id={`coordinate-help-${dive.id}`}>
-                    {t("coordinatePairHint")}
-                  </small>
+                  <small id={`coordinate-help-${dive.id}`}>{t("coordinatePairHint")}</small>
                 </label>
                 {userGpsDraftInvalid ? (
                   <p className="coordinate-input-error" role="alert">
@@ -2843,26 +2856,29 @@ function DiveDetail({
           <div className="photo-grid">
             {attachments.map((attachment) => (
               <article className="photo-tile" key={attachment.id}>
-                <LocalPhotoImage
-                  attachment={attachment}
-                  alt={attachment.caption || `Dive ${dive.diveNumber ?? ""} photo`}
-                />
+                <Link
+                  href={`/compose?dive=${encodeURIComponent(dive.id)}&photo=${encodeURIComponent(attachment.id)}`}
+                  className="photo-compose-target"
+                  aria-label={t("compose")}
+                >
+                  <LocalPhotoImage
+                    attachment={attachment}
+                    alt={attachment.caption || `Dive ${dive.diveNumber ?? ""} photo`}
+                  />
+                </Link>
                 <div className="photo-overlay">
                   <span>{attachment.fileName}</span>
-                  <Link
-                    href={`/compose?dive=${encodeURIComponent(dive.id)}&photo=${encodeURIComponent(attachment.id)}`}
-                    className="photo-compose-link"
-                  >
-                    <Sparkles size={16} /> {t("compose")}
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => onShare(attachment)}
-                    disabled={busy}
-                  >
-                    <Share2 size={16} /> {t("shareCard")}
-                  </button>
                 </div>
+                <button
+                  type="button"
+                  className="photo-delete-button"
+                  onClick={() => onDeletePhoto(attachment)}
+                  disabled={busy}
+                  aria-label={t("deletePhoto")}
+                  title={t("deletePhoto")}
+                >
+                  <X size={15} />
+                </button>
               </article>
             ))}
           </div>
@@ -3063,110 +3079,6 @@ async function readDiveImport(file: File): Promise<ImportedDive[]> {
     return readShearwaterDatabase(file);
   }
   throw new Error(`Unsupported dive-log format: ${file.name}`);
-}
-
-async function createShareCard(
-  dive: Dive,
-  attachment: Attachment,
-  language: AppLanguage,
-  diveLabel: string,
-  diveTimeLabel: string,
-) {
-  const image = await loadImage(attachment.blob);
-  const canvas = document.createElement("canvas");
-  const width = 1440;
-  const height = 1800;
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("Canvas is unavailable.");
-
-  const scale = Math.max(width / image.width, height / image.height);
-  const drawWidth = image.width * scale;
-  const drawHeight = image.height * scale;
-  context.drawImage(
-    image,
-    (width - drawWidth) / 2,
-    (height - drawHeight) / 2,
-    drawWidth,
-    drawHeight,
-  );
-
-  const gradient = context.createLinearGradient(0, height * 0.46, 0, height);
-  gradient.addColorStop(0, "rgba(2, 18, 26, 0)");
-  gradient.addColorStop(0.52, "rgba(2, 18, 26, 0.62)");
-  gradient.addColorStop(1, "rgba(2, 18, 26, 0.96)");
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, width, height);
-
-  context.fillStyle = "#8debd7";
-  context.font = "600 30px Arial";
-  context.fillText(`${diveLabel.toUpperCase()} ${dive.diveNumber ?? "—"}  ·  ${formatDate(dive.diveDate, language, "").toUpperCase()}`, 96, 1385);
-  context.fillStyle = "#ffffff";
-  context.font = "700 78px Arial";
-  drawWrappedText(context, displaySite(dive, ""), 96, 1485, width - 192, 86, 2);
-
-  const details = [
-    `${formatDepth(dive.depth)} MAX`,
-    `${formatDuration(dive.lengthText)} ${diveTimeLabel.toUpperCase()}`,
-    dive.buddy ? `WITH ${dive.buddy.toUpperCase()}` : null,
-  ].filter(Boolean);
-  context.fillStyle = "rgba(255,255,255,.86)";
-  context.font = "500 28px Arial";
-  context.fillText(details.join("   ·   "), 96, 1700);
-  context.fillStyle = "#8debd7";
-  context.font = "700 26px Arial";
-  context.fillText("DIVEFRAME", 96, 1760);
-
-  return await new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("Image export failed."))),
-      "image/png",
-      0.94,
-    ),
-  );
-}
-
-function drawWrappedText(
-  context: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  maxWidth: number,
-  lineHeight: number,
-  maxLines: number,
-) {
-  const words = text.split(/\s+/);
-  let line = "";
-  let lineNumber = 0;
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word;
-    if (context.measureText(test).width > maxWidth && line) {
-      context.fillText(line, x, y + lineNumber * lineHeight);
-      line = word;
-      lineNumber += 1;
-      if (lineNumber >= maxLines) return;
-    } else {
-      line = test;
-    }
-  }
-  if (lineNumber < maxLines) context.fillText(line, x, y + lineNumber * lineHeight);
-}
-
-function loadImage(blob: Blob) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const url = URL.createObjectURL(blob);
-    const image = new Image();
-    image.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(image);
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("This photo format cannot be rendered by the browser."));
-    };
-    image.src = url;
-  });
 }
 
 function displaySite(

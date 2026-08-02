@@ -195,6 +195,20 @@ button {
   width: 34px;
 }
 
+.topbar-back-button {
+  align-items: center;
+  background: rgba(141, 235, 215, 0.08);
+  border: 1px solid rgba(141, 235, 215, 0.18);
+  border-radius: 9px;
+  color: var(--teal);
+  cursor: pointer;
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  padding: 0;
+  width: 34px;
+}
+
 .status-pill {
   align-items: center;
   color: var(--muted);
@@ -338,9 +352,13 @@ button {
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid var(--line);
   border-radius: 14px;
+  align-content: center;
+  gap: 4px;
+  justify-items: center;
   display: grid;
   min-height: 86px;
   padding: 11px;
+  text-align: center;
 }
 
 .stat > span {
@@ -348,7 +366,6 @@ button {
 }
 
 .stat strong {
-  align-self: end;
   font-size: 18px;
   letter-spacing: -0.04em;
 }
@@ -794,6 +811,7 @@ button {
 
 .detail-panel {
   overflow-y: auto;
+  scroll-margin-top: 76px;
   background:
     radial-gradient(circle at 90% 0, rgba(77, 208, 184, 0.08), transparent 28rem),
     var(--ink-soft);
@@ -893,9 +911,13 @@ button {
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid var(--line);
   border-radius: 17px;
+  align-content: center;
+  gap: 4px;
+  justify-items: center;
   display: grid;
   min-height: 76px;
   padding: 10px;
+  text-align: center;
 }
 
 .metric > span {
@@ -908,10 +930,8 @@ button {
 }
 
 .metric small {
-  align-self: end;
   color: var(--muted);
   font-size: 9px;
-  margin-top: 7px;
 }
 
 .metric strong {
@@ -1181,11 +1201,31 @@ button {
 }
 
 .user-gps-editor {
-  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line);
+  border-radius: 14px;
   display: grid;
   gap: 10px;
   margin-top: 14px;
-  padding-top: 14px;
+  padding: 14px;
+}
+
+.user-gps-editor-header {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.user-gps-editor-header .eyebrow {
+  margin: 0 0 4px;
+}
+
+.user-gps-editor-header small {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .user-gps-editor-body {
@@ -1196,6 +1236,14 @@ button {
 .coordinate-pair-field {
   display: grid;
   gap: 6px;
+}
+
+.coordinate-pair-field > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .coordinate-pair-field input {
@@ -1233,9 +1281,13 @@ button {
 }
 
 .user-gps-editor-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.user-gps-editor-actions .button {
+  min-width: 0;
 }
 
 .photo-location-keep {
@@ -1542,45 +1594,44 @@ button {
   display: flex;
   justify-content: space-between;
   left: 0;
-  padding: 35px 12px 12px;
+  padding: 28px 8px 7px;
+  pointer-events: none;
   position: absolute;
   right: 0;
 }
 
 .photo-overlay span {
   font-size: 10px;
-  max-width: 45%;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.photo-overlay button {
-  align-items: center;
-  background: var(--teal);
-  border: 0;
-  border-radius: 9px;
-  color: var(--ink);
+.photo-compose-target {
   cursor: pointer;
-  display: flex;
-  font-size: 10px;
-  font-weight: 800;
-  gap: 5px;
-  padding: 8px 10px;
+  inset: 0;
+  position: absolute;
+  text-decoration: none;
+  z-index: 1;
 }
 
-.photo-compose-link {
+.photo-delete-button {
   align-items: center;
-  background: rgba(7, 27, 36, 0.88);
-  border: 1px solid rgba(141, 235, 215, 0.35);
-  border-radius: 9px;
+  background: #d9534f;
+  border: 0;
+  border-radius: 4px;
   color: #fff;
+  cursor: pointer;
   display: flex;
-  font-size: 10px;
-  font-weight: 800;
-  gap: 5px;
-  padding: 8px 10px;
-  text-decoration: none;
+  height: 21px;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 21px;
+  z-index: 2;
 }
 
 .photo-gallery-actions {
@@ -1695,6 +1746,11 @@ button {
 .composer-top-actions {
   display: flex;
   gap: 8px;
+}
+
+.composer-home-link,
+.composer-back-link {
+  padding: 8px;
 }
 
 .composer-shell {
@@ -2220,7 +2276,7 @@ button {
 .shared-background-grid {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .shared-background-choice {
@@ -2291,10 +2347,6 @@ button {
 .import-guide-shell {
   margin: 0 auto;
   max-width: 1080px;
-}
-
-.import-guide-back {
-  margin-bottom: 22px;
 }
 
 .import-guide-shell h1 {
@@ -3928,7 +3980,8 @@ button {
   }
 
   .photo-grid {
-    grid-template-columns: 1fr;
+    gap: 6px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .site-suggestions {
@@ -3945,6 +3998,20 @@ button {
 
   .photo-tile {
     aspect-ratio: 4 / 3;
+  }
+
+  .user-gps-editor-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .user-gps-editor-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .user-gps-editor-header .detail-edit-button {
+    width: 100%;
   }
 
   .empty-state {

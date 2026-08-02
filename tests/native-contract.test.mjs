@@ -329,6 +329,8 @@ test("exports are written natively because the WebView drops blob downloads", as
   assert.match(plugin, /Base64\.decode/);
   assert.match(plugin, /Intent\.ACTION_SEND/);
   assert.match(mainActivity, /registerPlugin\(FileExportPlugin\.class\)/);
+  assert.match(mainActivity, /DEFAULT_TEXT_ZOOM_PERCENT = 100/);
+  assert.match(mainActivity, /setTextZoom\(DEFAULT_TEXT_ZOOM_PERCENT\)/);
 
   assert.match(helper, /Capacitor\.isPluginAvailable\("FileExport"\)/);
   assert.match(helper, /blob\.slice\(offset/);
@@ -341,7 +343,6 @@ test("exports are written natively because the WebView drops blob downloads", as
   }
   assert.match(settings, /saveExportFile\(/);
   assert.match(settings, /shareExportFile\(/);
-  assert.match(app, /saveExportFile\(/);
   assert.match(exporter, /saveExportFile\(/);
   assert.match(pwa, /Capacitor\.isNativePlatform\(\)/);
   assert.match(pwa, /isNative \? t\("deviceStorageTitle"\)/);

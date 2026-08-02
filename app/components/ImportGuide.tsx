@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeft,
   Bluetooth,
   Database,
   FileText,
@@ -55,23 +54,16 @@ const SUBSURFACE_COMPUTER_FAMILIES = [
 
 export function ImportGuide({
   busy,
-  onBack,
   onChooseFiles,
   t,
 }: {
   busy: boolean;
-  onBack: () => void;
   onChooseFiles: () => void;
   t: AppTranslate;
 }) {
   return (
     <section className="import-guide-page">
       <div className="import-guide-shell">
-        <button type="button" className="button button-quiet import-guide-back" onClick={onBack}>
-          <ArrowLeft size={16} />
-          {t("importGuideBack")}
-        </button>
-
         <p className="eyebrow">{t("importDiveLog")}</p>
         <h1>{t("importGuideTitle")}</h1>
         <p className="import-guide-intro">{t("importGuideIntro")}</p>
