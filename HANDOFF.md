@@ -63,11 +63,13 @@ Shipped on `main` (pushed):
   About/import guidance shipped in `61aa342`. FIT import is implemented but
   labelled untested; Shearwater Cloud databases are described as basic-only,
   while detailed classic Shearwater Bluetooth import is Android-only.
-- Android debug APK **1.0.7** (`versionCode 8`) was rebuilt from shared-client
-  commit `30e269b` and published as GitHub release `v0.1.0-debug.7`, containing
-  `diveframe-debug.apk`; the stable download URL uses `releases/latest`
+- Android debug APK **1.0.8** (`versionCode 9`) was rebuilt from shared-client
+  commit `8f7348f` and published as GitHub release `v0.1.0-debug.8`, containing
+  `diveframe-debug.apk`; SHA-256 is
+  `0A5ED49C5DFAE23A015F7F10261C34F4AB679A76A7991639F223704778ED3212`.
+  The stable download URL uses `releases/latest`.
 - Current dogfooding state: the updated hosted web/PWA and Android APK are
-  ready for continued testing; no additional feature work is queued.
+  ready for continued testing.
 
 Open follow-ups:
 
