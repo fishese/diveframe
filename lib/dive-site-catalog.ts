@@ -31,7 +31,7 @@ export type NearbyCatalogSite = {
   source: "catalog";
 };
 
-export const NEARBY_SITE_RADIUS_KM = 12;
+export const NEARBY_SITE_RADIUS_KM = 6;
 
 const SESSION_CATALOG_KEY = "diveframe-session-dive-site-catalog";
 const SESSION_CATALOG_LABEL_KEY = "diveframe-session-dive-site-catalog-label";

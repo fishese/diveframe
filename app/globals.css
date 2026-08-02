@@ -1180,8 +1180,11 @@ button {
   margin: 0;
 }
 
-.details-editor > .button {
-  justify-self: start;
+.details-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
 }
 
 .trip-editor {

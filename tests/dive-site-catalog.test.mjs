@@ -48,8 +48,8 @@ test("validates and finds nearby session catalog sites", () => {
   assert.equal(nearby[0].location, "Hong Kong");
 });
 
-test("defaults nearby catalog suggestions to a 12 km radius", () => {
-  assert.equal(catalogTools.NEARBY_SITE_RADIUS_KM, 12);
+test("defaults nearby catalog suggestions to a 6 km radius", () => {
+  assert.equal(catalogTools.NEARBY_SITE_RADIUS_KM, 6);
   const tooFar = catalogTools.nearbySessionCatalogSites(
     catalog,
     22.48,

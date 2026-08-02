@@ -47,6 +47,8 @@ import {
   clearLocalDiveSiteOverride,
   createLocalTrip,
   deleteLocalAttachment,
+  deleteLocalDive,
+  deleteLocalDiveBySource,
   deleteLocalTrip,
   getLocalBackupSizeEstimate,
   getLocalAppPreferences,
@@ -160,6 +162,7 @@ type SharedBackgroundChoice = {
 };
 
 const MINIMUM_AVERAGE_SAC_DURATION_SECONDS = 20 * 60;
+const SAMPLE_DIVE_SOURCE_ID = "id:diveframe-sample-2030";
 
 export function DiveFrameApp() {
   const { language, t } = useAppI18n();
@@ -219,7 +222,12 @@ export function DiveFrameApp() {
     setDives(next);
     setStorageEstimate(nextStorageEstimate);
     setTrips(nextTrips);
-    setSelectedId((current) => preferredId ?? current ?? next[0]?.id ?? null);
+    setSelectedId((current) =>
+      preferredId ??
+      (current && next.some((dive) => dive.id === current)
+        ? current
+        : next[0]?.id ?? null),
+    );
     setStatus(next.length ? t("divesReady", { count: next.length }) : t("importDiveLog"));
   }, [t]);
 
@@ -554,6 +562,9 @@ export function DiveFrameApp() {
         await Promise.all(files.map((file) => readDiveImport(file)))
       ).flat();
       setStatus(t("foundDives", { count: imported.length }));
+      if (imported.some((dive) => dive.sourceId !== SAMPLE_DIVE_SOURCE_ID)) {
+        await deleteLocalDiveBySource("uddf", SAMPLE_DIVE_SOURCE_ID);
+      }
       await upsertLocalDives(imported);
       await refreshDives();
     } catch (error) {
@@ -598,6 +609,22 @@ export function DiveFrameApp() {
       setStatus(t("photoDeleted"));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("photoDeleteFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadSampleLog() {
+    setBusy(true);
+    setStatus(t("loadingSampleLog"));
+    try {
+      const response = await fetch("/examples/sample-dive.uddf");
+      if (!response.ok) throw new Error(t("sampleLogLoadFailed"));
+      await upsertLocalDives(readUddfLog(await response.text()));
+      await refreshDives();
+      setStatus(t("sampleLogLoaded"));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("sampleLogLoadFailed"));
     } finally {
       setBusy(false);
     }
@@ -666,6 +693,25 @@ export function DiveFrameApp() {
       return true;
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("diveDetailsSaveFailed"));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteDiveLog(id: string) {
+    setBusy(true);
+    setStatus(t("deletingDiveLog"));
+    try {
+      await deleteLocalDive(id);
+      setAttachments([]);
+      setSelectedId(null);
+      setMobileDetail(false);
+      await refreshDives();
+      setStatus(t("diveLogDeleted"));
+      return true;
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("diveLogDeleteFailed"));
       return false;
     } finally {
       setBusy(false);
@@ -989,6 +1035,7 @@ export function DiveFrameApp() {
         <EmptyState
           busy={busy}
           onImport={() => setImportGuideOpen(true)}
+          onLoadSample={() => void loadSampleLog()}
           status={status}
         />
       ) : (
@@ -1347,6 +1394,7 @@ export function DiveFrameApp() {
                   onSaveSite={saveDiveSite}
                   onClearSiteOverride={clearDiveSiteOverride}
                   onSaveDetails={saveDiveDetails}
+                  onDeleteDive={deleteDiveLog}
                   onSaveUserGps={saveDiveUserGps}
                   siteSuggestions={siteSuggestions}
                   locationSuggestions={locationSuggestions}
@@ -1372,10 +1420,12 @@ export function DiveFrameApp() {
 function EmptyState({
   busy,
   onImport,
+  onLoadSample,
   status,
 }: {
   busy: boolean;
   onImport: () => void;
+  onLoadSample: () => void;
   status: string;
 }) {
   const { t } = useAppI18n();
@@ -1398,6 +1448,14 @@ function EmptyState({
         >
           {busy ? <LoaderCircle className="spin" /> : <ArrowDownToLine />}
           {t("chooseDiveLog")}
+        </button>
+        <button
+          type="button"
+          className="button button-secondary"
+          onClick={onLoadSample}
+          disabled={busy}
+        >
+          {t("loadSampleLog")}
         </button>
         <span className="empty-status">{status}</span>
       </div>
@@ -1498,6 +1556,7 @@ function DiveDetail({
   onSaveSite,
   onClearSiteOverride,
   onSaveDetails,
+  onDeleteDive,
   onSaveUserGps,
   siteSuggestions,
   locationSuggestions,
@@ -1527,6 +1586,7 @@ function DiveDetail({
     startPressureBar?: number | null;
     endPressureBar?: number | null;
   }) => Promise<boolean>;
+  onDeleteDive: (diveId: string) => Promise<boolean>;
   onSaveUserGps: (
     diveId: string,
     gps: { lat: number; lng: number; source: UserGpsSource } | null,
@@ -1564,6 +1624,7 @@ function DiveDetail({
   );
   const siteEditorRef = useRef<HTMLDetailsElement>(null);
   const [editingDetails, setEditingDetails] = useState(false);
+  const [deleteDiveConfirmOpen, setDeleteDiveConfirmOpen] = useState(false);
   const [buddyDraft, setBuddyDraft] = useState(dive.buddy ?? "");
   const [notesDraft, setNotesDraft] = useState(dive.notes ?? "");
   const [tripDraft, setTripDraft] = useState(dive.tripId ?? "");
@@ -2631,13 +2692,23 @@ function DiveDetail({
                 </label>
               </div>
               <p>{t("localDetailsHint")}</p>
-              <button
-                type="submit"
-                className="button button-primary"
-                disabled={busy}
-              >
-                {t("saveChanges")}
-              </button>
+              <div className="details-editor-actions">
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={busy}
+                >
+                  {t("saveChanges")}
+                </button>
+                <button
+                  type="button"
+                  className="button button-danger-secondary"
+                  disabled={busy}
+                  onClick={() => setDeleteDiveConfirmOpen(true)}
+                >
+                  {t("deleteDiveLog")}
+                </button>
+              </div>
             </form>
           ) : null}
           <dl className="details-list">
@@ -2706,7 +2777,7 @@ function DiveDetail({
               {dive.userSite && <small>{t("selectedExpand")}</small>}
             </div>
             <span className="site-picker-toggle">
-              {t("within30Km")} <ChevronDown size={17} />
+              {t("within6Km")} <ChevronDown size={17} />
             </span>
           </summary>
           <div className="site-picker-body">
@@ -2926,6 +2997,65 @@ function DiveDetail({
           </Link>
         </div>
       </section>
+
+      {deleteDiveConfirmOpen ? (
+        <div
+          className="photo-location-help-backdrop"
+          role="presentation"
+          onClick={() => {
+            if (!busy) setDeleteDiveConfirmOpen(false);
+          }}
+        >
+          <section
+            className="photo-location-help-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`delete-dive-title-${dive.id}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="photo-location-help-header">
+              <h2 id={`delete-dive-title-${dive.id}`}>
+                {t("deleteDiveLogTitle")}
+              </h2>
+              <button
+                type="button"
+                className="button button-quiet"
+                disabled={busy}
+                onClick={() => setDeleteDiveConfirmOpen(false)}
+                aria-label={t("cancel")}
+                title={t("cancel")}
+              >
+                <X size={16} />
+              </button>
+            </header>
+            <p>{t("deleteDiveLogDescription")}</p>
+            <div className="details-editor-actions">
+              <button
+                type="button"
+                className="button button-quiet"
+                disabled={busy}
+                onClick={() => setDeleteDiveConfirmOpen(false)}
+              >
+                {t("cancel")}
+              </button>
+              <button
+                type="button"
+                className="button button-danger"
+                disabled={busy}
+                onClick={() => {
+                  void (async () => {
+                    if (await onDeleteDive(dive.id)) {
+                      setDeleteDiveConfirmOpen(false);
+                    }
+                  })();
+                }}
+              >
+                {t("deleteDiveLog")}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {photoLocationHelpOpen ? (
         <div

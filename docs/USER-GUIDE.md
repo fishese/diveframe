@@ -51,6 +51,11 @@ The **Import log** button accepts one or more of:
 - UDDF `.uddf` or XML logs, including Oceanic+ exports
 - Dive `.fit` activities exported from Garmin Dive or the current Suunto app
 
+If the logbook is empty, choose **Load sample log** to try the app with the
+included 2030-dated UDDF example. DiveFrame removes that sample automatically
+when you import a different log; you can also delete it from **Edit dive
+details**.
+
 ### Android: Download from computer
 
 In the DiveFrame Android app (not the browser PWA), **Download from computer**
@@ -336,10 +341,10 @@ expanded at a time. Manual typing in **Edit dive details** remains unchanged.
   statistics, units, English/Traditional Chinese/Japanese overlay language,
   styling, and optional logo
 - A complete DiveFrame app-data backup for transfer or recovery
-- A JSON log of manually added dive sites that have coordinates
-- A merged `dive-sites.json` catalog for review and updating the app repository
 - An updated copy of a freshly supplied Subsurface `.ssrf`/XML export, with
   matched site names, buddy, and notes added
+- A portable Subsurface logbook generated from the local DiveFrame data when
+  every dive has a date, duration, and usable depth/time profile
 
 ## Using a regional dive-site catalog
 
@@ -347,10 +352,9 @@ In **Settings**, choose a compatible `dive-sites.json` under **Dive-site
 catalog**. Its sites are added to—not substituted for—the catalog included
 with DiveFrame. The supplementary file is saved on this device in IndexedDB,
 survives reloads and app restarts, and is included in **Export app data**
-backups. The combined list is used for nearby-site suggestions and for the
-existing merge/download tools. Duplicate IDs and identical name/coordinate
-entries retain the bundled entry. Remove the additional catalog from the same
-card at any time.
+backups. The combined list is used for nearby-site suggestions. Duplicate IDs
+and identical name/coordinate entries retain the bundled entry. Remove the
+additional catalog from the same card at any time.
 
 If you need a catalog for another region, download the AI catalog prompt from
 that card, replace the region placeholder, and give it to an AI assistant that
@@ -429,14 +433,14 @@ and vertical position sliders for fine adjustment. The offsets are saved with
 that dive's composer settings and are applied identically to preview and
 high-resolution export. The renderer keeps the logo inside the image canvas.
 
-### Updating a Subsurface copy
+### Updating a Subsurface logbook
 
 The normalized DiveFrame import is lossy: it keeps the fields needed by the
 app, but not every Subsurface setting, event, cylinder attribute, or extension.
 It therefore cannot safely reconstruct a complete Subsurface log from
 IndexedDB.
 
-Use **Settings → Update a Subsurface export** instead:
+Use **Settings → Update a Subsurface logbook** instead:
 
 1. Export a fresh `.ssrf` or XML file from Subsurface.
 2. Select that file in DiveFrame.
@@ -449,7 +453,15 @@ cylinders, and fields DiveFrame does not parse, remains in the supplied copy.
 The original selected file is never overwritten. Site names selected in
 DiveFrame take priority, followed by a matched Shearwater site name.
 
-DiveFrame does not currently create modified Shearwater, UDDF, or FIT logs.
+DiveFrame does not create modified Shearwater, UDDF, or FIT logs.
+
+To create a portable logbook from the data already in DiveFrame, use
+**Settings → Export full Subsurface logbook**. After you click the button,
+DiveFrame checks every local dive for a date, duration, and a usable
+depth-over-time profile. If any record is incomplete, it does not create a
+file. The output includes the normalized site, GPS, buddy, notes, gas, computer,
+depth, temperature, and sample data, but it cannot preserve unknown Subsurface
+extensions or events from an original file.
 
 Cylinder choice, manual pressure values, category, broader location, photos,
 and image-composer settings remain DiveFrame-local. They are not written by the

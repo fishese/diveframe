@@ -88,6 +88,10 @@ import {
 } from "@/lib/file-export";
 import { addDiveFrameSitesToSubsurface } from "@/lib/subsurface-site-export";
 import {
+  createSubsurfaceLogbook,
+  validateSubsurfaceLogbookExport,
+} from "@/lib/subsurface-logbook-export";
+import {
   fetchWhatsNewDocument,
   renderWhatsNewBody,
   sanitizeWhatsNewHref,
@@ -711,54 +715,50 @@ export function SettingsApp() {
     }
   }
 
+  async function exportFullSubsurfaceLogbook() {
+    setBusy(true);
+    setStatus(t("preparingSubsurfaceLogbook"));
+    try {
+      const localDives = await listLocalDives();
+      if (!localDives.length) {
+        setStatus(t("noDivesForSubsurfaceLogbook"));
+        return;
+      }
+      const validation = validateSubsurfaceLogbookExport(localDives);
+      if (!validation.ok) {
+        setStatus(
+          t("subsurfaceLogbookIncomplete", {
+            count: validation.incompleteDiveIds.length,
+          }),
+        );
+        return;
+      }
+      const saved = await saveExportFile(
+        new Blob([createSubsurfaceLogbook(localDives)], {
+          type: "application/xml;charset=utf-8",
+        }),
+        "diveframe-suburface-logbook.ssrf",
+        "application/xml",
+      );
+      setStatus(
+        withSavedFileNotice(
+          t("subsurfaceLogbookExportComplete", { count: localDives.length }),
+          saved,
+        ),
+      );
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : t("subsurfaceLogbookExportFailed"),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const mergePreview = useMemo(
     () => mergeContributions(catalog, reviewedSites),
     [catalog, reviewedSites],
   );
-
-  async function exportAddedSiteLog() {
-    const includedSites = reviewedSites.filter((site) => site.name.trim());
-    const payload = {
-      schemaVersion: 1,
-      generatedAt: new Date().toISOString(),
-      description:
-        "Dive sites typed into DiveFrame. Review before adding them to data/dive-sites.json.",
-      sites: includedSites.map(contributionForExport),
-    };
-    try {
-      const saved = await saveJson(payload, "diveframe-added-sites.json");
-      setStatus(
-        withSavedFileNotice(
-          t("reviewedSitesExported", {
-            count: includedSites.length,
-            suffix: includedSites.length === 1 ? "" : "s",
-          }),
-          saved,
-        ),
-      );
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : t("backupFailed"));
-    }
-  }
-
-  async function downloadMergedCatalog() {
-    try {
-      const saved = await saveJson(mergePreview.catalog, "dive-sites.json");
-      setStatus(
-        withSavedFileNotice(
-          t("mergedCatalogDownloaded", {
-            added: mergePreview.added,
-            addedSuffix: mergePreview.added === 1 ? "" : "s",
-            skipped: mergePreview.skipped,
-            skippedSuffix: mergePreview.skipped === 1 ? "" : "s",
-          }),
-          saved,
-        ),
-      );
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : t("backupFailed"));
-    }
-  }
 
   async function shareSavedBackup() {
     if (!savedBackup) return;
@@ -1441,28 +1441,6 @@ export function SettingsApp() {
             {t("catalogSharingInvitation")}
           </p>
 
-          <div className="settings-actions">
-            <button
-              type="button"
-              className="button button-secondary"
-              onClick={() => void exportAddedSiteLog()}
-              disabled={busy || reviewedSites.length === 0}
-            >
-              <Download size={16} /> {t("exportAdditionLog")}
-            </button>
-            <button
-              type="button"
-              className="button button-primary"
-              onClick={() => void downloadMergedCatalog()}
-              disabled={busy || reviewedSites.length === 0}
-            >
-              <Download size={16} /> {t("downloadMergedCatalog")}
-            </button>
-          </div>
-
-          <p className="settings-note">
-            {t("mergeCatalogNote")}
-          </p>
         </section>
 
         <section className="settings-card duplicate-settings">
@@ -1617,6 +1595,17 @@ export function SettingsApp() {
           <p className="settings-note">
             {t("subsurfacePassThroughNote")}
           </p>
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() => void exportFullSubsurfaceLogbook()}
+            disabled={busy}
+          >
+            <Download size={16} /> {t("exportSubsurfaceLogbook")}
+          </button>
+          <p className="settings-note">
+            {t("exportSubsurfaceLogbookNote")}
+          </p>
         </section>
 
         <section className="settings-card storage-settings">
@@ -1715,7 +1704,6 @@ export function SettingsApp() {
     </main>
   );
 }
-
 function backupImpact(backup: PreparedAppBackup) {
   return Object.values(backup.stores).reduce(
     (totals, store) => ({
@@ -1855,30 +1843,6 @@ function LogoPreview({ logo }: { logo: LocalBrandingAsset }) {
   );
 }
 
-function contributionForExport(site: SiteContributionDraft) {
-  return {
-    name: site.name,
-    aliases: aliasesForDraft(site),
-    coordinates: {
-      latitude: site.latitude,
-      longitude: site.longitude,
-    },
-    linkedDive: {
-      diveId: site.diveId,
-      diveDate: site.diveDate,
-      shearwaterDiveNumber: site.shearwaterDiveNumber,
-      subsurfaceDiveNumber: site.subsurfaceDiveNumber,
-    },
-    source: {
-      kind: "diveframe_manual",
-      reference: `diveframe-dive:${site.diveId}`,
-    },
-    status: "candidate",
-    createdAt: site.createdAt,
-    updatedAt: site.updatedAt,
-  };
-}
-
 function mergeContributions(
   base: DiveSiteCatalog,
   contributions: SiteContributionDraft[],
@@ -2004,11 +1968,4 @@ function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
       Math.cos(radians(lat2)) *
       Math.sin(deltaLng / 2) ** 2;
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function saveJson(value: unknown, fileName: string) {
-  const blob = new Blob([JSON.stringify(value, null, 2)], {
-    type: "application/json",
-  });
-  return saveExportFile(blob, fileName, "application/json");
 }

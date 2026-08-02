@@ -55,7 +55,7 @@ a destructive migration has been discussed and agreed in advance.
 | Top-bar native action | Shows the phone link to `/android`; no Web Bluetooth import | Shows classic Shearwater Bluetooth download instead of the phone link |
 | File export | Browser blob download | `FileExportPlugin` writes to Android Downloads and can open the share sheet |
 | Photo GPS | Browser file picker and exifr-lite JavaScript GPS reader for JPEG/HEIC/HEIF; browser-controlled pickers may redact GPS, especially on Android | `PhotoLocationPlugin` requests `ACCESS_MEDIA_LOCATION` and uses the MediaStore picker plus original selected photo URI |
-| Nearby site suggestions | Bundled/supplementary/online suggestions are limited to 12 km from available coordinates | Same bundled client behavior; rebuild the APK when the shared cutoff changes |
+| Nearby site suggestions | Bundled/supplementary/online suggestions are limited to 6 km from available coordinates | Same bundled client behavior; rebuild the APK when the shared cutoff changes |
 | Dive-computer Bluetooth | Not supported | `DiveComputerPlugin` plus JNI/libdivecomputer; classic Shearwater only, not Perdix 3 |
 | Service worker | Registered and used | Unregistered/cleared by `PwaManager`; the packaged client is the offline shell |
 | Permissions | Browser-selected file/location capabilities | Android manifest permissions for Bluetooth, older-Android BLE discovery, internet, and unredacted photo location |

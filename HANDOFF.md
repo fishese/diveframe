@@ -51,7 +51,7 @@ Shipped on `main` (pushed):
   their location metadata stripped, so the picker keeps its previous broad
   file-selection behavior and shows a concise explanation with a link to the
   Android app when no location is found. Keeping the selected location photo is
-  opt-in. Nearby site suggestions are limited to 12 km from the available GPS
+  opt-in. Nearby site suggestions are limited to 6 km from the available GPS
   coordinates.
 - Native Downloads export plugin; Settings **What's new** feed with HTTPS CTAs
 - Official dive-site catalog remains build-bundled only (web deploy / new APK)
@@ -234,7 +234,7 @@ deploy / APK build. A user-loaded **supplementary** catalog is stored in
 IndexedDB, combined additively with the bundled catalog for nearby suggestions,
 included in app-data backups, and cleared by erase-all (not by dive-only erase).
 A one-time helper migrates any legacy `sessionStorage` catalog into IndexedDB.
-`lib/dive-site-catalog.ts` validates catalogs and ranks sites within 12 km.
+`lib/dive-site-catalog.ts` validates catalogs and ranks sites within 6 km.
 The downloadable prompt at `public/examples/dive-site-catalog-ai-prompt.md`
 helps users create regional catalogs for human review.
 
@@ -375,7 +375,7 @@ labelled approximate.
 ## Dive-site catalog and contribution log
 
 `data/dive-sites.json` is the primary nearby-site source. Active entries within
-12 km are returned nearest-first; OpenStreetMap is queried only when the local
+6 km are returned nearest-first; OpenStreetMap is queried only when the local
 catalog has no nearby match. The same cutoff is applied to bundled,
 supplementary, and online fallback results.
 
@@ -386,11 +386,10 @@ Selecting a catalog or map suggestion stores the assignment on the local dive.
 Typing a new name for a GPS-backed dive additionally creates or updates a
 `siteContributions` record using the dive's GPS position. A manual site without
 coordinates remains a valid local site override but is not offered for catalog
-merge. The settings page can export coordinate-backed records as
-`diveframe-added-sites.json`, or merge them into the built-in (or a user-chosen
-newer) catalog and download a replacement `dive-sites.json`. Same-name sites
-within 250 metres are treated as duplicates. The deployed browser cannot
-directly commit changes to the repository.
+merge. The settings review/export controls are currently archived under
+`scripts/archive/catalog-review-export/` while the catalog workflow is decided.
+Same-name sites within 250 metres are treated as duplicates. The deployed
+browser cannot directly commit changes to the repository.
 
 The supplied full test data produced 168 cross-source matches and 19
 Subsurface-only records. Perdix dives 17, 18, and 19 received their Subsurface
@@ -639,8 +638,8 @@ before hosted sync.
 - Add browser integration tests for IndexedDB, backup/restore, PWA updates, and
   high-resolution image export.
 - Consider image downscaling or optional originals for large phone photos.
-- Add a catalog-maintenance script that validates and imports reviewed entries
-  from `diveframe-added-sites.json`.
+- Decide whether to restore the archived catalog-review exports, then add a
+  catalog-maintenance script for the selected workflow.
 
 ## Recovery and rollback
 

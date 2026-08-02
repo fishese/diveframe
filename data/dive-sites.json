@@ -445,6 +445,29 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "bq-kralendijk-1000-steps",
+      "name": "1000 Steps",
+      "aliases": [
+        "Thousand Steps"
+      ],
+      "coordinates": {
+        "latitude": 12.211,
+        "longitude": -68.339
+      },
+      "place": {
+        "countryCode": "BQ",
+        "country": "Caribbean Netherlands",
+        "region": "Bonaire",
+        "locality": "Kralendijk"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "bz-great-blue-hole",
       "name": "Great Blue Hole",
       "aliases": [],
@@ -464,6 +487,27 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T00:00:00.000Z"
+    },
+    {
+      "id": "bz-lighthouse-half-moon-caye",
+      "name": "Half Moon Caye Wall",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 17.2047,
+        "longitude": -87.5364
+      },
+      "place": {
+        "countryCode": "BZ",
+        "country": "Belize",
+        "region": "Belize District",
+        "locality": "Lighthouse Reef"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "cr-cocos-bajo-alcyone",
@@ -487,6 +531,48 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "cr-cocos-manuelita",
+      "name": "Manuelita",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 5.533,
+        "longitude": -87.057
+      },
+      "place": {
+        "countryCode": "CR",
+        "country": "Costa Rica",
+        "region": "Puntarenas",
+        "locality": "Cocos Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "cv-santamaria-regulus-wreck",
+      "name": "Regulus Wreck",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 16.599,
+        "longitude": -22.898
+      },
+      "place": {
+        "countryCode": "CV",
+        "country": "Cabo Verde",
+        "region": "Sal",
+        "locality": "Santa Maria"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "cv-tchuklassa",
       "name": "Tchuklassa",
       "aliases": [],
@@ -506,6 +592,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "cy-capegreco-reef",
+      "name": "Cape Greco",
+      "aliases": [
+        "Cavo Greko"
+      ],
+      "coordinates": {
+        "latitude": 34.958,
+        "longitude": 34.06
+      },
+      "place": {
+        "countryCode": "CY",
+        "country": "Cyprus",
+        "region": "Famagusta District",
+        "locality": "Ayia Napa"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "cy-zenobia-wreck",
@@ -1637,6 +1746,27 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "fm-yap-goofnuw-channel",
+      "name": "Goofnuw Channel",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 9.48,
+        "longitude": 138.15
+      },
+      "place": {
+        "countryCode": "FM",
+        "country": "Micronesia",
+        "region": "Yap State",
+        "locality": "Yap"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "fm-yap-miil-channel",
       "name": "Mi’il Channel",
       "aliases": [
@@ -2071,9 +2201,34 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "gu-orote-gab-gab",
+      "name": "Gab Gab",
+      "aliases": [
+        "Gab Gab II"
+      ],
+      "coordinates": {
+        "latitude": 13.446,
+        "longitude": 144.658
+      },
+      "place": {
+        "countryCode": "GU",
+        "country": "Guam",
+        "region": "Pacific",
+        "locality": "Orote Peninsula"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "hk-basalt-island",
       "name": "Basalt Island",
-      "aliases": [],
+      "aliases": [
+        "火石洲"
+      ],
       "coordinates": {
         "latitude": 22.3158,
         "longitude": 114.3656
@@ -2089,7 +2244,7 @@
         "reference": "user-seed:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T00:00:00.000Z"
+      "updatedAt": "2026-07-31T02:53:00.000Z"
     },
     {
       "id": "hk-beaufort-island",
@@ -2261,7 +2416,10 @@
     {
       "id": "hk-hoi-ha-wreck",
       "name": "Hoi Ha Wan Wreck",
-      "aliases": [],
+      "aliases": [
+        "海下沉船",
+        "海下灣沉船"
+      ],
       "coordinates": {
         "latitude": 22.475,
         "longitude": 114.324
@@ -2277,7 +2435,7 @@
         "reference": "user-seed:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T00:00:00.000Z"
+      "updatedAt": "2026-07-31T02:53:00.000Z"
     },
     {
       "id": "hk-kau-sai-chau-east",
@@ -2348,6 +2506,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "hk-lobster-bay",
+      "name": "Lobster Bay",
+      "aliases": [
+        "龍蝦灣"
+      ],
+      "coordinates": {
+        "latitude": 22.3100846,
+        "longitude": 114.3004261
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Clear Water Bay"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "local-curation:114e-hk-reef-fish:2026-07-31"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-31T02:56:00.000Z"
     },
     {
       "id": "hk-north-ninepin",
@@ -2543,7 +2724,9 @@
     {
       "id": "hk-south-ninepin",
       "name": "South Ninepin Island",
-      "aliases": [],
+      "aliases": [
+        "南果洲"
+      ],
       "coordinates": {
         "latitude": 22.259,
         "longitude": 114.351
@@ -2559,7 +2742,7 @@
         "reference": "user-seed:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T00:00:00.000Z"
+      "updatedAt": "2026-07-31T02:53:00.000Z"
     },
     {
       "id": "hk-tai-pai",
@@ -2817,6 +3000,52 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "hr-vrsar-saline-reef",
+      "name": "Saline Reef",
+      "aliases": [
+        "Saline"
+      ],
+      "coordinates": {
+        "latitude": 45.14,
+        "longitude": 13.57
+      },
+      "place": {
+        "countryCode": "HR",
+        "country": "Croatia",
+        "region": "Istria County",
+        "locality": "Vrsar"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "id-alor-clown-valley",
+      "name": "Clown Valley",
+      "aliases": [
+        "Apuri"
+      ],
+      "coordinates": {
+        "latitude": -8.22,
+        "longitude": 124.46
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "East Nusa Tenggara",
+        "locality": "Alor"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "id-alor-kals-dream",
       "name": "Kal’s Dream",
       "aliases": [],
@@ -2836,6 +3065,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "id-ambon-pintu-kota",
+      "name": "Pintu Kota",
+      "aliases": [
+        "Door to the City"
+      ],
+      "coordinates": {
+        "latitude": -3.75,
+        "longitude": 128.05
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Maluku",
+        "locality": "Ambon"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "id-ambon-twilight-zone",
@@ -2899,6 +3151,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "id-banda-lava-flow",
+      "name": "Lava Flow",
+      "aliases": [
+        "Gunung Api"
+      ],
+      "coordinates": {
+        "latitude": -4.525,
+        "longitude": 129.871
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Maluku",
+        "locality": "Banda Neira"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "id-banda-manuk-island",
@@ -4058,7 +4333,7 @@
       "name": "Melissa’s Garden",
       "aliases": [],
       "coordinates": {
-        "latitude": 0.591,
+        "latitude": -0.591,
         "longitude": 130.269
       },
       "place": {
@@ -4072,7 +4347,7 @@
         "reference": "regional-curation:indonesia:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "id-raja-mikes-point",
@@ -4397,6 +4672,30 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "is-eyjafjordur-strytan",
+      "name": "Strýtan",
+      "aliases": [
+        "Stori Strytan",
+        "Big Strytan"
+      ],
+      "coordinates": {
+        "latitude": 65.82167,
+        "longitude": -18.12333
+      },
+      "place": {
+        "countryCode": "IS",
+        "country": "Iceland",
+        "region": "Northeastern Region",
+        "locality": "Eyjafjörður"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "supplement-test:isolated-regions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "is-silfra",
@@ -5116,30 +5415,6 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
-      "id": "jp-okinawa-cape-manza",
-      "name": "Cape Manza",
-      "aliases": [
-        "Manzamo",
-        "万座毛"
-      ],
-      "coordinates": {
-        "latitude": 26.5055,
-        "longitude": 127.849
-      },
-      "place": {
-        "countryCode": "JP",
-        "country": "Japan",
-        "region": "Okinawa Prefecture",
-        "locality": "Onna"
-      },
-      "source": {
-        "kind": "manual",
-        "reference": "regional-curation:japan:2026-07-28"
-      },
-      "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
-    },
-    {
       "id": "jp-okinawa-cape-zanpa",
       "name": "Cape Zanpa",
       "aliases": [
@@ -5217,12 +5492,15 @@
       "id": "jp-okinawa-manza-dream-hole",
       "name": "Manza Dream Hole",
       "aliases": [
+        "Cape Manza",
         "Dream Hole",
-        "万座ドリームホール"
+        "Manzamo",
+        "万座ドリームホール",
+        "万座毛"
       ],
       "coordinates": {
-        "latitude": 26.505,
-        "longitude": 127.85
+        "latitude": 26.50525,
+        "longitude": 127.8495
       },
       "place": {
         "countryCode": "JP",
@@ -5235,7 +5513,7 @@
         "reference": "regional-curation:japan:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-07-31T00:00:00.000Z"
     },
     {
       "id": "jp-okinawa-sunabe-seawall",
@@ -5351,6 +5629,29 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "ke-wasini-kisite-mpunguti",
+      "name": "Kisite Island North",
+      "aliases": [
+        "Kisite-Mpunguti Marine National Park"
+      ],
+      "coordinates": {
+        "latitude": -4.71389,
+        "longitude": 39.36222
+      },
+      "place": {
+        "countryCode": "KE",
+        "country": "Kenya",
+        "region": "Kwale County",
+        "locality": "Wasini Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "supplement-test:isolated-regions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "ky-bloody-bay-wall",
       "name": "Bloody Bay Wall",
       "aliases": [],
@@ -5370,6 +5671,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "ky-sevenmilebeach-uss-kittiwake",
+      "name": "USS Kittiwake",
+      "aliases": [
+        "Kittiwake Wreck"
+      ],
+      "coordinates": {
+        "latitude": 19.3619,
+        "longitude": -81.40122
+      },
+      "place": {
+        "countryCode": "KY",
+        "country": "Cayman Islands",
+        "region": "Grand Cayman",
+        "locality": "Seven Mile Beach"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "supplement-test:isolated-regions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "mt-blue-hole-gozo",
@@ -5611,6 +5935,27 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "mx-cozumel-santa-rosa-wall",
+      "name": "Santa Rosa Wall",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 20.35,
+        "longitude": -87.02
+      },
+      "place": {
+        "countryCode": "MX",
+        "country": "Mexico",
+        "region": "Quintana Roo",
+        "locality": "Cozumel"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "mx-socorro-el-boiler",
@@ -6085,6 +6430,51 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
+      "id": "my-perhentian-temple-of-the-sea",
+      "name": "Temple of the Sea",
+      "aliases": [
+        "Tokong Laut",
+        "Tukun Laut"
+      ],
+      "coordinates": {
+        "latitude": 5.95912,
+        "longitude": 102.65972
+      },
+      "place": {
+        "countryCode": "MY",
+        "country": "Malaysia",
+        "region": "Terengganu",
+        "locality": "Perhentian Islands"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:peninsular-malaysia:2026-07-31"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-31T02:56:00.000Z"
+    },
+    {
+      "id": "my-redang-bay-house-reef",
+      "name": "Redang Bay House Reef",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 5.7739,
+        "longitude": 103.03481
+      },
+      "place": {
+        "countryCode": "MY",
+        "country": "Malaysia",
+        "region": "Terengganu",
+        "locality": "Redang Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:peninsular-malaysia:2026-07-31"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-31T02:56:00.000Z"
+    },
+    {
       "id": "my-sipadan-barracuda-point",
       "name": "Barracuda Point",
       "aliases": [
@@ -6235,6 +6625,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "my-tenggol-east-pinnacle",
+      "name": "East Pinnacle",
+      "aliases": [
+        "Tokong Timur"
+      ],
+      "coordinates": {
+        "latitude": 4.78199,
+        "longitude": 103.68845
+      },
+      "place": {
+        "countryCode": "MY",
+        "country": "Malaysia",
+        "region": "Terengganu",
+        "locality": "Tenggol Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:peninsular-malaysia:2026-07-31"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-31T02:56:00.000Z"
     },
     {
       "id": "my-tioman-chebeh-island",
@@ -6407,6 +6820,27 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "mz-tofo-giants-castle",
+      "name": "Giant's Castle",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -23.85,
+        "longitude": 35.555
+      },
+      "place": {
+        "countryCode": "MZ",
+        "country": "Mozambique",
+        "region": "Inhambane",
+        "locality": "Tofo"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "pg-kimbe-bradford-shoals",
       "name": "Bradford Shoals",
       "aliases": [],
@@ -6562,7 +6996,7 @@
         "Cape Vogel Bomber"
       ],
       "coordinates": {
-        "latitude": 9.68,
+        "latitude": -9.68,
         "longitude": 150.22
       },
       "place": {
@@ -6576,14 +7010,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "pg-milnebay-dinahs-beach",
       "name": "Dinah's Beach",
       "aliases": [],
       "coordinates": {
-        "latitude": 10.3,
+        "latitude": -10.3,
         "longitude": 150.45
       },
       "place": {
@@ -6597,14 +7031,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "pg-milnebay-gunabalabla",
       "name": "Gunabalabla",
       "aliases": [],
       "coordinates": {
-        "latitude": 10.6,
+        "latitude": -10.6,
         "longitude": 150.6
       },
       "place": {
@@ -6618,14 +7052,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "pg-milnebay-observation-point",
       "name": "Observation Point",
       "aliases": [],
       "coordinates": {
-        "latitude": 10.0,
+        "latitude": -10.0,
         "longitude": 151.0
       },
       "place": {
@@ -6639,7 +7073,7 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "ph-anilao-bahura",
@@ -6726,14 +7160,17 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
-      "id": "ph-anilao-mainit-point",
-      "name": "Mainit Point",
+      "id": "ph-anilao-mainit-secret-bay",
+      "name": "Mainit Secret Bay",
       "aliases": [
-        "Mainit"
+        "Mainit",
+        "Mainit Muck",
+        "Mainit Point",
+        "Secret Bay"
       ],
       "coordinates": {
         "latitude": 13.689,
-        "longitude": 120.8935
+        "longitude": 120.89325
       },
       "place": {
         "countryCode": "PH",
@@ -6743,33 +7180,10 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:philippines:2026-07-28"
+        "reference": "regional-curation:dedup:2026-07-31"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
-    },
-    {
-      "id": "ph-anilao-secret-bay",
-      "name": "Secret Bay",
-      "aliases": [
-        "Mainit Muck"
-      ],
-      "coordinates": {
-        "latitude": 13.689,
-        "longitude": 120.893
-      },
-      "place": {
-        "countryCode": "PH",
-        "country": "Philippines",
-        "region": "Batangas",
-        "locality": "Anilao"
-      },
-      "source": {
-        "kind": "manual",
-        "reference": "user-seed:2026-07-28"
-      },
-      "status": "active",
-      "updatedAt": "2026-07-28T00:00:00.000Z"
+      "updatedAt": "2026-07-31T00:00:00.000Z"
     },
     {
       "id": "ph-anilao-sombrero-island",
@@ -8345,35 +8759,15 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
-      "id": "ph-puerto-galera-sabang-junk",
-      "name": "Sabang Junk",
+      "id": "ph-puerto-galera-sabang-wrecks",
+      "name": "Sabang Wrecks",
       "aliases": [
+        "Sabang Junk",
         "Vietnamese Wreck"
       ],
       "coordinates": {
-        "latitude": 13.5215,
-        "longitude": 120.974
-      },
-      "place": {
-        "countryCode": "PH",
-        "country": "Philippines",
-        "region": "Oriental Mindoro",
-        "locality": "Puerto Galera"
-      },
-      "source": {
-        "kind": "manual",
-        "reference": "regional-curation:round2:2026-07-29"
-      },
-      "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
-    },
-    {
-      "id": "ph-puerto-galera-sabang-wrecks",
-      "name": "Sabang Wrecks",
-      "aliases": [],
-      "coordinates": {
-        "latitude": 13.521,
-        "longitude": 120.973
+        "latitude": 13.52125,
+        "longitude": 120.9735
       },
       "place": {
         "countryCode": "PH",
@@ -8386,7 +8780,7 @@
         "reference": "regional-curation:philippines:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-07-31T00:00:00.000Z"
     },
     {
       "id": "ph-puerto-galera-shark-cave",
@@ -8452,35 +8846,16 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
-      "id": "ph-puerto-galera-speedboat-wreck",
-      "name": "The Speedboat Wreck",
-      "aliases": [],
-      "coordinates": {
-        "latitude": 13.518,
-        "longitude": 120.964
-      },
-      "place": {
-        "countryCode": "PH",
-        "country": "Philippines",
-        "region": "Oriental Mindoro",
-        "locality": "Puerto Galera"
-      },
-      "source": {
-        "kind": "manual",
-        "reference": "regional-curation:round2:2026-07-29"
-      },
-      "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
-    },
-    {
       "id": "ph-puerto-galera-st-christopher",
       "name": "St. Christopher Wreck",
       "aliases": [
-        "Anton's Wreck"
+        "Anton's Wreck",
+        "Speedboat Wreck",
+        "The Speedboat Wreck"
       ],
       "coordinates": {
         "latitude": 13.518,
-        "longitude": 120.965
+        "longitude": 120.9645
       },
       "place": {
         "countryCode": "PH",
@@ -8493,7 +8868,7 @@
         "reference": "regional-curation:round2:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-07-31T00:00:00.000Z"
     },
     {
       "id": "ph-puerto-galera-the-hill",
@@ -9140,6 +9515,27 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "sa-farasan-farasan-banks",
+      "name": "Farasan Banks",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 16.75,
+        "longitude": 42.05
+      },
+      "place": {
+        "countryCode": "SA",
+        "country": "Saudi Arabia",
+        "region": "Jizan Province",
+        "locality": "Farasan Islands"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "sa-farasan-mar-mar-reef",
       "name": "Mar Mar Reef",
       "aliases": [],
@@ -9165,7 +9561,7 @@
       "name": "Corsair Fighter Wreck",
       "aliases": [],
       "coordinates": {
-        "latitude": 8.1,
+        "latitude": -8.1,
         "longitude": 156.85
       },
       "place": {
@@ -9179,7 +9575,7 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-gizo-grand-central-station",
@@ -9188,7 +9584,7 @@
         "Njari Island"
       ],
       "coordinates": {
-        "latitude": 8.15,
+        "latitude": -8.15,
         "longitude": 156.75
       },
       "place": {
@@ -9202,7 +9598,7 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-gizo-hellcat-wreck",
@@ -9211,7 +9607,7 @@
         "Betsy"
       ],
       "coordinates": {
-        "latitude": 8.03,
+        "latitude": -8.03,
         "longitude": 157.0
       },
       "place": {
@@ -9225,14 +9621,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-gizo-joes-wall",
       "name": "Joe's Wall",
       "aliases": [],
       "coordinates": {
-        "latitude": 8.11,
+        "latitude": -8.11,
         "longitude": 156.84
       },
       "place": {
@@ -9246,14 +9642,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-gizo-mbigo-mbigo",
       "name": "Mbigo Mbigo",
       "aliases": [],
       "coordinates": {
-        "latitude": 8.2,
+        "latitude": -8.2,
         "longitude": 157.15
       },
       "place": {
@@ -9267,14 +9663,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-gizo-toa-maru",
       "name": "Toa Maru Wreck",
       "aliases": [],
       "coordinates": {
-        "latitude": 8.08,
+        "latitude": -8.08,
         "longitude": 156.83
       },
       "place": {
@@ -9288,7 +9684,7 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-gizo-zero-wreck",
@@ -9297,7 +9693,7 @@
         "Blackett Strait Zero"
       ],
       "coordinates": {
-        "latitude": 8.05,
+        "latitude": -8.05,
         "longitude": 157.1
       },
       "place": {
@@ -9311,14 +9707,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-honiara-bonegi-ii",
       "name": "Bonegi II",
       "aliases": [],
       "coordinates": {
-        "latitude": 9.38,
+        "latitude": -9.38,
         "longitude": 159.8
       },
       "place": {
@@ -9332,14 +9728,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-honiara-hirokawa-maru",
       "name": "Hirokawa Maru",
       "aliases": [],
       "coordinates": {
-        "latitude": 9.42,
+        "latitude": -9.42,
         "longitude": 160.05
       },
       "place": {
@@ -9353,14 +9749,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-honiara-mavis-wreck",
       "name": "Mavis Seaplane Wreck",
       "aliases": [],
       "coordinates": {
-        "latitude": 9.4,
+        "latitude": -9.4,
         "longitude": 159.9
       },
       "place": {
@@ -9374,14 +9770,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-munda-airacobra-wreck",
       "name": "P-39 Airacobra Wreck",
       "aliases": [],
       "coordinates": {
-        "latitude": 8.45,
+        "latitude": -8.45,
         "longitude": 157.35
       },
       "place": {
@@ -9395,14 +9791,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-munda-dauntless-wreck",
       "name": "Douglas SBD Dauntless Wreck",
       "aliases": [],
       "coordinates": {
-        "latitude": 8.46,
+        "latitude": -8.46,
         "longitude": 157.36
       },
       "place": {
@@ -9416,14 +9812,14 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sb-munda-kashi-maru",
       "name": "Kashi Maru Wreck",
       "aliases": [],
       "coordinates": {
-        "latitude": 8.33,
+        "latitude": -8.33,
         "longitude": 157.26
       },
       "place": {
@@ -9437,7 +9833,7 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-03T00:00:00.000Z"
     },
     {
       "id": "sd-sanganeb-north-plateau",
@@ -9501,6 +9897,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "sg-ghost-island",
+      "name": "Ghost Island",
+      "aliases": [
+        "Pulau Hantu"
+      ],
+      "coordinates": {
+        "latitude": 1.225,
+        "longitude": 103.7508333
+      },
+      "place": {
+        "countryCode": "SG",
+        "country": "Singapore",
+        "region": "Southern Islands",
+        "locality": "Pulau Hantu"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:singapore:2026-07-31"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-31T02:56:00.000Z"
     },
     {
       "id": "th-koh-bon-west-ridge",
@@ -10072,6 +10491,56 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "tw-checheng-chung-cheng-wreck-east",
+      "name": "Chung Cheng Wreck",
+      "aliases": [
+        "LSD-191",
+        "中正艦",
+        "中正艦沉船"
+      ],
+      "coordinates": {
+        "latitude": 22.09861,
+        "longitude": 120.7004
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Checheng"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "local-verification:bluetrend:2026-07-31"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-31T03:26:00.000Z"
+    },
+    {
+      "id": "tw-checheng-chung-cheng-wreck-west",
+      "name": "Chung Cheng Wreck",
+      "aliases": [
+        "LSD-191",
+        "中正艦",
+        "中正艦沉船"
+      ],
+      "coordinates": {
+        "latitude": 22.1036667,
+        "longitude": 120.6883333
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Checheng"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "local-verification:atolldive:2026-07-31"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-31T03:26:00.000Z"
+    },
+    {
       "id": "tw-green-big-gorge",
       "name": "Big Gorge",
       "aliases": [
@@ -10564,13 +11033,17 @@
       "id": "tw-green-seahorse-mailbox",
       "name": "Seahorse Mailbox",
       "aliases": [
-        "海馬郵筒",
+        "Shihlang",
+        "Shilang",
         "Underwater Postbox",
-        "世界上最深的郵筒"
+        "世界上最深的郵筒",
+        "海馬郵筒",
+        "石朗",
+        "豆丁海馬海底郵筒"
       ],
       "coordinates": {
-        "latitude": 22.6535,
-        "longitude": 121.472
+        "latitude": 22.65375,
+        "longitude": 121.47225
       },
       "place": {
         "countryCode": "TW",
@@ -10583,7 +11056,7 @@
         "reference": "regional-curation:round2:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-07-31T00:00:00.000Z"
     },
     {
       "id": "tw-green-shark-point",
@@ -10610,30 +11083,6 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T00:00:00.000Z"
-    },
-    {
-      "id": "tw-green-shilang",
-      "name": "Shilang",
-      "aliases": [
-        "Shihlang",
-        "石朗"
-      ],
-      "coordinates": {
-        "latitude": 22.654,
-        "longitude": 121.4725
-      },
-      "place": {
-        "countryCode": "TW",
-        "country": "Taiwan",
-        "region": "Taitung County",
-        "locality": "Green Island"
-      },
-      "source": {
-        "kind": "manual",
-        "reference": "regional-curation:taiwan:2026-07-28"
-      },
-      "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
       "id": "tw-green-six-metre-reef",
@@ -11410,7 +11859,9 @@
     {
       "id": "tw-penghu-rose-garden",
       "name": "Rose Garden",
-      "aliases": [],
+      "aliases": [
+        "玫瑰花園"
+      ],
       "coordinates": {
         "latitude": 23.23,
         "longitude": 119.46
@@ -11426,7 +11877,7 @@
         "reference": "regional-curation:expansion:2026-07-29"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-07-31T02:53:00.000Z"
     },
     {
       "id": "tw-penghu-seafan-forest",
@@ -11730,6 +12181,27 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "us-catalina-blue-cavern-point",
+      "name": "Blue Cavern Point",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 33.47,
+        "longitude": -118.48
+      },
+      "place": {
+        "countryCode": "US",
+        "country": "United States",
+        "region": "California",
+        "locality": "Avalon"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
       "id": "us-catalina-casino-point",
       "name": "Casino Point Dive Park",
       "aliases": [],
@@ -11749,6 +12221,27 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "us-keylargo-christ-of-the-abyss",
+      "name": "Christ of the Abyss",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 25.125,
+        "longitude": -80.298
+      },
+      "place": {
+        "countryCode": "US",
+        "country": "United States",
+        "region": "Florida",
+        "locality": "Key Largo"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:isolated-companions:2026-07-29"
+      },
+      "status": "active",
+      "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
       "id": "us-spiegel-grove",

@@ -643,6 +643,68 @@ export async function deleteLocalAttachment(diveId: string, attachmentId: string
   await transactionComplete(transaction);
 }
 
+/**
+ * Removes one dive and only the records that belong to it. Re-importing its
+ * source later creates a new local record through the normal merge pipeline.
+ */
+export async function deleteLocalDive(id: string) {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [
+      DIVES_STORE,
+      SOURCES_STORE,
+      ATTACHMENTS_STORE,
+      SITE_CONTRIBUTIONS_STORE,
+      COMPOSER_SETTINGS_STORE,
+      RAW_DIVE_RECORDS_STORE,
+    ],
+    "readwrite",
+  );
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const sourcesStore = transaction.objectStore(SOURCES_STORE);
+  const attachmentsStore = transaction.objectStore(ATTACHMENTS_STORE);
+  const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
+  const composerSettingsStore = transaction.objectStore(COMPOSER_SETTINGS_STORE);
+  const rawStore = transaction.objectStore(RAW_DIVE_RECORDS_STORE);
+  const [dive, sources, attachments, rawRecords] = await Promise.all([
+    request<LocalDive | undefined>(divesStore.get(id)),
+    request<SourceRecord[]>(sourcesStore.getAll()),
+    request<LocalAttachment[]>(attachmentsStore.index("diveId").getAll(id)),
+    request<LocalRawDiveRecord[]>(rawStore.index("diveId").getAll(id)),
+  ]);
+  if (!dive) {
+    transaction.abort();
+    throw new Error("Dive not found in this browser.");
+  }
+
+  divesStore.delete(id);
+  sources
+    .filter((source) => source.diveId === id)
+    .forEach((source) => sourcesStore.delete(source.key));
+  attachments.forEach((attachment) => attachmentsStore.delete(attachment.id));
+  rawRecords.forEach((record) => rawStore.delete(record.id));
+  contributionsStore.delete(id);
+  composerSettingsStore.delete(id);
+  await transactionComplete(transaction);
+}
+
+/** Removes a known seeded record after a real user import, if it exists. */
+export async function deleteLocalDiveBySource(
+  source: DiveSource,
+  sourceId: string,
+) {
+  const database = await openDatabase();
+  const mapping = await request<SourceRecord | undefined>(
+    database
+      .transaction(SOURCES_STORE)
+      .objectStore(SOURCES_STORE)
+      .get(sourceKey(source, sourceId)),
+  );
+  if (!mapping) return false;
+  await deleteLocalDive(mapping.diveId);
+  return true;
+}
+
 export async function listLocalBackgrounds() {
   const database = await openDatabase();
   const backgrounds = await request<LocalBackground[]>(

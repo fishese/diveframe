@@ -136,6 +136,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(backup, /diveframe-local-backup/);
   assert.match(backup, /blobBase64/);
   assert.match(app, /deleteLocalAttachment/);
+  assert.match(app, /deleteLocalDive/);
+  assert.match(app, /deleteLocalDiveBySource/);
+  assert.match(app, /loadSampleLog/);
+  assert.match(app, /deleteDiveConfirmOpen/);
   assert.match(app, /onDeletePhoto/);
   assert.match(app, /t\("addPhotos"\)/);
   assert.match(app, /t\("createShareImage"\)/);
@@ -157,9 +161,11 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /showPressure/);
   assert.match(app, /averageSampleTemperatureC/);
   assert.match(app, /calculateSacLitresPerMinute/);
-  assert.match(settings, /diveframe-added-sites\.json/);
-  assert.match(settings, /t\("downloadMergedCatalog"\)/);
+  assert.doesNotMatch(settings, /diveframe-added-sites\.json/);
+  assert.doesNotMatch(settings, /t\("downloadMergedCatalog"\)/);
   assert.match(settings, /mergeContributions/);
+  assert.match(settings, /createSubsurfaceLogbook/);
+  assert.match(settings, /validateSubsurfaceLogbookExport/);
   assert.match(settings, /t\("reusableBackgrounds"\)/);
   assert.match(settings, /updateLocalBackgroundName/);
   assert.match(settings, /t\("backgroundName"\)/);
@@ -472,8 +478,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v6/);
+  assert.match(serviceWorker, /diveframe-shell-v7/);
   assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);
+  assert.match(serviceWorker, /examples\/sample-dive\.uddf/);
   assert.match(serviceWorker, /examples\/dive-site-catalog-ai-prompt\.md/);
   assert.match(serviceWorker, /request\.mode === "navigate"/);
   assert.match(pwaInstall, /beforeinstallprompt/);

@@ -173,25 +173,25 @@ produce two separate dive records and is handled by duplicate review.
 
 ## Dive-site data
 
-The app bundles `data/dive-sites.json`. Active entries within 12 km are ranked
-by Haversine distance. The same 12 km cutoff applies to the supplementary
+The app bundles `data/dive-sites.json`. Active entries within 6 km are ranked
+by Haversine distance. The same 6 km cutoff applies to the supplementary
 catalog and OpenStreetMap fallback; OpenStreetMap is queried only when no
 bundled or supplementary entry is nearby.
 
 A user can load a compatible regional `dive-sites.json` in Settings. That
 supplementary catalog is stored in IndexedDB (`supplementaryCatalog`, at most
-one record) and combined additively with the bundled catalog. The combined
-entries participate in nearby suggestions and form the base of the merged
-catalog download. Duplicate IDs or identical name/coordinate records retain the
-bundled entry. The supplementary catalog is included in app-data backups and
-removed with **Erase all local logbook data**. A one-time migration copies any
-legacy session-only catalog into IndexedDB on first load after upgrade. A
-downloadable prompt helps users ask an AI assistant to research a regional
-catalog, but generated data must be reviewed by a person.
+one record) and combined additively with the bundled catalog. The entries
+participate in nearby suggestions; duplicate IDs or identical name/coordinate
+records retain the bundled entry. The supplementary catalog is included in
+app-data backups and removed with **Erase all local logbook data**. A one-time
+migration copies any legacy session-only catalog into IndexedDB on first load
+after upgrade. A downloadable prompt helps users ask an AI assistant to
+research a regional catalog, but generated data must be reviewed by a person.
 
 Manual GPS-backed sites create contribution records. Settings can review,
-rename, add aliases, exclude, export, or merge those candidates into a catalog
-download. The deployed app cannot commit catalog changes to GitHub.
+rename, add aliases, or exclude those candidates. The deferred review/export
+controls are archived in `scripts/archive/catalog-review-export/`; the deployed
+app cannot commit catalog changes to GitHub.
 
 ## Local persistence, backup, and privacy
 
@@ -253,15 +253,19 @@ require a network connection.
 
 - High-resolution PNG and JPEG share images.
 - Complete DiveFrame app-data backup.
-- Manual dive-site contribution JSON.
-- Merged replacement `dive-sites.json`.
 - A fresh Subsurface copy updated with matched site, buddy, and notes.
+- A newly generated portable Subsurface logbook from the local DiveFrame data,
+  only when every included dive has a date, duration, and usable depth/time
+  profile.
 
 The Subsurface tool edits the supplied XML in place at the DOM level and
 serializes a new download. It does not rebuild the log from DiveFrame's lossy
 normalized model. Profiles, pressure samples, cylinders, events, extensions,
 and unknown fields remain in the supplied document. DiveFrame does not
-currently write modified Shearwater, UDDF, or FIT files.
+currently write modified Shearwater, UDDF, or FIT files. The generated
+Subsurface logbook is a portable reconstruction, not a lossless replacement
+for an original Subsurface export; unknown extensions and events are not
+represented.
 
 IndexedDB v10 keeps per-dive raw capture bytes and user overlays from the v8
 schema (`docs/2026-07-30-indexeddb-v8-planning.md`), adds a persistent
@@ -275,11 +279,8 @@ Android BLE imports map Shearwater GNSS from libdivecomputer
 `DC_SAMPLE_LOCATION` samples into `gpsEntry*` / `gpsExit*` on the dive record
 when the computer recorded a satellite lock (log version 17+).
 
-**Planned (not implemented):** DiveFrame should be able to **generate** a new
-Subsurface `.ssrf` and possibly UDDF file from reparsed raw data plus DiveFrame
-overlays (site, buddy, notes, optional user GPS via `exportGpsPreference`, trip
-metadata as appropriate). That generator is separate from today's pass-through
-tool and must not mutate stored raw records.
+**Deferred:** A UDDF ZIP exporter could be added later. It would be a separate
+portable reconstruction and must not mutate stored raw records.
 
 ## Licensing boundary
 
