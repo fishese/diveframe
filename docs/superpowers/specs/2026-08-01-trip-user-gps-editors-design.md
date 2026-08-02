@@ -54,8 +54,9 @@ Extend the existing form (web + Android same component tree):
   selected, allow **rename**. Deleting a trip is allowed only when no dives
   reference it, or after confirm that clears those assignments first.
 - **User GPS:** lat/lng inputs + Clear; **Use location from photo…** listing
-  this dive’s attached photos that yield EXIF coordinates (JPEG supported;
-  HEIC/unavailable → graceful skip + status). Sets `userGpsSource` to
+  this dive’s attached photos that yield EXIF coordinates (JPEG and HEIC/HEIF
+  supported when the browser exposes metadata; unavailable → graceful skip +
+  status). Sets `userGpsSource` to
   `"photo-exif"` or `"manual"` accordingly.
 - Existing site name / location / buddy / notes / cylinder fields remain.
 

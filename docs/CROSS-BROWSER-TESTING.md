@@ -40,6 +40,8 @@ WebKit-compatible—then exercise:
 - file input and generated backup download handling;
 - Blob/base64 photo round trips and larger backup memory behavior;
 - PWA manifest and service-worker update behavior;
+- JPEG and GPS-tagged HEIC/HEIF location-photo selection (especially iOS
+  Safari's Photos picker metadata-sharing option);
 - composer canvas/SVG export; and
 - browser-specific storage persistence and quota behavior.
 

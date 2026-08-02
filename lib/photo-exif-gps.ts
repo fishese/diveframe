@@ -1,9 +1,9 @@
+import { gps as readExifGps } from "exifr/dist/lite.esm.js";
+
 /**
- * Minimal JPEG EXIF GPS reader. Chosen over the `exifr` dependency to avoid
- * pulling in a general-purpose EXIF/XMP/IPTC parser (and its dependency
- * surface) for what is a single, narrow need: GPSLatitude/GPSLongitude out
- * of the standard EXIF GPS IFD. Returns null for non-JPEG input, JPEGs
- * without an EXIF APP1 segment, or EXIF data lacking a usable GPS IFD.
+ * Minimal JPEG EXIF GPS reader retained as a narrow, dependency-free fallback
+ * and regression-test fixture. The cross-format reader below uses exifr's
+ * lite bundle for JPEG plus HEIC/HEIF metadata.
  */
 
 export type PhotoGpsCoordinates = {
@@ -168,6 +168,33 @@ export async function readJpegExifGps(
 
     const gpsIfdOffset = readUint32(view, gpsPointer.valueFieldOffset, order);
     return readGpsCoordinates(view, tiffStart, gpsIfdOffset, order);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Reads GPS coordinates from browser-selected JPEG or HEIC/HEIF bytes.
+ * Exifr's lite browser bundle only loads the metadata structures needed for
+ * GPS, so this does not decode or rewrite the selected image.
+ */
+export async function readPhotoExifGps(
+  buffer: ArrayBuffer,
+): Promise<PhotoGpsCoordinates | null> {
+  try {
+    const coordinates = await readExifGps(buffer);
+    if (
+      !coordinates ||
+      !Number.isFinite(coordinates.latitude) ||
+      !Number.isFinite(coordinates.longitude) ||
+      (coordinates.latitude === 0 && coordinates.longitude === 0)
+    ) {
+      return null;
+    }
+    return {
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+    };
   } catch {
     return null;
   }

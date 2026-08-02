@@ -330,10 +330,11 @@ without the necessary pressure and cylinder inputs.
   APK's classic Shearwater Bluetooth scope, Android media-location and
   Bluetooth permissions, native Downloads behavior, and the current decision
   to use Subsurface PC exports instead of a separate PC wrapper.
-- iPhone users can use the PWA in Safari. JPEG location extraction depends on
-  Safari's photo-picker metadata choice; HEIC EXIF extraction and a broader
-  iPhone compatibility pass remain planned. Native iOS packaging is still out
-  of scope.
+- iPhone users can use the PWA in Safari. The location picker accepts JPEG and
+  HEIC/HEIF and reads GPS metadata in JavaScript, but Safari still controls
+  whether a selected Photos-library item shares that metadata; camera captures
+  may strip it. A broader iPhone compatibility pass remains planned. Native
+  iOS packaging is still out of scope.
 - Web and APK runtime parity, intentional platform differences, and the
   maintainer release process are specified in `docs/WEB-APK-SYNC.md`. Every
   push to `main` must be checked for APK impact; shared client or native changes

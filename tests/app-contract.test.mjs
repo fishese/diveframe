@@ -260,7 +260,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /from "@\/lib\/dive-gps"/);
   assert.match(app, /resolveDiveMapCoordinates/);
   assert.match(app, /from "@\/lib\/photo-exif-gps"/);
-  assert.match(app, /readJpegExifGps/);
+  assert.match(app, /readPhotoExifGps/);
   assert.match(app, /from "@\/lib\/coordinate-input"/);
   assert.match(app, /parseCoordinatePair/);
   assert.match(app, /from "@\/lib\/photo-location-capability"/);
@@ -271,7 +271,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /t\("editLocation"\)/);
   assert.match(app, /t\("useLocationFromPhoto"\)/);
   assert.match(app, /file\.arrayBuffer\(\)/);
-  assert.match(app, /accept="image\/jpeg"/);
+  assert.match(app, /accept="\.jpg,\.jpeg,\.heic,\.heif,image\/jpeg,image\/heic,image\/heif"/);
   assert.match(app, /addLocationPhotoToDive/);
   assert.match(app, /photoLocationPermissionDenied/);
   assert.match(app, /photoGpsBusy/);
@@ -286,6 +286,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveGps, /gpsEntryLat !== null && dive\.gpsEntryLng !== null/);
   const photoExifGps = await readFile("lib/photo-exif-gps.ts", "utf8");
   assert.match(photoExifGps, /export async function readJpegExifGps/);
+  assert.match(photoExifGps, /export async function readPhotoExifGps/);
+  assert.match(photoExifGps, /JPEG or HEIC\/HEIF/);
   assert.match(photoExifGps, /0x8825/);
   assert.match(app, /selectMode/);
   assert.match(app, /toggleSelectMode/);

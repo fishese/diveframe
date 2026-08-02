@@ -82,7 +82,7 @@ import {
   parseCoordinatePair,
 } from "@/lib/coordinate-input";
 import { saveExportFile, savedFileNotice } from "@/lib/file-export";
-import { readJpegExifGps } from "@/lib/photo-exif-gps";
+import { readPhotoExifGps } from "@/lib/photo-exif-gps";
 import { photoLocationCapability } from "@/lib/photo-location-capability";
 import { chartAvailability, renderDiveChart } from "@/lib/chart-renderer";
 import { defaultComposerSettings } from "@/lib/composer-settings";
@@ -1827,7 +1827,7 @@ function DiveDetail({
     setPhotoGpsBusy(true);
     setPhotoGpsStatus(t("searchingPhotosForLocation"));
     try {
-      const gps = await readJpegExifGps(await file.arrayBuffer());
+      const gps = await readPhotoExifGps(await file.arrayBuffer());
       await applySelectedPhotoLocation(gps, file, addLocationPhotoToDive);
     } catch {
       setPhotoGpsStatus(t("photoLocationReadFailed"));
@@ -2346,7 +2346,7 @@ function DiveDetail({
                 <input
                   ref={photoLocationInputRef}
                   type="file"
-                  accept="image/jpeg"
+                  accept=".jpg,.jpeg,.heic,.heif,image/jpeg,image/heic,image/heif"
                   onChange={(event) => void handleWebPhotoLocationSelection(event)}
                   className="visually-hidden"
                   tabIndex={-1}

@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { resolve } from "node:path";
 import ts from "typescript";
+import { pathToFileURL } from "node:url";
 import {
   buildJpegWithGps,
   buildJpegWithoutGps,
@@ -16,11 +18,13 @@ async function loadTsModule(path) {
       target: ts.ScriptTarget.ES2022,
     },
   }).outputText;
-  return import(`data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`);
+  const exifrLiteUrl = pathToFileURL(resolve("node_modules/exifr/dist/lite.esm.js")).href;
+  const resolvedJavascript = javascript.replaceAll('"exifr/dist/lite.esm.js"', `"${exifrLiteUrl}"`);
+  return import(`data:text/javascript;base64,${Buffer.from(resolvedJavascript).toString("base64")}`);
 }
 
 const { resolveDiveMapCoordinates } = await loadTsModule("lib/dive-gps.ts");
-const { readJpegExifGps } = await loadTsModule("lib/photo-exif-gps.ts");
+const { readJpegExifGps, readPhotoExifGps } = await loadTsModule("lib/photo-exif-gps.ts");
 
 function diveGps(overrides = {}) {
   return {
@@ -71,6 +75,14 @@ test("ignores a partial computer GPS pair and falls back to user GPS", () => {
 test("readJpegExifGps reads latitude/longitude from a JPEG EXIF GPS IFD", async () => {
   const buffer = buildJpegWithGps({ latitude: 22.305, longitude: 114.1875 });
   const gps = await readJpegExifGps(buffer);
+  assert.ok(gps);
+  assert.ok(Math.abs(gps.latitude - 22.305) < 1e-4);
+  assert.ok(Math.abs(gps.longitude - 114.1875) < 1e-4);
+});
+
+test("readPhotoExifGps reads JPEG GPS through the cross-format parser", async () => {
+  const buffer = buildJpegWithGps({ latitude: 22.305, longitude: 114.1875 });
+  const gps = await readPhotoExifGps(buffer);
   assert.ok(gps);
   assert.ok(Math.abs(gps.latitude - 22.305) < 1e-4);
   assert.ok(Math.abs(gps.longitude - 114.1875) < 1e-4);
