@@ -88,10 +88,10 @@ as a GitHub Release asset.
 
 1. Review `git diff --name-only` and use the matrix above.
 2. For an APK release, increment `versionCode` and update `versionName` in
-   `android/app/build.gradle`. The first debug release currently uses
-   `versionCode 1` / `versionName "1.0"`; align these with the public release
-   naming before signed or store distribution. Confirm the build uses the same
-   signing key as the APK it is expected to update.
+   `android/app/build.gradle`. The first debug release used `versionCode 1` /
+   `versionName "1.0"`; the current debug update uses `versionCode 2` /
+   `versionName "1.0.1"`. Confirm the build uses the same signing key as the
+   APK it is expected to update.
 3. Run `npm test`, commit the intended source changes, and push that commit to
    `main`. Record the commit ID; the APK release tag must target it.
 4. Confirm the checkout still points to the pushed commit, then build the
@@ -169,11 +169,11 @@ As of 2026-08-02, the published Android build is an arm64 debug APK for manual
 installation. It is not a Play Store, signed production, or F-Droid release.
 The current GitHub release is:
 
-- release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug`
+- release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.1`
 - asset: `diveframe-debug.apk`
-- source commit: `22f5c56`
+- source commit: `efd9969`
 - SHA-256:
-  `D45F47572178404747B70409ED51CC1CC387226EF90D919E35240E10D67962AE`
+  `8FD4EEC350A33C0C622B8C6AA97353821F978745EFB31B4545F8F0A42D24488E`
 
 The debug APK is still signed by Android's debug tooling. An in-place Android
 update requires the same application ID, a compatible/higher `versionCode`,
