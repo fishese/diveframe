@@ -53,9 +53,10 @@ Shipped on `main` (pushed):
 - Official dive-site catalog remains build-bundled only (web deploy / new APK)
 - Refined the shared English, Traditional Chinese, and Japanese application
   translations plus fixed PWA metadata in `4f3eb05`; the tagline is now
-  “Your logs, enhanced.”
-- Android debug APK **1.0.3** (`versionCode 4`) was rebuilt from shared-client
-  commit `3b87922` and published as GitHub release `v0.1.0-debug.3`, containing
+  “Your logs, enhanced.” The import-guide backup link now uses client-side
+  navigation and waits for Settings layout hydration before scrolling.
+- Android debug APK **1.0.4** (`versionCode 5`) was rebuilt from shared-client
+  commit `c059bcf` and published as GitHub release `v0.1.0-debug.4`, containing
   `diveframe-debug.apk`; the stable download URL uses `releases/latest`
 - Current dogfooding pause: the user is testing the hosted web/PWA and the
   updated Android APK; no new feature work is queued until further feedback.

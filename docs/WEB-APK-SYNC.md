@@ -89,8 +89,8 @@ as a GitHub Release asset.
 1. Review `git diff --name-only` and use the matrix above.
 2. For an APK release, increment `versionCode` and update `versionName` in
    `android/app/build.gradle`. The first debug release used `versionCode 1` /
-   `versionName "1.0"`; the current debug build uses `versionCode 4` /
-   `versionName "1.0.3"`. Confirm the build uses the same signing key as the
+   `versionName "1.0"`; the current debug build uses `versionCode 5` /
+   `versionName "1.0.4"`. Confirm the build uses the same signing key as the
    APK it is expected to update.
 3. Run `npm test`, commit the intended source changes, and push that commit to
    `main`. Record the commit ID; the APK release tag must target it.
@@ -128,7 +128,7 @@ as a GitHub Release asset.
    https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
    ```
 
-   The current release is `v0.1.0-debug.3`. Because the stable URL uses GitHub's
+   The current release is `v0.1.0-debug.4`. Because the stable URL uses GitHub's
    `releases/latest` alias, debug releases are currently published as normal
    latest releases rather than GitHub prereleases. If that policy changes, the
    download-link strategy must change too.
@@ -169,11 +169,11 @@ As of 2026-08-02, the published Android build is an arm64 debug APK for manual
 installation. It is not a Play Store, signed production, or F-Droid release.
 The current GitHub release is:
 
-- release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.3`
+- release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.4`
 - asset: `diveframe-debug.apk`
-- source commit: `3b879229f39bdbfe32ed9805855c8f99befd0058`
+- source commit: `c059bcf7fa06d7ad652d05d9d36a1cb576ebeb1c`
 - SHA-256:
-  `98F43818229794C9739DECA975CE67BD2CA0690BAAA10C23C583EA4E4525D601`
+  `39FBB907C56A0B8E3F169F40422ED14A6DF5EAD41F5C3295AE941EF6FF003B65`
 
 The debug APK is still signed by Android's debug tooling. An in-place Android
 update requires the same application ID, a compatible/higher `versionCode`,
