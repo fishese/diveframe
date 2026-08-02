@@ -46,7 +46,7 @@ WebKit-compatible—then exercise:
 - browser-specific storage persistence and quota behavior.
 
 The current repository has unit/contract coverage but not this full
-Playwright-style browser matrix yet. The iOS Safari location-photo flow was
-smoke-tested against the hosted build on 2026-08-02; broader Safari-version,
-HEIC gallery/composer, Chromium-to-Firefox, and Android Chrome checks remain
-important before a native wrapper.
+Playwright-style browser matrix yet. The iOS Safari location-photo flow and
+retained JPEG/HEIC gallery/composer flow were smoke-tested against the hosted
+build on 2026-08-02. Broader Safari-version, Chromium-to-Firefox, and Android
+Chrome checks remain important before a native wrapper.

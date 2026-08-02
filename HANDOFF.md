@@ -58,7 +58,8 @@ Open follow-ups:
   reads GPS metadata with exifr's lite parser, without decoding or rewriting
   the image. Existing iPhone photos may still need Safari's picker option to
   share location; taking a new photo directly from the browser can strip GPS
-  metadata. Broader Safari-version and HEIC gallery/composer testing remains.
+  metadata. The JPEG/HEIC retained-photo gallery and composer flow has also
+  been verified on iPhone Safari; broader browser-version coverage remains.
 - Deploy production CORS for `/api/geocode`, `/api/nearby-sites`, and
   `/api/whats-new` so Capacitor `https://localhost` can use the hosted worker
   without a LAN API override
