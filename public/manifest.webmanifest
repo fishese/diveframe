@@ -2,7 +2,7 @@
   "id": "/",
   "name": "DiveFrame — Dive log companion",
   "short_name": "DiveFrame",
-  "description": "Your dives, enhanced with merged records, maps, photos, and shareable image overlays.",
+  "description": "Your logs, enhanced with merged records, maps, photos, and shareable image overlays.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -42,13 +42,13 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "DiveFrame",
-    description: "Your dives, enhanced.",
+    description: "Your logs, enhanced.",
     images: [{ url: `${CANONICAL_ORIGIN}/og.png`, width: 1732, height: 909 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "DiveFrame",
-    description: "Your dives, enhanced.",
+    description: "Your logs, enhanced.",
     images: [`${CANONICAL_ORIGIN}/og.png`],
   },
 };
