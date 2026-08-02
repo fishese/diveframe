@@ -31,7 +31,7 @@ APK uses its own WebView origin (`https://localhost`), so PWA and APK data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-02)
+## Current status (2026-08-03)
 
 Shipped on `main` (pushed):
 
@@ -46,9 +46,13 @@ Shipped on `main` (pushed):
   pressure series, exact dive mode, atmosphere/salinity/decompression metadata,
   and computer-reported tank metadata.
 - Photo GPS extraction: the APK uses the MediaStore picker with
-  `ACCESS_MEDIA_LOCATION`; web/PWA extraction supports JPEG EXIF. Keeping the
-  selected location photo is opt-in. Nearby site suggestions are limited to
-  12 km from the available GPS coordinates.
+  `ACCESS_MEDIA_LOCATION`; web/PWA extraction still reads metadata from the
+  selected file when a browser provides it. Android web uploads commonly have
+  their location metadata stripped, so the picker keeps its previous broad
+  file-selection behavior and shows a concise explanation with a link to the
+  Android app when no location is found. Keeping the selected location photo is
+  opt-in. Nearby site suggestions are limited to 12 km from the available GPS
+  coordinates.
 - Native Downloads export plugin; Settings **What's new** feed with HTTPS CTAs
 - Official dive-site catalog remains build-bundled only (web deploy / new APK)
 - Refined the shared English, Traditional Chinese, and Japanese application
@@ -79,6 +83,13 @@ Open follow-ups:
   without a LAN API override
 - BLE hardening / failure matrix / LGPL release checklist
 - Pre-wrapper Priority C quality items in `docs/PRODUCT-SPEC.md`
+- Android web image uploads did not retain usable GPS metadata in testing with
+  the app's picker and several external EXIF viewers. Do not force a more
+  restrictive browser picker for now; keep the Android app's native
+  `ACCESS_MEDIA_LOCATION` path for reliable photo-location lookup.
+- Future ideas: add a map picker for entering a GPS coordinate, and consider
+  accepting image uploads as ZIP files when a batch/original-file workflow is
+  useful.
 
 Session detail: `docs/2026-08-01-ble-product-import-session.md`.
 

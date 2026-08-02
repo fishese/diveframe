@@ -157,3 +157,17 @@ shipped on `main` and documented in `USER-GUIDE.md` / `PRODUCT-SPEC.md`. Plan:
 - **About / product copy (later):** Bluetooth import supports classic
   Shearwater BLE computers only (not Perdix 3). Other brands: use Subsurface
   (or Shearwater Cloud DB, UDDF, FIT) and import that file into DiveFrame.
+
+## Web photo-location follow-up (2026-08-03)
+
+Android web uploads did not preserve usable GPS metadata during dogfooding. The
+same result appeared in several external EXIF viewers, so the attempted
+picker-specific workaround is not worth keeping for now. The browser location
+picker was returned to its previous broad file-selection behavior, while the
+no-location popup was kept and shortened: it explains that Android strips
+location data from uploads, links to the Android app download page, and warns
+that images received through WhatsApp, Signal, or social media generally have
+no location data. Dive-photo and composer-asset pickers are unchanged.
+
+Possible future experiments are a map picker for entering GPS coordinates and
+optional image ZIP uploads for batch/original-file workflows.

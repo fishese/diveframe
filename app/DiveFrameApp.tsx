@@ -118,23 +118,6 @@ import { ImportGuide } from "./components/ImportGuide";
 type Dive = LocalDive;
 type Attachment = LocalAttachment;
 
-const LOCATION_PHOTO_EXTENSIONS = /\.(?:jpe?g|heic|heif)$/i;
-const LOCATION_PHOTO_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/jpg",
-  "image/heic",
-  "image/heif",
-  "image/heic-sequence",
-  "image/heif-sequence",
-]);
-
-function isLocationPhotoFile(file: File) {
-  return (
-    LOCATION_PHOTO_MIME_TYPES.has(file.type.toLowerCase()) ||
-    LOCATION_PHOTO_EXTENSIONS.test(file.name)
-  );
-}
-
 type MapLocation = {
   latitude: number;
   longitude: number;
@@ -1852,10 +1835,6 @@ function DiveDetail({
     const file = event.target.files?.[0] ?? null;
     event.target.value = "";
     if (!file || photoGpsBusy) return;
-    if (!isLocationPhotoFile(file)) {
-      setPhotoGpsStatus(t("photoLocationUnsupportedFile"));
-      return;
-    }
     setPhotoGpsBusy(true);
     setPhotoGpsStatus(t("searchingPhotosForLocation"));
     try {
@@ -2383,6 +2362,7 @@ function DiveDetail({
                 <input
                   ref={photoLocationInputRef}
                   type="file"
+                  accept=".jpg,.jpeg,.heic,.heif,image/jpeg,image/heic,image/heif"
                   onChange={(event) => void handleWebPhotoLocationSelection(event)}
                   className="visually-hidden"
                   tabIndex={-1}
@@ -2685,7 +2665,7 @@ function DiveDetail({
                   : t("notEntered")}
               </dd>
             </div>
-            <div>
+            <div className="source-row">
               <dt><ArrowDownToLine size={16} /> {t("importedFrom")}</dt>
               <dd>
                 {dive.sources.length ? (
@@ -2974,7 +2954,13 @@ function DiveDetail({
                 <X size={16} />
               </button>
             </header>
-            <p>{t("photoLocationHelpBody")}</p>
+            <p>
+              {t("photoLocationHelpBody")}{" "}
+              <Link href="/android">{t("photoLocationHelpAndroidApp")}</Link>{" "}
+              {t("photoLocationHelpBodySuffix")}
+              <br />
+              {t("photoLocationHelpSocial")}
+            </p>
             <button
               type="button"
               className="button button-primary"

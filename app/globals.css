@@ -1069,7 +1069,11 @@ button {
 }
 
 .details-list > div {
+  align-items: start;
   border-top: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.35fr);
   padding: 16px 0;
 }
 
@@ -1086,7 +1090,18 @@ button {
 .details-list dd {
   font-size: 13px;
   line-height: 1.55;
-  margin: 8px 0 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.details-list > .source-row,
+.details-list > .notes-row {
+  display: block;
+}
+
+.details-list > .source-row dd,
+.details-list > .notes-row dd {
+  margin-top: 8px;
 }
 
 .source-references {

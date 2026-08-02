@@ -284,9 +284,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /t\("editLocation"\)/);
   assert.match(app, /t\("useLocationFromPhoto"\)/);
   assert.match(app, /file\.arrayBuffer\(\)/);
-  assert.match(app, /LOCATION_PHOTO_EXTENSIONS/);
-  assert.match(app, /photoLocationUnsupportedFile/);
+  assert.match(app, /accept="\.jpg,\.jpeg,\.heic,\.heif,image\/jpeg,image\/heic,image\/heif"/);
   assert.match(app, /photo-location-help-backdrop/);
+  assert.match(app, /href="\/android"/);
+  assert.match(app, /photoLocationHelpSocial/);
   assert.match(app, /addLocationPhotoToDive/);
   assert.match(app, /photoLocationPermissionDenied/);
   assert.match(app, /photoGpsBusy/);
