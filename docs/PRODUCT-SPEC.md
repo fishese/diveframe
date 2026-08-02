@@ -116,6 +116,7 @@ weakening the web app or requiring a second logbook implementation.
 
 | Source | Accepted files | Typical data retained |
 | --- | --- | --- |
+| Classic Shearwater BLE (Android APK) | direct Bluetooth download | depth/temperature profile, independent tank-pressure series when present, gases, exact dive mode, environment/decompression metadata, computer identity, and computer GPS when recorded |
 | Shearwater Cloud Desktop | `.db`, `.sqlite`, `.sqlite3` | summaries, computer identity, start/end pressure, manual site, buddy, notes, and GNSS fields where present |
 | Subsurface | `.ssrf`, XML | profile samples, temperature, tank pressure, gases, GPS, sites, buddy, notes, and computer metadata |
 | UDDF, including Oceanic+ exports | `.uddf`, XML | open-format dive metadata and available profile/gas/GPS fields |
@@ -156,9 +157,19 @@ Internal values use:
 - coordinates as decimal latitude and longitude.
 
 The canonical dive retains source provenance, source-specific dive numbers,
-computer model and serial, normalized gas mixes, sample arrays, imported and
-user-selected site fields, buddy, notes, category, local photo count, and
-composer state. Conversion to imperial units happens only at display/export.
+computer model and serial, normalized gas mixes, sample arrays, exact dive
+mode, environment/decompression metadata, imported and user-selected site
+fields, buddy, notes, category, local photo count, and composer state. Sample
+pressure arrays are tank-indexed and match structured tank metadata by the same
+stable index. Physical tanks stay separate in storage; later twin/sidemount
+grouping is additive display configuration. Conversion to imperial units
+happens only at display/export.
+
+When matching sources contribute the same dive, profile and tank arrays are
+selected as complete alternatives rather than concatenated. Re-importing one
+physical tank through BLE and Subsurface/UDDF therefore cannot create two
+identical tanks inside the matched dive. An identity-matching failure can still
+produce two separate dive records and is handled by duplicate review.
 
 ## Dive-site data
 

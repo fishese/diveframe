@@ -44,11 +44,18 @@ export type DiveComputerTank = {
   beginPressureBar: number;
   endPressureBar: number;
   gasmixIndex: number;
+  volumeL: number;
+  workPressureBar: number;
+  volumeType: number;
+  usage: "none" | "oxygen" | "diluent" | "sidemount" | "unknown";
 };
 
 export type DiveComputerProfilePoint = {
   timeMs: number;
   depthM: number;
+  temperatureC?: number;
+  /** Tank-indexed pressure series; null means no reading for that tank/time. */
+  pressuresBar: Array<number | null>;
 };
 
 export type DiveComputerParsedDive = {
@@ -63,6 +70,16 @@ export type DiveComputerParsedDive = {
   temperatureSurfaceC?: number;
   atmosphericBar?: number;
   diveMode: string;
+  salinity?: {
+    waterType: "fresh" | "salt" | "unknown";
+    densityKgM3?: number;
+  };
+  decompressionModel?: {
+    type: "none" | "buhlmann" | "vpm" | "rgbm" | "dciem" | "unknown";
+    conservatism: number;
+    gfLow?: number;
+    gfHigh?: number;
+  };
   sampleCount: number;
   /** Shearwater GNSS fix, present only with a satellite lock (log version 17+). */
   gpsEntryLat?: number;

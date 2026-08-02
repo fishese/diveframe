@@ -23,9 +23,8 @@ export function rawDiveRecordId(fingerprintHex: string) {
 }
 
 /**
- * Maps a BLE normalizer preview into {@link LocalImportedDive}. Profile samples
- * are the downsampled preview set only; full-resolution samples remain in
- * {@link LocalRawDiveRecord.rawBytes} until a later reparse path exists.
+ * Maps a BLE normalizer preview into {@link LocalImportedDive}. Raw bytes are
+ * also retained so a newer parser can reprocess the original download later.
  */
 export function previewToImportedDive(
   preview: BleNormalizedDivePreview,
@@ -57,7 +56,13 @@ export function previewToImportedDive(
     categorySource: preview.categorySource,
     maxDepthM: preview.maxDepthM,
     waterTemperatureC: preview.waterTemperatureC,
+    surfaceTemperatureC: preview.surfaceTemperatureC,
+    atmosphericPressureBar: preview.atmosphericPressureBar,
+    salinity: preview.salinity,
+    decompressionModel: preview.decompressionModel,
+    diveMode: preview.diveMode,
     gasMixes: preview.gasMixes,
+    tanks: preview.tanks,
     computerModel: preview.computerModel,
     samples: preview.samples,
     tankPressuresStartBar: preview.tankPressuresStartBar,

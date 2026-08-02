@@ -216,6 +216,17 @@ test("download path uses dc_custom_open and does not claim persistence", async (
   assert.match(nativeC, /dc_device_set_fingerprint/);
   assert.match(nativeC, /dc_parser_new/);
   assert.match(nativeC, /dc_parser_samples_foreach/);
+  assert.match(nativeC, /DC_SAMPLE_TEMPERATURE/);
+  assert.match(nativeC, /DC_SAMPLE_PRESSURE/);
+  assert.match(nativeC, /temperature_min/);
+  assert.match(nativeC, /addProfilePoint", "\(IDD\)V/);
+  assert.match(nativeC, /addProfilePressure", "\(IID\)V/);
+  assert.match(nativeC, /DC_FIELD_DIVEMODE/);
+  assert.match(nativeC, /DC_FIELD_SALINITY/);
+  assert.match(nativeC, /DC_FIELD_ATMOSPHERIC/);
+  assert.match(nativeC, /DC_FIELD_DECOMODEL/);
+  assert.match(nativeC, /tank\.volume/);
+  assert.match(nativeC, /tank\.usage/);
   assert.match(nativeC, /DC_TRANSPORT_BLE/);
   assert.match(javaPlugin, /persisted\",\s*false|put\("persisted", false\)/);
   assert.match(javaPlugin, /downloadProgress/);
@@ -302,6 +313,33 @@ test("Shearwater GNSS survives the sample callback into the dive record", async 
   assert.match(normalizer, /gpsEntryLat: entryFix\?\.latitude \?\? null/);
   assert.match(persist, /gpsEntryLat: preview\.gpsEntryLat/);
   assert.doesNotMatch(persist, /gpsEntryLat: null/);
+});
+
+test("BLE temperature samples survive the native bridge contract", async () => {
+  const [nativeC, nativeJava, javaPlugin, capability, normalizer] =
+    await Promise.all([
+      readFile(
+        new URL("../android/app/src/main/cpp/diveframe_dc.c", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL(
+          "../android/app/src/main/java/cc/fishese/divelog/DiveComputerNative.java",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+      readFile(files.javaPlugin, "utf8"),
+      readFile(files.capability, "utf8"),
+      readFile(new URL("../lib/ble-dive-normalizer.ts", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(nativeC, /value->temperature/);
+  assert.match(nativeJava, /void addProfilePoint\(int timeMs, double depthM, double temperatureC\)/);
+  assert.match(nativeJava, /final double temperatureC/);
+  assert.match(javaPlugin, /"temperatureC", point\.temperatureC/);
+  assert.match(capability, /temperatureC\?: number/);
+  assert.match(normalizer, /point\.temperatureC/);
 });
 
 test("exports are written natively because the WebView drops blob downloads", async () => {

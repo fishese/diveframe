@@ -56,12 +56,47 @@ test("BLE normalizer maps a parsed Perdix-shaped dive into an import preview", (
         diveTimeSeconds: 518,
         maxDepthM: 4.2,
         diveMode: "oc",
+        temperatureSurfaceC: 30,
+        atmosphericBar: 1.012,
+        salinity: { waterType: "salt", densityKgM3: 1025 },
+        decompressionModel: {
+          type: "buhlmann",
+          conservatism: 0,
+          gfLow: 40,
+          gfHigh: 85,
+        },
         sampleCount: 59,
         gasmixes: [{ o2Percent: 21, hePercent: 0 }],
-        tanks: [{ beginBar: 113.2, endBar: 108.4, gasmixIndex: -1 }],
+        tanks: [{
+          beginBar: 113.2,
+          endBar: 108.4,
+          gasmixIndex: -1,
+          volumeL: 12,
+          workPressureBar: 232,
+          volumeType: 1,
+          usage: "sidemount",
+        }, {
+          beginBar: 201.4,
+          endBar: 184.1,
+          gasmixIndex: 0,
+          volumeL: 11.1,
+          workPressureBar: 207,
+          volumeType: 2,
+          usage: "sidemount",
+        }],
         profile: [
-          { timeMs: 10000, depthM: 3 },
-          { timeMs: 60000, depthM: 4.2 },
+          {
+            timeMs: 10000,
+            depthM: 3,
+            temperatureC: 28.5,
+            pressuresBar: [113.2, 201.4],
+          },
+          {
+            timeMs: 60000,
+            depthM: 4.2,
+            temperatureC: 29,
+            pressuresBar: [108.4, 184.1],
+          },
         ],
       },
     },
@@ -77,13 +112,51 @@ test("BLE normalizer maps a parsed Perdix-shaped dive into an import preview", (
   assert.equal(preview.diveDate, "2026-06-27T14:12:54");
   assert.equal(preview.durationSeconds, 518);
   assert.equal(preview.maxDepthM, 4.2);
+  assert.equal(preview.minTemp, 28.5);
+  assert.equal(preview.maxTemp, 29);
+  assert.equal(preview.waterTemperatureC, 28.5);
+  assert.equal(preview.surfaceTemperatureC, 30);
+  assert.equal(preview.atmosphericPressureBar, 1.012);
+  assert.deepEqual(preview.salinity, {
+    waterType: "salt",
+    densityKgM3: 1025,
+  });
+  assert.deepEqual(preview.decompressionModel, {
+    type: "buhlmann",
+    conservatism: 0,
+    gfLow: 40,
+    gfHigh: 85,
+  });
+  assert.equal(preview.diveMode, "oc");
   assert.equal(preview.serialNumber, "A8E705BD");
   assert.equal(preview.computerModel, "Perdix 2");
   assert.equal(preview.gasMixes[0]?.label, "Air");
-  assert.deepEqual(preview.tankPressuresStartBar, [113.2]);
-  assert.deepEqual(preview.tankPressuresEndBar, [108.4]);
+  assert.deepEqual(preview.tankPressuresStartBar, [113.2, 201.4]);
+  assert.deepEqual(preview.tankPressuresEndBar, [108.4, 184.1]);
+  assert.deepEqual(preview.tanks, [
+    {
+      index: 0,
+      gasMixIndex: null,
+      volumeL: 12,
+      workPressureBar: 232,
+      startPressureBar: 113.2,
+      endPressureBar: 108.4,
+      usage: "sidemount",
+    },
+    {
+      index: 1,
+      gasMixIndex: 0,
+      volumeL: 11.1,
+      workPressureBar: 207,
+      startPressureBar: 201.4,
+      endPressureBar: 184.1,
+      usage: "sidemount",
+    },
+  ]);
   assert.equal(preview.samples.length, 2);
-  assert.ok(preview.omissions.some((item) => /rawDiveRecords/i.test(item)));
+  assert.equal(preview.samples[0]?.temperatureC, 28.5);
+  assert.deepEqual(preview.samples[0]?.pressuresBar, [113.2, 201.4]);
+  assert.ok(preview.omissions.some((item) => /Cloud DiveId/i.test(item)));
   assert.equal(diveModel.gasMixLabel(21, 0), "Air");
 });
 

@@ -19,6 +19,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -491,6 +493,24 @@ public class DiveComputerPlugin extends Plugin {
         putOptionalDouble(out, "temperatureSurfaceC", parsed.temperatureSurfaceC);
         putOptionalDouble(out, "atmosphericBar", parsed.atmosphericBar);
         out.put("diveMode", parsed.diveMode);
+        if (!parsed.salinityWaterType.isBlank()) {
+            JSObject salinity = new JSObject();
+            salinity.put("waterType", parsed.salinityWaterType);
+            putOptionalDouble(salinity, "densityKgM3", parsed.salinityDensityKgM3);
+            out.put("salinity", salinity);
+        }
+        if (!parsed.decompressionModelType.isBlank()) {
+            JSObject decompressionModel = new JSObject();
+            decompressionModel.put("type", parsed.decompressionModelType);
+            decompressionModel.put("conservatism", parsed.decompressionConservatism);
+            if (parsed.decompressionGfLow >= 0) {
+                decompressionModel.put("gfLow", parsed.decompressionGfLow);
+            }
+            if (parsed.decompressionGfHigh >= 0) {
+                decompressionModel.put("gfHigh", parsed.decompressionGfHigh);
+            }
+            out.put("decompressionModel", decompressionModel);
+        }
         out.put("sampleCount", parsed.sampleCount);
         putOptionalDouble(out, "gpsEntryLat", parsed.entryLatitude);
         putOptionalDouble(out, "gpsEntryLng", parsed.entryLongitude);
@@ -515,6 +535,10 @@ public class DiveComputerPlugin extends Plugin {
             item.put("beginPressureBar", tank.beginPressureBar);
             item.put("endPressureBar", tank.endPressureBar);
             item.put("gasmixIndex", tank.gasmixIndex);
+            item.put("volumeL", tank.volumeL);
+            item.put("workPressureBar", tank.workPressureBar);
+            item.put("volumeType", tank.volumeType);
+            item.put("usage", tankUsageName(tank.usage));
             tanks.put(item);
         }
         out.put("tanks", tanks);
@@ -524,6 +548,12 @@ public class DiveComputerPlugin extends Plugin {
             JSObject item = new JSObject();
             item.put("timeMs", point.timeMs);
             item.put("depthM", point.depthM);
+            putOptionalDouble(item, "temperatureC", point.temperatureC);
+            JSArray pressures = new JSArray();
+            for (double pressure : point.pressuresBar) {
+                pressures.put(Double.isNaN(pressure) ? JSONObject.NULL : pressure);
+            }
+            item.put("pressuresBar", pressures);
             profile.put(item);
         }
         out.put("profile", profile);
@@ -533,6 +563,21 @@ public class DiveComputerPlugin extends Plugin {
     private static void putOptionalDouble(JSObject target, String key, double value) {
         if (!Double.isNaN(value)) {
             target.put(key, value);
+        }
+    }
+
+    private static String tankUsageName(int usage) {
+        switch (usage) {
+            case 0:
+                return "none";
+            case 1:
+                return "oxygen";
+            case 2:
+                return "diluent";
+            case 3:
+                return "sidemount";
+            default:
+                return "unknown";
         }
     }
 

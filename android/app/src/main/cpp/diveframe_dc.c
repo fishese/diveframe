@@ -1,5 +1,6 @@
 #include <android/log.h>
 #include <jni.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +17,8 @@
 #include <libdivecomputer/version.h>
 
 #define PROFILE_CAPTURE_MAX 2048
-#define PROFILE_OUTPUT_MAX 48
+#define PROFILE_OUTPUT_MAX PROFILE_CAPTURE_MAX
+#define PROFILE_TANK_MAX 8
 
 typedef struct {
     JNIEnv *env;
@@ -444,7 +446,20 @@ typedef struct {
     unsigned int last_time_ms;
     unsigned int times[PROFILE_CAPTURE_MAX];
     double depths[PROFILE_CAPTURE_MAX];
+    double temperatures[PROFILE_CAPTURE_MAX];
+    unsigned char has_sample_temperature[PROFILE_CAPTURE_MAX];
+    double pressures[PROFILE_CAPTURE_MAX][PROFILE_TANK_MAX];
+    unsigned char has_sample_pressure[PROFILE_CAPTURE_MAX][PROFILE_TANK_MAX];
     unsigned int n_points;
+    int has_pending_temperature;
+    unsigned int pending_temperature_time;
+    double pending_temperature;
+    double pending_pressures[PROFILE_TANK_MAX];
+    unsigned int pending_pressure_times[PROFILE_TANK_MAX];
+    unsigned char has_pending_pressure[PROFILE_TANK_MAX];
+    int has_temperature;
+    double temperature_min;
+    double temperature_max;
     /*
      * Shearwater GPS arrives as a sample rather than a parser field, on the
      * first and last sample of the dive. Keep the first as the entry fix and
@@ -486,14 +501,143 @@ sample_cb(dc_sample_type_t type, const dc_sample_value_t *value, void *userdata)
     }
 
     if (type == DC_SAMPLE_DEPTH && state->n_points < PROFILE_CAPTURE_MAX) {
-        state->times[state->n_points] = state->last_time_ms;
-        state->depths[state->n_points] = value->depth;
+        unsigned int index = state->n_points;
+        state->times[index] = state->last_time_ms;
+        state->depths[index] = value->depth;
+        if (state->has_pending_temperature
+            && state->pending_temperature_time == state->last_time_ms) {
+            state->temperatures[index] = state->pending_temperature;
+            state->has_sample_temperature[index] = 1;
+            state->has_pending_temperature = 0;
+        }
+        for (unsigned int tank = 0; tank < PROFILE_TANK_MAX; ++tank) {
+            if (state->has_pending_pressure[tank]
+                && state->pending_pressure_times[tank] == state->last_time_ms) {
+                state->pressures[index][tank] = state->pending_pressures[tank];
+                state->has_sample_pressure[index][tank] = 1;
+                state->has_pending_pressure[tank] = 0;
+            }
+        }
         state->n_points++;
+        return;
+    }
+
+    if (type == DC_SAMPLE_TEMPERATURE && isfinite(value->temperature)) {
+        const double temperature = value->temperature;
+        if (!state->has_temperature) {
+            state->has_temperature = 1;
+            state->temperature_min = temperature;
+            state->temperature_max = temperature;
+        } else {
+            if (temperature < state->temperature_min) {
+                state->temperature_min = temperature;
+            }
+            if (temperature > state->temperature_max) {
+                state->temperature_max = temperature;
+            }
+        }
+
+        if (state->n_points > 0
+            && state->times[state->n_points - 1] == state->last_time_ms) {
+            state->temperatures[state->n_points - 1] = temperature;
+            state->has_sample_temperature[state->n_points - 1] = 1;
+        } else {
+            state->has_pending_temperature = 1;
+            state->pending_temperature_time = state->last_time_ms;
+            state->pending_temperature = temperature;
+        }
+        return;
+    }
+
+    if (type == DC_SAMPLE_PRESSURE
+        && value->pressure.tank < PROFILE_TANK_MAX
+        && isfinite(value->pressure.value)) {
+        const unsigned int tank = value->pressure.tank;
+        const double pressure = value->pressure.value;
+        if (state->n_points > 0
+            && state->times[state->n_points - 1] == state->last_time_ms) {
+            state->pressures[state->n_points - 1][tank] = pressure;
+            state->has_sample_pressure[state->n_points - 1][tank] = 1;
+        } else {
+            state->pending_pressures[tank] = pressure;
+            state->pending_pressure_times[tank] = state->last_time_ms;
+            state->has_pending_pressure[tank] = 1;
+        }
+    }
+}
+
+static const char *
+water_type_name(dc_water_t type)
+{
+    switch (type) {
+    case DC_WATER_FRESH:
+        return "fresh";
+    case DC_WATER_SALT:
+        return "salt";
+    default:
+        return "unknown";
+    }
+}
+
+static const char *
+decomodel_name(dc_decomodel_type_t type)
+{
+    switch (type) {
+    case DC_DECOMODEL_NONE:
+        return "none";
+    case DC_DECOMODEL_BUHLMANN:
+        return "buhlmann";
+    case DC_DECOMODEL_VPM:
+        return "vpm";
+    case DC_DECOMODEL_RGBM:
+        return "rgbm";
+    case DC_DECOMODEL_DCIEM:
+        return "dciem";
+    default:
+        return "unknown";
     }
 }
 
 static void
-append_profile_points(JNIEnv *env, jobject parsed, jmethodID add_profile, sample_collect_t *samples)
+append_profile_point(
+    JNIEnv *env,
+    jobject parsed,
+    jmethodID add_profile,
+    jmethodID add_profile_pressure,
+    sample_collect_t *samples,
+    unsigned int source_index,
+    unsigned int output_index)
+{
+    (*env)->CallVoidMethod(
+        env,
+        parsed,
+        add_profile,
+        (jint) samples->times[source_index],
+        (jdouble) samples->depths[source_index],
+        samples->has_sample_temperature[source_index]
+            ? (jdouble) samples->temperatures[source_index]
+            : (jdouble) NAN);
+
+    for (unsigned int tank = 0; tank < PROFILE_TANK_MAX; ++tank) {
+        if (samples->has_sample_pressure[source_index][tank]) {
+            (*env)->CallVoidMethod(
+                env,
+                parsed,
+                add_profile_pressure,
+                (jint) output_index,
+                (jint) tank,
+                (jdouble) samples->pressures[source_index][tank]);
+        }
+    }
+}
+
+static void
+append_profile_points(
+    JNIEnv *env,
+    jobject parsed,
+    jmethodID add_profile,
+    jmethodID add_profile_pressure,
+    sample_collect_t *samples)
 {
     if (samples->n_points == 0) {
         return;
@@ -507,23 +651,17 @@ append_profile_points(JNIEnv *env, jobject parsed, jmethodID add_profile, sample
         }
     }
 
+    unsigned int output_index = 0;
     for (unsigned int i = 0; i < samples->n_points; i += step) {
-        (*env)->CallVoidMethod(
-            env,
-            parsed,
-            add_profile,
-            (jint) samples->times[i],
-            (jdouble) samples->depths[i]);
+        append_profile_point(
+            env, parsed, add_profile, add_profile_pressure, samples, i, output_index);
+        output_index++;
     }
 
     unsigned int last = samples->n_points - 1;
     if (last % step != 0) {
-        (*env)->CallVoidMethod(
-            env,
-            parsed,
-            add_profile,
-            (jint) samples->times[last],
-            (jdouble) samples->depths[last]);
+        append_profile_point(
+            env, parsed, add_profile, add_profile_pressure, samples, last, output_index);
     }
 }
 
@@ -558,14 +696,20 @@ parse_dive(
         env, parsed_class, "setAtmosphericBar", "(D)V");
     jmethodID set_mode = (*env)->GetMethodID(
         env, parsed_class, "setDiveMode", "(Ljava/lang/String;)V");
+    jmethodID set_salinity = (*env)->GetMethodID(
+        env, parsed_class, "setSalinity", "(Ljava/lang/String;D)V");
+    jmethodID set_decomodel = (*env)->GetMethodID(
+        env, parsed_class, "setDecompressionModel", "(Ljava/lang/String;III)V");
     jmethodID set_samples = (*env)->GetMethodID(
         env, parsed_class, "setSampleCount", "(I)V");
     jmethodID add_gas = (*env)->GetMethodID(
         env, parsed_class, "addGasMix", "(DDD)V");
     jmethodID add_tank = (*env)->GetMethodID(
-        env, parsed_class, "addTank", "(DDI)V");
+        env, parsed_class, "addTank", "(DDIDDII)V");
     jmethodID add_profile = (*env)->GetMethodID(
-        env, parsed_class, "addProfilePoint", "(ID)V");
+        env, parsed_class, "addProfilePoint", "(IDD)V");
+    jmethodID add_profile_pressure = (*env)->GetMethodID(
+        env, parsed_class, "addProfilePressure", "(IID)V");
     jmethodID set_entry_location = (*env)->GetMethodID(
         env, parsed_class, "setEntryLocation", "(DD)V");
     jmethodID set_exit_location = (*env)->GetMethodID(
@@ -573,8 +717,9 @@ parse_dive(
 
     if (!parsed_ctor || !set_status || !set_datetime || !set_divetime
         || !set_maxdepth || !set_avgdepth || !set_tmin || !set_tmax
-        || !set_tsurf || !set_atm || !set_mode || !set_samples
-        || !add_gas || !add_tank || !add_profile
+        || !set_tsurf || !set_atm || !set_mode || !set_salinity
+        || !set_decomodel || !set_samples || !add_gas || !add_tank
+        || !add_profile || !add_profile_pressure
         || !set_entry_location || !set_exit_location) {
         return NULL;
     }
@@ -634,14 +779,18 @@ parse_dive(
         (*env)->CallVoidMethod(env, parsed, set_avgdepth, (jdouble) avgdepth);
     }
 
+    int has_temperature_min = 0;
+    int has_temperature_max = 0;
     double temperature = 0.0;
     if (dc_parser_get_field(parser, DC_FIELD_TEMPERATURE_MINIMUM, 0, &temperature)
         == DC_STATUS_SUCCESS) {
         (*env)->CallVoidMethod(env, parsed, set_tmin, (jdouble) temperature);
+        has_temperature_min = 1;
     }
     if (dc_parser_get_field(parser, DC_FIELD_TEMPERATURE_MAXIMUM, 0, &temperature)
         == DC_STATUS_SUCCESS) {
         (*env)->CallVoidMethod(env, parsed, set_tmax, (jdouble) temperature);
+        has_temperature_max = 1;
     }
     if (dc_parser_get_field(parser, DC_FIELD_TEMPERATURE_SURFACE, 0, &temperature)
         == DC_STATUS_SUCCESS) {
@@ -652,6 +801,38 @@ parse_dive(
     if (dc_parser_get_field(parser, DC_FIELD_ATMOSPHERIC, 0, &atmospheric)
         == DC_STATUS_SUCCESS) {
         (*env)->CallVoidMethod(env, parsed, set_atm, (jdouble) atmospheric);
+    }
+
+    dc_salinity_t salinity;
+    memset(&salinity, 0, sizeof(salinity));
+    if (dc_parser_get_field(parser, DC_FIELD_SALINITY, 0, &salinity)
+        == DC_STATUS_SUCCESS) {
+        jstring water_type = (*env)->NewStringUTF(env, water_type_name(salinity.type));
+        (*env)->CallVoidMethod(
+            env, parsed, set_salinity, water_type, (jdouble) salinity.density);
+        (*env)->DeleteLocalRef(env, water_type);
+    }
+
+    dc_decomodel_t decomodel;
+    memset(&decomodel, 0, sizeof(decomodel));
+    if (dc_parser_get_field(parser, DC_FIELD_DECOMODEL, 0, &decomodel)
+        == DC_STATUS_SUCCESS) {
+        int gf_low = -1;
+        int gf_high = -1;
+        if (decomodel.type == DC_DECOMODEL_BUHLMANN) {
+            gf_low = (int) decomodel.params.gf.low;
+            gf_high = (int) decomodel.params.gf.high;
+        }
+        jstring model_type = (*env)->NewStringUTF(env, decomodel_name(decomodel.type));
+        (*env)->CallVoidMethod(
+            env,
+            parsed,
+            set_decomodel,
+            model_type,
+            (jint) decomodel.conservatism,
+            (jint) gf_low,
+            (jint) gf_high);
+        (*env)->DeleteLocalRef(env, model_type);
     }
 
     dc_divemode_t divemode = DC_DIVEMODE_OC;
@@ -692,7 +873,11 @@ parse_dive(
                     add_tank,
                     (jdouble) tank.beginpressure,
                     (jdouble) tank.endpressure,
-                    (jint) gasmix_index);
+                    (jint) gasmix_index,
+                    (jdouble) tank.volume,
+                    (jdouble) tank.workpressure,
+                    (jint) tank.type,
+                    (jint) tank.usage);
             }
         }
     }
@@ -702,7 +887,18 @@ parse_dive(
     status = dc_parser_samples_foreach(parser, sample_cb, &samples);
     if (status == DC_STATUS_SUCCESS) {
         (*env)->CallVoidMethod(env, parsed, set_samples, (jint) samples.sample_count);
-        append_profile_points(env, parsed, add_profile, &samples);
+        append_profile_points(
+            env, parsed, add_profile, add_profile_pressure, &samples);
+        if (samples.has_temperature) {
+            if (!has_temperature_min) {
+                (*env)->CallVoidMethod(
+                    env, parsed, set_tmin, (jdouble) samples.temperature_min);
+            }
+            if (!has_temperature_max) {
+                (*env)->CallVoidMethod(
+                    env, parsed, set_tmax, (jdouble) samples.temperature_max);
+            }
+        }
         if (samples.has_entry_location) {
             (*env)->CallVoidMethod(
                 env,

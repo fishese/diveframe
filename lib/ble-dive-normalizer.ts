@@ -1,4 +1,13 @@
-import { gasMixLabel, type DiveSample, type GasMix } from "./dive-model";
+import {
+  gasMixLabel,
+  type DiveDecompressionModel,
+  type DiveMode,
+  type DiveSalinity,
+  type DiveSample,
+  type DiveTank,
+  type DiveTankUsage,
+  type GasMix,
+} from "./dive-model";
 
 /**
  * Import-contract preview for BLE captures. Aligns with
@@ -6,7 +15,7 @@ import { gasMixLabel, type DiveSample, type GasMix } from "./dive-model";
  * {@link import("./ble-persist").previewToImportedDive} /
  * {@link import("./ble-persist").persistBleCaptureFromFixture} to write IndexedDB.
  */
-export const BLE_NORMALIZER_CONTRACT_VERSION = "1.0";
+export const BLE_NORMALIZER_CONTRACT_VERSION = "1.2";
 
 export type BleDeviceContext = {
   vendor: string;
@@ -26,8 +35,19 @@ export type BleParsedDiveInput = {
   avgDepthM?: number;
   temperatureMinC?: number;
   temperatureMaxC?: number;
+  temperatureSurfaceC?: number;
   atmosphericBar?: number;
   diveMode: string;
+  salinity?: {
+    waterType: string;
+    densityKgM3?: number;
+  };
+  decompressionModel?: {
+    type: string;
+    conservatism?: number;
+    gfLow?: number;
+    gfHigh?: number;
+  };
   sampleCount: number;
   gasmixes: Array<{ o2Percent: number; hePercent: number }>;
   tanks: Array<{
@@ -36,8 +56,17 @@ export type BleParsedDiveInput = {
     beginPressureBar?: number;
     endPressureBar?: number;
     gasmixIndex: number;
+    volumeL?: number;
+    workPressureBar?: number;
+    volumeType?: number;
+    usage?: string;
   }>;
-  profile: Array<{ timeMs: number; depthM: number }>;
+  profile: Array<{
+    timeMs: number;
+    depthM: number;
+    temperatureC?: number;
+    pressuresBar?: Array<number | null>;
+  }>;
   /** Shearwater GNSS fix; only present with a satellite lock (log version 17+). */
   gpsEntryLat?: number;
   gpsEntryLng?: number;
@@ -73,18 +102,20 @@ export type BleNormalizedDivePreview = {
   minTemp: number | null;
   maxTemp: number | null;
   waterTemperatureC: number | null;
+  surfaceTemperatureC: number | null;
+  atmosphericPressureBar: number | null;
+  salinity: DiveSalinity | null;
+  decompressionModel: DiveDecompressionModel | null;
   serialNumber: string | null;
   computerModel: string | null;
   category: "scuba" | "freediving" | "snorkelling";
   categorySource: "import";
-  diveMode: string | null;
+  diveMode: DiveMode | null;
   gasMixes: GasMix[];
+  tanks: DiveTank[];
   tankPressuresStartBar: Array<number | null>;
   tankPressuresEndBar: Array<number | null>;
-  /**
-   * Downsampled profile from the native spike only. Full-resolution samples
-   * remain in the raw payload until persistence lands.
-   */
+  /** Native profile points, including tank-indexed pressure readings. */
   samples: DiveSample[];
   sampleCountReported: number;
   /**
@@ -120,7 +151,6 @@ export function normalizeBleDivePreview(
   const parsed = dive.parsed;
   const parseOk = Boolean(parsed && parsed.parseStatus === 0);
   const omissions: string[] = [
-    "full-resolution profile samples retained in rawDiveRecords until reparse",
     "Shearwater Cloud DiveId / dive number",
     "site, location, buddy, notes",
   ];
@@ -140,12 +170,17 @@ export function normalizeBleDivePreview(
       minTemp: null,
       maxTemp: null,
       waterTemperatureC: null,
+      surfaceTemperatureC: null,
+      atmosphericPressureBar: null,
+      salinity: null,
+      decompressionModel: null,
       serialNumber: serialHex || null,
       computerModel: device.product || null,
       category: "scuba",
       categorySource: "import",
       diveMode: null,
       gasMixes: [],
+      tanks: [],
       tankPressuresStartBar: [],
       tankPressuresEndBar: [],
       samples: [],
@@ -183,14 +218,21 @@ export function normalizeBleDivePreview(
     parsed.avgDepthM != null && !Number.isNaN(parsed.avgDepthM)
       ? parsed.avgDepthM
       : null;
+  const sampleTemperatures = parsed.profile
+    .map((point) => point.temperatureC)
+    .filter((value): value is number => value != null && Number.isFinite(value));
   const minTemp =
     parsed.temperatureMinC != null && !Number.isNaN(parsed.temperatureMinC)
       ? parsed.temperatureMinC
-      : null;
+      : sampleTemperatures.length
+        ? Math.min(...sampleTemperatures)
+        : null;
   const maxTemp =
     parsed.temperatureMaxC != null && !Number.isNaN(parsed.temperatureMaxC)
       ? parsed.temperatureMaxC
-      : null;
+      : sampleTemperatures.length
+        ? Math.max(...sampleTemperatures)
+        : null;
 
   if (averageDepth == null) omissions.push("average depth (unsupported by parser)");
   if (minTemp == null && maxTemp == null) {
@@ -209,22 +251,59 @@ export function normalizeBleDivePreview(
 
   const tankPressuresStartBar: Array<number | null> = [];
   const tankPressuresEndBar: Array<number | null> = [];
-  for (const tank of parsed.tanks) {
-    const begin = tank.beginBar ?? tank.beginPressureBar ?? null;
-    const end = tank.endBar ?? tank.endPressureBar ?? null;
+  const sampledTankCount = parsed.profile.reduce(
+    (count, point) => Math.max(count, point.pressuresBar?.length ?? 0),
+    0,
+  );
+  const tankCount = Math.max(parsed.tanks.length, sampledTankCount);
+  const tanks: DiveTank[] = Array.from({ length: tankCount }, (_, index) => {
+    const tank = parsed.tanks[index];
+    const begin = positiveFiniteOrNull(
+      tank?.beginBar ?? tank?.beginPressureBar,
+    );
+    const end = positiveFiniteOrNull(tank?.endBar ?? tank?.endPressureBar);
     tankPressuresStartBar.push(begin);
     tankPressuresEndBar.push(end);
-  }
+    return {
+      index,
+      gasMixIndex:
+        tank != null &&
+        Number.isInteger(tank.gasmixIndex) &&
+        tank.gasmixIndex >= 0
+          ? tank.gasmixIndex
+          : null,
+      volumeL: positiveFiniteOrNull(tank?.volumeL),
+      workPressureBar: positiveFiniteOrNull(tank?.workPressureBar),
+      startPressureBar: begin,
+      endPressureBar: end,
+      usage: tankUsage(tank?.usage),
+    };
+  });
 
   const samples: DiveSample[] = parsed.profile.map((point) => ({
     elapsedSeconds: Math.round(point.timeMs / 1000),
     depthM: point.depthM,
-    pressuresBar: [],
+    ...(point.temperatureC != null && Number.isFinite(point.temperatureC)
+      ? { temperatureC: point.temperatureC }
+      : {}),
+    pressuresBar: (point.pressuresBar ?? []).map((pressure) =>
+      pressure != null && Number.isFinite(pressure)
+        ? pressure
+        : Number.NaN,
+    ),
   }));
+
+  const surfaceTemperatureC = finiteOrNull(parsed.temperatureSurfaceC);
+  const atmosphericPressureBar = positiveFiniteOrNull(parsed.atmosphericBar);
+  const salinity = normalizeSalinity(parsed.salinity);
+  const decompressionModel = normalizeDecompressionModel(
+    parsed.decompressionModel,
+  );
+  const diveMode = normalizeDiveMode(parsed.diveMode);
 
   if (parsed.sampleCount > samples.length) {
     omissions.push(
-      `profile downsampled for UI (${samples.length} of ${parsed.sampleCount} time samples)`,
+      `profile capture limited to ${samples.length} of ${parsed.sampleCount} time samples; full raw bytes retained`,
     );
   }
 
@@ -246,12 +325,17 @@ export function normalizeBleDivePreview(
     minTemp,
     maxTemp,
     waterTemperatureC: minTemp ?? maxTemp,
+    surfaceTemperatureC,
+    atmosphericPressureBar,
+    salinity,
+    decompressionModel,
     serialNumber: serialHex || null,
     computerModel: device.product || null,
     category: categoryFromDiveMode(parsed.diveMode),
     categorySource: "import",
-    diveMode: parsed.diveMode || null,
+    diveMode,
     gasMixes,
+    tanks,
     tankPressuresStartBar,
     tankPressuresEndBar,
     samples,
@@ -295,6 +379,78 @@ function coordinatePair(latitude?: number, longitude?: number) {
   if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
   if (latitude === 0 && longitude === 0) return null;
   return { latitude, longitude };
+}
+
+function finiteOrNull(value: number | undefined) {
+  return value != null && Number.isFinite(value) ? value : null;
+}
+
+function positiveFiniteOrNull(value: number | undefined) {
+  return value != null && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function normalizeDiveMode(value: string): DiveMode | null {
+  const mode = value.toLowerCase();
+  if (
+    mode === "freedive" ||
+    mode === "gauge" ||
+    mode === "oc" ||
+    mode === "ccr" ||
+    mode === "scr" ||
+    mode === "unknown"
+  ) {
+    return mode;
+  }
+  return null;
+}
+
+function tankUsage(value?: string): DiveTankUsage {
+  if (
+    value === "none" ||
+    value === "oxygen" ||
+    value === "diluent" ||
+    value === "sidemount"
+  ) {
+    return value;
+  }
+  return "unknown";
+}
+
+function normalizeSalinity(
+  value: BleParsedDiveInput["salinity"],
+): DiveSalinity | null {
+  if (!value) return null;
+  const waterType =
+    value.waterType === "fresh" || value.waterType === "salt"
+      ? value.waterType
+      : "unknown";
+  return {
+    waterType,
+    densityKgM3: positiveFiniteOrNull(value.densityKgM3),
+  };
+}
+
+function normalizeDecompressionModel(
+  value: BleParsedDiveInput["decompressionModel"],
+): DiveDecompressionModel | null {
+  if (!value) return null;
+  const knownTypes: DiveDecompressionModel["type"][] = [
+    "none",
+    "buhlmann",
+    "vpm",
+    "rgbm",
+    "dciem",
+    "unknown",
+  ];
+  const type = knownTypes.includes(value.type as DiveDecompressionModel["type"])
+    ? (value.type as DiveDecompressionModel["type"])
+    : "unknown";
+  return {
+    type,
+    conservatism: finiteOrNull(value.conservatism),
+    gfLow: finiteOrNull(value.gfLow),
+    gfHigh: finiteOrNull(value.gfHigh),
+  };
 }
 
 function categoryFromDiveMode(

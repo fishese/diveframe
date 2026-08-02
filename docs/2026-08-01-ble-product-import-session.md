@@ -131,13 +131,17 @@ shipped on `main` and documented in `USER-GUIDE.md` / `PRODUCT-SPEC.md`. Plan:
 3. Re-verify **Export app data** and GPS filter on device after the GNSS persist
    fix (new BLE imports should carry computer GPS when the computer recorded a
    lock).
-4. Deploy production CORS for Capacitor origins on geocode / nearby / what's-new.
-5. Next product steps:
+4. Re-download at least one Perdix 2 dive with AI to smoke-test parser contract
+   v1.2: temperature samples, tank-indexed pressure samples, exact dive mode,
+   atmosphere/salinity/decompression metadata, and tank metadata. Physical tank
+   series remain independent for later twin/sidemount display grouping.
+5. Deploy production CORS for Capacitor origins on geocode / nearby / what's-new.
+6. Next product steps:
    - Trip / user-GPS editors — **done** on `main`
    - Site display alias chips — **done** on `main`
    - BLE hardening / failure matrix / privacy–LGPL release work
    - About copy: classic Shearwater BLE only (not Perdix 3)
-6. Parked / lower priority: pinned in-app download strip; PC Web Bluetooth;
+7. Parked / lower priority: pinned in-app download strip; PC Web Bluetooth;
    background notification / foreground service
 
 ## Known leftovers

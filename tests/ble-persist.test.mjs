@@ -70,13 +70,29 @@ test("BLE persist helpers build shearwater-ble import + raw record ids", () => {
         avgDepthM: 2.1,
         temperatureMinC: 28,
         temperatureMaxC: 29,
+        temperatureSurfaceC: 30,
+        atmosphericBar: 1.012,
         diveMode: "OC",
+        salinity: { waterType: "salt", densityKgM3: 1025 },
+        decompressionModel: {
+          type: "buhlmann",
+          conservatism: 0,
+          gfLow: 40,
+          gfHigh: 85,
+        },
         sampleCount: 2,
         gasmixes: [{ o2Percent: 21, hePercent: 0 }],
-        tanks: [{ beginBar: 113.2, endBar: 108.4, gasmixIndex: 0 }],
+        tanks: [{
+          beginBar: 113.2,
+          endBar: 108.4,
+          gasmixIndex: 0,
+          volumeL: 12,
+          workPressureBar: 232,
+          usage: "none",
+        }],
         profile: [
-          { timeMs: 0, depthM: 0 },
-          { timeMs: 518000, depthM: 0 },
+          { timeMs: 0, depthM: 0, pressuresBar: [113.2] },
+          { timeMs: 518000, depthM: 0, pressuresBar: [108.4] },
         ],
       },
     },
@@ -85,6 +101,11 @@ test("BLE persist helpers build shearwater-ble import + raw record ids", () => {
   assert.equal(dive.source, "shearwater-ble");
   assert.equal(dive.sourceId, "6A3FDA66");
   assert.equal(dive.id, "dive:v1:shearwater-ble:6A3FDA66");
+  assert.equal(dive.diveMode, "oc");
+  assert.equal(dive.surfaceTemperatureC, 30);
+  assert.equal(dive.atmosphericPressureBar, 1.012);
+  assert.equal(dive.tanks[0].volumeL, 12);
+  assert.deepEqual(dive.samples[0].pressuresBar, [113.2]);
   assert.equal(
     persist.rawDiveRecordId("6a3fda66"),
     "raw:shearwater-ble:6A3FDA66",

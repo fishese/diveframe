@@ -300,6 +300,12 @@ final class DiveComputerNative {
         double temperatureSurfaceC = Double.NaN;
         double atmosphericBar = Double.NaN;
         String diveMode = "";
+        String salinityWaterType = "";
+        double salinityDensityKgM3 = Double.NaN;
+        String decompressionModelType = "";
+        int decompressionConservatism;
+        int decompressionGfLow = -1;
+        int decompressionGfHigh = -1;
         int sampleCount;
         // Shearwater GNSS fixes, emitted as location samples by libdivecomputer.
         double entryLatitude = Double.NaN;
@@ -353,6 +359,18 @@ final class DiveComputerNative {
             diveMode = mode == null ? "" : mode;
         }
 
+        void setSalinity(String waterType, double densityKgM3) {
+            salinityWaterType = waterType == null ? "" : waterType;
+            salinityDensityKgM3 = densityKgM3;
+        }
+
+        void setDecompressionModel(String type, int conservatism, int gfLow, int gfHigh) {
+            decompressionModelType = type == null ? "" : type;
+            decompressionConservatism = conservatism;
+            decompressionGfLow = gfLow;
+            decompressionGfHigh = gfHigh;
+        }
+
         void setSampleCount(int count) {
             sampleCount = count;
         }
@@ -371,12 +389,35 @@ final class DiveComputerNative {
             gasmixes.add(new GasMix(oxygen, helium, nitrogen));
         }
 
-        void addTank(double beginBar, double endBar, int gasmixIndex) {
-            tanks.add(new TankInfo(beginBar, endBar, gasmixIndex));
+        void addTank(
+            double beginBar,
+            double endBar,
+            int gasmixIndex,
+            double volumeL,
+            double workPressureBar,
+            int volumeType,
+            int usage
+        ) {
+            tanks.add(new TankInfo(
+                beginBar,
+                endBar,
+                gasmixIndex,
+                volumeL,
+                workPressureBar,
+                volumeType,
+                usage
+            ));
         }
 
-        void addProfilePoint(int timeMs, double depthM) {
-            profile.add(new ProfilePoint(timeMs, depthM));
+        void addProfilePoint(int timeMs, double depthM, double temperatureC) {
+            profile.add(new ProfilePoint(timeMs, depthM, temperatureC));
+        }
+
+        void addProfilePressure(int profileIndex, int tankIndex, double pressureBar) {
+            if (profileIndex < 0 || profileIndex >= profile.size() || tankIndex < 0) {
+                return;
+            }
+            profile.get(profileIndex).setPressure(tankIndex, pressureBar);
         }
     }
 
@@ -396,21 +437,47 @@ final class DiveComputerNative {
         final double beginPressureBar;
         final double endPressureBar;
         final int gasmixIndex;
+        final double volumeL;
+        final double workPressureBar;
+        final int volumeType;
+        final int usage;
 
-        TankInfo(double beginPressureBar, double endPressureBar, int gasmixIndex) {
+        TankInfo(
+            double beginPressureBar,
+            double endPressureBar,
+            int gasmixIndex,
+            double volumeL,
+            double workPressureBar,
+            int volumeType,
+            int usage
+        ) {
             this.beginPressureBar = beginPressureBar;
             this.endPressureBar = endPressureBar;
             this.gasmixIndex = gasmixIndex;
+            this.volumeL = volumeL;
+            this.workPressureBar = workPressureBar;
+            this.volumeType = volumeType;
+            this.usage = usage;
         }
     }
 
     static final class ProfilePoint {
         final int timeMs;
         final double depthM;
+        final double temperatureC;
+        final List<Double> pressuresBar = new ArrayList<>();
 
-        ProfilePoint(int timeMs, double depthM) {
+        ProfilePoint(int timeMs, double depthM, double temperatureC) {
             this.timeMs = timeMs;
             this.depthM = depthM;
+            this.temperatureC = temperatureC;
+        }
+
+        void setPressure(int tankIndex, double pressureBar) {
+            while (pressuresBar.size() <= tankIndex) {
+                pressuresBar.add(Double.NaN);
+            }
+            pressuresBar.set(tankIndex, pressureBar);
         }
     }
 }

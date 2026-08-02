@@ -4,8 +4,51 @@ export type DiveSample = {
   elapsedSeconds: number;
   depthM: number;
   temperatureC?: number;
+  /** Tank-indexed pressure series; indexes match {@link DiveTank.index}. */
   pressuresBar: number[];
   ndlSeconds?: number;
+};
+
+export type DiveMode =
+  | "freedive"
+  | "gauge"
+  | "oc"
+  | "ccr"
+  | "scr"
+  | "unknown";
+
+export type DiveTankUsage =
+  | "none"
+  | "oxygen"
+  | "diluent"
+  | "sidemount"
+  | "unknown";
+
+/**
+ * Computer-reported tank metadata. `index` is the stable key into each
+ * sample's `pressuresBar` array. Future twin/sidemount grouping can therefore
+ * remain a separate user-facing configuration without rewriting samples.
+ */
+export type DiveTank = {
+  index: number;
+  gasMixIndex: number | null;
+  volumeL: number | null;
+  workPressureBar: number | null;
+  startPressureBar: number | null;
+  endPressureBar: number | null;
+  usage: DiveTankUsage;
+};
+
+export type DiveSalinity = {
+  waterType: "fresh" | "salt" | "unknown";
+  densityKgM3: number | null;
+};
+
+export type DiveDecompressionModel = {
+  type: "none" | "buhlmann" | "vpm" | "rgbm" | "dciem" | "unknown";
+  conservatism: number | null;
+  gfLow: number | null;
+  gfHigh: number | null;
 };
 
 export type GasMix = {
@@ -44,7 +87,13 @@ export type Dive = {
   maxDepthM: number | null;
   averageDepthM: number | null;
   waterTemperatureC: number | null;
+  surfaceTemperatureC: number | null;
+  atmosphericPressureBar: number | null;
+  salinity: DiveSalinity | null;
+  decompressionModel: DiveDecompressionModel | null;
+  diveMode: DiveMode | null;
   gasMixes: GasMix[];
+  tanks: DiveTank[];
   computerModel: string | null;
   samples: DiveSample[];
   tankPressuresStartBar: Array<number | null>;

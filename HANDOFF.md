@@ -41,7 +41,10 @@ Shipped on `main` (pushed):
 - Trip list blocks, select mode, user GPS + JPEG EXIF, catalog alias display,
   date/computer/GPS list filters
 - Android product BLE import with incremental persist; Shearwater computer GPS
-  via `DC_SAMPLE_LOCATION` sample callbacks
+  via `DC_SAMPLE_LOCATION` sample callbacks. The native parser contract is
+  v1.2: new downloads retain sample temperature, independent tank-indexed
+  pressure series, exact dive mode, atmosphere/salinity/decompression metadata,
+  and computer-reported tank metadata.
 - Photo GPS extraction: the APK uses the MediaStore picker with
   `ACCESS_MEDIA_LOCATION`; web/PWA extraction supports JPEG EXIF. Keeping the
   selected location photo is opt-in. Nearby site suggestions are limited to
@@ -95,6 +98,9 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `lib/dive-matching.ts` — cross-source record matching.
 - `lib/dive-identity.ts` — deterministic canonical IDs and source precedence.
 - `lib/chart-renderer.ts` — profile downsampling and vector-like canvas paths.
+- `lib/dive-model.ts` — normalized profile/environment/tank model. A sample's
+  `pressuresBar[n]` belongs to `tanks[n]`; do not collapse physical tanks in
+  storage when adding twin/sidemount presentation later.
 - `lib/image-composer.ts`, `lib/templates.ts`, and `lib/exporter.ts` — data-driven
   layouts, rendering, and PNG/JPEG export.
 - `lib/app-i18n.ts`, `lib/i18n.ts`, and `lib/unit-conversion.ts` — application
@@ -487,13 +493,32 @@ assignment, formatted GPS coordinates, then omission. Fields with no source
 data are disabled in the controls and are never shown as zero.
 
 The Subsurface parser retains depth samples and sparse temperature and
-`pressure0`, `pressure1`, etc. telemetry. The renderer labels pressure as
-“Tank pressure.” DiveFrame calculates SAC only when duration, average depth,
-one complete pressure pair, and cylinder volume are available. Shearwater-only
-records can render summary statistics but, for the tested export, cannot
-render the true profile because its sample stream is proprietary. A one-time
-re-import of the Subsurface log populates samples for browser records created
-before schema version 4.
+`pressure0`, `pressure1`, etc. telemetry. Classic Shearwater BLE imports now
+also retain the native depth/temperature profile and pressure readings keyed by
+tank index (up to the existing 2,048-point native capture limit); original raw
+bytes remain stored for future reparsing. Dive records additionally retain
+exact dive mode, atmospheric pressure, salinity/density, decompression model
+and GF settings, surface temperature when a parser supplies it, and structured
+tank metadata. Shearwater currently reports no tank volume/work pressure and
+does not expose a surface-temperature summary, so those values can be null.
+
+Each physical computer tank remains an independent stored series. Future twin
+sets may aggregate selected tanks into one chart line, while sidemount can show
+separate lines; that grouping belongs in additive user/display configuration,
+not in the raw sample schema. JSON backups serialize sparse `NaN` pressure
+slots as `null`; hydration converts them back to missing numeric samples.
+
+Cross-source matching never concatenates tank or profile arrays. For a matched
+BLE + Subsurface/UDDF dive, `preferRicherSamples` selects one complete profile,
+and pressure-bound arrays are selected whole. A single physical tank therefore
+does not become two tanks merely because the same dive was imported from two
+sources. If matching fails, the failure mode is two separate dive records,
+which belongs to duplicate review—not duplicate tanks inside one dive.
+
+The renderer labels pressure as “Tank pressure.” DiveFrame calculates SAC only
+when duration, average depth, one complete pressure pair, and cylinder volume
+are available. A one-time re-import of the Subsurface log still populates
+samples for browser records created before schema version 4.
 
 Chart depth and elapsed-time axis labels are enabled by default and can be
 hidden per dive. The depth fill supports solid and upward transparent-fade

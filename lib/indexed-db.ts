@@ -1,6 +1,10 @@
 import type {
   DiveCategory,
+  DiveDecompressionModel,
+  DiveMode,
+  DiveSalinity,
   DiveSample,
+  DiveTank,
   GasMix,
 } from "./dive-model";
 import type { ComposerSettings } from "./composer-settings";
@@ -56,7 +60,13 @@ export type LocalDive = {
   categorySource: "default" | "import" | "user";
   maxDepthM: number | null;
   waterTemperatureC: number | null;
+  surfaceTemperatureC?: number | null;
+  atmosphericPressureBar?: number | null;
+  salinity?: DiveSalinity | null;
+  decompressionModel?: DiveDecompressionModel | null;
+  diveMode?: DiveMode | null;
   gasMixes: GasMix[];
+  tanks?: DiveTank[];
   computerModel: string | null;
   samples: DiveSample[];
   tankPressuresStartBar: Array<number | null>;
@@ -1698,10 +1708,28 @@ function mergeDive(
       incoming.waterTemperatureC,
       existing?.waterTemperatureC,
     ),
+    surfaceTemperatureC: core(
+      incoming.surfaceTemperatureC ?? null,
+      existing?.surfaceTemperatureC,
+    ),
+    atmosphericPressureBar: core(
+      incoming.atmosphericPressureBar ?? null,
+      existing?.atmosphericPressureBar,
+    ),
+    salinity: core(incoming.salinity ?? null, existing?.salinity),
+    decompressionModel: core(
+      incoming.decompressionModel ?? null,
+      existing?.decompressionModel,
+    ),
+    diveMode: core(incoming.diveMode ?? null, existing?.diveMode),
     gasMixes:
       incoming.gasMixes.length > 0
         ? incoming.gasMixes
         : (existing?.gasMixes ?? []),
+    tanks:
+      incoming.tanks?.length
+        ? incoming.tanks
+        : (existing?.tanks ?? []),
     computerModel: core(incoming.computerModel, existing?.computerModel),
     samples: preferRicherSamples(existing?.samples, incoming.samples),
     tankPressuresStartBar: preferPopulatedArray(
@@ -1776,7 +1804,22 @@ function mergeStoredDives(
       keep.waterTemperatureC,
       remove.waterTemperatureC,
     ),
+    surfaceTemperatureC: value(
+      keep.surfaceTemperatureC,
+      remove.surfaceTemperatureC,
+    ),
+    atmosphericPressureBar: value(
+      keep.atmosphericPressureBar,
+      remove.atmosphericPressureBar,
+    ),
+    salinity: value(keep.salinity, remove.salinity),
+    decompressionModel: value(
+      keep.decompressionModel,
+      remove.decompressionModel,
+    ),
+    diveMode: value(keep.diveMode, remove.diveMode),
     gasMixes: keep.gasMixes.length ? keep.gasMixes : remove.gasMixes,
+    tanks: keep.tanks?.length ? keep.tanks : (remove.tanks ?? []),
     computerModel: value(keep.computerModel, remove.computerModel),
     samples: preferRicherSamples(keep.samples, remove.samples),
     tankPressuresStartBar: preferPopulatedArray(
@@ -2020,9 +2063,20 @@ function hydrateDive(dive: LocalDive): LocalDive {
     maxDepthM,
     waterTemperatureC:
       dive.waterTemperatureC ?? dive.minTemp ?? dive.maxTemp ?? null,
+    surfaceTemperatureC: dive.surfaceTemperatureC ?? null,
+    atmosphericPressureBar: dive.atmosphericPressureBar ?? null,
+    salinity: dive.salinity ?? null,
+    decompressionModel: dive.decompressionModel ?? null,
+    diveMode: dive.diveMode ?? null,
     gasMixes: dive.gasMixes ?? [],
+    tanks: dive.tanks ?? [],
     computerModel: dive.computerModel ?? null,
-    samples: dive.samples ?? [],
+    samples: (dive.samples ?? []).map((sample) => ({
+      ...sample,
+      pressuresBar: (sample.pressuresBar ?? []).map((pressure) =>
+        Number.isFinite(pressure) ? pressure : Number.NaN,
+      ),
+    })),
     tankPressuresStartBar: pressures.start,
     tankPressuresEndBar: pressures.end,
     userGpsLat: dive.userGpsLat ?? null,
