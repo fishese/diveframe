@@ -21,10 +21,6 @@ export type DiveComputerPermissionResult = {
   bluetooth: string;
 };
 
-export type DiveComputerMediaLocationPermissionResult = {
-  mediaLocation: string;
-};
-
 export type DiveComputerScanStartResult = {
   scanning: boolean;
   timeoutMs: number;
@@ -158,7 +154,6 @@ export type DiveComputerDiveCapturedEvent = {
 export interface DiveComputerPlugin {
   getCapabilities(): Promise<DiveComputerCapabilities>;
   requestPermissions(): Promise<DiveComputerPermissionResult>;
-  requestMediaLocationPermission(): Promise<DiveComputerMediaLocationPermissionResult>;
   startScan(options?: { timeoutMs?: number }): Promise<DiveComputerScanStartResult>;
   stopScan(): Promise<{ scanning: boolean }>;
   connect(options: {
@@ -232,11 +227,6 @@ export const diveComputerCapability = {
   async requestPermissions() {
     requireNativePlugin();
     return nativePlugin.requestPermissions();
-  },
-
-  async requestMediaLocationPermission() {
-    requireNativePlugin();
-    return nativePlugin.requestMediaLocationPermission();
   },
 
   async startScan(options?: { timeoutMs?: number }) {

@@ -43,12 +43,6 @@ import java.util.concurrent.Executors;
                 Manifest.permission.ACCESS_FINE_LOCATION,
             }
         ),
-        @Permission(
-            alias = "mediaLocation",
-            strings = {
-                Manifest.permission.ACCESS_MEDIA_LOCATION,
-            }
-        ),
     }
 )
 public class DiveComputerPlugin extends Plugin {
@@ -157,7 +151,6 @@ public class DiveComputerPlugin extends Plugin {
         JSArray operations = new JSArray();
         operations.put("getCapabilities");
         operations.put("requestPermissions");
-        operations.put("requestMediaLocationPermission");
         operations.put("startScan");
         operations.put("stopScan");
         operations.put("connect");
@@ -194,30 +187,6 @@ public class DiveComputerPlugin extends Plugin {
     private void permissionCallback(PluginCall call) {
         JSObject result = new JSObject();
         result.put("bluetooth", getPermissionState(bluetoothAlias()).name());
-        call.resolve(result);
-    }
-
-    @PluginMethod
-    public void requestMediaLocationPermission(PluginCall call) {
-        // ACCESS_MEDIA_LOCATION was introduced in Android 10. On older
-        // versions the platform does not redact shared-photo EXIF metadata.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            JSObject result = new JSObject();
-            result.put("mediaLocation", "granted");
-            call.resolve(result);
-            return;
-        }
-        requestPermissionForAlias(
-            "mediaLocation",
-            call,
-            "mediaLocationPermissionCallback"
-        );
-    }
-
-    @PermissionCallback
-    private void mediaLocationPermissionCallback(PluginCall call) {
-        JSObject result = new JSObject();
-        result.put("mediaLocation", getPermissionState("mediaLocation").name());
         call.resolve(result);
     }
 

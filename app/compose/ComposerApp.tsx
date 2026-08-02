@@ -47,6 +47,7 @@ import {
 import { toNormalizedDive } from "@/lib/normalize-dive";
 import { TEMPLATES } from "@/lib/templates";
 import { useAppI18n } from "../AppI18nProvider";
+import { AndroidAppLink } from "../components/AndroidAppLink";
 
 type PhotoChoice = {
   id: string;
@@ -452,6 +453,7 @@ export function ComposerApp() {
             <ArrowLeft size={16} /> {t("backToDives")}
           </Link>
           <Link href="/settings" className="button button-quiet composer-settings-link"><SettingsIcon size={16} /> {t("settings")}</Link>
+          <AndroidAppLink />
           <button className="button button-primary" onClick={exportImage} disabled={!bitmap || exporting}>
             {exporting ? <LoaderCircle size={16} className="spin" /> : <Download size={16} />} {t("exportImage")}
           </button>

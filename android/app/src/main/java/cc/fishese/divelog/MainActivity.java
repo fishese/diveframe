@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(DiveComputerPlugin.class);
         registerPlugin(FileExportPlugin.class);
+        registerPlugin(PhotoLocationPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

@@ -224,7 +224,7 @@ button {
 }
 
 .button:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.55;
   transform: none;
 }
@@ -1180,6 +1180,80 @@ button {
   scroll-margin-top: 18px;
 }
 
+.user-gps-editor {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.user-gps-editor-body {
+  display: grid;
+  gap: 10px;
+}
+
+.coordinate-pair-field {
+  display: grid;
+  gap: 6px;
+}
+
+.coordinate-pair-field input {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  padding: 10px 11px;
+  width: 100%;
+}
+
+.coordinate-pair-field input:focus {
+  border-color: rgba(141, 235, 215, 0.48);
+  box-shadow: 0 0 0 3px rgba(141, 235, 215, 0.08);
+}
+
+.coordinate-pair-field input[aria-invalid="true"] {
+  border-color: rgba(255, 137, 115, 0.72);
+}
+
+.coordinate-pair-field small,
+.photo-location-keep,
+.photo-gps-status {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.coordinate-input-error {
+  color: #ffab9c;
+  font-size: 12px;
+  margin: 0;
+}
+
+.user-gps-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.photo-location-keep {
+  align-items: flex-start;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+}
+
+.photo-location-keep input {
+  accent-color: var(--teal);
+  margin-top: 2px;
+}
+
+.photo-gps-status {
+  margin: 0;
+}
+
 .site-picker-card .card-heading > span {
   color: var(--muted);
   font-size: 11px;
@@ -1319,7 +1393,7 @@ button {
 .site-suggestion-name:disabled,
 .site-alias-expand:disabled,
 .site-alias-chip:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.55;
 }
 
@@ -2458,6 +2532,10 @@ button {
   min-height: 100vh;
 }
 
+.android-page {
+  min-height: 100vh;
+}
+
 .about-shell {
   margin: 0 auto;
   max-width: 1120px;
@@ -2620,6 +2698,111 @@ button {
   margin-bottom: 30px;
   max-width: 720px;
   order: 0;
+}
+
+.android-shell {
+  margin: 0 auto;
+  max-width: 1120px;
+  padding: 54px 24px 90px;
+}
+
+.android-hero {
+  max-width: 830px;
+}
+
+.android-hero h1 {
+  font-size: clamp(40px, 6vw, 70px);
+  letter-spacing: -0.06em;
+  line-height: 0.98;
+  margin: 0;
+}
+
+.android-hero > p:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.7;
+  margin: 20px 0 0;
+  max-width: 760px;
+}
+
+.android-hero .about-actions {
+  margin-top: 24px;
+}
+
+.android-download-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 16px !important;
+}
+
+.android-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 42px;
+}
+
+.android-card {
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  display: flex;
+  gap: 16px;
+  min-height: 0;
+  padding: 24px;
+}
+
+.android-card h2,
+.android-note-card h2 {
+  font-size: 24px;
+  letter-spacing: -0.035em;
+  margin: 1px 0 12px;
+}
+
+.android-card p,
+.android-card li,
+.android-note-card p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.android-card p {
+  margin: 0;
+}
+
+.android-card ul {
+  margin: 14px 0 0;
+  padding-left: 20px;
+}
+
+.android-card li + li {
+  margin-top: 7px;
+}
+
+.android-note-card {
+  background:
+    linear-gradient(135deg, rgba(141, 235, 215, 0.1), rgba(141, 235, 215, 0.025));
+  border: 1px solid rgba(141, 235, 215, 0.22);
+  border-radius: 22px;
+  margin-top: 14px;
+  padding: 28px;
+}
+
+.android-note-card .eyebrow {
+  margin-bottom: 8px;
+}
+
+.android-note-card h2,
+.android-note-card p {
+  margin-top: 0;
+}
+
+.android-note-card p:last-child {
+  margin-bottom: 0;
+  max-width: 800px;
 }
 
 .whats-new-settings {
@@ -3586,6 +3769,10 @@ button {
     padding: 36px 16px 70px;
   }
 
+  .android-shell {
+    padding: 36px 16px 70px;
+  }
+
   .about-hero h1 {
     font-size: 41px;
   }
@@ -3595,8 +3782,17 @@ button {
     margin-top: 30px;
   }
 
+  .android-grid {
+    grid-template-columns: 1fr;
+    margin-top: 30px;
+  }
+
   .about-card {
     min-height: 0;
+    padding: 20px;
+  }
+
+  .android-card {
     padding: 20px;
   }
 

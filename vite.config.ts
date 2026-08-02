@@ -11,6 +11,17 @@ const { d1, r2 } = hostingConfig;
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
+// The Codex in-app browser does not expose a usable WebSocket transport for
+// Vite's HMR client. Disable the local HMR connection so its client cannot
+// surface an unhandled `send` rejection over the app. This only affects the
+// development server; production builds do not use this setting.
+const localServerConfig = {
+  hmr: false,
+  ...(isCodexSeatbeltSandbox
+    ? { watch: { useFsEvents: false, usePolling: true } }
+    : {}),
+};
+
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
@@ -44,9 +55,7 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    server: isCodexSeatbeltSandbox
-      ? { watch: { useFsEvents: false, usePolling: true } }
-      : undefined,
+    server: localServerConfig,
     plugins: [
       vinext(),
       sites(),

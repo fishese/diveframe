@@ -47,8 +47,10 @@ Shipped on `main` (pushed):
 
 Open follow-ups:
 
-- Photo EXIF location lookup is still a WIP: the web flow can remain stuck on
-  its loading spinner, and the Android flow still needs device testing.
+- Photo EXIF location lookup was rebuilt with a real web/PWA JPEG picker, a
+  dedicated Android picker that requests unredacted media location, and a
+  single comma-separated coordinate field. Keeping the selected location
+  photo is opt-in. The Android picker still needs a device smoke test.
 - Import-guide detail cards need a formatting pass: icon/title indentation and
   whether the title starts on the next line are currently inconsistent.
 - Deploy production CORS for `/api/geocode`, `/api/nearby-sites`, and
@@ -71,6 +73,9 @@ Deployment is managed by the repository's Cloudflare Worker integration.
   tools, including the reusable background library.
 - `app/about/AboutApp.tsx` — trilingual user-facing explanation of imports,
   exports, local persistence, source-log reconciliation, and licensing.
+- `app/android/AndroidAppPage.tsx` and `app/components/AndroidAppLink.tsx` —
+  web-only Android APK information/download page and compact phone links in
+  web headers.
 - `lib/parsers/` — separate Shearwater, Subsurface, UDDF, and FIT importers.
 - `lib/dive-model.ts` and `lib/normalize-dive.ts` — normalized internal model.
 - `lib/dive-matching.ts` — cross-source record matching.

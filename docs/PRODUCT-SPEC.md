@@ -83,8 +83,10 @@ weakening the web app or requiring a second logbook implementation.
   manual start/end pressure.
 - Assign dives to trips from **Edit dive details** or bulk **Select dives** on
   the logbook list (grouped trip blocks, session-only expand/collapse).
-- Set user GPS manually or from attached JPEG EXIF without overwriting computer
-  GPS; map display resolves computer → user → name geocode.
+- Set user GPS from one comma-separated decimal coordinate pair or from a
+  selected photo's EXIF without overwriting computer GPS; keeping that photo
+  on the dive is optional. Map display resolves computer → user → name
+  geocode.
 - Select a nearby site from the bundled catalog, a user-loaded supplementary
   catalog, or OpenStreetMap suggestions, including choosing a catalog alias as
   the displayed site name.
@@ -322,6 +324,10 @@ without the necessary pressure and cylinder inputs.
 - DiveFrame can be installed as a PWA. An Android debug Capacitor APK ships the
   same web UI with optional classic Shearwater BLE import. It is not yet an
   iOS app or store-distributed application.
+- The web headers link to an Android APK information page. It documents the
+  APK's classic Shearwater Bluetooth scope, Android media-location and
+  Bluetooth permissions, native Downloads behavior, and the current decision
+  to use Subsurface PC exports instead of a separate PC wrapper.
 - The Android WebView ignores `<a download>` blob URLs, so every export
   (backup, added-site log, merged catalog, Subsurface copy, composer image,
   share card) is streamed through a native plugin into the phone's public

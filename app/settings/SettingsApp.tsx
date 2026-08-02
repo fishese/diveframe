@@ -95,6 +95,7 @@ import {
   type WhatsNewDocument,
 } from "@/lib/whats-new";
 import { useAppI18n } from "../AppI18nProvider";
+import { AndroidAppLink } from "../components/AndroidAppLink";
 import { PwaInstallCard } from "../PwaInstall";
 
 type SiteContributionDraft = LocalSiteContribution & {
@@ -825,9 +826,12 @@ export function SettingsApp() {
             <small>{t("settings")}</small>
           </span>
         </Link>
-        <Link href="/" className="button button-quiet">
-          <ArrowLeft size={16} /> {t("backToDives")}
-        </Link>
+        <div className="topbar-actions">
+          <AndroidAppLink />
+          <Link href="/" className="button button-quiet">
+            <ArrowLeft size={16} /> {t("backToDives")}
+          </Link>
+        </div>
       </header>
 
       <div className="settings-shell">

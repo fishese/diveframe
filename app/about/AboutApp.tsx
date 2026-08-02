@@ -13,6 +13,7 @@ import {
   Waves,
 } from "lucide-react";
 import { useAppI18n } from "../AppI18nProvider";
+import { AndroidAppLink } from "../components/AndroidAppLink";
 
 export function AboutApp() {
   const { t } = useAppI18n();
@@ -33,6 +34,7 @@ export function AboutApp() {
           <Link href="/settings" className="button button-quiet">
             <Settings size={16} /> {t("settings")}
           </Link>
+          <AndroidAppLink />
           <Link href="/" className="button button-quiet">
             <ArrowLeft size={16} /> {t("backToDives")}
           </Link>

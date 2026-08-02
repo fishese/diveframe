@@ -16,6 +16,10 @@ const files = {
     "../android/app/src/main/java/cc/fishese/divelog/MainActivity.java",
     import.meta.url,
   ),
+  photoLocationPlugin: new URL(
+    "../android/app/src/main/java/cc/fishese/divelog/PhotoLocationPlugin.java",
+    import.meta.url,
+  ),
   gatt: new URL(
     "../android/app/src/main/java/cc/fishese/divelog/DiveComputerGattClient.java",
     import.meta.url,
@@ -26,6 +30,10 @@ const files = {
   ),
   capability: new URL(
     "../lib/dive-computer-capability.ts",
+    import.meta.url,
+  ),
+  photoLocationCapability: new URL(
+    "../lib/photo-location-capability.ts",
     import.meta.url,
   ),
   package: new URL("../package.json", import.meta.url),
@@ -89,8 +97,6 @@ test("BLE permissions, scan, cancel, and classic GATT transport are wired", asyn
   assert.match(manifest, /android\.hardware\.bluetooth_le/);
 
   assert.match(javaPlugin, /requestPermissions/);
-  assert.match(javaPlugin, /requestMediaLocationPermission/);
-  assert.match(javaPlugin, /ACCESS_MEDIA_LOCATION/);
   assert.match(javaPlugin, /startScan/);
   assert.match(javaPlugin, /stopScan/);
   assert.match(javaPlugin, /connect/);
@@ -108,7 +114,6 @@ test("BLE permissions, scan, cancel, and classic GATT transport are wired", asyn
   );
 
   assert.match(capability, /requestPermissions/);
-  assert.match(capability, /requestMediaLocationPermission/);
   assert.match(capability, /startScan/);
   assert.match(capability, /connect/);
   assert.match(capability, /downloadDives/);
@@ -116,6 +121,29 @@ test("BLE permissions, scan, cancel, and classic GATT transport are wired", asyn
   assert.match(capability, /downloadProgress/);
   assert.match(capability, /diveCaptured/);
   assert.match(capability, /deviceFound/);
+});
+
+test("Android photo picker requests unredacted EXIF and releases temporary photos", async () => {
+  const [manifest, plugin, capability, mainActivity, gradle] = await Promise.all([
+    readFile(files.manifest, "utf8"),
+    readFile(files.photoLocationPlugin, "utf8"),
+    readFile(files.photoLocationCapability, "utf8"),
+    readFile(files.mainActivity, "utf8"),
+    readFile(new URL("../android/app/build.gradle", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(manifest, /android\.permission\.ACCESS_MEDIA_LOCATION/);
+  assert.match(plugin, /name = "PhotoLocation"/);
+  assert.match(plugin, /requestPermissionForAlias/);
+  assert.match(plugin, /MediaStore\.setRequireOriginal/);
+  assert.match(plugin, /REQUEST_LOCATION_METADATA_ACCESS/);
+  assert.match(plugin, /new ExifInterface\(stream\)\.getLatLong\(\)/);
+  assert.match(plugin, /includePhoto/);
+  assert.match(plugin, /releasePickedPhoto/);
+  assert.match(mainActivity, /registerPlugin\(PhotoLocationPlugin\.class\)/);
+  assert.match(capability, /Capacitor\.isPluginAvailable\("PhotoLocation"\)/);
+  assert.match(capability, /Capacitor\.convertFileSrc/);
+  assert.match(gradle, /androidx\.exifinterface:exifinterface:1\.4\.2/);
 });
 
 test("BLE downloads keep the Android screen awake only during transfer", async () => {

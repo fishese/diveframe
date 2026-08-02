@@ -31,6 +31,7 @@ import {
   Waves,
   X,
 } from "lucide-react";
+import { AndroidAppLink } from "./components/AndroidAppLink";
 import {
   type ChangeEvent,
   type ReactNode,
@@ -76,8 +77,13 @@ import {
   type DiveSortOption,
 } from "@/lib/dive-list-model";
 import { resolveDiveMapCoordinates } from "@/lib/dive-gps";
+import {
+  formatCoordinatePair,
+  parseCoordinatePair,
+} from "@/lib/coordinate-input";
 import { saveExportFile, savedFileNotice } from "@/lib/file-export";
 import { readJpegExifGps } from "@/lib/photo-exif-gps";
+import { photoLocationCapability } from "@/lib/photo-location-capability";
 import { chartAvailability, renderDiveChart } from "@/lib/chart-renderer";
 import { defaultComposerSettings } from "@/lib/composer-settings";
 import {
@@ -538,10 +544,8 @@ export function DiveFrameApp() {
     }
   }
 
-  async function uploadPhotos(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = "";
-    if (!files.length || !selected) return;
+  async function savePhotoFiles(files: File[]) {
+    if (!files.length || !selected) return false;
     setBusy(true);
     setStatus(t("savingPhotos", { count: files.length, suffix: files.length === 1 ? "" : "s" }));
     try {
@@ -549,11 +553,19 @@ export function DiveFrameApp() {
       setAttachments((current) => [...current, ...additions]);
       await refreshDives(selected.id);
       setStatus(t("photosSaved"));
+      return true;
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("localSaveFailed"));
+      return false;
     } finally {
       setBusy(false);
     }
+  }
+
+  async function uploadPhotos(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    await savePhotoFiles(files);
   }
 
   async function sharePhoto(attachment: Attachment) {
@@ -921,7 +933,9 @@ export function DiveFrameApp() {
               <Bluetooth size={17} />
               {t("downloadFromComputer")}
             </button>
-          ) : null}
+          ) : (
+            <AndroidAppLink />
+          )}
           <button
             type="button"
             className="button button-primary"
@@ -1319,6 +1333,7 @@ export function DiveFrameApp() {
                   busy={busy}
                   gpsNameAttempted={gpsNameAttempted.has(selected.id)}
                   onUpload={uploadPhotos}
+                  onAddPhotoFiles={savePhotoFiles}
                   onShare={sharePhoto}
                   onSaveSite={saveDiveSite}
                   onClearSiteOverride={clearDiveSiteOverride}
@@ -1469,6 +1484,7 @@ function DiveDetail({
   busy,
   gpsNameAttempted,
   onUpload,
+  onAddPhotoFiles,
   onShare,
   onSaveSite,
   onClearSiteOverride,
@@ -1489,6 +1505,7 @@ function DiveDetail({
   busy: boolean;
   gpsNameAttempted: boolean;
   onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+  onAddPhotoFiles: (files: File[]) => Promise<boolean>;
   onShare: (attachment: Attachment) => void;
   onSaveSite: (site: SiteSelection) => Promise<boolean>;
   onClearSiteOverride: () => Promise<boolean>;
@@ -1721,92 +1738,149 @@ function DiveDetail({
   const hasMap = mapLatitude !== null && mapLongitude !== null;
 
   const [gpsEditorOpen, setGpsEditorOpen] = useState(false);
-  const [userLatDraft, setUserLatDraft] = useState(
-    dive.userGpsLat !== null ? String(dive.userGpsLat) : "",
-  );
-  const [userLngDraft, setUserLngDraft] = useState(
-    dive.userGpsLng !== null ? String(dive.userGpsLng) : "",
+  const [userGpsDraft, setUserGpsDraft] = useState(
+    formatCoordinatePair(dive.userGpsLat, dive.userGpsLng),
   );
   const [photoGpsStatus, setPhotoGpsStatus] = useState<string | null>(null);
   const [photoGpsBusy, setPhotoGpsBusy] = useState(false);
+  const [addLocationPhotoToDive, setAddLocationPhotoToDive] = useState(false);
+  const photoLocationInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setUserLatDraft(dive.userGpsLat !== null ? String(dive.userGpsLat) : "");
-    setUserLngDraft(dive.userGpsLng !== null ? String(dive.userGpsLng) : "");
+    setUserGpsDraft(formatCoordinatePair(dive.userGpsLat, dive.userGpsLng));
     setPhotoGpsStatus(null);
     setPhotoGpsBusy(false);
+    setAddLocationPhotoToDive(false);
     setGpsEditorOpen(false);
   }, [dive.id, dive.userGpsLat, dive.userGpsLng]);
 
-  const userLatValue = Number(userLatDraft);
-  const userLngValue = Number(userLngDraft);
-  const userGpsDraftValid =
-    userLatDraft.trim() !== "" &&
-    userLngDraft.trim() !== "" &&
-    Number.isFinite(userLatValue) &&
-    Number.isFinite(userLngValue) &&
-    userLatValue >= -90 &&
-    userLatValue <= 90 &&
-    userLngValue >= -180 &&
-    userLngValue <= 180;
+  const parsedUserGps = parseCoordinatePair(userGpsDraft);
+  const userGpsDraftInvalid = userGpsDraft.trim() !== "" && parsedUserGps === null;
 
   async function saveManualUserGps() {
-    if (!userGpsDraftValid) {
+    if (!parsedUserGps) {
       setPhotoGpsStatus(t("invalidLocationValues"));
       return;
     }
-    if (await onSaveUserGps(dive.id, { lat: userLatValue, lng: userLngValue, source: "manual" })) {
+    if (
+      await onSaveUserGps(dive.id, {
+        lat: parsedUserGps.latitude,
+        lng: parsedUserGps.longitude,
+        source: "manual",
+      })
+    ) {
       setGpsEditorOpen(false);
     }
   }
 
   async function clearUserGps() {
     if (await onSaveUserGps(dive.id, null)) {
-      setUserLatDraft("");
-      setUserLngDraft("");
+      setUserGpsDraft("");
+    }
+  }
+
+  async function applySelectedPhotoLocation(
+    gps: { latitude: number; longitude: number } | null,
+    file: File | null,
+    shouldAddPhoto: boolean,
+  ) {
+    let locationSaved = false;
+    if (gps) {
+      locationSaved = await onSaveUserGps(dive.id, {
+        lat: gps.latitude,
+        lng: gps.longitude,
+        source: "photo-exif",
+      });
+      if (locationSaved) {
+        setUserGpsDraft(formatCoordinatePair(gps.latitude, gps.longitude));
+      }
+    }
+
+    const photoAdded = !shouldAddPhoto
+      ? null
+      : file
+        ? Boolean(await onAddPhotoFiles([file]))
+        : false;
+
+    if (gps && !locationSaved) {
+      setPhotoGpsStatus(t("photoLocationSaveFailed"));
+    } else if (locationSaved && photoAdded === true) {
+      setPhotoGpsStatus(t("photoLocationSavedAndAdded"));
+    } else if (locationSaved && photoAdded === false) {
+      setPhotoGpsStatus(t("photoLocationSavedPhotoAddFailed"));
+    } else if (locationSaved) {
+      setPhotoGpsStatus(t("photoLocationSaved"));
+    } else if (photoAdded === true) {
+      setPhotoGpsStatus(t("photoAddedWithoutLocation"));
+    } else {
+      setPhotoGpsStatus(t("noPhotoLocationFound"));
+    }
+  }
+
+  async function handleWebPhotoLocationSelection(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = "";
+    if (!file || photoGpsBusy) return;
+    setPhotoGpsBusy(true);
+    setPhotoGpsStatus(t("searchingPhotosForLocation"));
+    try {
+      const gps = await readJpegExifGps(await file.arrayBuffer());
+      await applySelectedPhotoLocation(gps, file, addLocationPhotoToDive);
+    } catch {
+      setPhotoGpsStatus(t("photoLocationReadFailed"));
+    } finally {
+      setPhotoGpsBusy(false);
     }
   }
 
   async function findLocationFromPhoto() {
     if (photoGpsBusy) return;
+    setPhotoGpsStatus(null);
+
+    if (!photoLocationCapability.isAvailable()) {
+      // Keep this synchronous with the click so mobile browsers allow the
+      // system file picker to open.
+      photoLocationInputRef.current?.click();
+      return;
+    }
+
     setPhotoGpsBusy(true);
     setPhotoGpsStatus(t("searchingPhotosForLocation"));
+    let tempFileUri: string | undefined;
     try {
-      if (diveComputerCapability.isAvailable()) {
-        try {
-          const permission =
-            await diveComputerCapability.requestMediaLocationPermission();
-          if (permission.mediaLocation.toLowerCase() !== "granted") {
-            setPhotoGpsStatus(t("photoLocationPermissionDenied"));
-            return;
-          }
-        } catch {
-          setPhotoGpsStatus(t("photoLocationPermissionDenied"));
-          return;
-        }
+      const result = await photoLocationCapability.pickPhotoLocation(
+        addLocationPhotoToDive,
+      );
+      tempFileUri = result.tempFileUri;
+      if (result.status === "cancelled") {
+        setPhotoGpsStatus(null);
+        return;
       }
-      // Do not trust the MIME type here. Android's system picker and older
-      // backups can expose a JPEG as image/* or application/octet-stream;
-      // the EXIF reader safely rejects non-JPEG blobs after checking bytes.
-      for (const attachment of attachments) {
-        try {
-          const buffer = await attachment.blob.arrayBuffer();
-          const gps = await readJpegExifGps(buffer);
-          if (!gps) continue;
-          const saved = await onSaveUserGps(dive.id, {
-            lat: gps.latitude,
-            lng: gps.longitude,
-            source: "photo-exif",
-          });
-          setPhotoGpsStatus(saved ? null : t("photoLocationSaveFailed"));
-          if (saved) setGpsEditorOpen(false);
-          return;
-        } catch {
-          // Try the next photo.
-        }
+      if (result.status === "permission-denied") {
+        setPhotoGpsStatus(t("photoLocationPermissionDenied"));
+        return;
       }
-      setPhotoGpsStatus(t("noPhotoLocationFound"));
+      if (result.status === "error") {
+        setPhotoGpsStatus(result.message || t("photoLocationReadFailed"));
+        return;
+      }
+
+      const gps =
+        result.status === "found" &&
+        Number.isFinite(result.latitude) &&
+        Number.isFinite(result.longitude)
+          ? { latitude: result.latitude!, longitude: result.longitude! }
+          : null;
+      const file = addLocationPhotoToDive
+        ? await photoLocationCapability.readPickedPhoto(result)
+        : null;
+      await applySelectedPhotoLocation(gps, file, addLocationPhotoToDive);
+    } catch {
+      setPhotoGpsStatus(t("photoLocationReadFailed"));
     } finally {
+      await photoLocationCapability.releasePickedPhoto(tempFileUri).catch(() => {});
       setPhotoGpsBusy(false);
     }
   }
@@ -2205,35 +2279,47 @@ function DiveDetail({
             </button>
             {gpsEditorOpen ? (
               <div className="user-gps-editor-body">
-                <div className="details-editor-row">
-                  <label>
-                    <span>{t("latitude")}</span>
-                    <input
-                      type="number"
-                      step="any"
-                      min={-90}
-                      max={90}
-                      value={userLatDraft}
-                      onChange={(event) => setUserLatDraft(event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    <span>{t("longitude")}</span>
-                    <input
-                      type="number"
-                      step="any"
-                      min={-180}
-                      max={180}
-                      value={userLngDraft}
-                      onChange={(event) => setUserLngDraft(event.target.value)}
-                    />
-                  </label>
-                </div>
+                <label className="coordinate-pair-field">
+                  <span>{t("coordinates")}</span>
+                  <input
+                    type="text"
+                    inputMode="text"
+                    value={userGpsDraft}
+                    onChange={(event) => {
+                      setUserGpsDraft(event.target.value);
+                      setPhotoGpsStatus(null);
+                    }}
+                    placeholder="19.09876, 72.87643"
+                    aria-invalid={userGpsDraftInvalid}
+                    aria-describedby={`coordinate-help-${dive.id}`}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  <small id={`coordinate-help-${dive.id}`}>
+                    {t("coordinatePairHint")}
+                  </small>
+                </label>
+                {userGpsDraftInvalid ? (
+                  <p className="coordinate-input-error" role="alert">
+                    {t("invalidLocationValues")}
+                  </p>
+                ) : null}
+                <label className="photo-location-keep">
+                  <input
+                    type="checkbox"
+                    checked={addLocationPhotoToDive}
+                    onChange={(event) =>
+                      setAddLocationPhotoToDive(event.target.checked)
+                    }
+                    disabled={busy || photoGpsBusy}
+                  />
+                  <span>{t("addLocationPhotoToDive")}</span>
+                </label>
                 <div className="user-gps-editor-actions">
                   <button
                     type="button"
                     className="button button-primary"
-                    disabled={busy || !userGpsDraftValid}
+                    disabled={busy || userGpsDraft.trim() === ""}
                     onClick={() => void saveManualUserGps()}
                   >
                     {t("saveManualLocation")}
@@ -2249,14 +2335,27 @@ function DiveDetail({
                   <button
                     type="button"
                     className="button button-quiet"
-                    disabled={busy || photoGpsBusy || attachments.length === 0}
+                    disabled={busy || photoGpsBusy}
                     onClick={() => void findLocationFromPhoto()}
                   >
                     {photoGpsBusy ? <LoaderCircle size={16} className="spin" /> : null}
                     {photoGpsBusy ? t("searchingPhotosForLocation") : t("useLocationFromPhoto")}
                   </button>
                 </div>
-                {photoGpsStatus ? <p className="photo-gps-status">{photoGpsStatus}</p> : null}
+                <input
+                  ref={photoLocationInputRef}
+                  type="file"
+                  accept="image/jpeg"
+                  onChange={(event) => void handleWebPhotoLocationSelection(event)}
+                  className="visually-hidden"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
+                {photoGpsStatus ? (
+                  <p className="photo-gps-status" role="status">
+                    {photoGpsStatus}
+                  </p>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -2324,71 +2423,6 @@ function DiveDetail({
               {t("approximateMatch", { location: resolvedLocation.displayName })}
             </p>
           )}
-          {false && <div className="user-gps-editor">
-            <button
-              type="button"
-              className="button button-quiet detail-edit-button"
-              onClick={() => setGpsEditorOpen((value) => !value)}
-              disabled={busy}
-            >
-              {gpsEditorOpen ? t("cancel") : t("editLocation")}
-            </button>
-            {gpsEditorOpen ? (
-              <div className="user-gps-editor-body">
-                <div className="details-editor-row">
-                  <label>
-                    <span>{t("latitude")}</span>
-                    <input
-                      type="number"
-                      step="any"
-                      min={-90}
-                      max={90}
-                      value={userLatDraft}
-                      onChange={(event) => setUserLatDraft(event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    <span>{t("longitude")}</span>
-                    <input
-                      type="number"
-                      step="any"
-                      min={-180}
-                      max={180}
-                      value={userLngDraft}
-                      onChange={(event) => setUserLngDraft(event.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className="user-gps-editor-actions">
-                  <button
-                    type="button"
-                    className="button button-primary"
-                    disabled={busy || !userGpsDraftValid}
-                    onClick={() => void saveManualUserGps()}
-                  >
-                    {t("saveManualLocation")}
-                  </button>
-                  <button
-                    type="button"
-                    className="button button-quiet"
-                    disabled={busy || (dive.userGpsLat === null && dive.userGpsLng === null)}
-                    onClick={() => void clearUserGps()}
-                  >
-                    {t("clearLocation")}
-                  </button>
-                  <button
-                    type="button"
-                    className="button button-quiet"
-                    disabled={busy || attachments.length === 0}
-                    onClick={() => void findLocationFromPhoto()}
-                  >
-                    {t("useLocationFromPhoto")}
-                  </button>
-                </div>
-                {photoGpsStatus ? <p className="photo-gps-status">{photoGpsStatus}</p> : null}
-              </div>
-            ) : null}
-          </div>}
         </section>
 
         <section className="card log-card">

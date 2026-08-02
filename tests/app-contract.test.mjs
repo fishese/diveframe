@@ -40,6 +40,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     readFile("ASSET-LICENSES.md", "utf8"),
   ]);
   const importGuide = await readFile("app/components/ImportGuide.tsx", "utf8");
+  const androidPage = await readFile("app/android/AndroidAppPage.tsx", "utf8");
+  const androidLink = await readFile("app/components/AndroidAppLink.tsx", "utf8");
 
   assert.match(shearwater, /GnssEntryLocation/);
   assert.match(shearwater, /StoredDiveComputer/);
@@ -259,12 +261,18 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /resolveDiveMapCoordinates/);
   assert.match(app, /from "@\/lib\/photo-exif-gps"/);
   assert.match(app, /readJpegExifGps/);
+  assert.match(app, /from "@\/lib\/coordinate-input"/);
+  assert.match(app, /parseCoordinatePair/);
+  assert.match(app, /from "@\/lib\/photo-location-capability"/);
+  assert.match(app, /photoLocationCapability\.pickPhotoLocation/);
   assert.match(app, /onSaveUserGps/);
+  assert.match(app, /onAddPhotoFiles/);
   assert.match(app, /"user-gps-editor"/);
   assert.match(app, /t\("editLocation"\)/);
   assert.match(app, /t\("useLocationFromPhoto"\)/);
-  assert.match(app, /attachment\.blob\.arrayBuffer\(\)/);
-  assert.match(app, /requestMediaLocationPermission/);
+  assert.match(app, /file\.arrayBuffer\(\)/);
+  assert.match(app, /accept="image\/jpeg"/);
+  assert.match(app, /addLocationPhotoToDive/);
   assert.match(app, /photoLocationPermissionDenied/);
   assert.match(app, /photoGpsBusy/);
   assert.match(app, /nearbySitesLoading/);
@@ -326,6 +334,13 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /BleImportPanel/);
   assert.match(app, /downloadFromComputer/);
   assert.match(appI18n, /downloadFromComputer/);
+  assert.match(app, /AndroidAppLink/);
+  assert.match(androidLink, /href="\/android"/);
+  assert.match(androidLink, /diveComputerCapability.isAvailable/);
+  assert.match(androidPage, /releases\/latest/);
+  assert.match(androidPage, /androidAppPermissionsTitle/);
+  assert.match(androidPage, /androidAppIosTitle/);
+  assert.match(androidPage, /androidAppPcTitle/);
   assert.match(appI18n, /bleImportFullWarning/);
   assert.match(appI18n, /bleImportCancelConfirm/);
   assert.match(appI18n, /bleImportCancelledSaved/);
@@ -438,7 +453,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v4/);
+  assert.match(serviceWorker, /diveframe-shell-v5/);
   assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);
   assert.match(serviceWorker, /examples\/dive-site-catalog-ai-prompt\.md/);
   assert.match(serviceWorker, /request\.mode === "navigate"/);
