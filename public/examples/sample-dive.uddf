@@ -46,7 +46,11 @@
     <repetitiongroup id="diveframe-sample-2030">
       <dive id="diveframe-sample-2030">
         <informationbeforedive>
-          <link ref="samplebase"/>
+          <divesite>
+            <name>Sample Dive</name>
+            <latitude>1.67241</latitude>
+            <longitude>-91.9906</longitude>
+          </divesite>
           <divenumber>1</divenumber>
           <datetime>2030-08-02T10:00:00</datetime>
           <equipmentused>
@@ -1543,7 +1547,7 @@
           <averagedepth>14.024</averagedepth>
           <diveduration>2450</diveduration>
           <notes>
-            <para>Ideal recreational dive profile: controlled descent, stable bottom time with natural buoyancy variation, gradual multi-level ascent, 3-minute safety stop at 5m, and slow final ascent. Tropical water conditions.</para>
+            <para>sample dive log to test functions, please delete before you import your dives</para>
           </notes>
         </informationafterdive>
       </dive>

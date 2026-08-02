@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "DiveFrame — Dive log companion",
-  "short_name": "DiveFrame",
+  "name": "DiveFrame (Web)",
+  "short_name": "DiveFrame (Web)",
   "description": "Your logs, enhanced with merged records, maps, photos, and shareable image overlays.",
   "start_url": "/",
   "scope": "/",

@@ -536,7 +536,14 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.equal(bindings.r2, null);
 
   const pwa = JSON.parse(manifest);
-  assert.equal(pwa.name, "DiveFrame — Dive log companion");
+  assert.equal(pwa.name, "DiveFrame (Web)");
+  assert.equal(pwa.short_name, "DiveFrame (Web)");
   assert.equal(pwa.display, "standalone");
+
+  const sampleLog = await readFile("public/examples/sample-dive.uddf", "utf8");
+  assert.match(sampleLog, /<name>Sample Dive<\/name>/);
+  assert.match(sampleLog, /<latitude>1\.67241<\/latitude>/);
+  assert.match(sampleLog, /<longitude>-91\.9906<\/longitude>/);
+  assert.match(sampleLog, /sample dive log to test functions/);
 
 });

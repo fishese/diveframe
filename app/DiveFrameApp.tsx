@@ -1440,23 +1440,25 @@ function EmptyState({
         <p className="eyebrow">{t("startWithExport")}</p>
         <h1>{t("emptyTitle")}</h1>
         <p>{t("emptyDescription")}</p>
-        <button
-          type="button"
-          className="button button-primary button-large"
-          onClick={onImport}
-          disabled={busy}
-        >
-          {busy ? <LoaderCircle className="spin" /> : <ArrowDownToLine />}
-          {t("chooseDiveLog")}
-        </button>
-        <button
-          type="button"
-          className="button button-secondary"
-          onClick={onLoadSample}
-          disabled={busy}
-        >
-          {t("loadSampleLog")}
-        </button>
+        <div className="empty-import-actions">
+          <button
+            type="button"
+            className="button button-primary button-large"
+            onClick={onImport}
+            disabled={busy}
+          >
+            {busy ? <LoaderCircle className="spin" /> : <ArrowDownToLine />}
+            {t("chooseDiveLog")}
+          </button>
+          <button
+            type="button"
+            className="button button-secondary button-large"
+            onClick={onLoadSample}
+            disabled={busy}
+          >
+            {t("loadSampleLog")}
+          </button>
+        </div>
         <span className="empty-status">{status}</span>
       </div>
       <div className="empty-proof">
@@ -2700,14 +2702,6 @@ function DiveDetail({
                 >
                   {t("saveChanges")}
                 </button>
-                <button
-                  type="button"
-                  className="button button-danger-secondary"
-                  disabled={busy}
-                  onClick={() => setDeleteDiveConfirmOpen(true)}
-                >
-                  {t("deleteDiveLog")}
-                </button>
               </div>
             </form>
           ) : null}
@@ -2997,6 +2991,19 @@ function DiveDetail({
           </Link>
         </div>
       </section>
+
+      {editingDetails ? (
+        <div className="dive-delete-action">
+          <button
+            type="button"
+            className="button button-danger-secondary"
+            disabled={busy}
+            onClick={() => setDeleteDiveConfirmOpen(true)}
+          >
+            {t("deleteDiveLog")}
+          </button>
+        </div>
+      ) : null}
 
       {deleteDiveConfirmOpen ? (
         <div
