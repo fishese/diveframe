@@ -53,11 +53,12 @@ Shipped on `main` (pushed):
 
 Open follow-ups:
 
-- iPhone/Safari photo-location smoke testing remains open. The web location
-  picker now accepts JPEG plus HEIC/HEIF and reads GPS metadata with exifr's
-  lite parser, without decoding or rewriting the image. Existing iPhone
-  photos may still need Safari's picker option to share location; taking a new
-  photo directly from the browser can strip GPS metadata.
+- iPhone/Safari photo-location smoke testing passed against the hosted web
+  build on 2026-08-02. The web location picker accepts JPEG plus HEIC/HEIF and
+  reads GPS metadata with exifr's lite parser, without decoding or rewriting
+  the image. Existing iPhone photos may still need Safari's picker option to
+  share location; taking a new photo directly from the browser can strip GPS
+  metadata. Broader Safari-version and HEIC gallery/composer testing remains.
 - Deploy production CORS for `/api/geocode`, `/api/nearby-sites`, and
   `/api/whats-new` so Capacitor `https://localhost` can use the hosted worker
   without a LAN API override
