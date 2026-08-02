@@ -158,6 +158,34 @@ export function SettingsApp() {
     return () => window.cancelAnimationFrame(frame);
   }, [backupPreview]);
 
+  useEffect(() => {
+    if (window.location.hash !== "#backup-transfer") return;
+
+    let firstFrame = 0;
+    let secondFrame = 0;
+    const settleTimer = window.setTimeout(() => {
+      document.getElementById("backup-transfer")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 320);
+
+    firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        document.getElementById("backup-transfer")?.scrollIntoView({
+          behavior: "auto",
+          block: "start",
+        });
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+      window.clearTimeout(settleTimer);
+    };
+  }, []);
+
   async function refreshWhatsNew() {
     if (!navigator.onLine) {
       return;

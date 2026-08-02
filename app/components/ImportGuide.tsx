@@ -8,6 +8,7 @@ import {
   GitMerge,
   Upload,
 } from "lucide-react";
+import Link from "next/link";
 import type { AppTranslate } from "@/lib/app-i18n";
 
 const SUBSURFACE_COMPUTER_FAMILIES = [
@@ -103,12 +104,12 @@ export function ImportGuide({
           <aside className="import-guide-backup-card">
             <Archive size={20} aria-hidden="true" />
             <p>{t("importGuideBackupPrompt")}</p>
-            <a
+            <Link
               className="button button-secondary"
               href="/settings#backup-transfer"
             >
               {t("openBackupTools")}
-            </a>
+            </Link>
           </aside>
         </div>
 

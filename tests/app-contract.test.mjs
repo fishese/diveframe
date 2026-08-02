@@ -57,8 +57,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(importGuide, /importGuideCombineBullet/);
   assert.match(importGuide, /importGuideSubsurfaceLabel/);
   assert.match(importGuide, /href="\/settings#backup-transfer"/);
+  assert.match(importGuide, /import Link from "next\/link"/);
   assert.match(importGuide, /importGuideBackupPrompt/);
   assert.match(settings, /id="backup-transfer"/);
+  assert.match(settings, /window\.location\.hash !== "#backup-transfer"/);
   assert.match(settings, /eraseDivePhotosAction/);
   assert.match(settings, /eraseAllDataAction/);
   assert.match(appI18n, /Erase dive photos only/);

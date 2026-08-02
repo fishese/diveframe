@@ -2371,7 +2371,7 @@ button {
   border-radius: 14px;
   display: grid;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: clamp(40px, 4vw, 56px);
   padding: 16px;
 }
 
