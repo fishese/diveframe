@@ -51,7 +51,7 @@ Shipped on `main` (pushed):
   12 km from the available GPS coordinates.
 - Native Downloads export plugin; Settings **What's new** feed with HTTPS CTAs
 - Official dive-site catalog remains build-bundled only (web deploy / new APK)
-- Web-only Android download page and GitHub `v0.1.0-debug.1` release containing
+- Web-only Android download page and GitHub `v0.1.0-debug.2` release containing
   `diveframe-debug.apk`; the stable download URL uses `releases/latest`
 
 Open follow-ups:

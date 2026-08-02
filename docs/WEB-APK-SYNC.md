@@ -89,8 +89,8 @@ as a GitHub Release asset.
 1. Review `git diff --name-only` and use the matrix above.
 2. For an APK release, increment `versionCode` and update `versionName` in
    `android/app/build.gradle`. The first debug release used `versionCode 1` /
-   `versionName "1.0"`; the current debug update uses `versionCode 2` /
-   `versionName "1.0.1"`. Confirm the build uses the same signing key as the
+   `versionName "1.0"`; the current debug build uses `versionCode 3` /
+   `versionName "1.0.2"`. Confirm the build uses the same signing key as the
    APK it is expected to update.
 3. Run `npm test`, commit the intended source changes, and push that commit to
    `main`. Record the commit ID; the APK release tag must target it.
@@ -128,14 +128,14 @@ as a GitHub Release asset.
    https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
    ```
 
-   The current release is `v0.1.0-debug`. Because the stable URL uses GitHub's
+   The current release is `v0.1.0-debug.2`. Because the stable URL uses GitHub's
    `releases/latest` alias, debug releases are currently published as normal
    latest releases rather than GitHub prereleases. If that policy changes, the
    download-link strategy must change too.
 8. Copy/rename the Gradle output before uploading it as the release asset:
 
    ```powershell
-   $releaseTag = "v0.1.0-debug.1"
+   $releaseTag = "v0.1.0-debug.3"
    $releaseCommit = git rev-parse HEAD
    $releaseHash = (Get-FileHash `
      android\app\build\outputs\apk\debug\app-debug.apk `
@@ -169,11 +169,11 @@ As of 2026-08-02, the published Android build is an arm64 debug APK for manual
 installation. It is not a Play Store, signed production, or F-Droid release.
 The current GitHub release is:
 
-- release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.1`
+- release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.2`
 - asset: `diveframe-debug.apk`
-- source commit: `efd9969`
+- source commit: `9b4395a1b5dd63bc1eaf146861657bbc744ddafd`
 - SHA-256:
-  `8FD4EEC350A33C0C622B8C6AA97353821F978745EFB31B4545F8F0A42D24488E`
+  `FB1731A9394CE61EF4D767CEE240B731ED8A142768BEEDD46AF347ACDBCF22CC`
 
 The debug APK is still signed by Android's debug tooling. An in-place Android
 update requires the same application ID, a compatible/higher `versionCode`,
