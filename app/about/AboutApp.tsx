@@ -13,8 +13,14 @@ import {
   Settings,
   Waves,
 } from "lucide-react";
+import { useState } from "react";
 import { useAppI18n } from "../AppI18nProvider";
 import { AndroidAppLink } from "../components/AndroidAppLink";
+
+/** Assembled in the browser so the raw address is not in the initial HTML. */
+function contactEmail() {
+  return ["diveframe", String.fromCharCode(64), "fishese.cc"].join("");
+}
 
 export function AboutApp() {
   const { t } = useAppI18n();
@@ -114,6 +120,14 @@ export function AboutApp() {
           <p>{t("aboutSacRule")}</p>
         </section>
 
+        <section className="about-license about-dev">
+          <p className="eyebrow">{t("aboutDevEyebrow")}</p>
+          <h2>{t("aboutDevTitle")}</h2>
+          <p>{t("aboutDevBody")}</p>
+          <p>{t("aboutDevSolo")}</p>
+          <AboutContact />
+        </section>
+
         <section className="about-license">
           <p className="eyebrow">{t("aboutLicenseEyebrow")}</p>
           <h2>{t("aboutLicenseTitle")}</h2>
@@ -151,5 +165,52 @@ function AboutCard({
         {children}
       </div>
     </article>
+  );
+}
+
+function AboutContact() {
+  const { t } = useAppI18n();
+  const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const email = revealed ? contactEmail() : null;
+
+  async function copyEmail() {
+    const value = contactEmail();
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setRevealed(true);
+    }
+  }
+
+  return (
+    <div className="about-contact">
+      <p className="about-contact-label">{t("aboutDevContactLabel")}</p>
+      <p className="about-contact-hint">{t("aboutDevContactHint")}</p>
+      <div className="about-contact-actions">
+        {email ? (
+          <a className="about-contact-email" href={`mailto:${email}`}>
+            {email}
+          </a>
+        ) : (
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() => setRevealed(true)}
+          >
+            {t("aboutDevRevealEmail")}
+          </button>
+        )}
+        <button
+          type="button"
+          className="button button-quiet"
+          onClick={() => void copyEmail()}
+        >
+          {copied ? t("aboutDevEmailCopied") : t("aboutDevCopyEmail")}
+        </button>
+      </div>
+    </div>
   );
 }

@@ -277,8 +277,7 @@ welcome; redistributed versions must remain open source under the same license.
 
 The bundled
 [`public/backgrounds/bubbles-bg.jpg`](public/backgrounds/bubbles-bg.jpg)
-sample image is separately copyrighted and excluded from the GPL software
-license. A fork must remove, replace, or obtain permission to redistribute it.
-See [ASSET-LICENSES.md](ASSET-LICENSES.md). The software remains GPL-licensed,
-but the repository and official build are a mixed-license distribution rather
-than a collection in which every asset is open licensed.
+sample image is copyright DiveFrame developer and licensed under
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). See
+[ASSET-LICENSES.md](ASSET-LICENSES.md). The software remains GPL-3.0-or-later;
+the repository is a mixed open-source distribution (GPL code + CC BY-SA asset).

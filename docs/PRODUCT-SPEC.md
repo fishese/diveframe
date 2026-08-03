@@ -285,15 +285,12 @@ portable reconstruction and must not mutate stored raw records.
 ## Licensing boundary
 
 The DiveFrame software source is licensed under `GPL-3.0-or-later`. The
-included Bubbles sample background is separately copyrighted, explicitly
-excluded from the GPL grant, and documented in `ASSET-LICENSES.md`.
+included Bubbles sample background is copyright DiveFrame developer and
+licensed under CC BY-SA 4.0, documented in `ASSET-LICENSES.md`.
 
-This makes the repository and official build a mixed-license distribution:
-the software remains open-source GPL software, but not every bundled asset is
-open licensed. Redistributors must remove, replace, or obtain permission for
-the Bubbles image. A freely redistributable image license would reduce friction
-for package repositories and forks while still allowing the copyright holder
-to retain copyright.
+This makes the repository a mixed open-source distribution: GPL software plus
+a CC BY-SA asset. Redistributors may keep the Bubbles image when they comply
+with CC BY-SA 4.0 attribution and share-alike terms.
 
 ## Image composer
 

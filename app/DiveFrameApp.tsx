@@ -84,6 +84,12 @@ import {
 } from "@/lib/dive-list-model";
 import { resolveDiveMapCoordinates } from "@/lib/dive-gps";
 import {
+  collectBuddyNames,
+  completeBuddyToken,
+  matchBuddySuggestions,
+  splitBuddyNames,
+} from "@/lib/buddy-names";
+import {
   formatCoordinatePair,
   parseCoordinatePair,
 } from "@/lib/coordinate-input";
@@ -522,16 +528,8 @@ export function DiveFrameApp() {
         sacRates.length > 0
           ? sacRates.reduce((total, rate) => total + rate, 0) / sacRates.length
           : null,
-      buddies: new Set(
-        dives.flatMap((dive) =>
-          dive.buddy
-            ? dive.buddy
-                .split(",")
-                .map((buddy) => buddy.trim())
-                .filter(Boolean)
-            : [],
-        ),
-      ).size,
+      buddies: new Set(dives.flatMap((dive) => splitBuddyNames(dive.buddy)))
+        .size,
       longestDiveSeconds: durations.length ? Math.max(...durations) : null,
       deepestDiveM: maxDepths.length ? Math.max(...maxDepths) : null,
       averageMaxDepthM: maxDepths.length
@@ -559,6 +557,7 @@ export function DiveFrameApp() {
       ),
     [dives],
   );
+  const knownBuddyNames = useMemo(() => collectBuddyNames(dives), [dives]);
   const siteLocationSuggestions = useMemo(
     () =>
       dives.flatMap((dive): SiteLocationSuggestion[] => {
@@ -1431,6 +1430,7 @@ export function DiveFrameApp() {
                   onSaveUserGps={saveDiveUserGps}
                   siteSuggestions={siteSuggestions}
                   locationSuggestions={locationSuggestions}
+                  knownBuddyNames={knownBuddyNames}
                   siteLocationPairs={siteLocationSuggestions}
                   localDiveSiteCatalog={activeDiveSiteCatalog}
                   trips={trips}
@@ -1595,6 +1595,7 @@ function DiveDetail({
   onSaveUserGps,
   siteSuggestions,
   locationSuggestions,
+  knownBuddyNames,
   siteLocationPairs,
   localDiveSiteCatalog,
   trips,
@@ -1628,6 +1629,7 @@ function DiveDetail({
   ) => Promise<boolean>;
   siteSuggestions: string[];
   locationSuggestions: string[];
+  knownBuddyNames: string[];
   siteLocationPairs: SiteLocationSuggestion[];
   localDiveSiteCatalog: DiveSiteCatalog;
   trips: LocalTrip[];
@@ -1663,6 +1665,10 @@ function DiveDetail({
   const [editingDetails, setEditingDetails] = useState(false);
   const [deleteDiveConfirmOpen, setDeleteDiveConfirmOpen] = useState(false);
   const [buddyDraft, setBuddyDraft] = useState(dive.buddy ?? "");
+  const buddySuggestions = useMemo(
+    () => matchBuddySuggestions(buddyDraft, knownBuddyNames),
+    [buddyDraft, knownBuddyNames],
+  );
   const [notesDraft, setNotesDraft] = useState(dive.notes ?? "");
   const [tripDraft, setTripDraft] = useState(dive.tripId ?? "");
   const [newTripNameDraft, setNewTripNameDraft] = useState("");
@@ -2715,8 +2721,27 @@ function DiveDetail({
                   value={buddyDraft}
                   onChange={(event) => setBuddyDraft(event.target.value)}
                   maxLength={300}
+                  autoComplete="off"
                 />
               </label>
+              {buddySuggestions.length ? (
+                <div className="buddy-suggestions" role="listbox" aria-label={t("buddy")}>
+                  {buddySuggestions.map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      className="buddy-suggestion"
+                      role="option"
+                      disabled={busy}
+                      onClick={() =>
+                        setBuddyDraft(completeBuddyToken(buddyDraft, name))
+                      }
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <label>
                 <span>{t("notes")}</span>
                 <textarea
@@ -2773,14 +2798,6 @@ function DiveDetail({
                   disabled={busy}
                 >
                   {t("saveChanges")}
-                </button>
-                <button
-                  type="button"
-                  className="button button-danger-secondary"
-                  disabled={busy}
-                  onClick={() => setDeleteDiveConfirmOpen(true)}
-                >
-                  {t("deleteDiveLog")}
                 </button>
               </div>
             </form>
@@ -3071,6 +3088,17 @@ function DiveDetail({
           </Link>
         </div>
       </section>
+
+      <div className="dive-delete-action">
+        <button
+          type="button"
+          className="button button-danger-secondary"
+          disabled={busy}
+          onClick={() => setDeleteDiveConfirmOpen(true)}
+        >
+          {t("deleteDiveLog")}
+        </button>
+      </div>
 
       {deleteDiveConfirmOpen ? (
         <div

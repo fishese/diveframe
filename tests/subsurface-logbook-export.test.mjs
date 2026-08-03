@@ -51,9 +51,15 @@ test("creates a portable Subsurface logbook from complete local dives", () => {
   assert.deepEqual(validateSubsurfaceLogbookExport([completeDive]), { ok: true });
   const xml = createSubsurfaceLogbook([completeDive]);
   const document = new DOMParser().parseFromString(xml, "application/xml");
+  const root = document.documentElement;
+  const site = document.querySelector("divesites > site");
   const dive = document.querySelector("dives > dive");
+  const siteId = site?.getAttribute("uuid");
 
-  assert.equal(document.querySelector("divesites > site")?.getAttribute("name"), "Example &amp; Reef");
+  assert.equal(root?.getAttribute("version"), "3");
+  assert.equal(site?.getAttribute("name"), "Example &amp; Reef");
+  assert.match(siteId ?? "", /^[0-9a-f]{8}$/);
+  assert.equal(dive?.getAttribute("divesiteid"), siteId);
   assert.equal(dive?.getAttribute("duration"), "30:00 min");
   assert.equal(dive?.querySelector("buddy")?.textContent, "A & B");
   assert.equal(dive?.querySelector("notes")?.textContent, "A < B");

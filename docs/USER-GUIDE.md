@@ -475,10 +475,8 @@ redistribute it. Distributed modified versions must remain available under the
 same open-source license. See [LICENSE](../LICENSE) for the project notice and
 license link.
 
-The included Bubbles sample background is a separate copyrighted asset and is
-not covered by the GPL. Anyone redistributing a fork must remove or replace it
-unless they have permission from the copyright holder. See
-[ASSET-LICENSES.md](../ASSET-LICENSES.md).
+The included Bubbles sample background is copyright DiveFrame developer and
+licensed under CC BY-SA 4.0. See [ASSET-LICENSES.md](../ASSET-LICENSES.md).
 
 ## Product review and roadmap
 

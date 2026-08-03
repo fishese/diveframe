@@ -31,7 +31,7 @@ APK uses its own WebView origin (`https://localhost`), so PWA and APK data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-03)
+## Current status (2026-08-04)
 
 Shipped on `main` (pushed):
 
@@ -69,14 +69,17 @@ Shipped on `main` (pushed):
   translations, and a split `lib/app-i18n/{en,zh-Hant,ja}.ts` layout.
   Streaming backup encode/restore (audit item 4) and large React module splits
   remain open; session notes are in `docs/2026-08-03-audit-and-ui-session.md`.
-- UI/export/settings fixes: restore Delete dive beside Save changes; full
-  Subsurface logbook export skips incomplete dives and shows inline
-  success/failure under Source log tools; compact Settings language/install/
-  default-tank presentation.
-- Android debug APK **1.0.12** (`versionCode 13`) was rebuilt from shared-client
-  commit `ce12def` and published as GitHub release `v0.1.0-debug.12`, containing
-  `diveframe-debug.apk`; SHA-256 is
-  `1E0588F35F84507B4D575014CE5523A15F3685DBA66613318C22ED31543D3CA6`.
+- UI/export/settings fixes: Delete dive below the photo gallery; buddy
+  autocomplete (`,` / `，` / `、`); full Subsurface logbook export at
+  `version="3"` with hex site UUIDs, skipping incomplete dives and showing
+  inline status; compact Settings language/install/default-tank presentation.
+- Bubbles background relicensed **CC BY-SA 4.0** (DiveFrame developer). Noto Sans
+  TC kept for overlays; future system-font default noted as
+  `SYSTEM_OVERLAY_FONT_STACK` in `lib/composer-fonts.ts`.
+- About page: softer intro, full Subsurface export called out, personal “why
+  this exists” note, click-to-reveal contact email.
+- Android debug APK **1.0.13** (`versionCode 14`) targets this shared-client
+  batch; record commit and SHA-256 in `docs/WEB-APK-SYNC.md` after publication.
   The stable download URL uses `releases/latest`.
 - Current dogfooding state: the updated hosted web/PWA and Android APK are
   ready for continued testing.
@@ -107,6 +110,9 @@ Session detail: `docs/2026-08-01-ble-product-import-session.md`.
 
 2026-08-03 audit merge, follow-ups, and UI/export fixes:
 `docs/2026-08-03-audit-and-ui-session.md`.
+
+2026-08-04 UI, Subsurface v3, Bubbles CC BY-SA, and About:
+`docs/2026-08-04-ui-export-about-session.md`.
 
 Deep review findings and follow-up recommendations:
 `docs/2026-08-03-deep-code-audit.md`.
@@ -178,8 +184,7 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `docs/WEB-APK-SYNC.md` — canonical web-versus-APK parity boundaries,
   push triage matrix, and APK build/publication checklist.
 - `LICENSE` — project notice for `GPL-3.0-or-later`.
-- `ASSET-LICENSES.md` — separate copyright boundary for the non-GPL Bubbles
-  sample background.
+- `ASSET-LICENSES.md` — CC BY-SA 4.0 notice for the Bubbles sample background.
 - `.openai/hosting.json` — retained project metadata; D1 and R2 are
   intentionally disabled. Production is deployed by Cloudflare Workers Builds
   from GitHub.
@@ -491,8 +496,8 @@ The collapsed Personal presets section sits directly below Templates. A bundled
 The first available real image is selected automatically; clicking a selected
 tile again switches to the transparent background for overlay-only exports.
 Removing the bundled image affects only the current composer session.
-The image is excluded from the GPL software license; redistributors must follow
-`ASSET-LICENSES.md` and remove, replace, or obtain permission for it.
+The image is CC BY-SA 4.0 (copyright DiveFrame developer); see
+`ASSET-LICENSES.md`.
 
 Fresh dives default to social-media JPEG output. Output size, format, and JPEG
 quality are also stored in `appPreferences` and reused when another dive has no
@@ -522,11 +527,14 @@ fraction of canvas size, then clamps the logo within the canvas. Defaults are
 zero, so older saved composer settings retain their previous appearance.
 
 Overlay fonts are loaded from the public Google Fonts stylesheet imported by
-`app/globals.css`: Noto Sans TC, Inter, Outfit, Space Mono, and Huninn. Device
-Sans remains available without a download. The renderer waits for all requested
-weights before preview or export and falls back to platform Traditional Chinese
-fonts when offline. A single saved font-colour setting is used for all textual
-overlay content, including category, statistics, legends, and chart axes.
+`app/globals.css`: Noto Sans TC (kept for now; APK is still small), Inter,
+Outfit, Space Mono, and Huninn. Device Sans uses a system stack covering EN /
+ZH-Hant / JA without a download (`SYSTEM_OVERLAY_FONT_STACK` in
+`lib/composer-fonts.ts`). If Noto is removed later to shrink the install, make
+that system stack the default. The renderer waits for all requested weights
+before preview or export. A single saved font-colour setting is used for all
+textual overlay content, including category, statistics, legends, and chart
+axes.
 
 Site display priority is user override, linked source name, app catalog/OSM
 assignment, formatted GPS coordinates, then omission. Fields with no source

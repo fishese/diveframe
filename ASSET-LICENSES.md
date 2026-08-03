@@ -7,15 +7,15 @@ DiveFrame's software source code is licensed under
 
 File: `public/backgrounds/bubbles-bg.jpg`
 
-Copyright © 2026 DiveFrame developer. All rights reserved.
+Copyright © 2026 DiveFrame developer.
 
-This image is excluded from the GNU General Public License grant that applies
-to the DiveFrame software. Permission is granted to download and display the
-image as part of the official DiveFrame application and to use it within
-personal, non-commercial share images exported by DiveFrame. No permission is
-granted to modify or otherwise redistribute the source image except where
-permitted by applicable law or with separate permission from the copyright
-holder.
+This image is licensed under the Creative Commons Attribution-ShareAlike 4.0
+International License (CC BY-SA 4.0).
 
-Anyone redistributing a DiveFrame fork or build must remove or replace this
-image unless they have obtained permission to include it.
+You are free to share and adapt the image for any purpose, including commercial
+use, provided you give appropriate credit to the DiveFrame developer, indicate
+if changes were made, and distribute your contributions under the same license.
+See <https://creativecommons.org/licenses/by-sa/4.0/> for the full legal text.
+
+The DiveFrame software remains GPL-3.0-or-later. Redistributors may keep this
+CC BY-SA image in a fork when they comply with CC BY-SA 4.0.

@@ -14,6 +14,19 @@ export type OverlayFontDefinition = {
   stack: string;
 };
 
+/**
+ * Keep Noto Sans TC as the default bundled face for now (~APK still small).
+ *
+ * If we later drop Noto to shrink the install, prefer this EN/ZH-Hant/JA system
+ * stack as the default (Latin-only lists like Roboto/Arial alone are not enough):
+ *
+ *   system-ui, -apple-system, "Segoe UI", "PingFang TC", "PingFang HK",
+ *   "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", "Microsoft JhengHei",
+ *   "Noto Sans CJK TC", "Noto Sans TC", sans-serif
+ */
+export const SYSTEM_OVERLAY_FONT_STACK =
+  'system-ui, -apple-system, "Segoe UI", "PingFang TC", "PingFang HK", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", "Microsoft JhengHei", "Noto Sans CJK TC", "Noto Sans TC", sans-serif';
+
 export const OVERLAY_FONTS: OverlayFontDefinition[] = [
   {
     id: "noto-sans-tc",
@@ -53,9 +66,9 @@ export const OVERLAY_FONTS: OverlayFontDefinition[] = [
   {
     id: "system",
     name: "Device Sans",
-    description: "Fast device-default Latin and Chinese",
+    description: "Fast device-default Latin, Chinese, and Japanese",
     family: "system-ui",
-    stack: 'system-ui, "PingFang HK", "Microsoft JhengHei", sans-serif',
+    stack: SYSTEM_OVERLAY_FONT_STACK,
   },
 ];
 

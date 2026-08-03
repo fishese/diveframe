@@ -36,24 +36,39 @@ export function createSubsurfaceLogbook(dives: LocalDive[]) {
 
   const sites = new Map<string, ExportSite>();
   const siteIdByDiveId = new Map<string, string>();
+  const usedSiteIds = new Set<string>();
   portable.forEach((dive) => {
-    const site = exportSiteForDive(dive, sites.size + 1);
-    if (!site) return;
-    const key = `${site.name}\u0000${site.gps ?? ""}`;
-    const existing = sites.get(key) ?? site;
-    sites.set(key, existing);
-    siteIdByDiveId.set(dive.id, existing.id);
+    const draft = exportSiteForDive(dive);
+    if (!draft) return;
+    const key = `${draft.name}\u0000${draft.gps ?? ""}`;
+    const existing = sites.get(key);
+    if (existing) {
+      siteIdByDiveId.set(dive.id, existing.id);
+      return;
+    }
+    let id = siteUuidForKey(key);
+    let collision = 0;
+    while (usedSiteIds.has(id)) {
+      collision += 1;
+      id = ((Number.parseInt(siteUuidForKey(key), 16) + collision) >>> 0)
+        .toString(16)
+        .padStart(8, "0");
+    }
+    usedSiteIds.add(id);
+    const site = { ...draft, id };
+    sites.set(key, site);
+    siteIdByDiveId.set(dive.id, id);
   });
 
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<divelog program="DiveFrame" version="1">',
+    '<divelog program="DiveFrame" version="3">',
     "  <divesites>",
     ...[...sites.values()].map(
       (site) =>
         `    <site uuid="${escapeXml(site.id)}" name="${escapeXml(site.name)}"${
           site.gps ? ` gps="${escapeXml(site.gps)}"` : ""
-        }/>`,
+        }></site>`,
     ),
     "  </divesites>",
     "  <dives>",
@@ -69,6 +84,16 @@ export function createSubsurfaceLogbook(dives: LocalDive[]) {
 
 type ExportSite = { id: string; name: string; gps: string | null };
 
+/** Subsurface v3 site ids are short hex tokens; keep them stable per name+gps. */
+function siteUuidForKey(key: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < key.length; index += 1) {
+    hash ^= key.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
 function isPortableDive(dive: LocalDive) {
   const samples = profileSamples(dive);
   const distinctTimes = new Set(samples.map((sample) => sample.elapsedSeconds));
@@ -83,13 +108,13 @@ function isPortableDive(dive: LocalDive) {
   );
 }
 
-function exportSiteForDive(dive: LocalDive, index: number): ExportSite | null {
+function exportSiteForDive(dive: LocalDive): Omit<ExportSite, "id"> | null {
   const coordinates = exportCoordinates(dive);
   const gps = coordinates
     ? `${coordinates.latitude.toFixed(6)} ${coordinates.longitude.toFixed(6)}`
     : null;
   const name = dive.userSite?.trim() || dive.site?.trim() || gps;
-  return name ? { id: `diveframe-site-${index}`, name, gps } : null;
+  return name ? { name, gps } : null;
 }
 
 function serializeDive(dive: LocalDive, index: number, siteId: string | null) {

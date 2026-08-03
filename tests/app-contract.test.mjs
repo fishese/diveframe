@@ -173,6 +173,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /dive\.computerModel \|\| t\("unknown"\)/);
   assert.match(app, /updateLocalDiveDetails/);
   assert.match(app, /details-editor/);
+  assert.match(app, /dive-delete-action/);
+  assert.match(app, /buddy-suggestions/);
+  assert.match(app, /collectBuddyNames/);
+  assert.match(app, /completeBuddyToken/);
   assert.match(app, /DiveProfilePanel/);
   assert.match(app, /showPressure/);
   assert.match(app, /averageSampleTemperatureC/);
@@ -460,7 +464,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(catalogTools, /nearbySessionCatalogSites/);
   assert.match(catalogPrompt, /Return only the final UTF-8 JSON object/);
   assert.match(assetLicenses, /public\/backgrounds\/bubbles-bg\.jpg/);
-  assert.match(assetLicenses, /excluded from the GNU General Public License/);
+  assert.match(assetLicenses, /CC BY-SA 4\.0/);
   assert.match(app, /useAppI18n/);
   assert.doesNotMatch(app, /catalogNotesForDive/);
   assert.match(app, /photo-gallery-actions/);

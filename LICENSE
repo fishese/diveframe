@@ -16,5 +16,5 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 SPDX-License-Identifier: GPL-3.0-or-later
 
 This license applies to the DiveFrame software source code. The Bubbles sample
-background at public/backgrounds/bubbles-bg.jpg is excluded and remains
-separately copyrighted as described in ASSET-LICENSES.md.
+background at public/backgrounds/bubbles-bg.jpg is separately licensed under
+CC BY-SA 4.0 as described in ASSET-LICENSES.md.
