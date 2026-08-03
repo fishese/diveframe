@@ -78,8 +78,10 @@ Shipped on `main` (pushed):
   `SYSTEM_OVERLAY_FONT_STACK` in `lib/composer-fonts.ts`.
 - About page: softer intro, full Subsurface export called out, personal “why
   this exists” note, click-to-reveal contact email.
-- Android debug APK **1.0.13** (`versionCode 14`) targets this shared-client
-  batch; record commit and SHA-256 in `docs/WEB-APK-SYNC.md` after publication.
+- Android debug APK **1.0.13** (`versionCode 14`) was rebuilt from shared-client
+  commit `ade0a02` and published as GitHub release `v0.1.0-debug.13`, containing
+  `diveframe-debug.apk`; SHA-256 is
+  `F492EBAC37B79E8B7D570B31D8926CE6C7E2727F9FFAA710FBF127B2227D7BF2`.
   The stable download URL uses `releases/latest`.
 - Current dogfooding state: the updated hosted web/PWA and Android APK are
   ready for continued testing.
