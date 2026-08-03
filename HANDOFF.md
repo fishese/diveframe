@@ -73,11 +73,11 @@ Shipped on `main` (pushed):
   Subsurface logbook export skips incomplete dives and shows inline
   success/failure under Source log tools; compact Settings language/install/
   default-tank presentation.
-- Android debug APK **1.0.12** (`versionCode 13`) was rebuilt from the shared
-  client commit for these UI/export fixes and published as GitHub release
-  `v0.1.0-debug.12`, containing `diveframe-debug.apk`. Record the commit and
-  SHA-256 in `docs/WEB-APK-SYNC.md` after publication. The stable download URL
-  uses `releases/latest`.
+- Android debug APK **1.0.12** (`versionCode 13`) was rebuilt from shared-client
+  commit `ce12def` and published as GitHub release `v0.1.0-debug.12`, containing
+  `diveframe-debug.apk`; SHA-256 is
+  `1E0588F35F84507B4D575014CE5523A15F3685DBA66613318C22ED31543D3CA6`.
+  The stable download URL uses `releases/latest`.
 - Current dogfooding state: the updated hosted web/PWA and Android APK are
   ready for continued testing.
 

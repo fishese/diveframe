@@ -171,8 +171,9 @@ The current GitHub release is:
 
 - release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.12`
 - asset: `diveframe-debug.apk`
-- source commit: *(fill after publish)*
-- SHA-256: *(fill after publish)*
+- source commit: `ce12def6c564f439adaee2cb1a3f49f57d749b5d`
+- SHA-256:
+  `1E0588F35F84507B4D575014CE5523A15F3685DBA66613318C22ED31543D3CA6`
 
 The debug APK is still signed by Android's debug tooling. An in-place Android
 update requires the same application ID, a compatible/higher `versionCode`,
