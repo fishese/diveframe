@@ -2774,6 +2774,14 @@ function DiveDetail({
                 >
                   {t("saveChanges")}
                 </button>
+                <button
+                  type="button"
+                  className="button button-danger-secondary"
+                  disabled={busy}
+                  onClick={() => setDeleteDiveConfirmOpen(true)}
+                >
+                  {t("deleteDiveLog")}
+                </button>
               </div>
             </form>
           ) : null}
@@ -3063,19 +3071,6 @@ function DiveDetail({
           </Link>
         </div>
       </section>
-
-      {editingDetails ? (
-        <div className="dive-delete-action">
-          <button
-            type="button"
-            className="button button-danger-secondary"
-            disabled={busy}
-            onClick={() => setDeleteDiveConfirmOpen(true)}
-          >
-            {t("deleteDiveLog")}
-          </button>
-        </div>
-      ) : null}
 
       {deleteDiveConfirmOpen ? (
         <div

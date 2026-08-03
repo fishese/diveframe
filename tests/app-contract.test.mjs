@@ -181,7 +181,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(settings, /t\("downloadMergedCatalog"\)/);
   assert.match(settings, /mergeContributions/);
   assert.match(settings, /createSubsurfaceLogbook/);
-  assert.match(settings, /validateSubsurfaceLogbookExport/);
+  assert.match(settings, /partitionSubsurfaceLogbookDives/);
+  assert.match(settings, /sourceLogStatus/);
+  assert.match(settings, /setSourceLogStatus/);
+  assert.match(settings, /subsurface-export-status/);
   assert.match(settings, /t\("reusableBackgrounds"\)/);
   assert.match(settings, /updateLocalBackgroundName/);
   assert.match(settings, /t\("backgroundName"\)/);

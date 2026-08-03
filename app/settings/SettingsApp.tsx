@@ -94,7 +94,7 @@ import {
 import { addDiveFrameSitesToSubsurface } from "@/lib/subsurface-site-export";
 import {
   createSubsurfaceLogbook,
-  validateSubsurfaceLogbookExport,
+  partitionSubsurfaceLogbookDives,
 } from "@/lib/subsurface-logbook-export";
 import {
   fetchWhatsNewDocument,
@@ -124,6 +124,7 @@ export function SettingsApp() {
     DEFAULT_CYLINDER_PRESET_ID,
   );
   const [status, setStatus] = useState(t("loadingLogbook"));
+  const [sourceLogStatus, setSourceLogStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(true);
   const [backupPreview, setBackupPreview] =
     useState<PreparedAppBackup | null>(null);
@@ -730,7 +731,9 @@ export function SettingsApp() {
     event.target.value = "";
     if (!file) return;
     setBusy(true);
-    setStatus(t("preparingSubsurfaceExport"));
+    const preparing = t("preparingSubsurfaceExport");
+    setStatus(preparing);
+    setSourceLogStatus(preparing);
     try {
       const [dives, sourceRecords] = await Promise.all([
         listLocalDives(),
@@ -742,7 +745,9 @@ export function SettingsApp() {
         sourceRecords,
       );
       if (!result.updatedDives) {
-        setStatus(t("noSubsurfaceUpdates"));
+        const message = t("noSubsurfaceUpdates");
+        setStatus(message);
+        setSourceLogStatus(message);
         return;
       }
       const baseName =
@@ -752,21 +757,22 @@ export function SettingsApp() {
         `${baseName}-diveframe-updated.ssrf`,
         "application/xml",
       );
-      setStatus(
-        withSavedFileNotice(
-          t("subsurfaceExportComplete", {
-            dives: result.updatedDives,
-            sites: result.addedSites,
-            buddies: result.updatedBuddies,
-            notes: result.updatedNotes,
-          }),
-          saved,
-        ),
+      const message = withSavedFileNotice(
+        t("subsurfaceExportComplete", {
+          dives: result.updatedDives,
+          sites: result.addedSites,
+          buddies: result.updatedBuddies,
+          notes: result.updatedNotes,
+        }),
+        saved,
       );
+      setStatus(message);
+      setSourceLogStatus(message);
     } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : t("subsurfaceExportFailed"),
-      );
+      const message =
+        error instanceof Error ? error.message : t("subsurfaceExportFailed");
+      setStatus(message);
+      setSourceLogStatus(message);
     } finally {
       setBusy(false);
     }
@@ -774,39 +780,54 @@ export function SettingsApp() {
 
   async function exportFullSubsurfaceLogbook() {
     setBusy(true);
-    setStatus(t("preparingSubsurfaceLogbook"));
+    const preparing = t("preparingSubsurfaceLogbook");
+    setStatus(preparing);
+    setSourceLogStatus(preparing);
     try {
       const localDives = await listLocalDives();
       if (!localDives.length) {
-        setStatus(t("noDivesForSubsurfaceLogbook"));
+        const message = t("noDivesForSubsurfaceLogbook");
+        setStatus(message);
+        setSourceLogStatus(message);
         return;
       }
-      const validation = validateSubsurfaceLogbookExport(localDives);
-      if (!validation.ok) {
-        setStatus(
-          t("subsurfaceLogbookIncomplete", {
-            count: validation.incompleteDiveIds.length,
-          }),
-        );
+      const { portable, incompleteDiveIds } =
+        partitionSubsurfaceLogbookDives(localDives);
+      if (!portable.length) {
+        const message = t("subsurfaceLogbookIncomplete", {
+          count: incompleteDiveIds.length,
+        });
+        setStatus(message);
+        setSourceLogStatus(message);
         return;
       }
       const saved = await saveExportFile(
-        new Blob([createSubsurfaceLogbook(localDives)], {
+        new Blob([createSubsurfaceLogbook(portable)], {
           type: "application/xml;charset=utf-8",
         }),
         "diveframe-subsurface-logbook.ssrf",
         "application/xml",
       );
-      setStatus(
-        withSavedFileNotice(
-          t("subsurfaceLogbookExportComplete", { count: localDives.length }),
-          saved,
-        ),
+      const message = withSavedFileNotice(
+        incompleteDiveIds.length
+          ? t("subsurfaceLogbookExportCompleteWithSkipped", {
+              count: portable.length,
+              skipped: incompleteDiveIds.length,
+            })
+          : t("subsurfaceLogbookExportComplete", {
+              count: portable.length,
+            }),
+        saved,
       );
+      setStatus(message);
+      setSourceLogStatus(message);
     } catch (error) {
-      setStatus(
-        error instanceof Error ? error.message : t("subsurfaceLogbookExportFailed"),
-      );
+      const message =
+        error instanceof Error
+          ? error.message
+          : t("subsurfaceLogbookExportFailed");
+      setStatus(message);
+      setSourceLogStatus(message);
     } finally {
       setBusy(false);
     }
@@ -983,7 +1004,6 @@ export function SettingsApp() {
               <h2>{t("appLanguage")}</h2>
             </div>
           </div>
-          <p className="settings-note">{t("appLanguageDescription")}</p>
           <label className="language-select">
             <span className="visually-hidden">{t("appLanguage")}</span>
             <select
@@ -1219,7 +1239,7 @@ export function SettingsApp() {
           </div>
           <p className="settings-note">{t("defaultTankDescription")}</p>
           <label className="language-select">
-            <span>{t("tankSize")}</span>
+            <span className="visually-hidden">{t("defaultTankSize")}</span>
             <select
               value={defaultCylinderPresetId}
               onChange={(event) =>
@@ -1665,6 +1685,12 @@ export function SettingsApp() {
           <p className="settings-note">
             {t("exportSubsurfaceLogbookNote")}
           </p>
+          {sourceLogStatus ? (
+            <p className="settings-note subsurface-export-status" role="status">
+              {busy ? <LoaderCircle size={14} className="spin" /> : null}
+              {sourceLogStatus}
+            </p>
+          ) : null}
         </section>
 
         <section className="settings-card storage-settings">

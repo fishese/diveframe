@@ -5,32 +5,38 @@ export type SubsurfaceLogbookExportValidation =
   | { ok: false; incompleteDiveIds: string[] };
 
 /**
- * A portable logbook must include a date, a duration, and a usable depth/time
- * profile for every exported dive. This deliberately rejects sparse Cloud-only
- * records instead of creating a file that appears more complete than it is.
+ * A portable logbook needs a date, a duration, and a usable depth/time profile.
+ * Incomplete Cloud-only or sparse records are skipped so the rest can still
+ * export, instead of failing the whole logbook.
  */
+export function partitionSubsurfaceLogbookDives(dives: LocalDive[]) {
+  const portable: LocalDive[] = [];
+  const incompleteDiveIds: string[] = [];
+  for (const dive of dives) {
+    if (isPortableDive(dive)) portable.push(dive);
+    else incompleteDiveIds.push(dive.id);
+  }
+  return { portable, incompleteDiveIds };
+}
+
 export function validateSubsurfaceLogbookExport(
   dives: LocalDive[],
 ): SubsurfaceLogbookExportValidation {
-  const incompleteDiveIds = dives
-    .filter((dive) => !isPortableDive(dive))
-    .map((dive) => dive.id);
+  const { incompleteDiveIds } = partitionSubsurfaceLogbookDives(dives);
   return incompleteDiveIds.length
     ? { ok: false, incompleteDiveIds }
     : { ok: true };
 }
 
 export function createSubsurfaceLogbook(dives: LocalDive[]) {
-  const validation = validateSubsurfaceLogbookExport(dives);
-  if (!validation.ok) {
-    throw new Error(
-      `Cannot export ${validation.incompleteDiveIds.length} incomplete dive record(s).`,
-    );
+  const { portable } = partitionSubsurfaceLogbookDives(dives);
+  if (!portable.length) {
+    throw new Error("Cannot export a Subsurface logbook with no complete dive records.");
   }
 
   const sites = new Map<string, ExportSite>();
   const siteIdByDiveId = new Map<string, string>();
-  dives.forEach((dive) => {
+  portable.forEach((dive) => {
     const site = exportSiteForDive(dive, sites.size + 1);
     if (!site) return;
     const key = `${site.name}\u0000${site.gps ?? ""}`;
@@ -51,7 +57,7 @@ export function createSubsurfaceLogbook(dives: LocalDive[]) {
     ),
     "  </divesites>",
     "  <dives>",
-    ...dives.flatMap((dive, index) =>
+    ...portable.flatMap((dive, index) =>
       serializeDive(dive, index + 1, siteIdByDiveId.get(dive.id) ?? null),
     ),
     "  </dives>",

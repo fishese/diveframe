@@ -98,13 +98,13 @@ select option {
   color: var(--teal);
   display: flex;
   gap: 8px;
-  margin: 18px 0 0;
+  margin: 10px 0 0;
 }
 
 .pwa-data-note {
   border-top: 1px solid var(--line);
-  margin-top: 20px;
-  padding-top: 16px;
+  margin-top: 12px;
+  padding-top: 10px;
 }
 
 button,
@@ -3045,13 +3045,23 @@ button {
 .branding-settings > .settings-note,
 .backup-settings > .settings-note,
 .dive-defaults-settings > .settings-note,
-.pwa-settings > .settings-note,
 .subsurface-export-settings > .settings-note,
 .language-settings > .settings-note,
 .duplicate-settings > .settings-note,
 .storage-settings > .settings-note,
 .danger-settings > .settings-note {
   margin-top: 20px;
+}
+
+.pwa-settings > .settings-note {
+  margin-top: 10px;
+}
+
+.subsurface-export-status {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .background-settings > .button,

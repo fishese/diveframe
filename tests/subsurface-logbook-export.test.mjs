@@ -11,7 +11,11 @@ const javascript = ts.transpileModule(source, {
     target: ts.ScriptTarget.ES2022,
   },
 }).outputText;
-const { createSubsurfaceLogbook, validateSubsurfaceLogbookExport } = await import(
+const {
+  createSubsurfaceLogbook,
+  partitionSubsurfaceLogbookDives,
+  validateSubsurfaceLogbookExport,
+} = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
 );
 
@@ -63,7 +67,29 @@ test("rejects records without a usable depth-over-time profile", () => {
     ok: false,
     incompleteDiveIds: [incomplete.id],
   });
-  assert.throws(() => createSubsurfaceLogbook([incomplete]), /incomplete dive record/);
+  assert.throws(() => createSubsurfaceLogbook([incomplete]), /no complete dive/);
+});
+
+test("exports complete dives and skips incomplete ones in the same selection", () => {
+  const incomplete = {
+    ...completeDive,
+    id: "incomplete-cloud",
+    samples: [{ elapsedSeconds: 0, depthM: 0 }],
+  };
+  const partition = partitionSubsurfaceLogbookDives([completeDive, incomplete]);
+  assert.deepEqual(
+    partition.portable.map((dive) => dive.id),
+    [completeDive.id],
+  );
+  assert.deepEqual(partition.incompleteDiveIds, [incomplete.id]);
+
+  const xml = createSubsurfaceLogbook([completeDive, incomplete]);
+  const document = new DOMParser().parseFromString(xml, "application/xml");
+  assert.equal(document.querySelectorAll("dives > dive").length, 1);
+  assert.equal(
+    document.querySelector("divecomputer")?.getAttribute("diveid"),
+    completeDive.id,
+  );
 });
 
 test("rejects surface-only and duplicate-time profiles", () => {

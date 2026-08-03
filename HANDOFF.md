@@ -67,11 +67,17 @@ Shipped on `main` (pushed):
   cross-tab change notifications with optimize revision checks, Nominatim /
   Overpass cache and rate limits with coord-free error telemetry, pruned unused
   translations, and a split `lib/app-i18n/{en,zh-Hant,ja}.ts` layout.
-- Android debug APK **1.0.11** (`versionCode 12`) was rebuilt from shared-client
-  commit `dc736da` and published as GitHub release `v0.1.0-debug.11`, containing
-  `diveframe-debug.apk`; SHA-256 is
-  `9161C2C5FB994F2FE28E209C427B1B26F0F95303C110DBDE569FB95F9F79B3B6`.
-  The stable download URL uses `releases/latest`.
+  Streaming backup encode/restore (audit item 4) and large React module splits
+  remain open; session notes are in `docs/2026-08-03-audit-and-ui-session.md`.
+- UI/export/settings fixes: restore Delete dive beside Save changes; full
+  Subsurface logbook export skips incomplete dives and shows inline
+  success/failure under Source log tools; compact Settings language/install/
+  default-tank presentation.
+- Android debug APK **1.0.12** (`versionCode 13`) was rebuilt from the shared
+  client commit for these UI/export fixes and published as GitHub release
+  `v0.1.0-debug.12`, containing `diveframe-debug.apk`. Record the commit and
+  SHA-256 in `docs/WEB-APK-SYNC.md` after publication. The stable download URL
+  uses `releases/latest`.
 - Current dogfooding state: the updated hosted web/PWA and Android APK are
   ready for continued testing.
 
@@ -98,6 +104,9 @@ Open follow-ups:
   useful.
 
 Session detail: `docs/2026-08-01-ble-product-import-session.md`.
+
+2026-08-03 audit merge, follow-ups, and UI/export fixes:
+`docs/2026-08-03-audit-and-ui-session.md`.
 
 Deep review findings and follow-up recommendations:
 `docs/2026-08-03-deep-code-audit.md`.
