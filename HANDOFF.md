@@ -63,14 +63,14 @@ Shipped on `main` (pushed):
   About/import guidance shipped in `61aa342`. FIT import is implemented but
   labelled untested; Shearwater Cloud databases are described as basic-only,
   while detailed classic Shearwater Bluetooth import is Android-only.
-- Deep-code-audit resilience fixes shipped in `1c1e35b`: stale async races,
-  BLE listener teardown, import/export correctness, hosted API timeouts, and
-  focused regression coverage. Findings remain in
-  `docs/2026-08-03-deep-code-audit.md`.
-- Android debug APK **1.0.10** (`versionCode 11`) was rebuilt from shared-client
-  commit `1c1e35b` and published as GitHub release `v0.1.0-debug.10`, containing
+- Audit follow-ups shipped in `dc736da`: metadata-only backup size estimates,
+  cross-tab change notifications with optimize revision checks, Nominatim /
+  Overpass cache and rate limits with coord-free error telemetry, pruned unused
+  translations, and a split `lib/app-i18n/{en,zh-Hant,ja}.ts` layout.
+- Android debug APK **1.0.11** (`versionCode 12`) was rebuilt from shared-client
+  commit `dc736da` and published as GitHub release `v0.1.0-debug.11`, containing
   `diveframe-debug.apk`; SHA-256 is
-  `7C7341CF65C439AF986BB3B51E4C6CC4F25FCE0C5C308343583E3971F4DF6F25`.
+  `9161C2C5FB994F2FE28E209C427B1B26F0F95303C110DBDE569FB95F9F79B3B6`.
   The stable download URL uses `releases/latest`.
 - Current dogfooding state: the updated hosted web/PWA and Android APK are
   ready for continued testing.

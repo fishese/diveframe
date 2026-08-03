@@ -89,8 +89,8 @@ as a GitHub Release asset.
 1. Review `git diff --name-only` and use the matrix above.
 2. For an APK release, increment `versionCode` and update `versionName` in
    `android/app/build.gradle`. The first debug release used `versionCode 1` /
-   `versionName "1.0"`; the current debug build uses `versionCode 11` /
-   `versionName "1.0.10"`. Confirm the build uses the same signing key as the
+   `versionName "1.0"`; the current debug build uses `versionCode 12` /
+   `versionName "1.0.11"`. Confirm the build uses the same signing key as the
    APK it is expected to update.
 3. Run `npm test`, commit the intended source changes, and push that commit to
    `main`. Record the commit ID; the APK release tag must target it.
