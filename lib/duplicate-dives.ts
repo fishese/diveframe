@@ -46,7 +46,7 @@ export function findPotentialDuplicateDives(
         normalize(first.serialNumber) === normalize(second.serialNumber);
       const sourcesDiffer = first.sources.some(
         (source) => !second.sources.includes(source),
-      );
+      ) || second.sources.some((source) => !first.sources.includes(source));
       const exactProfile =
         timeDifferenceSeconds <= 90 &&
         (depthDifferenceM === null || depthDifferenceM <= 0.5) &&
@@ -66,7 +66,9 @@ export function findPotentialDuplicateDives(
 }
 
 function timestamp(dive: LocalDive) {
-  return dive.diveDate ? Date.parse(dive.diveDate) : Number.NaN;
+  return dive.diveDate
+    ? Date.parse(dive.diveDate.replace(" ", "T"))
+    : Number.NaN;
 }
 
 function difference(

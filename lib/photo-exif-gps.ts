@@ -142,8 +142,7 @@ function readGpsCoordinates(
   const longitude =
     readAsciiRefChar(view, lngRef) === "W" ? -longitudeMagnitude : longitudeMagnitude;
 
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
-  if (latitude === 0 && longitude === 0) return null;
+  if (!isUsableGps(latitude, longitude)) return null;
   return { latitude, longitude };
 }
 
@@ -185,9 +184,7 @@ export async function readPhotoExifGps(
     const coordinates = await readExifGps(buffer);
     if (
       !coordinates ||
-      !Number.isFinite(coordinates.latitude) ||
-      !Number.isFinite(coordinates.longitude) ||
-      (coordinates.latitude === 0 && coordinates.longitude === 0)
+      !isUsableGps(coordinates.latitude, coordinates.longitude)
     ) {
       return null;
     }
@@ -198,4 +195,14 @@ export async function readPhotoExifGps(
   } catch {
     return null;
   }
+}
+
+function isUsableGps(latitude: number, longitude: number) {
+  return (
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180 &&
+    !(latitude === 0 && longitude === 0)
+  );
 }

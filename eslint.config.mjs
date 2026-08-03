@@ -7,10 +7,22 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
+    // Framework and generated build output. Linting generated Android/Vite
+    // bundles hid actionable source errors behind thousands of diagnostics.
     ".next/**",
     "out/**",
     "build/**",
+    "dist/**",
+    "dist-native/**",
+    ".wrangler/**",
+    "android/.gradle/**",
+    "android/build/**",
+    "android/app/build/**",
+    "android/app/src/main/assets/**",
+    // Archived one-off recovery tools are retained as historical artifacts,
+    // not maintained as part of the current application build.
+    "scripts/archive/**",
+    "coverage/**",
     "next-env.d.ts",
   ]),
 ]);

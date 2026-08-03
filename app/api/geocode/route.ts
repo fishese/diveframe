@@ -81,9 +81,16 @@ async function searchLocation(query: string) {
   url.searchParams.set("q", query);
   url.searchParams.set("format", "jsonv2");
   url.searchParams.set("limit", "1");
-  const response = await fetch(url, { headers: nominatimHeaders() });
-  if (!response.ok) return "unavailable" as const;
-  return ((await response.json()) as NominatimSearchResult[])[0] ?? null;
+  try {
+    const response = await fetch(url, {
+      headers: nominatimHeaders(),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) return "unavailable" as const;
+    return ((await response.json()) as NominatimSearchResult[])[0] ?? null;
+  } catch {
+    return "unavailable" as const;
+  }
 }
 
 async function reverseGeocode(
@@ -106,7 +113,19 @@ async function reverseGeocode(
   url.searchParams.set("addressdetails", "1");
   url.searchParams.set("zoom", "10");
 
-  const response = await fetch(url, { headers: nominatimHeaders() });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: nominatimHeaders(),
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    return jsonWithCors(
+      request,
+      { error: "GPS location lookup is temporarily unavailable." },
+      { status: 502 },
+    );
+  }
   if (!response.ok) {
     return jsonWithCors(
       request,
@@ -115,7 +134,16 @@ async function reverseGeocode(
     );
   }
 
-  const match = (await response.json()) as NominatimReverseResult;
+  let match: NominatimReverseResult;
+  try {
+    match = (await response.json()) as NominatimReverseResult;
+  } catch {
+    return jsonWithCors(
+      request,
+      { error: "GPS location lookup returned an invalid response." },
+      { status: 502 },
+    );
+  }
   const address = match.address ?? {};
   const city =
     address.city ??

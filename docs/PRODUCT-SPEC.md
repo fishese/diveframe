@@ -357,17 +357,17 @@ without the necessary pressure and cylinder inputs.
   require a new APK built and published from that same commit. A Cloudflare web
   deployment does not update the GitHub APK or installed copies.
 - The Android WebView ignores `<a download>` blob URLs, so every export
-  (backup, added-site log, merged catalog, Subsurface copy, composer image,
-  share card) is streamed through a native plugin into the phone's public
-  Downloads folder, with an optional share-sheet handoff. Settings omits the
-  browser install/storage card inside the APK.
+  (backup, updated or generated Subsurface logbook, composer image, and share
+  card) is streamed through a native plugin into the phone's public Downloads
+  folder, with an optional share-sheet handoff. Settings omits the browser
+  install/storage card inside the APK.
 - The global notice surfaces the latest unread **What's new** version; Settings
   shows the compact unread entry and hides it after it is marked seen.
   Settings fetches a versioned JSON feed from
-  `https://divelog.fishese.cc/api/whats-new` (with Capacitor CORS intended on
-  the hosted origin; deploy
-  that header if the production worker still omits it), caches it in
-  app preferences, and renders entries with optional structured links such as
+  `https://divelog.fishese.cc/api/whats-new`. The shared API response helpers
+  attach CORS for approved Capacitor origins; production deployment still
+  needs an APK smoke test after hosting changes. The app caches the feed in
+  app preferences and renders entries with optional structured links such as
   APK downloads. Offline use shows the last cached feed.
 
 Formal screen-reader, keyboard-only, contrast, and iOS/Android device matrices
@@ -429,8 +429,9 @@ Remaining candidates:
 5. Decide whether a small portable CSV/JSON dive-summary export is valuable
    independently of the private full backup.
 
-The wrapper can start before every Priority C item is complete, but Priority A
-should be treated as the data-safety gate.
+The existing Android wrapper can continue hardening before every Priority C
+item is complete, but the data-safety work above remains the store-readiness
+gate.
 
 ## Features worth validating with divers before expanding scope
 
@@ -452,9 +453,10 @@ These may be useful, but should be driven by interviews rather than assumed:
 For each candidate, ask whether it belongs in DiveFrame or remains better in
 Subsurface/source apps.
 
-## Native wrapper decision points
+## Native wrapper status and remaining decision points
 
-Before choosing Capacitor, a Trusted Web Activity, or another wrapper:
+Capacitor is the current Android wrapper. Before store packaging or a future
+wrapper change:
 
 - Confirm whether native file pickers, share sheets, photo-library access,
   storage quotas, and offline behavior justify native APIs.
@@ -466,9 +468,8 @@ Before choosing Capacitor, a Trusted Web Activity, or another wrapper:
   chosen WebView.
 - Keep the normalized model and import pipeline platform-independent.
 
-A Trusted Web Activity is simpler but remains dependent on the hosted origin.
-Capacitor offers native plugins and is the stronger candidate if Bluetooth and
-native storage are planned.
+A Trusted Web Activity would be simpler but remains dependent on the hosted
+origin and would not replace the current native Bluetooth/file plugins.
 
 ## Planned extension guardrails
 
@@ -490,9 +491,9 @@ These are planned directions, not commitments for the current beta:
   before implementation.
 
 All three directions must preserve anonymous local use and provider-independent
-backup export. The current single-user beta may use documented destructive
-schema resets when worthwhile; supported migrations become mandatory before
-other users are invited or hosted accounts are offered.
+backup export. IndexedDB changes after v8 remain additive unless a destructive
+change is explicitly reviewed and documented; supported migrations are
+mandatory before other users are invited or hosted accounts are offered.
 
 ## Questions for reviewers
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Archive,
   ArrowLeft,
@@ -207,6 +208,7 @@ export function SettingsApp() {
   }
 
   useEffect(() => {
+    let active = true;
     const migrated = takeSessionSupplementaryCatalogMigration();
     Promise.all([
       listLocalSiteContributions(),
@@ -222,6 +224,7 @@ export function SettingsApp() {
           migrated && !savedCatalog
             ? await saveLocalSupplementaryCatalog(migrated.label, migrated.catalog)
             : savedCatalog;
+        if (!active) return;
         setContributions(items);
         setReviewedSites(items.map(toSiteDraft));
         setCatalog(
@@ -253,9 +256,16 @@ export function SettingsApp() {
         void refreshWhatsNew();
       })
       .catch((error) => {
-        setStatus(error instanceof Error ? error.message : t("settingsLoadFailed"));
+        if (active) {
+          setStatus(error instanceof Error ? error.message : t("settingsLoadFailed"));
+        }
       })
-      .finally(() => setBusy(false));
+      .finally(() => {
+        if (active) setBusy(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [t]);
 
   async function markWhatsNewSeen() {
@@ -737,7 +747,7 @@ export function SettingsApp() {
         new Blob([createSubsurfaceLogbook(localDives)], {
           type: "application/xml;charset=utf-8",
         }),
-        "diveframe-suburface-logbook.ssrf",
+        "diveframe-subsurface-logbook.ssrf",
         "application/xml",
       );
       setStatus(
@@ -846,7 +856,7 @@ export function SettingsApp() {
       <header className="topbar settings-topbar">
         <Link href="/" className="brand settings-brand" aria-label={t("backToDives")}>
           <span className="brand-mark">
-            <img src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" />
+            <Image src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" width={52} height={52} />
           </span>
           <span>
             <strong>DiveFrame</strong>
@@ -931,9 +941,11 @@ export function SettingsApp() {
             <span className="visually-hidden">{t("appLanguage")}</span>
             <select
               value={language}
-              onChange={(event) =>
-                void setLanguage(event.target.value as "en" | "zh-Hant" | "ja")
-              }
+              onChange={(event) => {
+                void setLanguage(
+                  event.target.value as "en" | "zh-Hant" | "ja",
+                ).catch(() => setStatus(t("settingsSaveFailed")));
+              }}
             >
               <option value="en">{t("english")}</option>
               <option value="zh-Hant">{t("traditionalChineseHK")}</option>

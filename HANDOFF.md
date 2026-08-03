@@ -80,9 +80,9 @@ Open follow-ups:
   share location; taking a new photo directly from the browser can strip GPS
   metadata. The JPEG/HEIC retained-photo gallery and composer flow has also
   been verified on iPhone Safari; broader browser-version coverage remains.
-- Deploy production CORS for `/api/geocode`, `/api/nearby-sites`, and
-  `/api/whats-new` so Capacitor `https://localhost` can use the hosted worker
-  without a LAN API override
+- The API handlers now emit CORS for the approved Capacitor origins on
+  `/api/geocode`, `/api/nearby-sites`, and `/api/whats-new`. Smoke-test the
+  deployed worker from the APK after each hosting/configuration change.
 - BLE hardening / failure matrix / LGPL release checklist
 - Pre-wrapper Priority C quality items in `docs/PRODUCT-SPEC.md`
 - Android web image uploads did not retain usable GPS metadata in testing with
@@ -94,6 +94,9 @@ Open follow-ups:
   useful.
 
 Session detail: `docs/2026-08-01-ble-product-import-session.md`.
+
+Deep review findings and follow-up recommendations:
+`docs/2026-08-03-deep-code-audit.md`.
 
 Web/APK parity and release checklist: `docs/WEB-APK-SYNC.md`.
 
@@ -117,7 +120,8 @@ Deployment is managed by the repository's Cloudflare Worker integration.
   web-only Android APK information/download page and compact phone links in
   web headers.
 - `lib/parsers/` — separate Shearwater, Subsurface, UDDF, and FIT importers.
-- `lib/dive-model.ts` and `lib/normalize-dive.ts` — normalized internal model.
+- `lib/normalize-dive.ts` — adapter from stored dives to the normalized
+  renderer model.
 - `lib/dive-matching.ts` — cross-source record matching.
 - `lib/dive-identity.ts` — deterministic canonical IDs and source precedence.
 - `lib/chart-renderer.ts` — profile downsampling and vector-like canvas paths.
@@ -190,6 +194,7 @@ Validation:
 
 ```bash
 npm run lint
+npm run typecheck
 npm test
 ```
 
@@ -587,8 +592,8 @@ before doing so.
 
 `docs/PRODUCT-SPEC.md` is the canonical review document. A Capacitor Android
 debug APK already ships the shared UI and classic Shearwater BLE import.
-Remaining Priority A/C items and production CORS for Capacitor API calls are
-the recommended gate before store packaging or treating BLE as fully hardened.
+Remaining Priority A/C items and deployed-APK CORS smoke testing are the
+recommended gate before store packaging or treating BLE as fully hardened.
 
 Backup hardening remains the highest-priority part of that gate.
 

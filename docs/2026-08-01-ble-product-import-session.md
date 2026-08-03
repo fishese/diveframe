@@ -59,9 +59,9 @@ Validated on device:
   `shareFile`) streams base64 chunks into the public Downloads folder via
   MediaStore; `lib/file-export.ts` picks that path on Android and keeps the
   anchor download on the web.
-- All exports go through it: backup, added-site log, merged catalog, updated
-  Subsurface file, composer image, share card. Status lines report the saved
-  file name, and **Send a copy** opens the Android share sheet after a backup.
+- All current exports go through it: backup, updated or generated Subsurface
+  logbook, composer image, and share card. Status lines report the saved file
+  name, and **Send a copy** opens the Android share sheet after a backup.
 - Settings now omits the browser install/storage card inside the APK, so the
   PWA install blurb and the former **This device's logbook** card do not show.
 
@@ -98,11 +98,10 @@ Fixes (shipped on `main`):
 Symptom: dive detail stuck on “Resolving GPS location…”, site title stays
 unnamed, map still shows the pin.
 
-Cause: the APK calls `https://divelog.fishese.cc/api/geocode` (and nearby-sites).
-Production returns 200 JSON but **no** `Access-Control-Allow-Origin` for
-Capacitor (`https://localhost`), so the WebView drops the response. Local
-`vinext` already sends CORS via `lib/api-cors.ts` — that code is simply not on
-the live worker yet.
+Cause at the time: the APK called `https://divelog.fishese.cc/api/geocode` (and
+nearby-sites), while the deployed response omitted
+`Access-Control-Allow-Origin` for Capacitor (`https://localhost`). The WebView
+therefore dropped an otherwise successful JSON response.
 
 Mitigations in tree:
 
@@ -112,7 +111,9 @@ Mitigations in tree:
   show place-name unavailable.
 - Native builds can override the API origin with
   `NEXT_PUBLIC_DIVEFRAME_API_ORIGIN` (LAN `vinext` for verification). Deploying
-  CORS to production is the lasting fix.
+  the shared `lib/api-cors.ts` response headers is the lasting fix. Current
+  handlers include those headers; verify the live worker from the APK after
+  deployment changes.
 
 ## Offline catalog + What's new (2026-08-01)
 
@@ -135,7 +136,7 @@ shipped on `main` and documented in `USER-GUIDE.md` / `PRODUCT-SPEC.md`. Plan:
    v1.2: temperature samples, tank-indexed pressure samples, exact dive mode,
    atmosphere/salinity/decompression metadata, and tank metadata. Physical tank
    series remain independent for later twin/sidemount display grouping.
-5. Deploy production CORS for Capacitor origins on geocode / nearby / what's-new.
+5. Smoke-test production CORS from the APK on geocode / nearby / What's new.
 6. Next product steps:
    - Trip / user-GPS editors — **done** on `main`
    - Site display alias chips — **done** on `main`
@@ -153,7 +154,8 @@ shipped on `main` and documented in `USER-GUIDE.md` / `PRODUCT-SPEC.md`. Plan:
 - vinext static export on Windows may abort during Node teardown after a
   successful prerender; `scripts/build-native-web.mjs` continues when
   `dist/client/index.html` is valid.
-- Production hosted APIs still need Capacitor CORS headers.
+- Hosted API handlers contain Capacitor CORS headers; deployment still needs
+  an APK smoke test when the worker or origin configuration changes.
 - **About / product copy (later):** Bluetooth import supports classic
   Shearwater BLE computers only (not Perdix 3). Other brands: use Subsurface
   (or Shearwater Cloud DB, UDDF, FIT) and import that file into DiveFrame.
@@ -169,8 +171,9 @@ location data from uploads, links to the Android app download page, and warns
 that images received through WhatsApp, Signal, or social media generally have
 no location data. Dive-photo and composer-asset pickers are unchanged.
 
-The matching Android debug APK was rebuilt from the shared commit and published
-as GitHub release `v0.1.0-debug.7` (`versionName 1.0.7`, `versionCode 8`).
+That matching Android debug APK was published as `v0.1.0-debug.7`; it has since
+been superseded by the current `v0.1.0-debug.9` release documented in
+`HANDOFF.md`.
 
 Possible future experiments are a map picker for entering GPS coordinates and
 optional image ZIP uploads for batch/original-file workflows.

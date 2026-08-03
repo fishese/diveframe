@@ -41,9 +41,17 @@ export function AppI18nProvider({ children }: { children: ReactNode }) {
   }, [language]);
 
   const setLanguage = useCallback(async (next: AppLanguage) => {
+    const previous = language;
     setLanguageState(next);
-    await saveLocalAppPreferences({ uiLanguage: next });
-  }, []);
+    try {
+      await saveLocalAppPreferences({ uiLanguage: next });
+    } catch (error) {
+      // Do not leave the controlled selector showing a value that failed to
+      // persist. A newer selection wins if the user changed it again meanwhile.
+      setLanguageState((current) => (current === next ? previous : current));
+      throw error;
+    }
+  }, [language]);
   const t = useCallback<AppTranslate>(
     (key, values) => translateApp(language, key, values),
     [language],

@@ -383,8 +383,11 @@ test("exports are written natively because the WebView drops blob downloads", as
   assert.match(settings, /shareExportFile\(/);
   assert.match(exporter, /saveExportFile\(/);
   assert.match(pwa, /Capacitor\.isNativePlatform\(\)/);
-  assert.match(pwa, /isNative \? t\("deviceStorageTitle"\)/);
-  assert.match(pwa, /storageNativeApp/);
+  // The install and browser-storage card is a PWA concern. Rendering it in the
+  // native shell duplicated Android's own storage/export UI and misleadingly
+  // reported WebView persistence semantics.
+  assert.match(pwa, /if \(!mounted \|\| isNative\) return null/);
+  assert.doesNotMatch(pwa, /deviceStorageTitle|storageNativeApp/);
   assert.match(pwa, /getLocalStoragePersistenceStatus\(!native\)/);
 });
 

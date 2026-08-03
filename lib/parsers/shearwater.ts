@@ -12,6 +12,35 @@ import {
 } from "./parser-utils";
 import { normalizeShearwaterPressurePair } from "../gas-calculations";
 
+const DIVE_DETAIL_COLUMNS = [
+  "DiveId",
+  "DiveNumber",
+  "DiveDate",
+  "LastModified",
+  "Depth",
+  "AverageDepth",
+  "MinTemp",
+  "MaxTemp",
+  "DiveLengthTime",
+  "Location",
+  "Site",
+  "Buddy",
+  "Notes",
+  "SerialNumber",
+  "GnssEntryLocation",
+  "GnssExitLocation",
+  "Tank1PressureStart",
+  "Tank1PressureEnd",
+  "Tank2PressureStart",
+  "Tank2PressureEnd",
+  "Tank3PressureStart",
+  "Tank3PressureEnd",
+  "Tank4PressureStart",
+  "Tank4PressureEnd",
+  "Apparatus",
+  "GasNotes",
+] as const;
+
 export async function readShearwaterDatabase(
   file: File,
 ): Promise<LocalImportedDive[]> {
@@ -24,22 +53,34 @@ export async function readShearwaterDatabase(
     if (!tables[0]?.values.length) {
       throw new Error("This does not look like a Shearwater Cloud database.");
     }
-    const computerNames = readStoredComputerNames(database);
+    const diveColumns = tableColumns(database, "dive_details");
+    if (!diveColumns.has("diveid")) {
+      throw new Error("This Shearwater database has no dive identifier column.");
+    }
+    const logColumns = tableColumns(database, "log_data");
+    const canJoinLogData =
+      logColumns.has("log_id") &&
+      logColumns.has("calculated_values_from_samples");
+    // Shearwater app versions do not all ship the same optional columns. NULL
+    // aliases preserve the normalized import shape without rejecting a basic
+    // database that still contains usable dive details.
+    const selectedColumns = DIVE_DETAIL_COLUMNS.map((column) =>
+      diveColumns.has(column.toLowerCase())
+        ? `d.${column}`
+        : `NULL AS ${column}`,
+    );
+    selectedColumns.push(
+      canJoinLogData
+        ? "l.calculated_values_from_samples"
+        : "NULL AS calculated_values_from_samples",
+    );
     const result = database.exec(`
-      SELECT d.DiveId, d.DiveNumber, d.DiveDate, d.LastModified,
-             d.Depth, d.AverageDepth, d.MinTemp, d.MaxTemp,
-             d.DiveLengthTime, d.Location, d.Site, d.Buddy, d.Notes,
-             d.SerialNumber, d.GnssEntryLocation, d.GnssExitLocation,
-             d.Tank1PressureStart, d.Tank1PressureEnd,
-             d.Tank2PressureStart, d.Tank2PressureEnd,
-             d.Tank3PressureStart, d.Tank3PressureEnd,
-             d.Tank4PressureStart, d.Tank4PressureEnd,
-             d.Apparatus, d.GasNotes,
-             l.calculated_values_from_samples
+      SELECT ${selectedColumns.join(", ")}
       FROM dive_details d
-      LEFT JOIN log_data l ON l.log_id = d.DiveId
-      ORDER BY d.DiveDate DESC
+      ${canJoinLogData ? "LEFT JOIN log_data l ON l.log_id = d.DiveId" : ""}
+      ORDER BY ${diveColumns.has("divedate") ? "d.DiveDate" : "d.DiveId"} DESC
     `);
+    const computerNames = readStoredComputerNames(database);
     if (!result[0]) return [];
     return rowsFrom(result[0]).map((row) => {
       const entry = locationFrom(row.GnssEntryLocation);
@@ -113,9 +154,11 @@ function readStoredComputerNames(database: {
   `);
   if (!exists[0]?.values.length) return new Map<string, string>();
 
-  const result = database.exec(
-    "SELECT SerialNumber, JsonData FROM StoredDiveComputer",
-  );
+  const columns = tableColumns(database, "StoredDiveComputer");
+  if (!columns.has("serialnumber") || !columns.has("jsondata")) {
+    return new Map<string, string>();
+  }
+  const result = database.exec("SELECT SerialNumber, JsonData FROM StoredDiveComputer");
   const names = new Map<string, string>();
   for (const [serialNumber, jsonData] of result[0]?.values ?? []) {
     const device = safeJson(asString(jsonData));
@@ -125,6 +168,22 @@ function readStoredComputerNames(database: {
     for (const key of serialLookupKeys(serialNumber)) names.set(key, name);
   }
   return names;
+}
+
+function tableColumns(
+  database: { exec: (sql: string) => QueryExecResult[] },
+  tableName: string,
+) {
+  const result = database.exec(`PRAGMA table_info('${tableName}')`)[0];
+  if (!result) return new Set<string>();
+  const nameIndex = result.columns.indexOf("name");
+  if (nameIndex < 0) return new Set<string>();
+  return new Set(
+    result.values
+      .map((row) => row[nameIndex])
+      .filter((name): name is string => typeof name === "string")
+      .map((name) => name.toLowerCase()),
+  );
 }
 
 function findComputerName(
@@ -163,7 +222,12 @@ function locationFrom(value: unknown) {
   const parsed = safeJson(asString(value));
   const latitude = numberFrom(parsed?.Latitude ?? parsed?.latitude);
   const longitude = numberFrom(parsed?.Longitude ?? parsed?.longitude);
-  return latitude === null || longitude === null ? null : { latitude, longitude };
+  return latitude === null ||
+    longitude === null ||
+    Math.abs(latitude) > 90 ||
+    Math.abs(longitude) > 180
+    ? null
+    : { latitude, longitude };
 }
 
 function asString(value: unknown) {

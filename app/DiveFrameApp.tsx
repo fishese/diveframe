@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   AlertTriangle,
   ArrowDownToLine,
@@ -87,6 +88,10 @@ import {
 } from "@/lib/coordinate-input";
 import { readPhotoExifGps } from "@/lib/photo-exif-gps";
 import { photoLocationCapability } from "@/lib/photo-location-capability";
+import {
+  prepareSampleAwareImport,
+  SAMPLE_DIVE_SOURCE_ID,
+} from "@/lib/sample-dive";
 import { chartAvailability, renderDiveChart } from "@/lib/chart-renderer";
 import { defaultComposerSettings } from "@/lib/composer-settings";
 import {
@@ -100,7 +105,6 @@ import {
 } from "@/lib/gas-calculations";
 import { toNormalizedDive } from "@/lib/normalize-dive";
 import {
-  NEARBY_SITE_RADIUS_KM,
   nearbySessionCatalogSites,
   resolveActiveDiveSiteCatalog,
   type DiveSiteCatalog,
@@ -162,8 +166,6 @@ type SharedBackgroundChoice = {
 };
 
 const MINIMUM_AVERAGE_SAC_DURATION_SECONDS = 20 * 60;
-const SAMPLE_DIVE_SOURCE_ID = "id:diveframe-sample-2030";
-
 export function DiveFrameApp() {
   const { language, t } = useAppI18n();
   const [dives, setDives] = useState<Dive[]>([]);
@@ -200,11 +202,11 @@ export function DiveFrameApp() {
   // Resolved after mount: the server render and the static export both report
   // the web platform, so checking during render would hide the control forever.
   const [bleImportAvailable, setBleImportAvailable] = useState(false);
+  const refreshGenerationRef = useRef(0);
   const [storageEstimate, setStorageEstimate] = useState<Awaited<
     ReturnType<typeof getLocalBackupSizeEstimate>
   > | null>(null);
   const importInput = useRef<HTMLInputElement>(null);
-  const enrichingLocations = useRef(false);
   const gpsNameAttemptedRef = useRef(new Set<string>());
   const [gpsNameAttempted, setGpsNameAttempted] = useState<ReadonlySet<string>>(
     () => new Set(),
@@ -214,11 +216,13 @@ export function DiveFrameApp() {
   } | null>(null);
 
   const refreshDives = useCallback(async (preferredId?: string) => {
+    const generation = ++refreshGenerationRef.current;
     const [next, nextStorageEstimate, nextTrips] = await Promise.all([
       listLocalDives(),
       getLocalBackupSizeEstimate(),
       listLocalTrips(),
     ]);
+    if (generation !== refreshGenerationRef.current) return;
     setDives(next);
     setStorageEstimate(nextStorageEstimate);
     setTrips(nextTrips);
@@ -233,6 +237,7 @@ export function DiveFrameApp() {
 
   useEffect(() => {
     let active = true;
+    const generation = ++refreshGenerationRef.current;
     Promise.all([
       listLocalDives(),
       getLocalBackupSizeEstimate(),
@@ -240,7 +245,7 @@ export function DiveFrameApp() {
       getLocalSupplementaryCatalog(),
     ])
       .then(([next, nextStorageEstimate, nextTrips, nextSupplementaryCatalog]) => {
-        if (!active) return;
+        if (!active || generation !== refreshGenerationRef.current) return;
         setDives(next);
         setStorageEstimate(nextStorageEstimate);
         setTrips(nextTrips);
@@ -253,7 +258,7 @@ export function DiveFrameApp() {
         void requestPersistentLocalStorage();
       })
       .catch((error) => {
-        if (active) {
+        if (active && generation === refreshGenerationRef.current) {
           setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
         }
       });
@@ -285,7 +290,12 @@ export function DiveFrameApp() {
   }, [mobileDetail, selectedId]);
 
   useEffect(() => {
-    setBleImportAvailable(diveComputerCapability.isAvailable());
+    // Capability is client-only. Defer the state update so the static/server
+    // render stays identical during hydration.
+    const frame = window.requestAnimationFrame(() => {
+      setBleImportAvailable(diveComputerCapability.isAvailable());
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const selected = useMemo(
@@ -310,16 +320,17 @@ export function DiveFrameApp() {
         !dive.resolvedLocation &&
         !gpsNameAttemptedRef.current.has(dive.id),
     );
-    if (!pending.length || enrichingLocations.current) return;
-    enrichingLocations.current = true;
+    if (!pending.length) return;
 
     const controller = new AbortController();
     let cancelled = false;
     void (async () => {
+      const attemptedIds: string[] = [];
       try {
         const updates = new Map<string, Dive>();
         for (const [index, dive] of pending.entries()) {
           if (cancelled) return;
+          let attempted = false;
           try {
             const response = await fetch(
               diveFrameApiUrl(
@@ -327,6 +338,7 @@ export function DiveFrameApp() {
               ),
               { signal: controller.signal },
             );
+            attempted = true;
             const payload = (await response.json()) as {
               location?: {
                 label: string;
@@ -343,32 +355,33 @@ export function DiveFrameApp() {
             }
           } catch (error) {
             if ((error as DOMException)?.name === "AbortError") throw error;
+            attempted = true;
             // Network/CORS failures still count as attempted so the UI does not
             // stay on “Resolving…” forever.
           } finally {
-            gpsNameAttemptedRef.current.add(dive.id);
-            setGpsNameAttempted(new Set(gpsNameAttemptedRef.current));
+            if (attempted) attemptedIds.push(dive.id);
           }
           if (index < pending.length - 1) await delay(1100);
         }
-        if (!cancelled && updates.size) {
-          setDives((current) =>
-            current.map((item) => updates.get(item.id) ?? item),
-          );
+        if (!cancelled) {
+          attemptedIds.forEach((id) => gpsNameAttemptedRef.current.add(id));
+          setGpsNameAttempted(new Set(gpsNameAttemptedRef.current));
+          if (updates.size) {
+            setDives((current) =>
+              current.map((item) => updates.get(item.id) ?? item),
+            );
+          }
         }
       } catch (error) {
         if ((error as DOMException)?.name !== "AbortError") {
           setStatus(t("gpsNamesPending"));
         }
-      } finally {
-        enrichingLocations.current = false;
       }
     })();
 
     return () => {
       cancelled = true;
       controller.abort();
-      enrichingLocations.current = false;
     };
   }, [dives, t]);
 
@@ -562,10 +575,14 @@ export function DiveFrameApp() {
         await Promise.all(files.map((file) => readDiveImport(file)))
       ).flat();
       setStatus(t("foundDives", { count: imported.length }));
-      if (imported.some((dive) => dive.sourceId !== SAMPLE_DIVE_SOURCE_ID)) {
+      const preparedImport = prepareSampleAwareImport(imported);
+      const { includesRealDive } = preparedImport;
+      if (includesRealDive) {
         await deleteLocalDiveBySource("uddf", SAMPLE_DIVE_SOURCE_ID);
       }
-      await upsertLocalDives(imported);
+      // If the sample file and a real log are selected together, do not
+      // reinsert the sample immediately after removing its existing copy.
+      await upsertLocalDives(preparedImport.dives);
       await refreshDives();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("importFailed"));
@@ -708,10 +725,10 @@ export function DiveFrameApp() {
       setSelectedId(null);
       setMobileDetail(false);
       await refreshDives();
-      setStatus(t("diveLogDeleted"));
+      setStatus(t("diveDeleted"));
       return true;
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : t("diveLogDeleteFailed"));
+      setStatus(error instanceof Error ? error.message : t("diveDeleteFailed"));
       return false;
     } finally {
       setBusy(false);
@@ -936,7 +953,13 @@ export function DiveFrameApp() {
           aria-label={t("home")}
         >
           <span className="brand-mark">
-            <img src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" />
+            <Image
+              src="/icons/diveframe-icon.svg"
+              alt=""
+              aria-hidden="true"
+              width={52}
+              height={52}
+            />
           </span>
           <span>
             <strong>DiveFrame</strong>
@@ -1616,8 +1639,10 @@ function DiveDetail({
   const [manualSite, setManualSite] = useState(dive.userSite ?? dive.site ?? "");
   const [locationDraft, setLocationDraft] = useState(dive.location ?? "");
   const [sharedBackgrounds, setSharedBackgrounds] = useState<SharedBackgroundChoice[]>([]);
-  const [nearbySites, setNearbySites] = useState<NearbySite[]>([]);
-  const [nearbySitesLoading, setNearbySitesLoading] = useState(false);
+  const [remoteNearbySites, setRemoteNearbySites] = useState<{
+    coordinateKey: string;
+    sites: NearbySite[];
+  } | null>(null);
   const [expandedAliasSiteId, setExpandedAliasSiteId] = useState<string | null>(
     null,
   );
@@ -1670,16 +1695,25 @@ function DiveDetail({
     };
   }, [dive.id]);
 
-  // Re-sync trip drafts from the source of truth whenever the underlying dive's
-  // trip assignment changes (e.g. after a successful save, a trip delete elsewhere)
-  // or whenever the details editor is opened/closed, so stale sentinel values like
-  // "__new__" (or a deleted trip id) never survive into the next edit/save cycle.
-  useEffect(() => {
+  function resetTripEditorDrafts() {
     setTripDraft(dive.tripId ?? "");
     setNewTripNameDraft("");
     setTripRenameOpen(false);
     setTripRenameDraft("");
-  }, [dive.id, dive.tripId, editingDetails]);
+  }
+
+  // A trip can change after an async create/assign/delete. Deferring the draft
+  // reset avoids a synchronous effect cascade while keeping the open editor in
+  // sync with the persisted assignment.
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setTripDraft(dive.tripId ?? "");
+      setNewTripNameDraft("");
+      setTripRenameOpen(false);
+      setTripRenameDraft("");
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [dive.tripId]);
   const [defaultCylinderPresetId, setDefaultCylinderPresetId] = useState(
     DEFAULT_CYLINDER_PRESET_ID,
   );
@@ -1750,7 +1784,15 @@ function DiveDetail({
       siteLocationPairs,
     ],
   );
-  const mapCoordinates = resolveDiveMapCoordinates(dive);
+  const mapCoordinates = useMemo(
+    () => resolveDiveMapCoordinates(dive),
+    [
+      dive.gpsEntryLat,
+      dive.gpsEntryLng,
+      dive.userGpsLat,
+      dive.userGpsLng,
+    ],
+  );
   const hasResolvedGps = mapCoordinates !== null;
   const [geocodeResult, setGeocodeResult] = useState<{
     query: string;
@@ -1819,15 +1861,6 @@ function DiveDetail({
   const [addLocationPhotoToDive, setAddLocationPhotoToDive] = useState(false);
   const photoLocationInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setUserGpsDraft(formatCoordinatePair(dive.userGpsLat, dive.userGpsLng));
-    setPhotoGpsStatus(null);
-    setPhotoGpsBusy(false);
-    setPhotoLocationHelpOpen(false);
-    setAddLocationPhotoToDive(false);
-    setGpsEditorOpen(false);
-  }, [dive.id, dive.userGpsLat, dive.userGpsLng]);
-
   const parsedUserGps = parseCoordinatePair(userGpsDraft);
   const userGpsDraftInvalid = userGpsDraft.trim() !== "" && parsedUserGps === null;
 
@@ -1843,6 +1876,9 @@ function DiveDetail({
         source: "manual",
       })
     ) {
+      setUserGpsDraft(
+        formatCoordinatePair(parsedUserGps.latitude, parsedUserGps.longitude),
+      );
       setGpsEditorOpen(false);
     }
   }
@@ -1850,6 +1886,7 @@ function DiveDetail({
   async function clearUserGps() {
     if (await onSaveUserGps(dive.id, null)) {
       setUserGpsDraft("");
+      setGpsEditorOpen(false);
     }
   }
 
@@ -2048,25 +2085,39 @@ function DiveDetail({
     setExpandedAliasSiteId((current) => (current === siteId ? null : siteId));
   }
 
+  const nearbyCoordinateKey = mapCoordinates
+    ? `${mapCoordinates.latitude},${mapCoordinates.longitude}`
+    : null;
+  const localNearbySites = useMemo(
+    () =>
+      mapCoordinates
+        ? nearbySessionCatalogSites(
+            localDiveSiteCatalog,
+            mapCoordinates.latitude,
+            mapCoordinates.longitude,
+          )
+        : [],
+    [localDiveSiteCatalog, mapCoordinates],
+  );
+  const nearbySites = localNearbySites.length
+    ? localNearbySites
+    : remoteNearbySites?.coordinateKey === nearbyCoordinateKey
+      ? remoteNearbySites.sites
+      : [];
+  const nearbySitesLoading = Boolean(
+    nearbyCoordinateKey &&
+      localNearbySites.length === 0 &&
+      remoteNearbySites?.coordinateKey !== nearbyCoordinateKey,
+  );
+
   useEffect(() => {
-    if (!mapCoordinates) return;
-    const { latitude, longitude } = mapCoordinates;
-    const localCatalogSites = nearbySessionCatalogSites(
-      localDiveSiteCatalog,
-      latitude,
-      longitude,
-    );
-    // Show the bundled plus supplementary catalog immediately for offline use.
-    setNearbySites(localCatalogSites);
-    if (localCatalogSites.length > 0) {
-      setNearbySitesLoading(false);
+    if (!mapCoordinates || !nearbyCoordinateKey || localNearbySites.length) {
       return;
     }
-
+    const { latitude, longitude } = mapCoordinates;
     const controller = new AbortController();
     let active = true;
     const timeout = window.setTimeout(() => controller.abort(), 10000);
-    setNearbySitesLoading(true);
     fetch(
       diveFrameApiUrl(
         `/api/nearby-sites?lat=${encodeURIComponent(String(latitude))}&lng=${encodeURIComponent(String(longitude))}`,
@@ -2081,22 +2132,27 @@ function DiveDetail({
         if (!response.ok) throw new Error(payload.error ?? "Nearby sites unavailable.");
         return payload.sites ?? [];
       })
-      .then((sites) => setNearbySites(mergeNearbySites(localCatalogSites, sites)))
-      .catch((error) => {
-        if ((error as DOMException)?.name !== "AbortError") {
-          setNearbySites(localCatalogSites);
-        }
+      .then((sites) => {
+        if (active) setRemoteNearbySites({ coordinateKey: nearbyCoordinateKey, sites });
+      })
+      .catch(() => {
+        // Record an empty result for this exact coordinate, including timeout,
+        // so the loading state does not remain stuck indefinitely.
+        if (active) setRemoteNearbySites({ coordinateKey: nearbyCoordinateKey, sites: [] });
       })
       .finally(() => {
         window.clearTimeout(timeout);
-        if (active) setNearbySitesLoading(false);
       });
     return () => {
       active = false;
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [localDiveSiteCatalog, mapCoordinates?.latitude, mapCoordinates?.longitude]);
+  }, [
+    localNearbySites.length,
+    mapCoordinates,
+    nearbyCoordinateKey,
+  ]);
 
   return (
     <div className="detail-content">
@@ -2513,7 +2569,10 @@ function DiveDetail({
             <button
               type="button"
               className="button button-quiet detail-edit-button"
-              onClick={() => setEditingDetails((value) => !value)}
+              onClick={() => {
+                resetTripEditorDrafts();
+                setEditingDetails((value) => !value);
+              }}
               disabled={busy}
             >
               {editingDetails ? t("cancel") : t("editDiveDetails")}
@@ -2546,7 +2605,10 @@ function DiveDetail({
                     startPressureBar: optionalPositiveNumber(startPressureDraft),
                     endPressureBar: optionalPositiveNumber(endPressureDraft),
                   });
-                  if (saved) setEditingDetails(false);
+                  if (saved) {
+                    resetTripEditorDrafts();
+                    setEditingDetails(false);
+                  }
                 })();
               }}
             >
@@ -3277,20 +3339,6 @@ function displayLocation(
   dive: Pick<Dive, "location" | "resolvedLocation">,
 ) {
   return dive.location || dive.resolvedLocation || null;
-}
-
-function mergeNearbySites(sessionSites: NearbySite[], fetchedSites: NearbySite[]) {
-  const seen = new Set<string>();
-  return [...sessionSites, ...fetchedSites]
-    .filter((site) => site.distanceKm <= NEARBY_SITE_RADIUS_KM)
-    .filter((site) => {
-      const key = `${site.name.trim().toLocaleLowerCase("en")}\u0000${site.latitude.toFixed(4)}\u0000${site.longitude.toFixed(4)}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .sort((a, b) => a.distanceKm - b.distanceKm)
-    .slice(0, 20);
 }
 
 function formatSourceName(source: string) {

@@ -257,7 +257,7 @@ Run the checks with:
 
 ```sh
 npm run lint
-npx tsc --noEmit --incremental false
+npm run typecheck
 npm test
 ```
 

@@ -65,3 +65,75 @@ test("rejects records without a usable depth-over-time profile", () => {
   });
   assert.throws(() => createSubsurfaceLogbook([incomplete]), /incomplete dive record/);
 });
+
+test("rejects surface-only and duplicate-time profiles", () => {
+  const surfaceOnly = {
+    ...completeDive,
+    id: "surface-only",
+    samples: [
+      { elapsedSeconds: 0, depthM: 0 },
+      { elapsedSeconds: 120, depthM: 0 },
+    ],
+  };
+  const duplicateTime = {
+    ...completeDive,
+    id: "duplicate-time",
+    samples: [
+      { elapsedSeconds: 10, depthM: 1 },
+      { elapsedSeconds: 10, depthM: 5 },
+    ],
+  };
+  assert.deepEqual(validateSubsurfaceLogbookExport([surfaceOnly, duplicateTime]), {
+    ok: false,
+    incompleteDiveIds: ["surface-only", "duplicate-time"],
+  });
+});
+
+test("honours complete GPS pairs and never creates a hybrid coordinate", () => {
+  const userGpsDive = {
+    ...completeDive,
+    gpsEntryLat: 22.3,
+    gpsEntryLng: 114.2,
+    userGpsLat: 1.2,
+    userGpsLng: 2.3,
+    exportGpsPreference: "user",
+  };
+  const xml = createSubsurfaceLogbook([userGpsDive]);
+  const document = new DOMParser().parseFromString(xml, "application/xml");
+  assert.equal(
+    document.querySelector("divesites > site")?.getAttribute("gps"),
+    "1.200000 2.300000",
+  );
+
+  const partialComputer = {
+    ...userGpsDive,
+    gpsEntryLng: null,
+    exportGpsPreference: "computer",
+  };
+  const partialXml = createSubsurfaceLogbook([partialComputer]);
+  const partialDocument = new DOMParser().parseFromString(partialXml, "application/xml");
+  assert.equal(
+    partialDocument.querySelector("divesites > site")?.getAttribute("gps"),
+    null,
+  );
+});
+
+test("derives average depth by elapsed time rather than sample count", () => {
+  const derived = {
+    ...completeDive,
+    averageDepth: null,
+    samples: [
+      { elapsedSeconds: 0, depthM: 0, pressuresBar: [] },
+      { elapsedSeconds: 100, depthM: 10, pressuresBar: [] },
+      { elapsedSeconds: 110, depthM: 10, pressuresBar: [] },
+    ],
+  };
+  const document = new DOMParser().parseFromString(
+    createSubsurfaceLogbook([derived]),
+    "application/xml",
+  );
+  assert.equal(
+    document.querySelector("divecomputer > depth")?.getAttribute("mean"),
+    "5.45 m",
+  );
+});

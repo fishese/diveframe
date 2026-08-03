@@ -164,7 +164,6 @@ export function buildDiveListRows<T extends DiveListItem>(
   dives: T[],
   trips: DiveListTrip[],
   option: DiveSortOption,
-  _filtersActive = false,
 ): DiveListRow<T>[] {
   const tripById = new Map(trips.map((trip) => [trip.id, trip]));
   const tripGroups = new Map<string, T[]>();
@@ -262,6 +261,7 @@ function diveHasGps(dive: DiveListItem): boolean {
 }
 
 function numberFrom(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }

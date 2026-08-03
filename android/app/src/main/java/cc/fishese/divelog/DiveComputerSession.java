@@ -11,11 +11,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Foreground-only capture state machine for the research spike.
+ * Foreground-only state machine for the Android Shearwater BLE import.
  *
  * States: idle → scanning → connecting → ready → downloading, with cancel from
- * any active state returning to idle. Persistence into the web logbook is not
- * implemented here.
+ * any active state returning to idle. JavaScript persists streamed capture
+ * events into the shared IndexedDB logbook; this class owns transport only.
  */
 final class DiveComputerSession {
     enum Phase {

@@ -8,7 +8,7 @@ import {
   Radio,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { AppTranslate } from "@/lib/app-i18n";
 import {
   BLE_LAST_N_DEFAULT,
@@ -71,6 +71,7 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
   const [libdivecomputerVersion, setLibdivecomputerVersion] = useState<string>();
   const [libdivecomputerCommit, setLibdivecomputerCommit] = useState<string>();
   const listenersRef = useRef<Array<{ remove: () => Promise<void> }>>([]);
+  const translateRef = useRef(t);
   const parsedLastN = Number.parseInt(lastNText, 10);
   const lastN = Number.isNaN(parsedLastN)
     ? BLE_LAST_N_DEFAULT
@@ -81,6 +82,22 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
   const transportBusy = phase === "connecting" || downloadBusy;
   const connectReady = phase === "ready" || phase === "done";
 
+  const addDevice = useCallback((event: DiveComputerDeviceFoundEvent) => {
+    setDevices((current) => {
+      const next = new Map(current.map((device) => [device.address, device]));
+      next.set(event.address, {
+        address: event.address,
+        name: event.name || event.address,
+        rssi: event.rssi,
+      });
+      return [...next.values()].sort((a, b) => b.rssi - a.rssi);
+    });
+  }, []);
+
+  useEffect(() => {
+    translateRef.current = t;
+  }, [t]);
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -89,53 +106,68 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
         if (cancelled) return;
         setLibdivecomputerVersion(caps.libdivecomputerVersion);
         setLibdivecomputerCommit(caps.libdivecomputerCommit);
-        // The native session outlives this panel and the WebView, so a reopen
-        // (or a reload) must adopt a transport that is still open instead of
-        // sitting at idle while native refuses to scan or connect again.
+        // Native transport may survive a WebView reload or interrupted JS
+        // teardown. Adopt it here; a normal panel close disconnects below.
         if (caps.transportReady) {
           setPhase("ready");
-          setStatus(t("bleImportSessionResumed"));
+          setStatus(translateRef.current("bleImportSessionResumed"));
         }
       } catch {
-        /* ignore until bridge is ready */
+        // The availability gate already hides this panel without the bridge;
+        // a transient capability failure is retried by the next panel open.
       }
     })();
 
     void (async () => {
-      const listeners = [
-        await diveComputerCapability.addListener("deviceFound", (event) => {
+      const pendingListeners: Array<{ remove: () => Promise<void> }> = [];
+      try {
+        pendingListeners.push(await diveComputerCapability.addListener("deviceFound", (event) => {
           addDevice(event);
-        }),
-        await diveComputerCapability.addListener("diveCaptured", () => {
+        }));
+        pendingListeners.push(await diveComputerCapability.addListener("diveCaptured", () => {
           setCapturedCount((count) => count + 1);
-        }),
-        await diveComputerCapability.addListener("transportReady", (event) => {
+        }));
+        pendingListeners.push(await diveComputerCapability.addListener("transportReady", (event) => {
           setConnectedName((current) => event.name || current);
           setPhase("ready");
-        }),
-        await diveComputerCapability.addListener("transportClosed", () => {
+        }));
+        pendingListeners.push(await diveComputerCapability.addListener("transportClosed", () => {
           setConnectedName("");
           setPhase((current) =>
             current === "downloading" || current === "saving"
               ? current
               : "idle",
           );
-        }),
-      ];
-      listenersRef.current = listeners;
+        }));
+        if (cancelled) {
+          await Promise.allSettled(
+            pendingListeners.map((listener) => listener.remove()),
+          );
+          return;
+        }
+        listenersRef.current = pendingListeners;
+      } catch {
+        await Promise.allSettled(
+          pendingListeners.map((listener) => listener.remove()),
+        );
+        if (!cancelled) {
+          setStatus(translateRef.current("bleImportError"));
+        }
+      }
     })();
 
     return () => {
       cancelled = true;
-      void Promise.all(
-        listenersRef.current.map((listener) => listener.remove()),
+      const listeners = listenersRef.current;
+      listenersRef.current = [];
+      void Promise.allSettled(
+        listeners.map((listener) => listener.remove()),
       );
       // Release the computer so the next open can scan from idle.
       void diveComputerCapability.stopScan().catch(() => undefined);
       void diveComputerCapability.disconnect().catch(() => undefined);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only listeners
-  }, []);
+  }, [addDevice]);
 
   /**
    * Native only accepts a scan from idle and a connect from idle or scanning,
@@ -149,18 +181,6 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
       return;
     }
     await diveComputerCapability.disconnect().catch(() => undefined);
-  }
-
-  function addDevice(event: DiveComputerDeviceFoundEvent) {
-    setDevices((current) => {
-      const next = new Map(current.map((device) => [device.address, device]));
-      next.set(event.address, {
-        address: event.address,
-        name: event.name || event.address,
-        rssi: event.rssi,
-      });
-      return [...next.values()].sort((a, b) => b.rssi - a.rssi);
-    });
   }
 
   async function refreshCheckpoint(productHint: string, serialHexHint?: string) {

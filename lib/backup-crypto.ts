@@ -2,6 +2,7 @@ export const ENCRYPTED_BACKUP_FORMAT = "diveframe-encrypted-backup";
 export const ENCRYPTED_BACKUP_VERSION = 1;
 
 const PBKDF2_ITERATIONS = 250_000;
+const MAX_ACCEPTED_PBKDF2_ITERATIONS = 2_000_000;
 const SALT_BYTES = 16;
 const IV_BYTES = 12;
 
@@ -48,6 +49,7 @@ export function isEncryptedBackupEnvelope(
     encryption.hash === "SHA-256" &&
     Number.isInteger(encryption.iterations) &&
     encryption.iterations >= 100_000 &&
+    encryption.iterations <= MAX_ACCEPTED_PBKDF2_ITERATIONS &&
     typeof encryption.saltBase64 === "string" &&
     typeof encryption.ivBase64 === "string" &&
     typeof candidate.ciphertextBase64 === "string"

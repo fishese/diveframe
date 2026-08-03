@@ -22,9 +22,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Classic Shearwater GATT transport used as the future {@code dc_custom_open}
- * backend. Connects, selects service {@code fe25c237-…}, enables notifications
- * on {@code 27b7570b-…}, and exposes blocking read/write/poll/purge helpers.
+ * Classic Shearwater GATT transport behind libdivecomputer's
+ * {@code dc_custom_open} callbacks. It selects service {@code fe25c237-…},
+ * enables notifications on {@code 27b7570b-…}, and exposes the blocking I/O
+ * operations consumed by the JNI download thread.
  */
 final class DiveComputerGattClient {
     static final UUID SHEARWATER_CLASSIC_SERVICE =

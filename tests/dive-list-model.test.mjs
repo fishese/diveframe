@@ -149,6 +149,13 @@ test("compareDives sorts by duration with date tie-break desc", () => {
   assert.ok(compareDives(shallow, deep, "duration-asc") < 0);
 });
 
+test("unknown depth sorts after a real zero-depth value", () => {
+  const unknown = dive({ diveDate: "2026-07-02", maxDepthM: null, depth: null });
+  const surface = dive({ diveDate: "2026-07-01", maxDepthM: 0, depth: "0" });
+  assert.ok(compareDives(unknown, surface, "depth-asc") > 0);
+  assert.ok(compareDives(unknown, surface, "depth-desc") > 0);
+});
+
 test("diveMatchesListFilters search includes computerModel", () => {
   assert.equal(
     diveMatchesListFilters(

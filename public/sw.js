@@ -54,11 +54,8 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
+        .then(async (response) => {
+          await cacheSuccessfulResponse(request, response);
           return response;
         })
         .catch(async () => (await caches.match(request)) || caches.match("/")),
@@ -70,13 +67,21 @@ self.addEventListener("fetch", (event) => {
     caches.match(request).then(
       (cached) =>
         cached ||
-        fetch(request).then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
+        fetch(request).then(async (response) => {
+          await cacheSuccessfulResponse(request, response);
           return response;
         }),
     ),
   );
 });
+
+async function cacheSuccessfulResponse(request, response) {
+  if (!response.ok) return;
+  // Await the write while the fetch event is alive; an unobserved cache.put()
+  // can be terminated before it finishes on mobile browsers. Cache quota
+  // failures must not block the live network response.
+  await caches
+    .open(CACHE_NAME)
+    .then((cache) => cache.put(request, response.clone()))
+    .catch(() => undefined);
+}

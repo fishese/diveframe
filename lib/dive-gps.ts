@@ -21,11 +21,29 @@ export type DiveGpsInput = {
 export function resolveDiveMapCoordinates(
   dive: DiveGpsInput,
 ): DiveMapCoordinates | null {
-  if (dive.gpsEntryLat !== null && dive.gpsEntryLng !== null) {
-    return { latitude: dive.gpsEntryLat, longitude: dive.gpsEntryLng, source: "computer" };
+  const computer = validatedPair(dive.gpsEntryLat, dive.gpsEntryLng);
+  if (computer) {
+    return { ...computer, source: "computer" };
   }
-  if (dive.userGpsLat !== null && dive.userGpsLng !== null) {
-    return { latitude: dive.userGpsLat, longitude: dive.userGpsLng, source: "user" };
+  const user = validatedPair(dive.userGpsLat, dive.userGpsLng);
+  if (user) {
+    return { ...user, source: "user" };
   }
   return null;
+}
+
+function validatedPair(
+  latitude: number | null,
+  longitude: number | null,
+): { latitude: number; longitude: number } | null {
+  return (
+    latitude !== null &&
+    longitude !== null &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180
+      ? { latitude, longitude }
+      : null
+  );
 }

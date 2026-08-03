@@ -55,3 +55,9 @@ test("rejects an incorrect password or modified ciphertext", async () => {
     (error) => error.name === "BackupPasswordIncorrectError",
   );
 });
+
+test("rejects an encrypted envelope with an excessive KDF work factor", async () => {
+  const envelope = await backupCrypto.encryptBackupText("backup", "2468");
+  envelope.encryption.iterations = 20_000_000;
+  assert.equal(backupCrypto.isEncryptedBackupEnvelope(envelope), false);
+});

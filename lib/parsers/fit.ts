@@ -4,6 +4,7 @@ import { gasMixLabel } from "../dive-model";
 import type { LocalImportedDive } from "../indexed-db";
 import { stablePortableSourceId } from "../dive-identity";
 import { inferCategory } from "./parser-utils";
+import { fitCoordinateDegrees, fitDepthMetres } from "../fit-units";
 
 type FitValue = Record<string, unknown>;
 
@@ -67,7 +68,7 @@ export async function readFitDive(file: File): Promise<LocalImportedDive[]> {
         if (sensorIndex >= 0 && pressure !== null) currentPressures[sensorIndex] = pressure;
         updateIndex += 1;
       }
-      const depthM = fitDepth(record.depth);
+      const depthM = fitDepthMetres(record.depth);
       const elapsedSeconds =
         finiteNumber(record.elapsed_time) ??
         (recordMs !== null && startMs !== null ? (recordMs - startMs) / 1000 : null);
@@ -86,9 +87,9 @@ export async function readFitDive(file: File): Promise<LocalImportedDive[]> {
     .sort((a, b) => a.elapsedSeconds - b.elapsedSeconds);
 
   const maxDepthM =
-    fitDepth(summary?.max_depth) ?? maximum(samples.map((sample) => sample.depthM));
+    fitDepthMetres(summary?.max_depth) ?? maximum(samples.map((sample) => sample.depthM));
   const averageDepthM =
-    fitDepth(summary?.avg_depth) ?? average(samples.map((sample) => sample.depthM));
+    fitDepthMetres(summary?.avg_depth) ?? average(samples.map((sample) => sample.depthM));
   const durationSeconds =
     finiteNumber(session?.total_timer_time) ??
     finiteNumber(session?.total_elapsed_time) ??
@@ -104,13 +105,13 @@ export async function readFitDive(file: File): Promise<LocalImportedDive[]> {
   const diveNumber =
     finiteNumber(summary?.dive_number) ?? finiteNumber(session?.dive_number);
   const latitude =
-    coordinate(session?.start_position_lat, -90, 90) ??
-    coordinate(session?.end_position_lat, -90, 90);
+    fitCoordinateDegrees(session?.start_position_lat, -90, 90) ??
+    fitCoordinateDegrees(session?.end_position_lat, -90, 90);
   const longitude =
-    coordinate(session?.start_position_long, -180, 180) ??
-    coordinate(session?.end_position_long, -180, 180);
-  const exitLatitude = coordinate(session?.end_position_lat, -90, 90);
-  const exitLongitude = coordinate(session?.end_position_long, -180, 180);
+    fitCoordinateDegrees(session?.start_position_long, -180, 180) ??
+    fitCoordinateDegrees(session?.end_position_long, -180, 180);
+  const exitLatitude = fitCoordinateDegrees(session?.end_position_lat, -90, 90);
+  const exitLongitude = fitCoordinateDegrees(session?.end_position_long, -180, 180);
   const manufacturer =
     stringValue(device?.manufacturer) ?? stringValue(fileId?.manufacturer);
   const product = device?.product ?? fileId?.product;
@@ -245,11 +246,6 @@ function finiteNumber(value: unknown) {
   return Number.isFinite(number) ? number : null;
 }
 
-function fitDepth(value: unknown) {
-  const number = finiteNumber(value);
-  return number === null ? null : number / 1000;
-}
-
 function fitMilliseconds(value: unknown) {
   const number = finiteNumber(value);
   return number === null ? null : number / 1000;
@@ -259,13 +255,6 @@ function percentage(value: unknown) {
   const number = finiteNumber(value);
   if (number === null) return null;
   return number <= 1 ? number * 100 : number;
-}
-
-function coordinate(value: unknown, minimum: number, maximumValue: number) {
-  const number = finiteNumber(value);
-  return number !== null && number >= minimum && number <= maximumValue
-    ? number
-    : null;
 }
 
 function dateValue(value: unknown) {

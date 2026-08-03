@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   Bluetooth,
@@ -26,7 +27,7 @@ export function AndroidAppPage() {
       <header className="topbar">
         <Link href="/" className="brand" aria-label={t("backToDives")}>
           <span className="brand-mark">
-            <img src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" />
+            <Image src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" width={52} height={52} />
           </span>
           <span>
             <strong>DiveFrame</strong>

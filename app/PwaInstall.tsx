@@ -1,7 +1,7 @@
 "use client";
 
 import { Capacitor } from "@capacitor/core";
-import { Check, Download, Share2, Smartphone } from "lucide-react";
+import { Check, Download, Share2 } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   getLocalStoragePersistenceStatus,
@@ -58,16 +58,18 @@ export function PwaManager() {
             }
           })
           .catch(() => undefined);
-        void caches
-          ?.keys()
-          .then((names) =>
-            Promise.all(
-              names
-                .filter((name) => name.startsWith("diveframe-"))
-                .map((name) => caches.delete(name)),
-            ),
-          )
-          .catch(() => undefined);
+        if ("caches" in window) {
+          void window.caches
+            .keys()
+            .then((names) =>
+              Promise.all(
+                names
+                  .filter((name) => name.startsWith("diveframe-"))
+                  .map((name) => window.caches.delete(name)),
+              ),
+            )
+            .catch(() => undefined);
+        }
       } else {
         navigator.serviceWorker.register("/sw.js").catch(() => undefined);
       }
@@ -145,8 +147,7 @@ export function PwaInstallCard() {
       );
   }, []);
 
-  // Native builds intentionally skip this browser card; native storage copy
-  // (storageNativeApp) remains available to any future native-only surface.
+  // Native builds intentionally skip this browser install/storage card.
   if (!mounted || isNative) return null;
 
   async function install() {
@@ -164,19 +165,15 @@ export function PwaInstallCard() {
     <section className="settings-card pwa-settings">
       <div className="settings-card-heading">
         <span className="settings-icon">
-          {isNative ? (
-            <Smartphone size={21} />
-          ) : installed ? (
+          {installed ? (
             <Check size={21} />
           ) : (
             <Download size={21} />
           )}
         </span>
         <div>
-          <p className="eyebrow">
-            {isNative ? t("appStorage") : t("installableApp")}
-          </p>
-          <h2>{isNative ? t("deviceStorageTitle") : t("installDiveFrame")}</h2>
+          <p className="eyebrow">{t("installableApp")}</p>
+          <h2>{t("installDiveFrame")}</h2>
         </div>
       </div>
       <p className="settings-note">{t("installDiveFrameDescription")}</p>

@@ -116,7 +116,15 @@ export async function GET(request: Request) {
     });
   }
 
-  const data = (await response.json()) as { elements?: OverpassElement[] };
+  let data: { elements?: OverpassElement[] };
+  try {
+    data = (await response.json()) as { elements?: OverpassElement[] };
+  } catch {
+    return jsonWithCors(request, {
+      source: "openstreetmap",
+      sites: await searchDivePlaces(latitude, longitude, radiusKm),
+    });
+  }
   const seen = new Set<string>();
   const sites = (data.elements ?? [])
     .flatMap((element) => {
@@ -201,5 +209,8 @@ function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
     Math.cos(radians(lat1)) *
       Math.cos(radians(lat2)) *
       Math.sin(deltaLng / 2) ** 2;
-  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  // Floating-point rounding can put the haversine fraction just outside
+  // [0, 1] for antipodal points, which would otherwise produce NaN.
+  const clamped = Math.min(1, Math.max(0, a));
+  return 6371 * 2 * Math.atan2(Math.sqrt(clamped), Math.sqrt(1 - clamped));
 }

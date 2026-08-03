@@ -80,6 +80,13 @@ test("readJpegExifGps reads latitude/longitude from a JPEG EXIF GPS IFD", async 
   assert.ok(Math.abs(gps.longitude - 114.1875) < 1e-4);
 });
 
+test("ignores out-of-range stored GPS and falls back to a valid pair", () => {
+  const coords = resolveDiveMapCoordinates(
+    diveGps({ gpsEntryLat: 122, gpsEntryLng: 114, userGpsLat: 3, userGpsLng: 4 }),
+  );
+  assert.deepEqual(coords, { latitude: 3, longitude: 4, source: "user" });
+});
+
 test("readPhotoExifGps reads JPEG GPS through the cross-format parser", async () => {
   const buffer = buildJpegWithGps({ latitude: 22.305, longitude: 114.1875 });
   const gps = await readPhotoExifGps(buffer);

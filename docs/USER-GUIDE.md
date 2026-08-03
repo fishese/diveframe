@@ -78,7 +78,7 @@ dive-computer GPS (from Cloud Desktop databases and from Android BLE download).
 Shearwater only stores a fix from log version 17 onwards and
 only when the computer actually locked on, so older dives having no coordinates
 is normal rather than a fault. When reverse geocoding cannot reach the DiveFrame
-API (for example before production CORS is deployed for the APK), the dive still
+API (for example if a production deployment temporarily omits APK CORS), the dive still
 keeps its pin and shows that a place name is unavailable instead of spinning.
 
 Dives are identified by per-dive fingerprints, so a later fuller download that
@@ -223,7 +223,7 @@ into the phone's public **Downloads** folder and the status line reports the
 file name. **Send a copy** then opens the Android share sheet to move the
 backup off the phone. **Import app data** uses the normal Android file picker,
 so a backup saved in Downloads can be re-imported directly. Composer images,
-share cards, added-site logs, and updated Subsurface files are saved the same
+share cards, app-data backups, and updated or generated Subsurface files are saved the same
 way.
 
 When importing an encrypted backup, DiveFrame asks for its password before

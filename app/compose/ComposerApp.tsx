@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, BookmarkPlus, ChevronDown, Crop, Download, House, ImagePlus, LoaderCircle, RotateCcw, Trash2 } from "lucide-react";
 import {
   useEffect,
@@ -55,6 +56,8 @@ type PhotoChoice = {
   blob: Blob;
 };
 
+type LoadedCanvasSource = CanvasImageSource & { width: number; height: number };
+
 const BUNDLED_BACKGROUND_ID = "bundled:bubbles";
 const TRANSPARENT_BACKGROUND_ID = "background:transparent";
 
@@ -98,19 +101,30 @@ export function ComposerApp() {
   const [presets, setPresets] = useState<LocalComposerPreset[]>([]);
   const [presetName, setPresetName] = useState("");
   const [selectedPresetId, setSelectedPresetId] = useState("");
-  const [bitmap, setBitmap] = useState<(CanvasImageSource & { width: number; height: number }) | null>(null);
-  const [logo, setLogo] = useState<(CanvasImageSource & { width: number; height: number }) | null>(null);
+  const [loadedBitmap, setLoadedBitmap] = useState<{
+    photoId: string;
+    source: LoadedCanvasSource;
+  } | null>(null);
+  const [logo, setLogo] = useState<LoadedCanvasSource | null>(null);
+  const bitmapSourceRef = useRef<LoadedCanvasSource | null>(null);
+  const logoSourceRef = useRef<LoadedCanvasSource | null>(null);
+  const translateRef = useRef(t);
   const [status, setStatus] = useState(t("loadingComposer"));
   const [exporting, setExporting] = useState(false);
   const [cropMode, setCropMode] = useState(false);
 
   useEffect(() => {
+    translateRef.current = t;
+  }, [t]);
+
+  useEffect(() => {
+    let active = true;
     const parameters = new URLSearchParams(window.location.search);
     const requestedDive = parameters.get("dive");
     const requestedPhoto = parameters.get("photo");
     listLocalDives().then(async (dives) => {
       const selectedDive = dives.find((item) => item.id === requestedDive) ?? dives[0];
-      if (!selectedDive) throw new Error(t("importBeforeComposer"));
+      if (!selectedDive) throw new Error(translateRef.current("importBeforeComposer"));
       const [
         attachments,
         backgrounds,
@@ -162,14 +176,40 @@ export function ComposerApp() {
           : initial.selectedPhotoId && choices.some((item) => item.id === initial.selectedPhotoId)
             ? initial.selectedPhotoId
             : defaultPhotoId;
+      const loadedLogo = savedLogo
+        ? await loadPhoto(savedLogo.blob).catch(() => null)
+        : null;
+      if (!active) {
+        closeCanvasSource(loadedLogo);
+        return;
+      }
       setDive(selectedDive);
       setPhotos(choices);
       setPresets(savedPresets);
       setSettings(initial);
-      if (savedLogo) setLogo(await loadPhoto(savedLogo.blob));
-      setStatus(choices.length ? t("ready") : t("addPhotoFirst"));
-    }).catch((error) => setStatus(error instanceof Error ? error.message : t("composerOpenFailed")));
-  }, [t]);
+      if (loadedLogo) {
+        closeCanvasSource(logoSourceRef.current);
+        logoSourceRef.current = loadedLogo;
+        setLogo(loadedLogo);
+      }
+      setStatus(
+        choices.length
+          ? translateRef.current("ready")
+          : translateRef.current("addPhotoFirst"),
+      );
+    }).catch((error) => {
+      if (active) {
+        setStatus(
+          error instanceof Error
+            ? error.message
+            : translateRef.current("composerOpenFailed"),
+        );
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const selectedPhoto = useMemo(
     () => photos.find((photo) => photo.id === settings?.selectedPhotoId) ?? null,
@@ -180,6 +220,10 @@ export function ComposerApp() {
     [photos],
   );
   const activePhoto = selectedPhoto ?? transparentPhoto;
+  const bitmap =
+    loadedBitmap && loadedBitmap.photoId === activePhoto?.id
+      ? loadedBitmap.source
+      : null;
   const normalized = useMemo(() => dive ? toNormalizedDive(dive) : null, [dive]);
   const lastOutputSize = settings?.outputSize;
   const lastOutputFormat = settings?.format;
@@ -188,10 +232,28 @@ export function ComposerApp() {
     if (!activePhoto) return;
     let cancelled = false;
     loadPhoto(activePhoto.blob).then((loaded) => {
-      if (!cancelled) setBitmap(loaded);
-    }).catch(() => setStatus(t("photoDecodeFailed")));
+      if (cancelled) {
+        closeCanvasSource(loaded);
+        return;
+      }
+      closeCanvasSource(bitmapSourceRef.current);
+      bitmapSourceRef.current = loaded;
+      setLoadedBitmap({ photoId: activePhoto.id, source: loaded });
+    }).catch(() => {
+      if (!cancelled) setStatus(translateRef.current("photoDecodeFailed"));
+    });
     return () => { cancelled = true; };
-  }, [activePhoto, t]);
+  }, [activePhoto]);
+
+  useEffect(
+    () => () => {
+      closeCanvasSource(bitmapSourceRef.current);
+      closeCanvasSource(logoSourceRef.current);
+      bitmapSourceRef.current = null;
+      logoSourceRef.current = null;
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!canvasRef.current || !bitmap || !normalized || !settings) return;
@@ -200,7 +262,7 @@ export function ComposerApp() {
       : (() => { const [w, h] = settings.ratio.split(":").map(Number); return w / h; })();
     const height = 900;
     let cancelled = false;
-    void ensureOverlayFont(settings.fontFamily).finally(() => {
+    void ensureOverlayFont(settings.fontFamily).catch(() => undefined).then(() => {
       if (!cancelled && canvasRef.current) {
         renderComposition(canvasRef.current, bitmap, normalized, settings, Math.round(height * previewRatio), height, logo ?? undefined);
         if (cropMode) drawCropGuide(canvasRef.current);
@@ -211,7 +273,11 @@ export function ComposerApp() {
 
   useEffect(() => {
     if (!settings) return;
-    const timeout = window.setTimeout(() => saveLocalComposerSettings(settings), 350);
+    const timeout = window.setTimeout(() => {
+      void saveLocalComposerSettings(settings).catch(() => {
+        setStatus(translateRef.current("settingsSaveFailed"));
+      });
+    }, 350);
     return () => window.clearTimeout(timeout);
   }, [settings]);
 
@@ -289,7 +355,11 @@ export function ComposerApp() {
         "selectedPhotoId",
         remaining.find((photo) => photo.source !== "transparent")?.id ?? null,
       );
-      if (!remaining.length) setBitmap(null);
+      if (!remaining.length) {
+        closeCanvasSource(bitmapSourceRef.current);
+        bitmapSourceRef.current = null;
+        setLoadedBitmap(null);
+      }
     }
     try {
       await saveLocalAppPreferences({ bundledBackgroundHidden: true });
@@ -442,7 +512,7 @@ export function ComposerApp() {
       <header className="composer-topbar">
         <Link href={`/?dive=${encodeURIComponent(dive.id)}`} className="brand">
           <span className="brand-mark">
-            <img src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" />
+            <Image src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" width={52} height={52} />
           </span>
           <span><strong>DiveFrame</strong><small>{t("composer")}</small></span>
         </Link>
@@ -817,6 +887,16 @@ function PhotoChoiceTile({
       <small>{label}</small>
     </button>
   );
+}
+
+function closeCanvasSource(source: LoadedCanvasSource | null) {
+  if (
+    source &&
+    "close" in source &&
+    typeof (source as ImageBitmap).close === "function"
+  ) {
+    (source as ImageBitmap).close();
+  }
 }
 
 function ControlSection({

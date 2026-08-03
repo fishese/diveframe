@@ -15,6 +15,7 @@ import {
   shouldPromoteCanonicalSource,
 } from "./dive-identity";
 import { normalizeShearwaterPressurePair } from "./gas-calculations";
+import { moveAttachmentsAfter } from "./attachment-order";
 import { withOptimizedJpeg } from "./media-optimization";
 import type { DiveSiteCatalog } from "./dive-site-catalog";
 import type { WhatsNewDocument } from "./whats-new";
@@ -627,9 +628,10 @@ export async function deleteLocalAttachment(diveId: string, attachmentId: string
   );
   const attachmentsStore = transaction.objectStore(ATTACHMENTS_STORE);
   const divesStore = transaction.objectStore(DIVES_STORE);
-  const [attachment, dive] = await Promise.all([
+  const [attachment, dive, attachmentCount] = await Promise.all([
     request<LocalAttachment | undefined>(attachmentsStore.get(attachmentId)),
     request<LocalDive | undefined>(divesStore.get(diveId)),
+    request<number>(attachmentsStore.index("diveId").count(diveId)),
   ]);
   if (!attachment || attachment.diveId !== diveId || !dive) {
     transaction.abort();
@@ -638,7 +640,9 @@ export async function deleteLocalAttachment(diveId: string, attachmentId: string
   attachmentsStore.delete(attachmentId);
   divesStore.put({
     ...dive,
-    photoCount: Math.max(0, (dive.photoCount ?? 0) - 1),
+    // Recount instead of decrementing cached metadata, which may be stale in
+    // an older backup or after a previously interrupted write.
+    photoCount: Math.max(0, attachmentCount - 1),
   });
   await transactionComplete(transaction);
 }
@@ -1206,6 +1210,15 @@ export async function updateLocalDiveUserGps(
   id: string,
   gps: { lat: number; lng: number; source: UserGpsSource } | null,
 ) {
+  if (
+    gps !== null &&
+    (!Number.isFinite(gps.lat) ||
+      !Number.isFinite(gps.lng) ||
+      Math.abs(gps.lat) > 90 ||
+      Math.abs(gps.lng) > 180)
+  ) {
+    throw new Error("Supply valid GPS coordinates.");
+  }
   const now = new Date().toISOString();
   return updateDive(id, (dive) => {
     if (gps === null) {
@@ -1472,11 +1485,13 @@ export async function getLocalBackupSizeEstimate() {
   const backgrounds = snapshot.backgrounds.map(withoutBlob);
   const brandingAssets = snapshot.brandingAssets.map(withoutBlob);
   const rawDiveRecords = snapshot.rawDiveRecords.map((record) => {
-    const { rawBytes: _rawBytes, ...metadata } = record;
+    const { rawBytes, ...metadata } = record;
+    void rawBytes;
     return metadata;
   });
   const deviceCheckpoints = snapshot.deviceCheckpoints.map((record) => {
-    const { fingerprint: _fingerprint, ...metadata } = record;
+    const { fingerprint, ...metadata } = record;
+    void fingerprint;
     return metadata;
   });
   const metadataBytes = new Blob([
@@ -1608,10 +1623,13 @@ export async function mergeLocalDuplicateDives(
   const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
   const composerSettingsStore = transaction.objectStore(COMPOSER_SETTINGS_STORE);
   const rawStore = transaction.objectStore(RAW_DIVE_RECORDS_STORE);
-  const [keepRaw, removeRaw, attachments, sources, keepContribution, removeContribution, keepSettings, removeSettings, rawRecords] =
+  const [keepRaw, removeRaw, keepAttachments, removeAttachments, sources, keepContribution, removeContribution, keepSettings, removeSettings, rawRecords] =
     await Promise.all([
       request<LocalDive | undefined>(divesStore.get(keepId)),
       request<LocalDive | undefined>(divesStore.get(removeId)),
+      request<LocalAttachment[]>(
+        attachmentsStore.index("diveId").getAll(keepId),
+      ),
       request<LocalAttachment[]>(
         attachmentsStore.index("diveId").getAll(removeId),
       ),
@@ -1628,12 +1646,18 @@ export async function mergeLocalDuplicateDives(
   }
   const keep = hydrateDive(keepRaw);
   const remove = hydrateDive(removeRaw);
-  const merged = mergeStoredDives(keep, remove, attachments.length);
+  const movedAttachments = moveAttachmentsAfter(
+    keepAttachments,
+    removeAttachments,
+    keepId,
+  );
+  const merged = {
+    ...mergeStoredDives(keep, remove, removeAttachments.length),
+    photoCount: keepAttachments.length + removeAttachments.length,
+  };
   divesStore.put(merged);
   divesStore.delete(removeId);
-  attachments.forEach((attachment) =>
-    attachmentsStore.put({ ...attachment, diveId: keepId }),
-  );
+  movedAttachments.forEach((attachment) => attachmentsStore.put(attachment));
   rawRecords.forEach((record) =>
     rawStore.put({ ...record, diveId: keepId }),
   );
@@ -1662,7 +1686,7 @@ export async function mergeLocalDuplicateDives(
   return {
     keptDiveId: keepId,
     removedDiveId: removeId,
-    movedPhotos: attachments.length,
+    movedPhotos: removeAttachments.length,
     mergedSources: merged.sources.length,
   };
 }

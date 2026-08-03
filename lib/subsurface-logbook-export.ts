@@ -64,49 +64,37 @@ export function createSubsurfaceLogbook(dives: LocalDive[]) {
 type ExportSite = { id: string; name: string; gps: string | null };
 
 function isPortableDive(dive: LocalDive) {
-  const samples = dive.samples
-    .filter(
-      (sample) =>
-        Number.isFinite(sample.elapsedSeconds) && Number.isFinite(sample.depthM),
-    )
-    .sort((a, b) => a.elapsedSeconds - b.elapsedSeconds);
+  const samples = profileSamples(dive);
+  const distinctTimes = new Set(samples.map((sample) => sample.elapsedSeconds));
   return (
     Boolean(dateAndTime(dive.diveDate)) &&
     Number.isFinite(dive.durationSeconds) &&
     (dive.durationSeconds ?? 0) > 0 &&
     samples.length >= 2 &&
-    samples.at(-1)!.elapsedSeconds > 0
+    distinctTimes.size >= 2 &&
+    samples.some((sample) => sample.depthM > 0) &&
+    samples.at(-1)!.elapsedSeconds > samples[0].elapsedSeconds
   );
 }
 
 function exportSiteForDive(dive: LocalDive, index: number): ExportSite | null {
-  const latitude =
-    dive.gpsEntryLat ?? dive.userGpsLat ?? null;
-  const longitude =
-    dive.gpsEntryLng ?? dive.userGpsLng ?? null;
-  const gps =
-    latitude !== null && longitude !== null
-      ? `${latitude.toFixed(6)} ${longitude.toFixed(6)}`
-      : null;
+  const coordinates = exportCoordinates(dive);
+  const gps = coordinates
+    ? `${coordinates.latitude.toFixed(6)} ${coordinates.longitude.toFixed(6)}`
+    : null;
   const name = dive.userSite?.trim() || dive.site?.trim() || gps;
   return name ? { id: `diveframe-site-${index}`, name, gps } : null;
 }
 
 function serializeDive(dive: LocalDive, index: number, siteId: string | null) {
   const stamp = dateAndTime(dive.diveDate)!;
-  const samples = [...dive.samples]
-    .filter(
-      (sample) =>
-        Number.isFinite(sample.elapsedSeconds) && Number.isFinite(sample.depthM),
-    )
-    .sort((a, b) => a.elapsedSeconds - b.elapsedSeconds);
+  const samples = profileSamples(dive);
   const maximumDepth =
-    dive.maxDepthM ??
-    finiteNumber(dive.depth) ??
+    finiteNonNegative(dive.maxDepthM) ??
+    finiteNonNegative(finiteNumber(dive.depth)) ??
     Math.max(...samples.map((sample) => sample.depthM));
   const averageDepth =
-    dive.averageDepth ??
-    samples.reduce((sum, sample) => sum + sample.depthM, 0) / samples.length;
+    finiteNonNegative(dive.averageDepth) ?? timeWeightedAverageDepth(samples);
   const attributes = [
     `number="${dive.diveNumber ?? index}"`,
     `date="${stamp.date}"`,
@@ -159,7 +147,7 @@ function serializeDive(dive: LocalDive, index: number, siteId: string | null) {
 
 function dateAndTime(value: string | null) {
   const match = value?.trim().match(
-    /^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}(?::\d{2})?))?$/,
+    /^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}(?::\d{2})?)(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/,
   );
   if (!match) return null;
   return { date: match[1], time: match[2] ?? "00:00:00" };
@@ -180,6 +168,59 @@ function finiteNumber(value: string | null) {
   if (value === null) return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function finiteNonNegative(value: number | null) {
+  return value !== null && Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+function profileSamples(dive: LocalDive) {
+  return dive.samples
+    .filter(
+      (sample) =>
+        Number.isFinite(sample.elapsedSeconds) &&
+        sample.elapsedSeconds >= 0 &&
+        Number.isFinite(sample.depthM) &&
+        sample.depthM >= 0,
+    )
+    .sort((left, right) => left.elapsedSeconds - right.elapsedSeconds);
+}
+
+function timeWeightedAverageDepth(
+  samples: Array<{ elapsedSeconds: number; depthM: number }>,
+) {
+  let depthSeconds = 0;
+  let elapsedSeconds = 0;
+  for (let index = 1; index < samples.length; index += 1) {
+    const previous = samples[index - 1];
+    const current = samples[index];
+    const interval = current.elapsedSeconds - previous.elapsedSeconds;
+    if (interval <= 0) continue;
+    depthSeconds += ((previous.depthM + current.depthM) / 2) * interval;
+    elapsedSeconds += interval;
+  }
+  return elapsedSeconds > 0
+    ? depthSeconds / elapsedSeconds
+    : samples.reduce((sum, sample) => sum + sample.depthM, 0) / samples.length;
+}
+
+function exportCoordinates(dive: LocalDive) {
+  const computer = validCoordinatePair(dive.gpsEntryLat, dive.gpsEntryLng);
+  const user = validCoordinatePair(dive.userGpsLat, dive.userGpsLng);
+  if (dive.exportGpsPreference === "user") return user;
+  if (dive.exportGpsPreference === "user-if-missing") return computer ?? user;
+  return computer;
+}
+
+function validCoordinatePair(latitude: number | null, longitude: number | null) {
+  return latitude !== null &&
+    longitude !== null &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180
+    ? { latitude, longitude }
+    : null;
 }
 
 function escapeXml(value: string) {

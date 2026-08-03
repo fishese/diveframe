@@ -54,3 +54,15 @@ test("does not flag materially different profiles", () => {
   ]);
   assert.equal(result.length, 0);
 });
+
+test("detects a source difference regardless of which record has more sources", () => {
+  const result = duplicates.findPotentialDuplicateDives([
+    dive({ id: "earlier", sources: ["shearwater"] }),
+    dive({
+      id: "later",
+      diveDate: "2026-05-17T14:02:00.000Z",
+      sources: ["shearwater", "uddf"],
+    }),
+  ]);
+  assert.equal(result.length, 1);
+});

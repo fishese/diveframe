@@ -298,7 +298,12 @@ function average(values: number[]) {
 
 function normalizeDateTime(value: string | null) {
   if (!value) return null;
-  return value.replace("T", " ").replace(/Z$/, "");
+  const match = value.trim().match(
+    /^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}(?::\d{2})?)(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/,
+  );
+  return match
+    ? `${match[1]} ${match[2] ?? "00:00:00"}`
+    : value.trim().replace("T", " ");
 }
 
 function getPressureBounds(samples: DiveSample[]) {

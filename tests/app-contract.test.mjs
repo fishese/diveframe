@@ -85,7 +85,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(uddf, /stablePortableSourceId/);
   assert.doesNotMatch(uddf, /index \+ 1/);
   assert.match(fit, /source: "fit"/);
-  assert.match(fit, /fitDepth/);
+  assert.match(fit, /fitDepthMetres/);
   assert.match(fit, /stablePortableSourceId/);
   assert.doesNotMatch(fit, /file\.name/);
   assert.match(subsurface, /querySelectorAll\("sample"\)/);
@@ -298,14 +298,16 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /photoLocationPermissionDenied/);
   assert.match(app, /photoGpsBusy/);
   assert.match(app, /nearbySitesLoading/);
-  assert.match(app, /site\.distanceKm <= NEARBY_SITE_RADIUS_KM/);
+  assert.match(app, /nearbySessionCatalogSites/);
+  assert.match(catalogTools, /NEARBY_SITE_RADIUS_KM = 6/);
   assert.match(app, /setTimeout\(\(\) => controller\.abort\(\), 10000\)/);
   assert.match(app, /source: "manual"/);
   assert.match(app, /source: "photo-exif"/);
   assert.doesNotMatch(app, /exportGpsPreference/);
   const diveGps = await readFile("lib/dive-gps.ts", "utf8");
   assert.match(diveGps, /export function resolveDiveMapCoordinates/);
-  assert.match(diveGps, /gpsEntryLat !== null && dive\.gpsEntryLng !== null/);
+  assert.match(diveGps, /validatedPair\(dive\.gpsEntryLat, dive\.gpsEntryLng\)/);
+  assert.match(diveGps, /Math\.abs\(latitude\) <= 90/);
   const photoExifGps = await readFile("lib/photo-exif-gps.ts", "utf8");
   assert.match(photoExifGps, /export async function readJpegExifGps/);
   assert.match(photoExifGps, /export async function readPhotoExifGps/);
@@ -333,7 +335,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /t\("newTripOption"\)/);
   assert.match(appI18n, /newTripOption/);
   assert.match(appI18n, /deleteTripConfirmWithDives/);
-  assert.match(app, /\[dive\.id, dive\.tripId, editingDetails\]/);
+  assert.match(app, /resetTripEditorDrafts/);
+  assert.match(app, /requestAnimationFrame\(\(\) => \{\s*setTripDraft/);
   assert.match(app, /visibleDiveIds/);
   assert.match(app, /function visibleSelectedDiveIds/);
   assert.match(app, /const ids = visibleSelectedDiveIds\(\);/);
