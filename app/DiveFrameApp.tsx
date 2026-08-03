@@ -74,6 +74,7 @@ import {
   updateLocalDiveUserGps,
   upsertLocalDives,
 } from "@/lib/indexed-db";
+import { subscribeLocalDataChanges } from "@/lib/cross-tab-sync";
 import {
   buildDiveListRows,
   compareDives,
@@ -266,6 +267,15 @@ export function DiveFrameApp() {
       active = false;
     };
   }, [t]);
+
+  useEffect(() => {
+    return subscribeLocalDataChanges(() => {
+      void refreshDives();
+      void getLocalSupplementaryCatalog()
+        .then(setSupplementaryCatalog)
+        .catch(() => undefined);
+    });
+  }, [refreshDives]);
 
   useEffect(() => {
     getLocalAppPreferences()

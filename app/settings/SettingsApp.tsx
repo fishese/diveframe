@@ -64,6 +64,10 @@ import {
   type LocalDive,
   type LocalSiteContribution,
 } from "@/lib/indexed-db";
+import {
+  LocalDataConflictError,
+  subscribeLocalDataChanges,
+} from "@/lib/cross-tab-sync";
 import type { AppTranslate } from "@/lib/app-i18n";
 import {
   findPotentialDuplicateDives,
@@ -267,6 +271,45 @@ export function SettingsApp() {
       active = false;
     };
   }, [t]);
+
+  useEffect(() => {
+    return subscribeLocalDataChanges(() => {
+      void Promise.all([
+        listLocalSiteContributions(),
+        listLocalBackgrounds(),
+        getLocalOverlayLogo(),
+        listLocalDives(),
+        getLocalBackupSizeEstimate(),
+        getLocalSupplementaryCatalog(),
+      ])
+        .then(
+          ([
+            items,
+            savedBackgrounds,
+            savedLogo,
+            nextDives,
+            estimate,
+            savedCatalog,
+          ]) => {
+            setContributions(items);
+            setReviewedSites(items.map(toSiteDraft));
+            setCatalog(
+              resolveActiveDiveSiteCatalog(
+                BUILT_IN_CATALOG,
+                savedCatalog?.catalog ?? null,
+              ),
+            );
+            setCatalogLabel(savedCatalog?.label ?? null);
+            setBackgrounds(savedBackgrounds);
+            setLogo(savedLogo ?? null);
+            setDuplicateCandidates(findPotentialDuplicateDives(nextDives));
+            setDives(nextDives);
+            setStorageEstimate(estimate);
+          },
+        )
+        .catch(() => undefined);
+    });
+  }, []);
 
   async function markWhatsNewSeen() {
     if (!whatsNew || whatsNew.version === lastSeenWhatsNewVersion) return;
@@ -587,7 +630,11 @@ export function SettingsApp() {
       );
     } catch (error) {
       setStatus(
-        error instanceof Error ? error.message : t("optimizeStoredPhotosFailed"),
+        error instanceof LocalDataConflictError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : t("optimizeStoredPhotosFailed"),
       );
     } finally {
       setBusy(false);

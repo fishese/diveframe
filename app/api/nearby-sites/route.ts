@@ -1,6 +1,14 @@
 import diveSiteCatalog from "@/data/dive-sites.json";
 import { jsonWithCors, optionsWithCors } from "@/lib/api-cors";
 import { NEARBY_SITE_RADIUS_KM } from "@/lib/dive-site-catalog";
+import {
+  NOMINATIM_MIN_INTERVAL_MS,
+  logOsmUpstreamError,
+  osmCacheKey,
+  readOsmCacheEntry,
+  withUpstreamRateLimit,
+  writeOsmCache,
+} from "@/lib/osm-upstream";
 
 type OverpassElement = {
   id: number;
@@ -16,6 +24,17 @@ type NominatimPlace = {
   lon?: string;
   display_name?: string;
   name?: string;
+};
+
+type NearbySitePayload = {
+  id: string;
+  name: string;
+  aliases?: string[];
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+  source: string;
+  location?: string | null;
 };
 
 const LOCAL_DIVE_SITES = diveSiteCatalog.sites
@@ -76,6 +95,20 @@ export async function GET(request: Request) {
     });
   }
 
+  const cacheKey = osmCacheKey({
+    provider: "nearby",
+    lat: latitude.toFixed(3),
+    lng: longitude.toFixed(3),
+    radius: String(radiusKm),
+  });
+  const cached = readOsmCacheEntry<{
+    source: string;
+    sites: NearbySitePayload[];
+  }>(cacheKey);
+  if (cached.hit && cached.value) {
+    return jsonWithCors(request, cached.value);
+  }
+
   const radius = radiusKm * 1000;
   const query = `
     [out:json][timeout:6];
@@ -92,38 +125,61 @@ export async function GET(request: Request) {
   let response: Response | null = null;
   for (const endpoint of endpoints) {
     try {
-      const candidate = await fetch(endpoint, {
-        method: "POST",
-        signal: AbortSignal.timeout(8_000),
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-          "User-Agent": "DiveFrame/1.0 (private dive logbook)",
-        },
-        body: new URLSearchParams({ data: query }),
-      });
+      const candidate = await withUpstreamRateLimit(
+        "overpass",
+        1_000,
+        () =>
+          fetch(endpoint, {
+            method: "POST",
+            signal: AbortSignal.timeout(8_000),
+            headers: {
+              "Content-Type":
+                "application/x-www-form-urlencoded;charset=UTF-8",
+              "User-Agent": "DiveFrame/1.0 (private dive logbook)",
+            },
+            body: new URLSearchParams({ data: query }),
+          }),
+      );
       if (candidate.ok) {
         response = candidate;
         break;
       }
+      logOsmUpstreamError({
+        provider: "overpass",
+        operation: "nearby-overpass",
+        status: candidate.status,
+        reason: "http",
+      });
     } catch {
-      // Try the next public Overpass mirror.
+      logOsmUpstreamError({
+        provider: "overpass",
+        operation: "nearby-overpass",
+        status: null,
+        reason: "network",
+      });
     }
   }
   if (!response) {
-    return jsonWithCors(request, {
-      source: "openstreetmap",
-      sites: await searchDivePlaces(latitude, longitude, radiusKm),
-    });
+    const sites = await searchDivePlaces(latitude, longitude, radiusKm);
+    const body = { source: "openstreetmap", sites };
+    writeOsmCache(cacheKey, body);
+    return jsonWithCors(request, body);
   }
 
   let data: { elements?: OverpassElement[] };
   try {
     data = (await response.json()) as { elements?: OverpassElement[] };
   } catch {
-    return jsonWithCors(request, {
-      source: "openstreetmap",
-      sites: await searchDivePlaces(latitude, longitude, radiusKm),
+    logOsmUpstreamError({
+      provider: "overpass",
+      operation: "nearby-overpass",
+      status: response.status,
+      reason: "invalid-json",
     });
+    const sites = await searchDivePlaces(latitude, longitude, radiusKm);
+    const body = { source: "openstreetmap", sites };
+    writeOsmCache(cacheKey, body);
+    return jsonWithCors(request, body);
   }
   const seen = new Set<string>();
   const sites = (data.elements ?? [])
@@ -149,7 +205,9 @@ export async function GET(request: Request) {
     .sort((a, b) => a.distanceKm - b.distanceKm)
     .slice(0, 12);
 
-  return jsonWithCors(request, { source: "openstreetmap", sites });
+  const body = { source: "openstreetmap", sites };
+  writeOsmCache(cacheKey, body);
+  return jsonWithCors(request, body);
 }
 
 async function searchDivePlaces(
@@ -169,33 +227,57 @@ async function searchDivePlaces(
     `${longitude - delta},${latitude + delta},${longitude + delta},${latitude - delta}`,
   );
   try {
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(10_000),
-      headers: {
-        Accept: "application/json",
-        "Accept-Language": "en",
-        "User-Agent": "DiveFrame/1.0 (private dive logbook)",
-      },
-    });
-    if (!response.ok) return [];
+    const response = await withUpstreamRateLimit(
+      "nominatim",
+      NOMINATIM_MIN_INTERVAL_MS,
+      () =>
+        fetch(url, {
+          signal: AbortSignal.timeout(10_000),
+          headers: {
+            Accept: "application/json",
+            "Accept-Language": "en",
+            "User-Agent": "DiveFrame/1.0 (private dive logbook)",
+          },
+        }),
+    );
+    if (!response.ok) {
+      logOsmUpstreamError({
+        provider: "nominatim",
+        operation: "nearby-nominatim",
+        status: response.status,
+        reason: "http",
+      });
+      return [];
+    }
     const places = (await response.json()) as NominatimPlace[];
-    return places.flatMap((place) => {
-      const lat = Number(place.lat);
-      const lng = Number(place.lon);
-      const name = place.name?.trim() || place.display_name?.split(",")[0]?.trim();
-      if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) return [];
-      const siteDistanceKm = distanceKm(latitude, longitude, lat, lng);
-      if (siteDistanceKm > radiusKm) return [];
-      return [{
-        id: `osm-place-${place.place_id}`,
-        name,
-        latitude: lat,
-        longitude: lng,
-        distanceKm: siteDistanceKm,
-        source: "openstreetmap",
-      }];
-    }).sort((a, b) => a.distanceKm - b.distanceKm);
+    return places
+      .flatMap((place) => {
+        const lat = Number(place.lat);
+        const lng = Number(place.lon);
+        const name =
+          place.name?.trim() || place.display_name?.split(",")[0]?.trim();
+        if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) return [];
+        const siteDistanceKm = distanceKm(latitude, longitude, lat, lng);
+        if (siteDistanceKm > radiusKm) return [];
+        return [
+          {
+            id: `osm-place-${place.place_id}`,
+            name,
+            latitude: lat,
+            longitude: lng,
+            distanceKm: siteDistanceKm,
+            source: "openstreetmap",
+          },
+        ];
+      })
+      .sort((a, b) => a.distanceKm - b.distanceKm);
   } catch {
+    logOsmUpstreamError({
+      provider: "nominatim",
+      operation: "nearby-nominatim",
+      status: null,
+      reason: "network",
+    });
     return [];
   }
 }

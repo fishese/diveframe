@@ -1,5 +1,13 @@
 import { jsonWithCors, optionsWithCors } from "@/lib/api-cors";
 import { locationQueries } from "@/lib/geocode-query";
+import {
+  NOMINATIM_MIN_INTERVAL_MS,
+  logOsmUpstreamError,
+  osmCacheKey,
+  readOsmCacheEntry,
+  withUpstreamRateLimit,
+  writeOsmCache,
+} from "@/lib/osm-upstream";
 
 export { locationQueries };
 
@@ -40,7 +48,6 @@ export async function GET(request: Request) {
   let match: NominatimSearchResult | undefined;
   let matchedQuery = query;
   for (let index = 0; index < queries.length; index += 1) {
-    if (index > 0) await delay(1_050);
     const result = await searchLocation(queries[index]);
     if (result === "unavailable") {
       return jsonWithCors(
@@ -77,18 +84,60 @@ export async function GET(request: Request) {
 }
 
 async function searchLocation(query: string) {
+  const cacheKey = osmCacheKey({
+    provider: "nominatim",
+    op: "search",
+    q: query.toLocaleLowerCase("en"),
+  });
+  const cached = readOsmCacheEntry<NominatimSearchResult | null>(cacheKey);
+  if (cached.hit) return cached.value;
+
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("q", query);
   url.searchParams.set("format", "jsonv2");
   url.searchParams.set("limit", "1");
   try {
-    const response = await fetch(url, {
-      headers: nominatimHeaders(),
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!response.ok) return "unavailable" as const;
-    return ((await response.json()) as NominatimSearchResult[])[0] ?? null;
+    return await withUpstreamRateLimit(
+      "nominatim",
+      NOMINATIM_MIN_INTERVAL_MS,
+      async () => {
+        const response = await fetch(url, {
+          headers: nominatimHeaders(),
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (!response.ok) {
+          logOsmUpstreamError({
+            provider: "nominatim",
+            operation: "search",
+            status: response.status,
+            reason: "http",
+          });
+          return "unavailable" as const;
+        }
+        let payload: NominatimSearchResult[];
+        try {
+          payload = (await response.json()) as NominatimSearchResult[];
+        } catch {
+          logOsmUpstreamError({
+            provider: "nominatim",
+            operation: "search",
+            status: response.status,
+            reason: "invalid-json",
+          });
+          return "unavailable" as const;
+        }
+        const match = payload[0] ?? null;
+        writeOsmCache(cacheKey, match);
+        return match;
+      },
+    );
   } catch {
+    logOsmUpstreamError({
+      provider: "nominatim",
+      operation: "search",
+      status: null,
+      reason: "network",
+    });
     return "unavailable" as const;
   }
 }
@@ -106,6 +155,20 @@ async function reverseGeocode(
     );
   }
 
+  // Rounded cache key improves hit rate without logging precise dive pins.
+  const cacheKey = osmCacheKey({
+    provider: "nominatim",
+    op: "reverse",
+    lat: latitude.toFixed(3),
+    lng: longitude.toFixed(3),
+  });
+  const cached = readOsmCacheEntry<{
+    location: { label: string; city: string | null; country: string | null };
+  }>(cacheKey);
+  if (cached.hit && cached.value) {
+    return jsonWithCors(request, cached.value);
+  }
+
   const url = new URL("https://nominatim.openstreetmap.org/reverse");
   url.searchParams.set("lat", String(latitude));
   url.searchParams.set("lon", String(longitude));
@@ -115,11 +178,22 @@ async function reverseGeocode(
 
   let response: Response;
   try {
-    response = await fetch(url, {
-      headers: nominatimHeaders(),
-      signal: AbortSignal.timeout(10_000),
-    });
+    response = await withUpstreamRateLimit(
+      "nominatim",
+      NOMINATIM_MIN_INTERVAL_MS,
+      () =>
+        fetch(url, {
+          headers: nominatimHeaders(),
+          signal: AbortSignal.timeout(10_000),
+        }),
+    );
   } catch {
+    logOsmUpstreamError({
+      provider: "nominatim",
+      operation: "reverse",
+      status: null,
+      reason: "network",
+    });
     return jsonWithCors(
       request,
       { error: "GPS location lookup is temporarily unavailable." },
@@ -127,6 +201,12 @@ async function reverseGeocode(
     );
   }
   if (!response.ok) {
+    logOsmUpstreamError({
+      provider: "nominatim",
+      operation: "reverse",
+      status: response.status,
+      reason: "http",
+    });
     return jsonWithCors(
       request,
       { error: "GPS location lookup is temporarily unavailable." },
@@ -138,6 +218,12 @@ async function reverseGeocode(
   try {
     match = (await response.json()) as NominatimReverseResult;
   } catch {
+    logOsmUpstreamError({
+      provider: "nominatim",
+      operation: "reverse",
+      status: response.status,
+      reason: "invalid-json",
+    });
     return jsonWithCors(
       request,
       { error: "GPS location lookup returned an invalid response." },
@@ -158,7 +244,9 @@ async function reverseGeocode(
     match.display_name ||
     `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
 
-  return jsonWithCors(request, { location: { label, city, country } });
+  const body = { location: { label, city, country } };
+  writeOsmCache(cacheKey, body);
+  return jsonWithCors(request, body);
 }
 
 function nullableCoordinate(value: string | null) {
@@ -173,8 +261,4 @@ function nominatimHeaders() {
     "Accept-Language": "en",
     "User-Agent": "DiveFrame/1.0 (device-local dive logbook)",
   };
-}
-
-function delay(milliseconds: number) {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }

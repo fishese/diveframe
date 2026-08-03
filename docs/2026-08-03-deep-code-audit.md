@@ -104,6 +104,9 @@ deploy the web app.
    current estimate clones every IndexedDB record; a maintained aggregate or
    metadata-only store would scale better for large photo/raw-record libraries,
    but would require an additive schema/design discussion.
+   **Follow-up (branch `feature/audit-followups-3-5-7`):** size estimate now
+   walks blob stores with a cursor and sums stored byte lengths / metadata JSON
+   without calling `exportLocalBackupSnapshot` or base64-encoding media.
 4. Stream backup JSON/base64 generation and restore. The Android file writer is
    chunked, but backup construction still materializes the encoded document in
    memory before it reaches that writer.
@@ -111,11 +114,22 @@ deploy the web app.
    optimistic revision checks around long media optimization. IndexedDB
    serializes transactions, but a second tab can leave the first tab's React
    state stale or race a long read/transform/write cycle.
+   **Follow-up:** `lib/cross-tab-sync.ts` publishes revisioned change events;
+   logbook/settings refresh on foreign-tab updates; photo optimization asserts
+   the revision is unchanged before writing.
 6. Split `DiveFrameApp.tsx`, `SettingsApp.tsx`, and `app-i18n.ts` into bounded
    feature modules. Their current size makes review and targeted test setup
    harder even though the runtime behavior is valid.
+   **Follow-up:** `app-i18n` is split into `lib/app-i18n/{en,zh-Hant,ja}.ts`
+   with a thin `lib/app-i18n.ts` barrel. Thirty-one unused translation keys
+   (including archived manual-site catalog export copy and superseded storage
+   / share-card strings) were removed before the split. Large React module
+   splits remain open.
 7. Add server-side caching/rate controls for Nominatim and Overpass that comply
    with the providers' policies, plus telemetry limited to operational errors
    without logging private dive coordinates.
+   **Follow-up:** `lib/osm-upstream.ts` adds in-isolate TTL cache, Nominatim
+   spacing, and coord-free `osm_upstream_error` warnings on the geocode and
+   nearby-sites routes.
 8. Complete the native BLE failure matrix, lifecycle/instrumentation tests,
    and LGPL/source-release checklist before store distribution.

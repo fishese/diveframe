@@ -16,6 +16,16 @@ import {
 } from "./dive-identity";
 import { normalizeShearwaterPressurePair } from "./gas-calculations";
 import { moveAttachmentsAfter } from "./attachment-order";
+import {
+  buildBackupSizeEstimate,
+  omitBinaryFields,
+} from "./backup-size-estimate";
+import {
+  assertLocalDataRevision,
+  publishLocalDataChange,
+  readLocalDataRevision,
+  type LocalDataChangeReason,
+} from "./cross-tab-sync";
 import { withOptimizedJpeg } from "./media-optimization";
 import type { DiveSiteCatalog } from "./dive-site-catalog";
 import type { WhatsNewDocument } from "./whats-new";
@@ -365,6 +375,7 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
   }
 
   await transactionComplete(transaction);
+  notifyLocalDataChanged("import");
   return listLocalDives();
 }
 
@@ -467,6 +478,7 @@ export async function persistBleImport(options: {
   }
 
   await transactionComplete(transaction);
+  notifyLocalDataChanged("import");
   return {
     diveCount: options.dives.length,
     rawCount: options.rawRecords.length,
@@ -690,6 +702,7 @@ export async function deleteLocalDive(id: string) {
   contributionsStore.delete(id);
   composerSettingsStore.delete(id);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 /** Removes a known seeded record after a real user import, if it exists. */
@@ -1442,6 +1455,9 @@ export async function importLocalBackupSnapshot(
     records.forEach((record) => store.put(record));
   }
   await transactionComplete(transaction);
+  notifyLocalDataChanged(
+    mode === "merge" ? "backup-restore" : "backup-restore",
+  );
   const importedStore = (storeName: string) =>
     storesToImport.some(([name]) => name === storeName);
   return {
@@ -1476,62 +1492,150 @@ export async function clearLocalDivePhotos() {
     if (dive.photoCount) divesStore.put({ ...dive, photoCount: 0 });
   });
   await transactionComplete(transaction);
+  notifyLocalDataChanged("erase");
   return attachments.length;
 }
 
 export async function getLocalBackupSizeEstimate() {
-  const snapshot = await exportLocalBackupSnapshot();
-  const attachments = snapshot.attachments.map(withoutBlob);
-  const backgrounds = snapshot.backgrounds.map(withoutBlob);
-  const brandingAssets = snapshot.brandingAssets.map(withoutBlob);
-  const rawDiveRecords = snapshot.rawDiveRecords.map((record) => {
-    const { rawBytes, ...metadata } = record;
-    void rawBytes;
-    return metadata;
-  });
-  const deviceCheckpoints = snapshot.deviceCheckpoints.map((record) => {
-    const { fingerprint, ...metadata } = record;
-    void fingerprint;
-    return metadata;
-  });
+  // Estimate from stored sizes and metadata JSON only. Do not build a full
+  // backup snapshot or base64-encode media just to show a size warning.
+  const database = await openDatabase();
+  const transaction = database.transaction([...ALL_STORE_NAMES]);
+  const [
+    dives,
+    sourceRecords,
+    siteContributions,
+    composerSettings,
+    composerPresets,
+    appPreferences,
+    trips,
+    supplementaryCatalog,
+    attachments,
+    backgrounds,
+    brandingAssets,
+    rawDiveRecords,
+    deviceCheckpoints,
+  ] = await Promise.all([
+    request<LocalDive[]>(transaction.objectStore(DIVES_STORE).getAll()),
+    request<SourceRecord[]>(transaction.objectStore(SOURCES_STORE).getAll()),
+    request<LocalSiteContribution[]>(
+      transaction.objectStore(SITE_CONTRIBUTIONS_STORE).getAll(),
+    ),
+    request<ComposerSettings[]>(
+      transaction.objectStore(COMPOSER_SETTINGS_STORE).getAll(),
+    ),
+    request<LocalComposerPreset[]>(
+      transaction.objectStore(COMPOSER_PRESETS_STORE).getAll(),
+    ),
+    request<LocalAppPreferences[]>(
+      transaction.objectStore(APP_PREFERENCES_STORE).getAll(),
+    ),
+    request<LocalTrip[]>(transaction.objectStore(TRIPS_STORE).getAll()),
+    request<LocalSupplementaryCatalog[]>(
+      transaction.objectStore(SUPPLEMENTARY_CATALOG_STORE).getAll(),
+    ),
+    collectStoreRecords(transaction.objectStore(ATTACHMENTS_STORE), (record) => {
+      const value = record as LocalAttachment;
+      return {
+        metadata: omitBinaryFields(
+          value as unknown as Record<string, unknown>,
+          ["blob"],
+        ),
+        binaryBytes: Number(value.size) || 0,
+      };
+    }),
+    collectStoreRecords(transaction.objectStore(BACKGROUNDS_STORE), (record) => {
+      const value = record as LocalBackground;
+      return {
+        metadata: omitBinaryFields(
+          value as unknown as Record<string, unknown>,
+          ["blob"],
+        ),
+        binaryBytes: Number(value.size) || 0,
+      };
+    }),
+    collectStoreRecords(
+      transaction.objectStore(BRANDING_ASSETS_STORE),
+      (record) => {
+        const value = record as LocalBrandingAsset;
+        return {
+          metadata: omitBinaryFields(
+            value as unknown as Record<string, unknown>,
+            ["blob"],
+          ),
+          binaryBytes: Number(value.size) || 0,
+        };
+      },
+    ),
+    collectStoreRecords(
+      transaction.objectStore(RAW_DIVE_RECORDS_STORE),
+      (record) => {
+        const value = record as LocalRawDiveRecord;
+        return {
+          metadata: omitBinaryFields(
+            value as unknown as Record<string, unknown>,
+            ["rawBytes"],
+          ),
+          binaryBytes: value.rawBytes?.size ?? (Number(value.length) || 0),
+        };
+      },
+    ),
+    collectStoreRecords(
+      transaction.objectStore(DEVICE_CHECKPOINTS_STORE),
+      (record) => {
+        const value = record as LocalDeviceCheckpoint;
+        return {
+          metadata: omitBinaryFields(
+            value as unknown as Record<string, unknown>,
+            ["fingerprint"],
+          ),
+          binaryBytes: value.fingerprint?.size ?? 0,
+        };
+      },
+    ),
+  ]);
+
+  const mediaBytes =
+    attachments.binaryBytes +
+    backgrounds.binaryBytes +
+    brandingAssets.binaryBytes;
+  const rawBytes = rawDiveRecords.binaryBytes;
+  const fingerprintBytes = deviceCheckpoints.binaryBytes;
+
   const metadataBytes = new Blob([
     JSON.stringify({
-      ...snapshot,
-      attachments,
-      backgrounds,
-      brandingAssets,
-      rawDiveRecords,
-      deviceCheckpoints,
+      dives: dives.map(hydrateDive),
+      sourceRecords,
+      siteContributions,
+      composerSettings,
+      composerPresets,
+      appPreferences,
+      trips,
+      supplementaryCatalog,
+      attachments: attachments.records,
+      backgrounds: backgrounds.records,
+      brandingAssets: brandingAssets.records,
+      rawDiveRecords: rawDiveRecords.records,
+      deviceCheckpoints: deviceCheckpoints.records,
     }),
   ]).size;
-  const mediaBytes = [
-    ...snapshot.attachments,
-    ...snapshot.backgrounds,
-    ...snapshot.brandingAssets,
-  ].reduce((total, record) => total + record.size, 0);
-  const rawBytes = snapshot.rawDiveRecords.reduce(
-    (total, record) => total + record.rawBytes.size,
-    0,
-  );
-  const fingerprintBytes = snapshot.deviceCheckpoints.reduce(
-    (total, record) => total + record.fingerprint.size,
-    0,
-  );
-  const binaryBytes = mediaBytes + rawBytes + fingerprintBytes;
-  return {
+
+  return buildBackupSizeEstimate({
+    metadataJsonBytes: metadataBytes,
     mediaBytes,
     rawBytes,
-    estimatedBackupBytes: metadataBytes + Math.ceil((binaryBytes * 4) / 3),
-    divePhotos: snapshot.attachments.length,
-    backgrounds: snapshot.backgrounds.length,
-    rawDiveRecords: snapshot.rawDiveRecords.length,
-  };
+    fingerprintBytes,
+    divePhotos: attachments.count,
+    backgrounds: backgrounds.count,
+    rawDiveRecords: rawDiveRecords.count,
+  });
 }
 
 export async function optimizeLocalStoredPhotos(
   quality = 0.88,
   maxDimension = 2560,
 ) {
+  const revisionAtStart = readLocalDataRevision();
   const database = await openDatabase();
   const readTransaction = database.transaction([
     ATTACHMENTS_STORE,
@@ -1580,6 +1684,8 @@ export async function optimizeLocalStoredPhotos(
     if (updated !== background) updatedBackgrounds.push(updated);
   }
   if (updatedAttachments.length || updatedBackgrounds.length) {
+    // Another tab may have mutated media while canvases were decoding.
+    assertLocalDataRevision(revisionAtStart);
     const transaction = database.transaction(
       [ATTACHMENTS_STORE, BACKGROUNDS_STORE],
       "readwrite",
@@ -1591,6 +1697,7 @@ export async function optimizeLocalStoredPhotos(
       transaction.objectStore(BACKGROUNDS_STORE).put(record),
     );
     await transactionComplete(transaction);
+    notifyLocalDataChanged("optimize-photos");
   }
   return {
     examined: attachments.length + backgrounds.length,
@@ -1683,6 +1790,7 @@ export async function mergeLocalDuplicateDives(
   }
   composerSettingsStore.delete(removeId);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return {
     keptDiveId: keepId,
     removedDiveId: removeId,
@@ -1699,6 +1807,7 @@ export async function clearAllLocalData() {
     transaction.objectStore(storeName).clear();
   }
   await transactionComplete(transaction);
+  notifyLocalDataChanged("erase");
 }
 
 export async function clearLocalDiveData() {
@@ -1709,6 +1818,7 @@ export async function clearLocalDiveData() {
     transaction.objectStore(storeName).clear();
   }
   await transactionComplete(transaction);
+  notifyLocalDataChanged("erase");
 }
 
 async function updateDive(id: string, change: (dive: LocalDive) => LocalDive) {
@@ -1998,12 +2108,6 @@ async function optimizedJpeg(
   }
 }
 
-function withoutBlob<T extends { blob: Blob }>(record: T): Omit<T, "blob"> {
-  const copy: Record<string, unknown> = { ...record };
-  delete copy.blob;
-  return copy as Omit<T, "blob">;
-}
-
 function openDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const operation = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
@@ -2117,6 +2221,47 @@ function transactionComplete(transaction: IDBTransaction) {
       reject(transaction.error ?? new Error("Local storage operation failed."));
     transaction.onabort = () =>
       reject(transaction.error ?? new Error("Local storage operation was cancelled."));
+  });
+}
+
+function notifyLocalDataChanged(reason: LocalDataChangeReason) {
+  publishLocalDataChange(reason);
+}
+
+/**
+ * Walk a store with a cursor so blob-bearing records are not retained as one
+ * giant in-memory snapshot while estimating backup size.
+ */
+function collectStoreRecords(
+  store: IDBObjectStore,
+  mapRecord: (value: unknown) => {
+    metadata: Record<string, unknown>;
+    binaryBytes: number;
+  },
+) {
+  return new Promise<{
+    records: Record<string, unknown>[];
+    count: number;
+    binaryBytes: number;
+  }>((resolve, reject) => {
+    const records: Record<string, unknown>[] = [];
+    let count = 0;
+    let binaryBytes = 0;
+    const operation = store.openCursor();
+    operation.onsuccess = () => {
+      const cursor = operation.result;
+      if (!cursor) {
+        resolve({ records, count, binaryBytes });
+        return;
+      }
+      const mapped = mapRecord(cursor.value);
+      records.push(mapped.metadata);
+      binaryBytes += mapped.binaryBytes;
+      count += 1;
+      cursor.continue();
+    };
+    operation.onerror = () =>
+      reject(operation.error ?? new Error("Local storage cursor failed."));
   });
 }
 

@@ -33,12 +33,15 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     readFile("docs/USER-GUIDE.md", "utf8"),
     readFile("LICENSE", "utf8"),
   ]);
-  const [appI18n, catalogTools, catalogPrompt, assetLicenses] = await Promise.all([
+  const [appI18nEn, appI18nJa, appI18nBarrel, catalogTools, catalogPrompt, assetLicenses] = await Promise.all([
+    readFile("lib/app-i18n/en.ts", "utf8"),
+    readFile("lib/app-i18n/ja.ts", "utf8"),
     readFile("lib/app-i18n.ts", "utf8"),
     readFile("lib/dive-site-catalog.ts", "utf8"),
     readFile("public/examples/dive-site-catalog-ai-prompt.md", "utf8"),
     readFile("ASSET-LICENSES.md", "utf8"),
   ]);
+  const appI18n = `${appI18nBarrel}\n${appI18nEn}\n${appI18nJa}`;
   const importGuide = await readFile("app/components/ImportGuide.tsx", "utf8");
   const androidPage = await readFile("app/android/AndroidAppPage.tsx", "utf8");
   const androidLink = await readFile("app/components/AndroidAppLink.tsx", "utf8");
@@ -97,7 +100,20 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /rekeyDive/);
   assert.match(storage, /clearLocalDivePhotos/);
   assert.match(storage, /getLocalBackupSizeEstimate/);
+  assert.match(storage, /collectStoreRecords/);
+  assert.match(storage, /buildBackupSizeEstimate/);
+  assert.doesNotMatch(
+    storage.match(
+      /export async function getLocalBackupSizeEstimate\(\)[\s\S]+?(?=export async function optimizeLocalStoredPhotos)/,
+    )?.[0] ?? "",
+    /exportLocalBackupSnapshot/,
+  );
   assert.match(storage, /optimizeLocalStoredPhotos/);
+  assert.match(storage, /assertLocalDataRevision/);
+  assert.match(storage, /notifyLocalDataChanged/);
+  assert.match(app, /subscribeLocalDataChanges/);
+  assert.match(settings, /subscribeLocalDataChanges/);
+  assert.match(settings, /LocalDataConflictError/);
   assert.match(storage, /bundledBackgroundHidden/);
   assert.match(storage, /mergeLocalDuplicateDives/);
   assert.match(backup, /SHA-256/);
@@ -207,7 +223,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(settings, /useAppI18n/);
   assert.match(settings, /setLanguage/);
   assert.match(settings, /<option value="ja">/);
-  assert.match(appI18n, /const ja: Record<keyof typeof en, string>/);
+  assert.match(appI18nJa, /const ja: Record<keyof typeof en, string>/);
+  assert.match(appI18nBarrel, /from "\.\/app-i18n\/en"/);
+  assert.match(appI18nBarrel, /from "\.\/app-i18n\/zh-Hant"/);
+  assert.match(appI18nBarrel, /from "\.\/app-i18n\/ja"/);
   assert.match(appI18n, /moreFilters:/);
   assert.match(appI18n, /computerFilterLabel:/);
   assert.match(appI18n, /allComputers:/);
