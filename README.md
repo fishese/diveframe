@@ -1,13 +1,15 @@
 # DiveFrame
 
-Your dive computer’s log is the source of truth. DiveFrame makes it richer —
-maps, photos, site names, and share-ready images — entirely on your device.
+A private, device-local companion for your dive logs. Import from your dive
+computer or logbook app — or download classic Shearwater dives over Bluetooth
+on Android — then merge matching records, add maps and photos, and create
+shareable dive images, without uploading your logbook to DiveFrame.
 
 **Try it:** [divelog.fishese.cc](https://divelog.fishese.cc)
 
-Pull a location from a dive photo, get nearby site suggestions, fix the name
-once, and keep the result when you re-import. No account. No cloud logbook.
-Nothing leaves your browser or phone unless you export it.
+Pull GPS from a dive photo to get nearby site suggestions, fix the name once,
+and keep the result when you re-import. No account. Nothing leaves your
+browser or phone unless you export it.
 
 > **Beta.** Keep your original exports and a recent DiveFrame backup while
 > workflows are still changing.
@@ -23,14 +25,11 @@ Nothing leaves your browser or phone unless you export it.
   temperature, logo, and overlays in English, 繁體中文, or 日本語.
 - **Trips, edits, memos.** Group dives, correct site and location, and jot
   pre-import memos so details aren’t lost between the water and the log.
-- **Private backup.** Full on-device backup (optional password) for browser ↔
-  browser or browser ↔ Android transfers.
+- **Export & backup.** Full Subsurface logbook export, plus a private on-device
+  backup (optional password) for browser ↔ browser or browser ↔ Android.
 - **Android APK.** Same app, plus classic Shearwater Bluetooth download and
   native save/share —
   [download the debug APK](https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk).
-
-Your source apps stay the system of record. DiveFrame does not write changes
-back to them.
 
 Full how-to: [User guide](docs/USER-GUIDE.md)
 
