@@ -188,7 +188,7 @@ is **Set in App**. About copy refers to site assignment only.
 - Free-text buddy field (reuse buddy separator conventions in UI hints if
   cheap).
 - Notes textarea with helper / placeholder text exactly:
-  `Note other info such as gas mixes, weight, exposures here so you can refer to it after you import the log`.
+  `Note other info such as gas mixes, weight, exposures here`.
 
 ### UI
 

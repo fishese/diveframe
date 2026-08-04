@@ -37,7 +37,7 @@ import { readPhotoExifGps } from "@/lib/photo-exif-gps";
 import type { AppTranslate } from "@/lib/app-i18n";
 
 const NOTES_PLACEHOLDER =
-  "Note other info such as gas mixes, weight, exposures here so you can refer to it after you import the log";
+  "Note other info such as gas mixes, weight, exposures here";
 
 const MINUTE_SUGGESTIONS = [0, 15, 30, 45] as const;
 
@@ -48,6 +48,7 @@ export function MemosApp() {
   const [busy, setBusy] = useState(false);
   const [editingHeadingId, setEditingHeadingId] = useState<string | null>(null);
   const [photoHelpOpen, setPhotoHelpOpen] = useState(false);
+  const [scrollToMemoId, setScrollToMemoId] = useState<string | null>(null);
   const webPhotoInputRef = useRef<HTMLInputElement>(null);
   const photoTargetIdRef = useRef<string | null>(null);
 
@@ -76,6 +77,14 @@ export function MemosApp() {
       setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
     });
   }, [refresh, t]);
+
+  useEffect(() => {
+    if (!scrollToMemoId) return;
+    const node = document.getElementById(`memo-${scrollToMemoId}`);
+    if (!node) return;
+    node.scrollIntoView({ behavior: "smooth", block: "start" });
+    setScrollToMemoId(null);
+  }, [scrollToMemoId, memos]);
 
   async function persist(next: DiveMemo) {
     const stored = await saveLocalDiveMemo({
@@ -108,6 +117,7 @@ export function MemosApp() {
       };
       await persist(memo);
       setEditingHeadingId(memo.id);
+      setScrollToMemoId(memo.id);
     } finally {
       setBusy(false);
     }
@@ -255,6 +265,16 @@ export function MemosApp() {
           onChange={(event) => void handleWebPhotoChange(event)}
         />
 
+        <button
+          type="button"
+          className="button button-secondary memos-add"
+          disabled={busy}
+          onClick={() => void addMemo()}
+        >
+          {busy ? <LoaderCircle size={16} className="spin" /> : <Plus size={16} />}
+          {t("diveMemosAdd")}
+        </button>
+
         <div className="memos-list">
           {memos.map((memo) => (
             <MemoCard
@@ -384,7 +404,7 @@ function MemoCard({
   }
 
   return (
-    <article className="memo-card">
+    <article className="memo-card" id={`memo-${memo.id}`}>
       <header className="memo-card-header">
         {editingHeading ? (
           <input

@@ -2783,6 +2783,7 @@ button {
   display: grid;
   gap: 16px;
   padding: 18px;
+  scroll-margin-top: calc(72px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
 }
 
 .memo-card-header {
@@ -2941,7 +2942,11 @@ button {
 }
 
 .memos-add {
-  margin-top: 20px;
+  margin: 0 0 18px;
+}
+
+.memos-list + .memos-add {
+  margin: 20px 0 0;
 }
 
 @media (max-width: 640px) {
