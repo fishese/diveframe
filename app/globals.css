@@ -2766,8 +2766,15 @@ body:has(.beta-notice) .composer-topbar {
 }
 
 .memos-hero {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   max-width: 640px;
+}
+
+.memos-hero h1 {
+  font-size: clamp(26px, 6vw, 36px);
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin: 0 0 8px;
 }
 
 .memos-hero > p {
@@ -2914,9 +2921,11 @@ body:has(.beta-notice) .memo-card {
 .memo-time-controls {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 4px;
+  max-width: 100%;
   min-width: 0;
+  overflow-x: auto;
 }
 
 .memo-step-button {
@@ -2927,32 +2936,37 @@ body:has(.beta-notice) .memo-card {
   padding: 0 6px;
 }
 
-.memo-hour-input,
-.memo-minute-input {
+/* Must beat `.memo-field-grid input { width: 100% }` or the hour box fills the row. */
+.memo-field-grid .memo-hour-input,
+.memo-field-grid .memo-minute-input {
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
   color: #f5fbfa;
-  flex: 0 0 auto;
+  flex: 0 0 2.75rem;
   font: inherit;
   font-size: 14px;
   height: 28px;
+  max-width: 2.75rem;
+  min-width: 2.75rem;
   padding: 0 4px;
   text-align: center;
   width: 2.75rem;
 }
 
-.memo-meridiem-select {
+.memo-field-grid .memo-meridiem-select {
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
   color: #f5fbfa;
-  flex: 0 0 auto;
+  flex: 0 0 3.6rem;
   font: inherit;
   font-size: 14px;
   height: 28px;
+  max-width: 3.6rem;
+  min-width: 3.6rem;
   padding: 0 4px;
   width: 3.6rem;
 }

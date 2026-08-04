@@ -636,7 +636,7 @@ export const en = {
   bleImportRssi: "{rssi} dBm",
 
   diveMemosEyebrow: "Before you import",
-  diveMemosTitle: "Dive memos",
+  diveMemosTitle: "Jot a memo",
   diveMemosIntro:
     "Jot date, time, location, buddies, and notes for a dive so you can match them after you import the log.",
   diveMemosAdd: "Add memo",

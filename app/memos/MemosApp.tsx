@@ -260,7 +260,7 @@ export function MemosApp() {
 
       <div className="memos-shell">
         <section className="memos-hero">
-          <h1 className="visually-hidden">{t("diveMemosTitle")}</h1>
+          <h1>{t("diveMemosTitle")}</h1>
           <p>{t("diveMemosIntro")}</p>
           {status ? <p className="composer-status">{status}</p> : null}
         </section>
@@ -393,7 +393,12 @@ function MemoCard({
 
   useEffect(() => {
     setDraft(memo);
-    setCoordsDraft(formatCoordinatePair(memo.lat, memo.lng));
+    setCoordsDraft(
+      formatCoordinatePair(
+        memo.lat == null ? null : roundCoord(memo.lat),
+        memo.lng == null ? null : roundCoord(memo.lng),
+      ),
+    );
   }, [memo]);
 
   useEffect(() => {

@@ -634,7 +634,7 @@ export const ja: Record<keyof typeof en, string> = {
   photoLocationReadFailed: "選択した写真をDiveFrameで読み取れませんでした。",
 
   diveMemosEyebrow: "読み込みの前に",
-  diveMemosTitle: "ダイブメモ",
+  diveMemosTitle: "メモを残す",
   diveMemosIntro:
     "ダイブの日付・時刻・場所・バディ・メモを控えておくと、ログを読み込んだあとに照合しやすくなります。",
   diveMemosAdd: "メモを追加",

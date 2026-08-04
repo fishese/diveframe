@@ -637,7 +637,7 @@ export const zhHant: Record<keyof typeof en, string> = {
   photoLocationReadFailed: "DiveFrame 無法讀取所選相片。",
 
   diveMemosEyebrow: "匯入之前",
-  diveMemosTitle: "潛水備忘",
+  diveMemosTitle: "記下備忘",
   diveMemosIntro:
     "先記下潛水的日期、時間、地點、潛伴與備註，匯入日誌後會較易對照。",
   diveMemosAdd: "新增備忘",
