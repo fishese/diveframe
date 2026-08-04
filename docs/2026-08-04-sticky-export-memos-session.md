@@ -28,15 +28,13 @@ pick them up.
 - Android long-press shortcut to `/memos`: skipped (Capacitor deep-link /
   BridgeActivity path wiring is messy for a cold-start static shortcut).
 - Memo ↔ dive auto-match UI.
-- GitHub Release asset for **1.0.15** (local dogfood installed; publish when
-  ready).
 
-## Dogfood
+## Follow-up (2026-08-05)
 
-- APK **1.0.15** (`versionCode 16`) from `dab7aad`, installed via wireless adb
-  on SM-S9280.
-- SHA-256:
-  `D63D094D1EB7D987783A35A0F53C7EA57570414687A134EF4AFE88D630BF629E`.
+Memo layout polish and chrome safe-area rewrite (What's New not sticky;
+`.app-safe-top` + Android inset injection) shipped in
+`docs/2026-08-05-chrome-memos-polish-session.md` as APK **1.0.16** /
+`v0.1.0-debug.14`.
 
 ## Spec / plan
 

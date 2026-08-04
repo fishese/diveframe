@@ -31,7 +31,7 @@ APK uses its own WebView origin (`https://localhost`), so PWA and APK data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-04)
+## Current status (2026-08-05)
 
 Shipped on `main` (pushed):
 
@@ -85,17 +85,18 @@ Shipped on `main` (pushed):
   **Dive memos** (`/memos`, IndexedDB v11, backup v4). Android long-press
   shortcut deferred. Session:
   `docs/2026-08-04-sticky-export-memos-session.md`. **APK-affecting.**
+- Memo UI polish: one-line time stepper, select-on-focus, coords+actions row,
+  **Jot a memo** hero. Chrome: What's New scrolls away; sticky `.app-safe-top`
+  + topbar `top: safe-area`; Android injects `--safe-area-inset-*` from window
+  insets. Session: `docs/2026-08-05-chrome-memos-polish-session.md`.
+  **APK-affecting.**
 - About page: softer intro, full Subsurface export called out, personal “why
   this exists” note, click-to-reveal contact email.
-- Android debug APK **1.0.15** (`versionCode 16`) was rebuilt from commit
-  `dab7aad` (sticky/export/memos + GPS permission fix) and installed over
-  wireless adb for dogfood. SHA-256 of the local `app-debug.apk` is
-  `D63D094D1EB7D987783A35A0F53C7EA57570414687A134EF4AFE88D630BF629E`.
-  GitHub `releases/latest` / `diveframe-debug.apk` may still point at an older
-  published asset until a new release is uploaded.
-- Current dogfooding state: local `main` and the adb-installed **1.0.15** APK
-  include sticky/export/memos. Hosted web/PWA updates after push to
-  `origin/main`.
+- Android debug APK **1.0.16** (`versionCode 17`) published as GitHub
+  `v0.1.0-debug.14` (`diveframe-debug.apk`). See `docs/WEB-APK-SYNC.md` for
+  the commit SHA and SHA-256 after the release step in that session.
+- Trilingual copy for newer memo strings may still need a dedicated pass in
+  `lib/app-i18n/{en,ja,zh-Hant}.ts` (planned by the maintainer).
 
 Open follow-ups:
 

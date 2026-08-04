@@ -59,10 +59,10 @@ select option {
   gap: 9px;
   justify-content: center;
   line-height: 1.35;
-  padding: calc(6px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))) 4vw 6px;
-  position: sticky;
-  top: 0;
-  z-index: 60;
+  padding: 6px 4vw;
+  /* Scrolls away with the page; safe-area is owned by .app-safe-top. */
+  position: relative;
+  z-index: 40;
 }
 
 .beta-notice > svg {
@@ -94,6 +94,19 @@ select option {
   font-weight: 700;
   margin-left: 7px;
   text-underline-offset: 2px;
+}
+
+/* Opaque status-bar cover: stays put so What's New can scroll away while
+   sticky top bars park just below the inset instead of under system UI. */
+.app-safe-top {
+  background: var(--ink);
+  flex-shrink: 0;
+  height: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  pointer-events: none;
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 70;
 }
 
 .pwa-install-status {
@@ -132,21 +145,11 @@ button {
   box-sizing: border-box;
   display: flex;
   justify-content: space-between;
-  min-height: calc(58px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
-  padding:
-    var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
-    4vw
-    0;
+  min-height: 58px;
+  padding: 0 4vw;
   position: sticky;
-  top: 0;
+  top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
   z-index: 50;
-}
-
-/* Banner already consumes the status-bar inset; avoid a second empty band. */
-body:has(.beta-notice) .topbar,
-body:has(.beta-notice) .composer-topbar {
-  min-height: 52px;
-  padding-top: 0;
 }
 
 .brand {
@@ -1812,13 +1815,10 @@ body:has(.beta-notice) .composer-topbar {
   box-sizing: border-box;
   display: flex;
   justify-content: space-between;
-  min-height: calc(64px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
-  padding:
-    var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
-    20px
-    0;
+  min-height: 64px;
+  padding: 0 20px;
   position: sticky;
-  top: 0;
+  top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
   z-index: 20;
 }
 
@@ -2255,11 +2255,8 @@ body:has(.beta-notice) .composer-topbar {
 
 @media (max-width: 860px) {
   .composer-topbar {
-    min-height: calc(58px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
-    padding:
-      var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
-      10px
-      0;
+    min-height: 58px;
+    padding: 0 10px;
   }
 
   .composer-top-actions .composer-settings-link {
@@ -2807,10 +2804,6 @@ body:has(.beta-notice) .composer-topbar {
   scroll-margin-top: calc(56px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
 }
 
-body:has(.beta-notice) .memo-card {
-  scroll-margin-top: 56px;
-}
-
 .memo-card-header {
   align-items: center;
   display: flex;
@@ -2939,6 +2932,8 @@ body:has(.beta-notice) .memo-card {
 /* Must beat `.memo-field-grid input { width: 100% }` or the hour box fills the row. */
 .memo-field-grid .memo-hour-input,
 .memo-field-grid .memo-minute-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -2953,6 +2948,21 @@ body:has(.beta-notice) .memo-card {
   padding: 0 4px;
   text-align: center;
   width: 2.75rem;
+}
+
+.memo-field-grid .memo-minute-input {
+  flex-basis: calc(2.75rem + 2ch);
+  max-width: calc(2.75rem + 2ch);
+  min-width: calc(2.75rem + 2ch);
+  width: calc(2.75rem + 2ch);
+}
+
+.memo-field-grid .memo-hour-input::-webkit-outer-spin-button,
+.memo-field-grid .memo-hour-input::-webkit-inner-spin-button,
+.memo-field-grid .memo-minute-input::-webkit-outer-spin-button,
+.memo-field-grid .memo-minute-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .memo-field-grid .memo-meridiem-select {
@@ -2978,24 +2988,36 @@ body:has(.beta-notice) .memo-card {
   font-weight: 700;
 }
 
-.memo-coords-input {
+.memo-coords-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.memo-field-grid .memo-coords-input {
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
   color: #f5fbfa;
+  flex: 1 1 auto;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 12px;
-  max-width: 100%;
+  height: 28px;
+  max-width: none;
   min-width: 0;
-  padding: 6px 8px;
-  width: 100%;
+  padding: 4px 8px;
+  width: auto;
 }
 
 .memo-coord-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -4284,21 +4306,8 @@ body:has(.beta-notice) .memo-card {
 
 @media (max-width: 760px) {
   .topbar {
-    min-height: calc(52px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
-    padding:
-      var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
-      12px
-      0;
-  }
-
-  body:has(.beta-notice) .topbar,
-  body:has(.beta-notice) .composer-topbar {
-    min-height: 48px;
-    padding-top: 0;
-  }
-
-  body:has(.beta-notice) .composer-preview-pane {
-    top: 48px;
+    min-height: 52px;
+    padding: 0 12px;
   }
 
   .brand-mark {

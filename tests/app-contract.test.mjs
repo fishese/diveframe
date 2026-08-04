@@ -592,15 +592,19 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(globalStyles, /color-scheme: dark/);
   assert.match(globalStyles, /env\(safe-area-inset-top/);
   assert.match(globalStyles, /var\(--safe-area-inset-top/);
-  assert.match(globalStyles, /body:has\(\.beta-notice\)/);
+  assert.match(globalStyles, /\.app-safe-top\s*\{[^}]*position:\s*sticky/);
+  assert.match(globalStyles, /\.beta-notice\s*\{[^}]*position:\s*relative/);
+  assert.doesNotMatch(globalStyles, /\.beta-notice\s*\{[^}]*position:\s*sticky/);
   assert.match(
     globalStyles,
-    /\.topbar\s*\{(?=[^}]*\btop:\s*0)(?=[^}]*padding:[\s\S]*?safe-area-inset-top)[^}]*\}/,
+    /\.topbar\s*\{(?=[^}]*top:\s*var\(--safe-area-inset-top)(?=[^}]*position:\s*sticky)[^}]*\}/,
   );
   assert.doesNotMatch(
     globalStyles,
-    /\.topbar\s*\{[^}]*top:\s*var\(--safe-area-inset-top/,
+    /body:has\(\.beta-notice\)\s*\.(?:topbar|composer-topbar)/,
   );
+  const layoutSource = await readFile("app/layout.tsx", "utf8");
+  assert.match(layoutSource, /className="app-safe-top"/);
   assert.match(globalStyles, /\.mobile-home-button/);
   assert.match(globalStyles, /\.composer-preview-pane[\s\S]+position: sticky/);
   assert.match(globalStyles, /\.danger-option \.button[\s\S]+width: 100%/);

@@ -523,8 +523,10 @@ function MemoCard({
                 type="number"
                 min={1}
                 max={12}
+                inputMode="numeric"
                 value={draft.hour ?? ""}
                 disabled={busy}
+                onFocus={(event) => event.currentTarget.select()}
                 onChange={(event) => {
                   const raw = event.target.value;
                   if (raw === "") {
@@ -555,6 +557,7 @@ function MemoCard({
                 type="number"
                 min={0}
                 max={59}
+                inputMode="numeric"
                 list={`memo-minute-suggestions-${memo.id}`}
                 value={
                   draft.minute === null || draft.minute === undefined
@@ -562,6 +565,7 @@ function MemoCard({
                     : String(normalizeMemoMinute(draft.minute)).padStart(2, "0")
                 }
                 disabled={busy}
+                onFocus={(event) => event.currentTarget.select()}
                 onChange={(event) => {
                   const raw = event.target.value;
                   if (raw === "") {
@@ -619,55 +623,57 @@ function MemoCard({
 
         <div className="memo-span-2 memo-coords-row">
           <span>{t("diveMemosCoordinates")}</span>
-          <input
-            className="memo-coords-input"
-            type="text"
-            value={coordsDraft}
-            disabled={busy}
-            placeholder="19.09876, 72.87643"
-            autoComplete="off"
-            spellCheck={false}
-            aria-invalid={coordsInvalid}
-            onChange={(event) => setCoordsDraft(event.target.value)}
-            onBlur={() => commitCoordsDraft()}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.currentTarget.blur();
-              }
-            }}
-            aria-label={t("diveMemosCoordinates")}
-          />
-          <div className="memo-coord-actions">
-            <button
-              type="button"
-              className="button button-secondary memo-compact-button"
+          <div className="memo-coords-controls">
+            <input
+              className="memo-coords-input"
+              type="text"
+              value={coordsDraft}
               disabled={busy}
-              onClick={onDeviceGps}
-            >
-              <Navigation size={14} /> {t("diveMemosUseGps")}
-            </button>
-            <button
-              type="button"
-              className="button button-secondary memo-compact-button"
-              disabled={busy}
-              onClick={onPhotoGps}
-            >
-              <ImageIcon size={14} /> {t("diveMemosPhotoGps")}
-            </button>
-            {draft.lat != null || draft.lng != null ? (
+              placeholder="19.09876, 72.87643"
+              autoComplete="off"
+              spellCheck={false}
+              aria-invalid={coordsInvalid}
+              onChange={(event) => setCoordsDraft(event.target.value)}
+              onBlur={() => commitCoordsDraft()}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                }
+              }}
+              aria-label={t("diveMemosCoordinates")}
+            />
+            <div className="memo-coord-actions">
               <button
                 type="button"
                 className="button button-secondary memo-compact-button"
                 disabled={busy}
-                onClick={() => {
-                  setCoordsDraft("");
-                  updateDraft({ lat: null, lng: null });
-                  flushSave();
-                }}
+                onClick={onDeviceGps}
               >
-                {t("diveMemosClearGps")}
+                <Navigation size={14} /> {t("diveMemosUseGps")}
               </button>
-            ) : null}
+              <button
+                type="button"
+                className="button button-secondary memo-compact-button"
+                disabled={busy}
+                onClick={onPhotoGps}
+              >
+                <ImageIcon size={14} /> {t("diveMemosPhotoGps")}
+              </button>
+              {draft.lat != null || draft.lng != null ? (
+                <button
+                  type="button"
+                  className="button button-secondary memo-compact-button"
+                  disabled={busy}
+                  onClick={() => {
+                    setCoordsDraft("");
+                    updateDraft({ lat: null, lng: null });
+                    flushSave();
+                  }}
+                >
+                  {t("diveMemosClearGps")}
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
 

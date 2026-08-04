@@ -76,6 +76,7 @@ export default function RootLayout({
       >
         <AppI18nProvider>
           <PwaManager />
+          <div className="app-safe-top" aria-hidden="true" />
           <BetaNotice />
           {children}
         </AppI18nProvider>

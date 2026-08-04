@@ -1,7 +1,14 @@
 {
-  "version": "2026-08-01",
-  "updatedAt": "2026-08-01T12:00:00.000Z",
+  "version": "2026-08-05",
+  "updatedAt": "2026-08-05T00:00:00.000Z",
   "entries": [
+    {
+      "id": "2026-08-05-dive-memos",
+      "title": "Dive memos",
+      "body": "Jot date, time, location, buddies, and notes before a log exists. Open Dive memos from the import guide. Android debug APK 1.0.16 also fixes What's New / top bar placement under the status bar.",
+      "date": "2026-08-05",
+      "links": []
+    },
     {
       "id": "2026-08-01-catalog-offline",
       "title": "Offline site catalog",
