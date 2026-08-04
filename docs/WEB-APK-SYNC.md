@@ -89,8 +89,8 @@ as a GitHub Release asset.
 1. Review `git diff --name-only` and use the matrix above.
 2. For an APK release, increment `versionCode` and update `versionName` in
    `android/app/build.gradle`. The first debug release used `versionCode 1` /
-   `versionName "1.0"`; the current dogfood debug build uses `versionCode 15` /
-   `versionName "1.0.14"`. Confirm the build uses the same signing key as the
+   `versionName "1.0"`; the current dogfood debug build uses `versionCode 16` /
+   `versionName "1.0.15"`. Confirm the build uses the same signing key as the
    APK it is expected to update.
 3. Run `npm test`, commit the intended source changes, and push that commit to
    `main`. Record the commit ID; the APK release tag must target it.
@@ -129,7 +129,7 @@ as a GitHub Release asset.
    ```
 
    The last GitHub-published release asset is still `v0.1.0-debug.13`; local
-   dogfood is **1.0.14** until `v0.1.0-debug.14` is uploaded. Because the stable
+   dogfood is **1.0.15** until a matching `v0.1.0-debug.*` asset is uploaded. Because the stable
    URL uses GitHub's `releases/latest` alias, debug releases are currently
    published as normal latest releases rather than GitHub prereleases. If that
    policy changes, the download-link strategy must change too.
@@ -172,9 +172,8 @@ The current GitHub release is:
 
 - last GitHub release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.13`
   (stable download URL still serves that asset until a newer `--latest` release)
-- local dogfood APK: **1.0.14** / `versionCode 15` from commit `37e7dd0`
-- local SHA-256:
-  `AAD2011E7D7180D95CFB968E359ECFC612375AC8003E55C5F2A7FD916256D0CE`
+- local dogfood APK: **1.0.15** / `versionCode 16` (built from current `main`)
+- local SHA-256: recorded in HANDOFF after each dogfood install
 
 The debug APK is still signed by Android's debug tooling. An in-place Android
 update requires the same application ID, a compatible/higher `versionCode`,
