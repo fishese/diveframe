@@ -77,6 +77,11 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(about, /t\("aboutLicenseTitle"\)/);
   assert.match(about, /t\("aboutCatalogTitle"\)/);
   assert.match(about, /t\("aboutAssetLicense"\)/);
+  assert.match(appI18nEn, /aboutAssetLicense:.*OFL|Open Font License|bundled overlay fonts/i);
+  const appI18nZhHant = await readFile("lib/app-i18n/zh-Hant.ts", "utf8");
+  assert.match(appI18nEn, /Open Font License|OFL/);
+  assert.match(appI18nZhHant, /Open Font License|OFL|開放字型|開源字型/);
+  assert.match(appI18nJa, /Open Font License|OFL|オープン/);
   assert.match(about, /source:shearwater-only/);
   assert.match(about, /source:subsurface-only/);
   assert.match(userGuide, /\*\*Set in App\*\*/);
@@ -465,6 +470,12 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(catalogPrompt, /Return only the final UTF-8 JSON object/);
   assert.match(assetLicenses, /public\/backgrounds\/bubbles-bg\.jpg/);
   assert.match(assetLicenses, /CC BY-SA 4\.0/);
+  assert.match(assetLicenses, /SIL Open Font License|Open Font License 1\.1|OFL/);
+  assert.match(assetLicenses, /Noto Sans TC/);
+  assert.match(assetLicenses, /Inter/);
+  assert.match(assetLicenses, /Outfit/);
+  assert.match(assetLicenses, /Space Mono/);
+  assert.match(assetLicenses, /Huninn/);
   assert.match(app, /useAppI18n/);
   assert.doesNotMatch(app, /catalogNotesForDive/);
   assert.match(app, /photo-gallery-actions/);
@@ -526,6 +537,33 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     "utf8",
   );
   assert.match(globalStyles, /select option/);
+  assert.doesNotMatch(globalStyles, /fonts\.googleapis\.com/);
+  assert.doesNotMatch(globalStyles, /fonts\.gstatic\.com/);
+  assert.match(globalStyles, /overlay-fonts\.css/);
+
+  const overlayFontsCss = await readFile("app/overlay-fonts.css", "utf8");
+  for (const family of [
+    "Noto Sans TC",
+    "Inter",
+    "Outfit",
+    "Space Mono",
+    "Huninn",
+  ]) {
+    assert.match(overlayFontsCss, new RegExp(`font-family:\\s*['"]${family}['"]`));
+  }
+  assert.match(overlayFontsCss, /src:\s*url\(["']?\/fonts\/[^)"']+\.woff2/);
+  assert.doesNotMatch(overlayFontsCss, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
+
+  const { readdir } = await import("node:fs/promises");
+  const fontFiles = await readdir("public/fonts");
+  assert.ok(
+    fontFiles.some((name) => name.endsWith(".woff2")),
+    "expected committed WOFF2 files under public/fonts/",
+  );
+  assert.ok(
+    fontFiles.some((name) => /^OFL-/i.test(name) && name.endsWith(".txt")),
+    "expected OFL-*.txt license files under public/fonts/",
+  );
   assert.match(globalStyles, /color-scheme: dark/);
   assert.match(globalStyles, /env\(safe-area-inset-top/);
   assert.match(globalStyles, /var\(--safe-area-inset-top/);
