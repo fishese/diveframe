@@ -88,9 +88,9 @@ Shipped on `main` (pushed):
 - About page: softer intro, full Subsurface export called out, personal “why
   this exists” note, click-to-reveal contact email.
 - Android debug APK **1.0.15** (`versionCode 16`) was rebuilt from commit
-  `5046ab5` (sticky/export/memos + self-hosted fonts) and installed over
+  `dab7aad` (sticky/export/memos + GPS permission fix) and installed over
   wireless adb for dogfood. SHA-256 of the local `app-debug.apk` is
-  `FAADEBAEEB1C5D84D90A30C7EB69DAB4E63C708DD148831359AE9FF348DAB103`.
+  `D63D094D1EB7D987783A35A0F53C7EA57570414687A134EF4AFE88D630BF629E`.
   GitHub `releases/latest` / `diveframe-debug.apk` may still point at an older
   published asset until a new release is uploaded.
 - Current dogfooding state: local `main` and the adb-installed **1.0.15** APK

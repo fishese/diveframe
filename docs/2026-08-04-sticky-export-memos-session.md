@@ -33,10 +33,10 @@ pick them up.
 
 ## Dogfood
 
-- APK **1.0.15** (`versionCode 16`) from `5046ab5`, installed via wireless adb
+- APK **1.0.15** (`versionCode 16`) from `dab7aad`, installed via wireless adb
   on SM-S9280.
 - SHA-256:
-  `FAADEBAEEB1C5D84D90A30C7EB69DAB4E63C708DD148831359AE9FF348DAB103`.
+  `D63D094D1EB7D987783A35A0F53C7EA57570414687A134EF4AFE88D630BF629E`.
 
 ## Spec / plan
 
