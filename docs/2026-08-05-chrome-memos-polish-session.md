@@ -41,5 +41,7 @@ injection; rebuild and publish the debug APK from the same commit.
 ## Dogfood / release
 
 - APK **1.0.16** (`versionCode 17`), GitHub tag **`v0.1.0-debug.14`**, asset
-  `diveframe-debug.apk` (see `docs/WEB-APK-SYNC.md` and `HANDOFF.md` for
-  commit SHA and digest after publish).
+  `diveframe-debug.apk`, commit `2c4edc1`.
+- SHA-256:
+  `4F7616053D36B1DB7EF0C8C711FC6AFE3B76C839DF7119131B117CE42EA32F63`.
+- https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk

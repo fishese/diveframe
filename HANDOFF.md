@@ -93,8 +93,10 @@ Shipped on `main` (pushed):
 - About page: softer intro, full Subsurface export called out, personal “why
   this exists” note, click-to-reveal contact email.
 - Android debug APK **1.0.16** (`versionCode 17`) published as GitHub
-  `v0.1.0-debug.14` (`diveframe-debug.apk`). See `docs/WEB-APK-SYNC.md` for
-  the commit SHA and SHA-256 after the release step in that session.
+  `v0.1.0-debug.14` from commit `2c4edc1`. SHA-256:
+  `4F7616053D36B1DB7EF0C8C711FC6AFE3B76C839DF7119131B117CE42EA32F63`.
+  Stable download:
+  https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
 - Trilingual copy for newer memo strings may still need a dedicated pass in
   `lib/app-i18n/{en,ja,zh-Hant}.ts` (planned by the maintainer).
 
