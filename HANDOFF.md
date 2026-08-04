@@ -82,13 +82,18 @@ Shipped on `main` (pushed):
   `docs/FDROID-PATH.md`.
 - About page: softer intro, full Subsurface export called out, personal “why
   this exists” note, click-to-reveal contact email.
-- Android debug APK **1.0.13** (`versionCode 14`) was rebuilt from shared-client
-  commit `ade0a02` and published as GitHub release `v0.1.0-debug.13`, containing
-  `diveframe-debug.apk`; SHA-256 is
-  `F492EBAC37B79E8B7D570B31D8926CE6C7E2727F9FFAA710FBF127B2227D7BF2`.
-  The stable download URL uses `releases/latest`.
-- Current dogfooding state: the updated hosted web/PWA and Android APK are
-  ready for continued testing.
+- Android debug APK **1.0.14** (`versionCode 15`) was rebuilt from commit
+  `37e7dd0` (self-hosted overlay fonts + orphan prune on rebundle) and installed
+  over wireless adb for dogfood. SHA-256 of the local
+  `app-debug.apk` is
+  `AAD2011E7D7180D95CFB968E359ECFC612375AC8003E55C5F2A7FD916256D0CE`.
+  Airplane-mode Compose smoke on device confirmed overlay text still renders
+  from bundled fonts. GitHub `releases/latest` / `diveframe-debug.apk` still
+  points at the prior published **1.0.13** (`v0.1.0-debug.13`) until a new
+  release asset is uploaded.
+- Current dogfooding state: local `main` has self-hosted fonts; the adb-installed
+  **1.0.14** APK matches that client. Hosted web/PWA updates after push to
+  `origin/main`.
 
 Open follow-ups:
 

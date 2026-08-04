@@ -89,8 +89,8 @@ as a GitHub Release asset.
 1. Review `git diff --name-only` and use the matrix above.
 2. For an APK release, increment `versionCode` and update `versionName` in
    `android/app/build.gradle`. The first debug release used `versionCode 1` /
-   `versionName "1.0"`; the current debug build uses `versionCode 14` /
-   `versionName "1.0.13"`. Confirm the build uses the same signing key as the
+   `versionName "1.0"`; the current dogfood debug build uses `versionCode 15` /
+   `versionName "1.0.14"`. Confirm the build uses the same signing key as the
    APK it is expected to update.
 3. Run `npm test`, commit the intended source changes, and push that commit to
    `main`. Record the commit ID; the APK release tag must target it.
@@ -128,14 +128,15 @@ as a GitHub Release asset.
    https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
    ```
 
-   The current release is `v0.1.0-debug.13`. Because the stable URL uses GitHub's
-   `releases/latest` alias, debug releases are currently published as normal
-   latest releases rather than GitHub prereleases. If that policy changes, the
-   download-link strategy must change too.
+   The last GitHub-published release asset is still `v0.1.0-debug.13`; local
+   dogfood is **1.0.14** until `v0.1.0-debug.14` is uploaded. Because the stable
+   URL uses GitHub's `releases/latest` alias, debug releases are currently
+   published as normal latest releases rather than GitHub prereleases. If that
+   policy changes, the download-link strategy must change too.
 8. Copy/rename the Gradle output before uploading it as the release asset:
 
    ```powershell
-   $releaseTag = "v0.1.0-debug.13"
+   $releaseTag = "v0.1.0-debug.14"
    $releaseCommit = git rev-parse HEAD
    $releaseHash = (Get-FileHash `
      android\app\build\outputs\apk\debug\app-debug.apk `
@@ -169,11 +170,11 @@ As of 2026-08-03, the published Android build is an arm64 debug APK for manual
 installation. It is not a Play Store, signed production, or F-Droid release.
 The current GitHub release is:
 
-- release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.13`
-- asset: `diveframe-debug.apk`
-- source commit: `ade0a02a12c56f6beaf14144e866a56791802b4e`
-- SHA-256:
-  `F492EBAC37B79E8B7D570B31D8926CE6C7E2727F9FFAA710FBF127B2227D7BF2`
+- last GitHub release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.13`
+  (stable download URL still serves that asset until a newer `--latest` release)
+- local dogfood APK: **1.0.14** / `versionCode 15` from commit `37e7dd0`
+- local SHA-256:
+  `AAD2011E7D7180D95CFB968E359ECFC612375AC8003E55C5F2A7FD916256D0CE`
 
 The debug APK is still signed by Android's debug tooling. An in-place Android
 update requires the same application ID, a compatible/higher `versionCode`,
