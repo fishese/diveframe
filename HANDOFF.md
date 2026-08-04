@@ -73,9 +73,13 @@ Shipped on `main` (pushed):
   autocomplete (`,` / `，` / `、`); full Subsurface logbook export at
   `version="3"` with hex site UUIDs, skipping incomplete dives and showing
   inline status; compact Settings language/install/default-tank presentation.
-- Bubbles background relicensed **CC BY-SA 4.0** (DiveFrame developer). Noto Sans
-  TC kept for overlays; future system-font default noted as
-  `SYSTEM_OVERLAY_FONT_STACK` in `lib/composer-fonts.ts`.
+- Bubbles background relicensed **CC BY-SA 4.0** (DiveFrame developer). Overlay
+  fonts are self-hosted OFL WOFF2 under `public/fonts/` with local
+  `app/overlay-fonts.css`; refresh via `npm run bundle:overlay-fonts`. Noto Sans
+  TC remains the default; if Noto is dropped later, use
+  `SYSTEM_OVERLAY_FONT_STACK` in `lib/composer-fonts.ts`. **APK-affecting.**
+  Session: `docs/2026-08-04-self-hosted-fonts-session.md`. F-Droid outline:
+  `docs/FDROID-PATH.md`.
 - About page: softer intro, full Subsurface export called out, personal “why
   this exists” note, click-to-reveal contact email.
 - Android debug APK **1.0.13** (`versionCode 14`) was rebuilt from shared-client
@@ -115,6 +119,9 @@ Session detail: `docs/2026-08-01-ble-product-import-session.md`.
 
 2026-08-04 UI, Subsurface v3, Bubbles CC BY-SA, and About:
 `docs/2026-08-04-ui-export-about-session.md`.
+
+2026-08-04 self-hosted overlay fonts:
+`docs/2026-08-04-self-hosted-fonts-session.md`.
 
 Deep review findings and follow-up recommendations:
 `docs/2026-08-03-deep-code-audit.md`.
@@ -528,14 +535,15 @@ Logo placement combines the existing data-driven anchor with normalized
 fraction of canvas size, then clamps the logo within the canvas. Defaults are
 zero, so older saved composer settings retain their previous appearance.
 
-Overlay fonts are loaded from the public Google Fonts stylesheet imported by
-`app/globals.css`: Noto Sans TC (kept for now; APK is still small), Inter,
-Outfit, Space Mono, and Huninn. Device Sans uses a system stack covering EN /
-ZH-Hant / JA without a download (`SYSTEM_OVERLAY_FONT_STACK` in
-`lib/composer-fonts.ts`). If Noto is removed later to shrink the install, make
-that system stack the default. The renderer waits for all requested weights
-before preview or export. A single saved font-colour setting is used for all
-textual overlay content, including category, statistics, legends, and chart
+Overlay fonts are self-hosted OFL WOFF2 under `public/fonts/`, loaded via
+`app/overlay-fonts.css` (imported from `app/globals.css`): Noto Sans TC (kept
+as default; APK is still small), Inter, Outfit, Space Mono, and Huninn. Device
+Sans uses a system stack covering EN / ZH-Hant / JA without a download
+(`SYSTEM_OVERLAY_FONT_STACK` in `lib/composer-fonts.ts`). If Noto is removed
+later to shrink the install, make that system stack the default. Maintainer
+refresh: `npm run bundle:overlay-fonts`. The renderer waits for all requested
+weights before preview or export. A single saved font-colour setting is used for
+all textual overlay content, including category, statistics, legends, and chart
 axes.
 
 Site display priority is user override, linked source name, app catalog/OSM

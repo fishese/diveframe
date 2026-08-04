@@ -17,9 +17,8 @@ user-reported UI/export fixes, Bubbles relicensing, and About copy.
 
 - Bubbles sample background is **CC BY-SA 4.0**, copyright DiveFrame developer
   (`ASSET-LICENSES.md`, LICENSE, README, About/i18n, guides).
-- Overlay fonts: keep bundled/remote **Noto Sans TC** for now. Future default if
-  Noto is dropped: `SYSTEM_OVERLAY_FONT_STACK` in `lib/composer-fonts.ts`
-  (EN / ZH-Hant / JA system faces). Self-hosting fonts was explored and deferred.
+- Overlay fonts: superseded by self-hosted OFL — see
+  `docs/2026-08-04-self-hosted-fonts-session.md`.
 
 ## About
 

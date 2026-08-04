@@ -199,8 +199,8 @@ current browser profile and web address. The source files are read in the
 browser and never modified.
 
 DiveFrame does not store the logbook on its server. Map-name and nearby-site
-lookups use network services. Public webfonts may also be downloaded by the
-browser.
+lookups use network services. Composer overlay fonts are bundled with the app
+for offline use (SIL OFL families listed in `ASSET-LICENSES.md`).
 
 For a named dive without GPS, DiveFrame first searches the complete location
 text. If that fails and the name contains comma-separated place levels, it
@@ -425,7 +425,8 @@ time, for example `diveframe-20260517 14-03.jpg`. The time separator is a
 hyphen so the file remains valid on Windows.
 
 The overlay font menu includes Noto Sans TC, Inter, Outfit, Space Mono, Huninn,
-and Device Sans. The font-colour picker applies one colour consistently to the
+and Device Sans (the same faces as before; all are bundled for offline use
+except Device Sans, which uses system faces). The font-colour picker applies one colour consistently to the
 site, category, date, statistics, chart legend, and axis labels.
 
 When a logo is enabled, choose its preset anchor and then use the horizontal
