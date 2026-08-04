@@ -2821,14 +2821,16 @@ button {
 
 .memo-field-grid label,
 .memo-time-row,
-.memo-coords {
+.memo-date-field,
+.memo-coords-row {
   display: grid;
   gap: 8px;
 }
 
 .memo-field-grid label > span,
 .memo-time-row > span,
-.memo-coords > span {
+.memo-date-field > span,
+.memo-coords-row > span {
   color: var(--mist);
   font-size: 12px;
   font-weight: 700;
@@ -2840,13 +2842,13 @@ button {
 .memo-field-grid select,
 .memo-field-grid textarea,
 .memo-time-controls select,
-.memo-stepper input {
+.memo-time-controls input {
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid var(--line);
   border-radius: 10px;
   color: var(--foam);
   font: inherit;
-  padding: 10px 12px;
+  padding: 8px 10px;
   width: 100%;
 }
 
@@ -2858,42 +2860,84 @@ button {
   grid-column: 1 / -1;
 }
 
+.memo-datetime-row {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+}
+
+.memo-date-field {
+  flex: 0 0 auto;
+}
+
+.memo-date-field input[type="date"] {
+  box-sizing: border-box;
+  height: 38px;
+  max-width: 11.5rem;
+  min-height: 0;
+  width: 11.5rem;
+}
+
+.memo-time-row {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .memo-time-controls {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
-.memo-stepper {
-  align-items: center;
-  display: inline-grid;
-  gap: 2px;
-  justify-items: center;
+.memo-step-button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 8px;
 }
 
-.memo-stepper input {
+.memo-hour-input,
+.memo-minute-input {
   text-align: center;
-  width: 4.2rem;
+  width: 3.4rem;
+}
+
+.memo-meridiem-select {
+  width: 4.5rem;
 }
 
 .memo-time-colon {
   color: var(--mist);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
 }
 
-.memo-coord-values {
-  color: var(--foam);
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 13px;
-  margin: 0;
-}
-
-.memo-coord-actions {
+.memo-coords-line {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.memo-coords-input {
+  flex: 1 1 12rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+  min-width: 10rem;
+}
+
+.memo-compact-button {
+  font-size: 12px;
+  gap: 4px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.memo-compact-button svg {
+  flex-shrink: 0;
 }
 
 .memos-add {
@@ -2907,6 +2951,16 @@ button {
 
   .memo-field-grid {
     grid-template-columns: 1fr;
+  }
+
+  .memo-datetime-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .memo-date-field input[type="date"] {
+    max-width: none;
+    width: 100%;
   }
 }
 

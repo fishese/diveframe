@@ -50,7 +50,7 @@ test("stepMemoHour wraps 12↔1 without depending on meridiem", () => {
   assert.equal(stepMemoHour(null, 1), 11);
 });
 
-test("normalizeMemoMinute treats empty as 0", () => {
+test("normalizeMemoMinute treats empty as 0 and accepts 0–59", () => {
   assert.equal(normalizeMemoMinute(null), 0);
   assert.equal(normalizeMemoMinute(undefined), 0);
   assert.equal(normalizeMemoMinute(""), 0);
@@ -58,6 +58,10 @@ test("normalizeMemoMinute treats empty as 0", () => {
   assert.equal(normalizeMemoMinute(15), 15);
   assert.equal(normalizeMemoMinute(30), 30);
   assert.equal(normalizeMemoMinute(45), 45);
+  assert.equal(normalizeMemoMinute(7), 7);
+  assert.equal(normalizeMemoMinute(59), 59);
+  assert.equal(normalizeMemoMinute(60), 0);
+  assert.equal(normalizeMemoMinute(-1), 0);
 });
 
 test("createDiveMemoId returns a UUID string", () => {

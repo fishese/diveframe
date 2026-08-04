@@ -5,7 +5,8 @@ export type DiveMemo = {
   heading: string;
   date: string;
   hour: number | null;
-  minute: DiveMemoMinute | null;
+  /** Minutes 0–59; empty/null treated as 0 when saving. */
+  minute: number | null;
   meridiem: "AM" | "PM";
   location: string | null;
   lat: number | null;
@@ -69,15 +70,16 @@ export function stepMemoHour(
   return next;
 }
 
-/** Empty / null minute is treated as :00 when saving or matching. */
+/** Empty / null minute is treated as :00 when saving or matching.
+ *  Accepts any integer 0–59; invalid values fall back to 0. */
 export function normalizeMemoMinute(
-  minute: DiveMemoMinute | number | null | undefined | "",
-): DiveMemoMinute {
+  minute: number | null | undefined | "",
+): number {
   if (minute === null || minute === undefined || minute === "") return 0;
-  if (minute === 0 || minute === 15 || minute === 30 || minute === 45) {
-    return minute;
-  }
-  return 0;
+  if (!Number.isFinite(minute)) return 0;
+  const truncated = Math.trunc(minute);
+  if (truncated < 0 || truncated > 59) return 0;
+  return truncated;
 }
 
 export function createDiveMemoId(): string {

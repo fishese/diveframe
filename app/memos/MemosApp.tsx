@@ -4,11 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
-  ChevronDown,
-  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Image as ImageIcon,
   LoaderCircle,
-  MapPin,
   Navigation,
   Plus,
   Trash2,
@@ -23,13 +22,16 @@ import {
   normalizeMemoMinute,
   stepMemoHour,
   type DiveMemo,
-  type DiveMemoMinute,
 } from "@/lib/dive-memos";
 import {
   deleteLocalDiveMemo,
   listLocalDiveMemos,
   saveLocalDiveMemo,
 } from "@/lib/indexed-db";
+import {
+  formatCoordinatePair,
+  parseCoordinatePair,
+} from "@/lib/coordinate-input";
 import { photoLocationCapability } from "@/lib/photo-location-capability";
 import { readPhotoExifGps } from "@/lib/photo-exif-gps";
 import type { AppTranslate } from "@/lib/app-i18n";
@@ -37,7 +39,7 @@ import type { AppTranslate } from "@/lib/app-i18n";
 const NOTES_PLACEHOLDER =
   "Note other info such as gas mixes, weight, exposures here so you can refer to it after you import the log";
 
-const MINUTE_OPTIONS: DiveMemoMinute[] = [0, 15, 30, 45];
+const MINUTE_SUGGESTIONS = [0, 15, 30, 45] as const;
 
 export function MemosApp() {
   const { t } = useAppI18n();
@@ -350,10 +352,36 @@ function MemoCard({
   t: AppTranslate;
 }) {
   const headingRef = useRef<HTMLInputElement>(null);
+  const [coordsDraft, setCoordsDraft] = useState(
+    formatCoordinatePair(memo.lat, memo.lng),
+  );
+  const coordsInvalid =
+    coordsDraft.trim() !== "" && parseCoordinatePair(coordsDraft) === null;
 
   useEffect(() => {
     if (editingHeading) headingRef.current?.focus();
   }, [editingHeading]);
+
+  useEffect(() => {
+    setCoordsDraft(formatCoordinatePair(memo.lat, memo.lng));
+  }, [memo.lat, memo.lng]);
+
+  function commitCoordsDraft() {
+    if (coordsDraft.trim() === "") {
+      if (memo.lat != null || memo.lng != null) {
+        onChange({ ...memo, lat: null, lng: null });
+      }
+      return;
+    }
+    const parsed = parseCoordinatePair(coordsDraft);
+    if (!parsed) return;
+    if (parsed.latitude === memo.lat && parsed.longitude === memo.lng) return;
+    onChange({
+      ...memo,
+      lat: parsed.latitude,
+      lng: parsed.longitude,
+    });
+  }
 
   return (
     <article className="memo-card">
@@ -397,35 +425,36 @@ function MemoCard({
       </header>
 
       <div className="memo-field-grid">
-        <label>
-          <span>{t("diveMemosDate")}</span>
-          <input
-            type="date"
-            value={memo.date}
-            disabled={busy}
-            onChange={(event) => onChange({ ...memo, date: event.target.value })}
-          />
-        </label>
+        <div className="memo-datetime-row memo-span-2">
+          <label className="memo-date-field">
+            <span>{t("diveMemosDate")}</span>
+            <input
+              type="date"
+              value={memo.date}
+              disabled={busy}
+              onChange={(event) => onChange({ ...memo, date: event.target.value })}
+            />
+          </label>
 
-        <div className="memo-time-row">
-          <span>{t("diveMemosTime")}</span>
-          <div className="memo-time-controls">
-            <div className="memo-stepper">
+          <div className="memo-time-row">
+            <span>{t("diveMemosTime")}</span>
+            <div className="memo-time-controls">
               <button
                 type="button"
-                className="button button-quiet"
+                className="button button-quiet memo-step-button"
                 disabled={busy}
                 onClick={() =>
                   onChange({
                     ...memo,
-                    hour: stepMemoHour(memo.hour, 1),
+                    hour: stepMemoHour(memo.hour, -1),
                   })
                 }
-                aria-label={t("diveMemosHourUp")}
+                aria-label={t("diveMemosHourDown")}
               >
-                <ChevronUp size={14} />
+                <ChevronLeft size={14} />
               </button>
               <input
+                className="memo-hour-input"
                 type="number"
                 min={1}
                 max={12}
@@ -446,51 +475,68 @@ function MemoCard({
               />
               <button
                 type="button"
-                className="button button-quiet"
+                className="button button-quiet memo-step-button"
                 disabled={busy}
                 onClick={() =>
                   onChange({
                     ...memo,
-                    hour: stepMemoHour(memo.hour, -1),
+                    hour: stepMemoHour(memo.hour, 1),
                   })
                 }
-                aria-label={t("diveMemosHourDown")}
+                aria-label={t("diveMemosHourUp")}
               >
-                <ChevronDown size={14} />
+                <ChevronRight size={14} />
               </button>
+              <span className="memo-time-colon">:</span>
+              <input
+                className="memo-minute-input"
+                type="number"
+                min={0}
+                max={59}
+                list={`memo-minute-suggestions-${memo.id}`}
+                value={
+                  memo.minute === null || memo.minute === undefined
+                    ? ""
+                    : String(normalizeMemoMinute(memo.minute)).padStart(2, "0")
+                }
+                disabled={busy}
+                onChange={(event) => {
+                  const raw = event.target.value;
+                  if (raw === "") {
+                    onChange({ ...memo, minute: null });
+                    return;
+                  }
+                  const value = Number(raw);
+                  if (!Number.isFinite(value)) return;
+                  const clamped = Math.min(59, Math.max(0, Math.trunc(value)));
+                  onChange({ ...memo, minute: clamped });
+                }}
+                aria-label={t("diveMemosMinute")}
+              />
+              <datalist id={`memo-minute-suggestions-${memo.id}`}>
+                {MINUTE_SUGGESTIONS.map((minute) => (
+                  <option
+                    key={minute}
+                    value={String(minute).padStart(2, "0")}
+                  />
+                ))}
+              </datalist>
+              <select
+                className="memo-meridiem-select"
+                value={memo.meridiem}
+                disabled={busy}
+                onChange={(event) =>
+                  onChange({
+                    ...memo,
+                    meridiem: event.target.value === "PM" ? "PM" : "AM",
+                  })
+                }
+                aria-label={t("diveMemosMeridiem")}
+              >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
             </div>
-            <span className="memo-time-colon">:</span>
-            <select
-              value={normalizeMemoMinute(memo.minute)}
-              disabled={busy}
-              onChange={(event) =>
-                onChange({
-                  ...memo,
-                  minute: Number(event.target.value) as DiveMemoMinute,
-                })
-              }
-              aria-label={t("diveMemosMinute")}
-            >
-              {MINUTE_OPTIONS.map((minute) => (
-                <option key={minute} value={minute}>
-                  {String(minute).padStart(2, "0")}
-                </option>
-              ))}
-            </select>
-            <select
-              value={memo.meridiem}
-              disabled={busy}
-              onChange={(event) =>
-                onChange({
-                  ...memo,
-                  meridiem: event.target.value === "PM" ? "PM" : "AM",
-                })
-              }
-              aria-label={t("diveMemosMeridiem")}
-            >
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
           </div>
         </div>
 
@@ -506,38 +552,51 @@ function MemoCard({
           />
         </label>
 
-        <div className="memo-span-2 memo-coords">
+        <div className="memo-span-2 memo-coords-row">
           <span>{t("diveMemosCoordinates")}</span>
-          <p className="memo-coord-values">
-            {memo.lat != null && memo.lng != null
-              ? `${memo.lat.toFixed(5)}, ${memo.lng.toFixed(5)}`
-              : t("diveMemosNoCoordinates")}
-          </p>
-          <div className="memo-coord-actions">
+          <div className="memo-coords-line">
+            <input
+              className="memo-coords-input"
+              type="text"
+              value={coordsDraft}
+              disabled={busy}
+              placeholder="19.09876, 72.87643"
+              autoComplete="off"
+              spellCheck={false}
+              aria-invalid={coordsInvalid}
+              onChange={(event) => setCoordsDraft(event.target.value)}
+              onBlur={() => commitCoordsDraft()}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                }
+              }}
+              aria-label={t("diveMemosCoordinates")}
+            />
             <button
               type="button"
-              className="button button-secondary"
+              className="button button-secondary memo-compact-button"
               disabled={busy}
               onClick={onDeviceGps}
             >
-              <Navigation size={16} /> {t("diveMemosUseGps")}
+              <Navigation size={14} /> {t("diveMemosUseGps")}
             </button>
             <button
               type="button"
-              className="button button-secondary"
+              className="button button-secondary memo-compact-button"
               disabled={busy}
               onClick={onPhotoGps}
             >
-              <ImageIcon size={16} /> {t("diveMemosPhotoGps")}
+              <ImageIcon size={14} /> {t("diveMemosPhotoGps")}
             </button>
             {memo.lat != null || memo.lng != null ? (
               <button
                 type="button"
-                className="button button-quiet"
+                className="button button-quiet memo-compact-button"
                 disabled={busy}
                 onClick={() => onChange({ ...memo, lat: null, lng: null })}
               >
-                <MapPin size={16} /> {t("diveMemosClearGps")}
+                {t("diveMemosClearGps")}
               </button>
             ) : null}
           </div>

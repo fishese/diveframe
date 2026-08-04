@@ -652,7 +652,7 @@ export const zhHant: Record<keyof typeof en, string> = {
   diveMemosLocation: "地點",
   diveMemosCoordinates: "座標",
   diveMemosNoCoordinates: "尚未有座標",
-  diveMemosUseGps: "使用裝置 GPS",
+  diveMemosUseGps: "使用 GPS",
   diveMemosPhotoGps: "使用相片位置",
   diveMemosClearGps: "清除座標",
   deleteMemo: "刪除備忘",
