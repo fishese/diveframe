@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
@@ -96,11 +96,24 @@ for (const [remote, local] of urlToLocal) {
   console.log(`wrote public/fonts/${local} (${buf.length} bytes)`);
 }
 
+const keep = new Set([...urlToLocal.values()]);
 for (const entry of OFL_SOURCES) {
   const text = await fetchText(entry.url);
   const name = `OFL-${entry.id}.txt`;
   writeFileSync(resolve(FONTS_DIR, name), text, "utf8");
+  keep.add(name);
   console.log(`wrote public/fonts/${name}`);
+}
+
+for (const name of readdirSync(FONTS_DIR)) {
+  if (keep.has(name)) {
+    continue;
+  }
+  if (!name.endsWith(".woff2") && !/^OFL-.*\.txt$/i.test(name)) {
+    continue;
+  }
+  unlinkSync(resolve(FONTS_DIR, name));
+  console.log(`removed orphan public/fonts/${name}`);
 }
 
 console.log(`wrote ${OUT_CSS}`);
