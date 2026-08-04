@@ -120,8 +120,8 @@ reviewers.
 - New composers default to social-media JPEG output. The last selected output
   size, format, and JPEG quality are reused on new dives, and exported files
   use the dive date/time in a Windows-safe filename.
-- A curated overlay-font menu with public Traditional Chinese/Latin webfonts:
-  Noto Sans TC, Inter, Outfit, Space Mono, and Huninn, plus Device Sans.
+- A curated overlay-font menu with bundled SIL OFL Traditional Chinese/Latin
+  faces: Noto Sans TC, Inter, Outfit, Space Mono, and Huninn, plus Device Sans.
   One font-colour control applies consistently to all text content.
 - Depth-profile charts from Subsurface samples, with optional sparse tank
   pressure and temperature telemetry, plus optional elapsed-time and depth axes
