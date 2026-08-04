@@ -26,7 +26,8 @@ browser or phone unless you export it.
 - **Trips, edits, memos.** Group dives, correct site and location, and jot
   pre-import memos so details aren’t lost between the water and the log.
 - **Export & backup.** Full Subsurface logbook export, plus a private on-device
-  backup (optional password) for browser ↔ browser or browser ↔ Android.
+  backup (optional password) for browser ↔ browser or browser ↔ Android —
+  your data stays offline.
 - **Android APK.** Same app, plus classic Shearwater Bluetooth download and
   native save/share —
   [download the debug APK](https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk).

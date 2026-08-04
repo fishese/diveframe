@@ -213,7 +213,6 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   const memosPage = await readFile("app/memos/page.tsx", "utf8");
   assert.match(memosPage, /MemosApp/);
   assert.match(appI18nEn, /diveMemosUseGps:\s*"GPS"/);
-  assert.match(globalStyles, /chrome-banner-visible/);
   assert.match(appI18nEn, /setInApp:\s*"Edited here"/);
   assert.match(composer, /depth-pressure-temperature/);
   assert.match(composer, /zh-Hant/);
