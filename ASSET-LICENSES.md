@@ -19,3 +19,23 @@ See <https://creativecommons.org/licenses/by-sa/4.0/> for the full legal text.
 
 The DiveFrame software remains GPL-3.0-or-later. Redistributors may keep this
 CC BY-SA image in a fork when they comply with CC BY-SA 4.0.
+
+## Overlay fonts
+
+DiveFrame bundles the following SIL Open Font License 1.1 (OFL) families for
+offline composer overlays (web, PWA, and Android APK):
+
+- Noto Sans TC
+- Inter
+- Outfit
+- Space Mono
+- Huninn
+
+Binary files live under `public/fonts/` as unmodified `.woff2` redistributions.
+Per-family OFL text is stored as `public/fonts/OFL-*.txt`. See
+<https://openfontlicense.org/> for the license terms.
+
+These fonts were acquired via the Google Fonts CSS API for packaging only.
+DiveFrame does not load `fonts.googleapis.com` or `fonts.gstatic.com` at
+runtime. Device Sans continues to use the device system font stack and is not
+an OFL bundle.

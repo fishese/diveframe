@@ -105,7 +105,7 @@ export const ja: Record<keyof typeof en, string> = {
   aboutLicenseEyebrow: "オープンソース",
   aboutLicenseTitle: "フォークして、改善して、オープンなままに。",
   aboutLicenseDescription: "DiveFrameはGNU General Public License v3.0以降で提供されるフリーソフトウェアです。フォーク、調査、変更、再配布が可能ですが、再配布版も同じオープンソースライセンスで利用できる状態にしてください。",
-  aboutAssetLicense: "付属のBubblesサンプル背景はDiveFrame開発者の著作物で、CC BY-SA 4.0でライセンスされています。帰属表示と同一条件下での配布については、素材ライセンスの注意事項をご確認ください。",
+  aboutAssetLicense: "付属のBubblesサンプル背景はDiveFrame開発者の著作物で、CC BY-SA 4.0でライセンスされています。同梱のオーバーレイフォント（Noto Sans TC、Inter、Outfit、Space Mono、Huninn）はSIL Open Font License 1.1（OFL）です。帰属表示・同一条件下での配布およびOFLについては、素材ライセンスの注意事項をご確認ください。",
   openLogbook: "ログブックを開く",
   openBackupTools: "バックアップツールを開く",
   importLog: "ログを読み込む",

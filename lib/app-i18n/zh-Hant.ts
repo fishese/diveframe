@@ -105,7 +105,7 @@ export const zhHant: Record<keyof typeof en, string> = {
   aboutLicenseEyebrow: "開放源碼",
   aboutLicenseTitle: "歡迎建立分支及改進，並請保持開放源碼。",
   aboutLicenseDescription: "DiveFrame 是依 GNU 通用公眾授權條款第 3 版或任何後續版本發布的自由軟件。歡迎建立分支、研究、修改及再發布；再發布的版本須繼續以相同的開放源碼授權條款提供。",
-  aboutAssetLicense: "內置的 Bubbles 範例背景版權歸 DiveFrame 開發者所有，並以 CC BY-SA 4.0 授權。請參閱素材授權聲明以了解署名與相同方式分享條款。",
+  aboutAssetLicense: "內置的 Bubbles 範例背景版權歸 DiveFrame 開發者所有，並以 CC BY-SA 4.0 授權。內置疊加字型（Noto Sans TC、Inter、Outfit、Space Mono、Huninn）以 SIL Open Font License 1.1（OFL）授權。請參閱素材授權聲明以了解署名、相同方式分享與 OFL 條款。",
   openLogbook: "開啟潛水紀錄",
   openBackupTools: "開啟備份工具",
   importLog: "匯入紀錄",

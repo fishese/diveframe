@@ -92,7 +92,7 @@ export const en = {
   aboutLicenseEyebrow: "Open source",
   aboutLicenseTitle: "Fork it. Improve it. Keep it open.",
   aboutLicenseDescription: "DiveFrame is free software licensed under the GNU General Public License v3.0 or later. You are welcome to fork, study, modify, and redistribute it, provided redistributed versions remain available under the same open-source license.",
-  aboutAssetLicense: "The included Bubbles sample background is copyrighted by the DiveFrame developer and licensed under CC BY-SA 4.0. See the asset notice for attribution and share-alike terms.",
+  aboutAssetLicense: "The included Bubbles sample background is copyrighted by the DiveFrame developer and licensed under CC BY-SA 4.0. Bundled overlay fonts (Noto Sans TC, Inter, Outfit, Space Mono, and Huninn) are SIL Open Font License 1.1. See the asset notice for attribution and share-alike / OFL terms.",
   openLogbook: "Open logbook",
   openBackupTools: "Open backup tools",
   importLog: "Import log",
