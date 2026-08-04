@@ -58,8 +58,8 @@ select option {
   font-size: 12px;
   gap: 9px;
   justify-content: center;
-  line-height: 1.45;
-  padding: calc(8px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))) 4vw 8px;
+  line-height: 1.35;
+  padding: calc(6px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))) 4vw 6px;
 }
 
 .beta-notice > svg {
@@ -137,6 +137,13 @@ button {
   position: sticky;
   top: 0;
   z-index: 50;
+}
+
+/* Banner already consumes the status-bar inset; avoid a second empty band. */
+html.chrome-banner-visible .topbar,
+html.chrome-banner-visible .composer-topbar {
+  min-height: 52px;
+  padding-top: 0;
 }
 
 .brand {
@@ -2413,7 +2420,7 @@ button {
 
 .import-guide-page {
   min-height: calc(100vh - 82px);
-  padding: 34px 4vw 64px;
+  padding: 20px 4vw 64px;
 }
 
 .import-guide-shell {
@@ -2749,47 +2756,48 @@ button {
 .memos-shell {
   margin: 0 auto;
   max-width: 760px;
-  padding: 36px 24px 90px;
+  padding: 16px 24px 72px;
 }
 
 .memos-hero {
-  margin-bottom: 28px;
+  margin-bottom: 12px;
   max-width: 640px;
 }
 
-.memos-hero h1 {
-  font-size: clamp(34px, 5vw, 52px);
-  letter-spacing: -0.05em;
-  line-height: 1;
+.memos-hero > p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
   margin: 0;
 }
 
-.memos-hero > p:last-of-type {
-  color: var(--muted);
-  font-size: 15px;
-  line-height: 1.6;
-  margin: 14px 0 0;
+.memos-hero .composer-status {
+  margin-top: 8px;
 }
 
 .memos-list {
   display: grid;
-  gap: 18px;
+  gap: 12px;
 }
 
 .memo-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 12px;
   display: grid;
-  gap: 16px;
-  padding: 18px;
-  scroll-margin-top: calc(72px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  gap: 10px;
+  padding: 12px 14px;
+  scroll-margin-top: calc(56px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+}
+
+html.chrome-banner-visible .memo-card {
+  scroll-margin-top: 56px;
 }
 
 .memo-card-header {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: space-between;
 }
 
@@ -2797,14 +2805,14 @@ button {
 .memo-heading-input {
   background: transparent;
   border: 0;
-  color: var(--foam);
+  color: #f5fbfa;
   flex: 1;
   font: inherit;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.03em;
   min-width: 0;
-  padding: 4px 0;
+  padding: 2px 0;
   text-align: left;
 }
 
@@ -2816,7 +2824,7 @@ button {
 
 .memo-field-grid {
   display: grid;
-  gap: 14px 16px;
+  gap: 8px 12px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -2825,7 +2833,7 @@ button {
 .memo-date-field,
 .memo-coords-row {
   display: grid;
-  gap: 8px;
+  gap: 4px;
 }
 
 .memo-field-grid label > span,
@@ -2833,7 +2841,7 @@ button {
 .memo-date-field > span,
 .memo-coords-row > span {
   color: var(--mist);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2846,14 +2854,16 @@ button {
 .memo-time-controls input {
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--foam);
+  border-radius: 8px;
+  color: #f5fbfa;
   font: inherit;
-  padding: 8px 10px;
+  font-size: 14px;
+  padding: 6px 8px;
   width: 100%;
 }
 
 .memo-field-grid textarea {
+  min-height: 4.5rem;
   resize: vertical;
 }
 
@@ -2864,8 +2874,8 @@ button {
 .memo-datetime-row {
   align-items: end;
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px 24px;
+  flex-wrap: nowrap;
+  gap: 12px;
 }
 
 .memo-date-field {
@@ -2874,10 +2884,10 @@ button {
 
 .memo-date-field input[type="date"] {
   box-sizing: border-box;
-  height: 38px;
-  max-width: 11.5rem;
+  height: 34px;
+  max-width: 10.5rem;
   min-height: 0;
-  width: 11.5rem;
+  width: 10.5rem;
 }
 
 .memo-time-row {
@@ -2888,29 +2898,33 @@ button {
 .memo-time-controls {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-wrap: nowrap;
+  gap: 4px;
 }
 
 .memo-step-button {
-  height: 32px;
-  min-height: 32px;
-  padding: 0 8px;
+  flex: 0 0 auto;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 6px;
 }
 
 .memo-hour-input,
 .memo-minute-input {
+  flex: 0 0 auto;
   text-align: center;
-  width: 3.4rem;
+  width: 2.8rem;
 }
 
 .memo-meridiem-select {
-  width: 4.5rem;
+  flex: 0 0 auto;
+  width: 3.8rem;
 }
 
 .memo-time-colon {
   color: var(--mist);
-  font-size: 18px;
+  flex: 0 0 auto;
+  font-size: 16px;
   font-weight: 700;
 }
 
@@ -2918,22 +2932,23 @@ button {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .memo-coords-input {
-  flex: 1 1 12rem;
+  flex: 1 1 8rem;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 13px;
-  min-width: 10rem;
+  font-size: 12px;
+  min-width: 0;
 }
 
 .memo-compact-button {
-  font-size: 12px;
-  gap: 4px;
-  height: 32px;
-  min-height: 32px;
-  padding: 0 10px;
+  flex: 0 0 auto;
+  font-size: 11px;
+  gap: 3px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 8px;
   white-space: nowrap;
 }
 
@@ -2942,16 +2957,18 @@ button {
 }
 
 .memos-add {
-  margin: 0 0 18px;
+  margin: 0 0 10px;
+  min-height: 36px;
+  padding: 8px 12px;
 }
 
 .memos-list + .memos-add {
-  margin: 20px 0 0;
+  margin: 12px 0 0;
 }
 
 @media (max-width: 640px) {
   .memos-shell {
-    padding: 28px 18px 72px;
+    padding: 10px 14px 56px;
   }
 
   .memo-field-grid {
@@ -2959,13 +2976,35 @@ button {
   }
 
   .memo-datetime-row {
-    align-items: stretch;
-    flex-direction: column;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .memo-date-field {
+    flex: 1 1 auto;
   }
 
   .memo-date-field input[type="date"] {
     max-width: none;
     width: 100%;
+  }
+
+  .memo-time-row {
+    flex: 1 1 100%;
+  }
+
+  .memo-coords-line {
+    flex-wrap: nowrap;
+  }
+
+  .memo-coords-input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .memo-compact-button {
+    padding: 0 6px;
   }
 }
 
@@ -4209,6 +4248,16 @@ button {
       0;
   }
 
+  html.chrome-banner-visible .topbar,
+  html.chrome-banner-visible .composer-topbar {
+    min-height: 48px;
+    padding-top: 0;
+  }
+
+  html.chrome-banner-visible .composer-preview-pane {
+    top: 48px;
+  }
+
   .brand-mark {
     border-radius: 8px;
     height: 30px;
@@ -4783,7 +4832,7 @@ button {
 
 @media (max-width: 560px) {
   .import-guide-page {
-    padding: 34px 18px 60px;
+    padding: 16px 18px 60px;
   }
 
   .import-guide-shell h1 {

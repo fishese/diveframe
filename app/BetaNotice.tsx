@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AlertTriangle, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getLocalAppPreferences, saveLocalAppPreferences } from "@/lib/indexed-db";
 import { fetchWhatsNewDocument, type WhatsNewDocument } from "@/lib/whats-new";
 import { useAppI18n } from "./AppI18nProvider";
@@ -11,6 +11,7 @@ export function BetaNotice() {
   const { t } = useAppI18n();
   const [whatsNew, setWhatsNew] = useState<WhatsNewDocument | null>(null);
   const [lastSeenVersion, setLastSeenVersion] = useState<string | null>(null);
+  const noticeRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -48,11 +49,32 @@ export function BetaNotice() {
     };
   }, []);
 
+  useEffect(() => {
+    const notice = noticeRef.current;
+    if (!notice) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        document.documentElement.classList.toggle(
+          "chrome-banner-visible",
+          Boolean(entry?.isIntersecting),
+        );
+      },
+      { threshold: 0 },
+    );
+    observer.observe(notice);
+    return () => {
+      observer.disconnect();
+      document.documentElement.classList.remove("chrome-banner-visible");
+    };
+  }, []);
+
   const unread = whatsNew !== null && whatsNew.version !== lastSeenVersion;
   const latestEntry = whatsNew?.entries[whatsNew.entries.length - 1] ?? null;
 
   return (
     <aside
+      ref={noticeRef}
       className={`beta-notice ${unread ? "whats-new-notice" : ""}`}
       aria-label={unread ? t("whatsNew") : t("betaNoticeLabel")}
     >

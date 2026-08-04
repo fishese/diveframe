@@ -251,8 +251,7 @@ export function MemosApp() {
 
       <div className="memos-shell">
         <section className="memos-hero">
-          <p className="eyebrow">{t("diveMemosEyebrow")}</p>
-          <h1>{t("diveMemosTitle")}</h1>
+          <h1 className="visually-hidden">{t("diveMemosTitle")}</h1>
           <p>{t("diveMemosIntro")}</p>
           {status ? <p className="composer-status">{status}</p> : null}
         </section>

@@ -212,7 +212,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(memosApp, /saveLocalDivePhoto|addLocalDivePhoto/);
   const memosPage = await readFile("app/memos/page.tsx", "utf8");
   assert.match(memosPage, /MemosApp/);
-  assert.match(appI18nEn, /diveMemosTitle:\s*"Dive memos"/);
+  assert.match(appI18nEn, /diveMemosUseGps:\s*"GPS"/);
+  assert.match(globalStyles, /chrome-banner-visible/);
   assert.match(appI18nEn, /setInApp:\s*"Edited here"/);
   assert.match(composer, /depth-pressure-temperature/);
   assert.match(composer, /zh-Hant/);
@@ -592,6 +593,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(globalStyles, /color-scheme: dark/);
   assert.match(globalStyles, /env\(safe-area-inset-top/);
   assert.match(globalStyles, /var\(--safe-area-inset-top/);
+  assert.match(globalStyles, /chrome-banner-visible/);
   assert.match(
     globalStyles,
     /\.topbar\s*\{(?=[^}]*\btop:\s*0)(?=[^}]*padding:[\s\S]*?safe-area-inset-top)[^}]*\}/,
