@@ -3,12 +3,12 @@
 A private, device-local companion for your dive logs. Import from your dive
 computer or logbook app — or download classic Shearwater dives over Bluetooth
 on Android — then merge matching records, add maps and photos, and create
-shareable dive images, without uploading your logbook to DiveFrame.
+shareable dive images.
 
 **Try it:** [divelog.fishese.cc](https://divelog.fishese.cc)
 
-Pull GPS from a dive photo to get nearby site suggestions, fix the name once,
-and keep the result when you re-import. No account. Nothing leaves your
+Pull location from a dive photo to get nearby site suggestions, fix the name
+once, and keep the result when you re-import. No account. Nothing leaves your
 browser or phone unless you export it.
 
 > **Beta.** Keep your original exports and a recent DiveFrame backup while
