@@ -137,7 +137,7 @@ is **Set in App**. About copy refers to site assignment only.
   ```ts
   type DiveMemo = {
     id: string;
-    heading: string;
+    heading: string; // default "Dive 1", "Dive 2", …
     date: string; // YYYY-MM-DD
     hour: number | null; // 1–12; default 10
     minute: 0 | 15 | 30 | 45 | null; // empty treated as 0
@@ -154,7 +154,8 @@ is **Set in App**. About copy refers to site assignment only.
 
 ### Defaults and time UI
 
-- Heading default: `Dive Note 1`, `Dive Note 2`, … based on existing count.
+- Heading default: `Dive 1`, `Dive 2`, … based on existing count (start with
+  **Dive 1**; user can add more).
 - Date: today.
 - Time default: **10 : 00 AM**.
 - Hour: typeable + stepper ±1; values 1–12; **12 increments to 1** (and 1
@@ -177,11 +178,15 @@ is **Set in App**. About copy refers to site assignment only.
 
 - Free-text buddy field (reuse buddy separator conventions in UI hints if
   cheap).
-- Notes textarea.
+- Notes textarea with helper / placeholder text exactly:
+  `Note other info such as gas mixes, weight, exposures here so you can refer to it after you import the log`.
 
 ### UI
 
-- List memos; create / edit / delete.
+- Start with one memo (**Dive 1**); affordance to add more.
+- Clicking the heading enters edit mode immediately (inline rename; no separate
+  “edit title” control required).
+- List / expand memos; edit fields; delete.
 - No dive matching UI in this pass.
 
 ### Out of scope (memos)
@@ -198,9 +203,10 @@ is **Set in App**. About copy refers to site assignment only.
 - Brand home behavior covered where practical (contract or focused unit).
 - Dive-list filter: renamed label; matches `appEditedAt` and legacy app-only
   fields; does not treat composer-only state as edited.
-- Memos: CRUD; defaults (heading, 10:00 AM); hour wrap 12→1 without meridiem
-  flip; minute empty → 00; backup includes store; erase-dives keeps memos;
-  erase-all clears memos; photo-GPS path does not persist attachments.
+- Memos: CRUD; defaults (heading `Dive 1`, 10:00 AM); hour wrap 12→1 without
+  meridiem flip; minute empty → 00; notes placeholder helper text; backup
+  includes store; erase-dives keeps memos; erase-all clears memos; photo-GPS
+  path does not persist attachments.
 - i18n keys present in en / zh-Hant / ja.
 
 ## Docs
