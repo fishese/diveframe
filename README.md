@@ -1,283 +1,63 @@
 # DiveFrame
 
-DiveFrame is a device-local dive log companion. Your dive-computer apps remain
-the source and backup; DiveFrame brings those records together with Subsurface
-data, then adds maps, photos, site details, and shareable image overlays.
+A private, device-local companion for your dive logs. Import exports from your
+dive computer or logbook app, merge matching records, add maps and photos, and
+create shareable dive images — without uploading your logbook to DiveFrame.
 
-> **Beta:** DiveFrame is under active development. Keep the original dive-log
-> exports and a recent DiveFrame backup.
->
-> **IndexedDB:** Schema **v8** was a one-time destructive upgrade. Later
-> upgrades (including **v9** and the v10 repair migration) are additive and keep
-> existing logbook data.
-> Coming from a pre-v8 origin still requires re-import after that wipe.
+**Try it:** [divelog.fishese.cc](https://divelog.fishese.cc)
 
-The web app is available at [divelog.fishese.cc](https://divelog.fishese.cc).
+> **Beta.** Keep your original exports and a recent DiveFrame backup while
+> workflows are still changing.
 
-## Current workflow
+## What it does
 
-1. Export a supported log: Shearwater Cloud Desktop `.db`, Subsurface
-   `.ssrf`/XML, Oceanic+ UDDF, or a dive `.fit` from Garmin Dive or the current
-   Suunto app.
-2. Open DiveFrame on Android, iPhone, or Windows.
-3. Choose **Import log** and select one or more files.
-4. Re-import newer exports at any time. Stable source identities update
-   existing dives without detaching photos.
-5. Import other supported sources as well. DiveFrame conservatively matches
-   the same dive across sources, then retains the richer profile, GPS, site,
-   notes, and source-specific dive numbers.
+- **Import** Shearwater Cloud Desktop databases, Subsurface `.ssrf`/XML, UDDF
+  (including Oceanic+), and Garmin Dive / Suunto app `.fit` files
+- **Merge** the same dive across sources without discarding the richer profile,
+  GPS, site, notes, or source dive numbers
+- **Enrich** with maps, nearby site suggestions, photos, trips, and local edits
+- **Compose** high-resolution share images with depth profiles and overlays
+  (English, 繁體中文, or 日本語)
+- **Back up** everything on-device (optional password) and restore on another
+  browser or the Android app
+- **Android APK:** same UI, plus classic Shearwater Bluetooth download and
+  native file save/share ([download](https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk))
 
-The original files are parsed in the browser and are never modified. DiveFrame
-stores normalized display fields, source mappings, site choices, and photo
-blobs in IndexedDB on the current device.
+Your source apps stay the system of record. DiveFrame does not write changes
+back to them.
 
-See the [user guide](docs/USER-GUIDE.md) for supported files, local-storage
-boundaries, available exports, and the workflow for manually copying DiveFrame
-site corrections back to a source log.
+Full how-to: [User guide](docs/USER-GUIDE.md)
 
-For product and engineering review, see the
-[current product specification](docs/PRODUCT-SPEC.md). It includes known
-limits, a pre-wrapper readiness gate, planned extension guardrails, and a review
-checklist for divers, privacy, accessibility, localization, and engineering
-reviewers.
+## Quick start
 
-## Features
+1. Export a supported log from your computer or logbook app.
+2. Open DiveFrame → **Import log** → choose one or more files.
+3. Re-import later anytime; matching dives update in place and keep photos.
+4. Add sites, GPS, photos, and share images as needed.
+5. Use **Settings → Export app data** before clearing storage or switching
+   devices.
 
-- Reads `dive_details`, calculated summaries, manual sites, buddies, and notes.
-- Reads open UDDF dive logs and FIT dive activities, including available
-  profiles, temperatures, gases, tank pressures, GPS, and computer metadata.
-- Resolves Shearwater device names such as Peregrine and Perdix 2 from
-  `StoredDiveComputer` while retaining the original serial number.
-- Reads newer `GnssEntryLocation` and `GnssExitLocation` values that older
-  Shearwater export views can omit.
-- Responsive dive list and detail views.
-- Dive-list sorting by date, duration, or maximum depth in either direction.
-- Compact dive summaries that show both maximum depth and dive duration.
-- A compact six-stat logbook overview covering total dives, dives at named
-  sites, unique imported locations, accumulated underwater time, average
-  calculable SAC, and unique buddies.
-- OpenStreetMap entry-location maps.
-- Mutually exclusive Has site, GPS Data, and Edited here filters with an
-  explicit clear action.
-- Documented `source:shearwater-only` and `source:subsurface-only` search
-  operators for finding records that have not matched across those two logs.
-- A single broader geocoding retry for named dives without GPS, so a failed
-  site-level query can still resolve its city/region (for example,
-  `Mikomotojima, Shizuoka, Japan` → `Shizuoka, Japan`).
-- A curated local dive-site catalog with proximity-ranked suggestions and an
-  OpenStreetMap fallback.
-- Editable dive-site and broader location names, with autocomplete suggestions
-  from the current local logbook.
-- Separate source-specific dive numbers on merged records.
-- A filter for site names assigned in DiveFrame and a JSON export of manually
-  typed site candidates.
-- A settings page that can merge device-added sites into the bundled catalog
-  and download a replacement `dive-sites.json` for repository updates. The
-  pending additions can be reviewed, renamed, given aliases, or excluded first.
-- A complete device-to-device backup file containing IndexedDB records, dive
-  photos, reusable backgrounds, the overlay logo, per-dive composer settings,
-  named composer presets, and the app-language preference. Current backups use
-  format version 3 (SHA-256 checksum) and show a preview before an explicit
-  merge or replace. Format versions 1–2 still import; absent BLE/trips stores
-  are treated as empty. Export can optionally password-encrypt the file;
-  encrypted imports request the password before validation and preview.
-- Manual review and user-directed merging of likely duplicate dive records,
-  plus direct selection of timezone-offset pairs.
-- Separate reset actions: erase all local logbook data, clear only imported dives,
-  or clear only per-dive photos while retaining reusable backgrounds and other
-  settings.
-- A pass-through Subsurface export tool that adds matched site names, buddy,
-  and notes to a freshly supplied SSRF/XML copy without rebuilding or dropping
-  the source log's profiles, events, cylinders, or other fields.
-- Full interface localisation in English, Traditional Chinese (Hong Kong), and
-  Japanese, with a separately configurable overlay language for exported images.
-- Multiple photos per dive plus a device-local library of reusable diving
-  backgrounds. Reusable backgrounds have editable names for easier selection;
-  per-dive photos continue to use their filenames.
-- A bundled Bubbles background lets a dive be composed before any personal
-  photo is added. It appears in the Settings background library and can be
-  removed or restored; that preference travels with app backups.
-- A compatible regional `dive-sites.json` can be loaded for the current tab.
-  Its sites are added to the bundled catalog for nearby suggestions and merged
-  catalog downloads without permanently changing app data; a downloadable AI
-  prompt helps users prepare catalogs for their own regions.
-- Nine logbook summaries cover dive/site/location/buddy counts, total and
-  longest time, deepest and average maximum depth, and average SAC. Large
-  estimated backups add a tenth storage-warning card.
-- Storage tools estimate backup/media size and can replace eligible dive photos
-  and reusable backgrounds with smaller 88%-quality JPEGs capped at 2560 px.
-- Share-image entry points at both the top of the dive and the bottom of its
-  photo gallery.
-- A live image composer with five original layouts, including two purpose-built
-  16:9 landscape designs, high-resolution PNG/JPEG
-  output, common aspect ratios, metric/imperial units, and English, Traditional
-  Chinese, or Japanese overlays. Its interactive crop mode supports drag-to-reposition,
-  wheel or slider zoom, touch input, and reset. On mobile, the reduced preview
-  stays pinned below the top bar while controls scroll.
-- Named composer presets for reusing layout, visible fields, chart, logo,
-  typography, colour, and output choices across dives without copying a
-  dive-specific site name, category, selected photo, or crop.
-- New composers default to social-media JPEG output. The last selected output
-  size, format, and JPEG quality are reused on new dives, and exported files
-  use the dive date/time in a Windows-safe filename.
-- A curated overlay-font menu with bundled SIL OFL Traditional Chinese/Latin
-  faces: Noto Sans TC, Inter, Outfit, Space Mono, and Huninn, plus Device Sans.
-  One font-colour control applies consistently to all text content.
-- Depth-profile charts from Subsurface samples, with optional sparse tank
-  pressure and temperature telemetry, plus optional elapsed-time and depth axes
-  that are enabled by default. The depth-area fill can be solid or fade to
-  transparent above the profile. Missing fields are omitted rather than
-  replaced with fabricated values.
-- Compact depth charts on dive detail pages, with an optional tank-pressure
-  line when pressure telemetry is available.
-- Time-weighted average water temperature and conservative SAC estimates.
-  SAC is shown only when duration, average depth, one valid pressure pair, and
-  a cylinder volume are available. Standard aluminium and steel cylinder
-  presets are available per dive; the device default starts at Aluminium 80
-  (11.1 L). Unitless Shearwater air-integration values are normalized from PSI
-  to bar before the calculation.
-  The overview average excludes dives shorter than 20 minutes.
-- One device-local transparent PNG or SVG overlay logo configured in Settings,
-  with per-dive visibility, anchor, and horizontal/vertical fine-positioning
-  controls in the composer.
-- Installable web-app metadata for mobile and desktop browsers.
-- A trilingual beta notice on every page links to backup tools and warns that
-  pre-release updates may require a local-data reset.
+Install as a PWA from **Settings → Install DiveFrame** (or Safari → Share →
+Add to Home Screen on iPhone). The PWA and Android APK keep separate local
+data — transfer with an app-data backup.
 
-## Install the app
+## For contributors
 
-DiveFrame can be installed as a Progressive Web App (PWA) from **Settings →
-Install DiveFrame**. On Android and desktop Chromium browsers, use the install
-button when it appears. On iPhone or iPad, open DiveFrame in Safari, tap
-**Share**, then **Add to Home Screen**.
-
-The installed app uses the same IndexedDB data as the browser for the same web
-address. Removing the app or clearing site data can remove the local logbook,
-so export an app-data backup first.
-
-The PWA is also the base for the Capacitor **Android debug APK**, which ships
-the same UI plus classic Shearwater BLE import and native Downloads export.
-PWA and APK store data in separate origins — use **Export app data** to move a
-logbook between them. Store signing and iOS packaging are not included yet.
-
-## Planned compatibility
-
-Direct Bluetooth in the web/PWA, Google Drive synchronization, and user
-accounts are not in the current beta. The Android debug APK already feeds
-classic Shearwater BLE downloads into the same portable records and merge
-pipeline. Future changes should preserve room for:
-
-- the web app as a first-class, account-optional onboarding and usage surface;
-- hardened native BLE import (and eventually other brands) on the same model;
-- Google Drive as an optional backup/sync transport rather than a separate
-  data model; and
-- optional accounts that synchronize the local IndexedDB model without making
-  canonical dive IDs depend on an account, device, or storage provider.
-
-Portable backup export remains the provider-independent recovery path. See the
-[product specification](docs/PRODUCT-SPEC.md) for the architectural guardrails.
-
-## Stable dive identity
-
-Canonical dive IDs are deterministic across devices. DiveFrame uses immutable
-source identifiers in this priority order: Shearwater `DiveId`, Subsurface
-`deviceid:diveid`, UDDF identity, then FIT identity. UDDF uses its dive element
-ID when present; otherwise it derives a stable profile fingerprint. Garmin and
-Suunto FIT imports use the device plus activity/file creation timestamp when
-present, with the same profile-fingerprint fallback. File names and positions
-inside an export are never used as identity. Date/time, computer serial, depth,
-and duration matching links records when a second source is imported.
-If that source has a higher-priority immutable ID, the dive and its attached
-photos, site contribution, source mappings, and composer settings are re-keyed
-together.
-
-This intentionally replaces the earlier import-order-dependent IDs. Existing
-test data is not migrated; use **Settings → Erase all local logbook data**, then import the
-source logs again before creating a new transferable backup.
-
-## Development
-
-Use Node.js 22 or newer.
-
-> **Push/release reminder:** a push updates the hosted web app but never the
-> downloadable or installed APK. Before every push, use the
-> [web/APK parity and release checklist](docs/WEB-APK-SYNC.md) to decide whether
-> the Android build must be rebuilt, tested, and published from the same commit.
+Node.js 22+. Before pushing shared web/APK changes, see
+[web/APK sync](docs/WEB-APK-SYNC.md).
 
 ```sh
 npm install
 npm run dev
-```
-
-To validate the bundled dive-site catalog, or a proposed regional catalog,
-without uploading it anywhere:
-
-```bash
-npm run validate:sites -- data/dive-sites.json
-```
-
-Warnings request human review but do not fail the command. Structural errors,
-duplicate IDs, and same-name records within 150 metres exit with status 1. See
-[`docs/dive-site-validation.md`](docs/dive-site-validation.md) for details.
-
-The deployed Worker is stateless. Dive and photo data stay in the browser;
-server routes only proxy map lookups. Use **Settings → Export app data** to
-back up or transfer that local data.
-
-The normalized browser import is intentionally not a lossless representation
-of every Subsurface XML field. To carry DiveFrame changes back, use
-**Settings → Update a Subsurface export** and choose a fresh original
-Subsurface `.ssrf`/XML file. DiveFrame edits that copy narrowly and downloads a
-new file; it never overwrites the selected source file.
-
-For full depth-profile charts, import Subsurface, UDDF, or FIT data when
-available. Shearwater Cloud exports provide summaries and tank start/end
-values, but the sample stream in the tested export is stored in a proprietary
-blob that DiveFrame does not currently decode.
-
-### Import format policy
-
-DiveFrame implements formats whose structure is public rather than guessing at
-proprietary files:
-
-- Oceanic+ documents its downloadable dives as
-  [UDDF](https://www.oceanicworldwide.com/blog/faq/what-format-will-my-dives-be-downloaded-to/);
-  DiveFrame follows the open [UDDF 3.2.3 specification](https://www.streit.cc/resources/UDDF/v3.2.3/en/).
-- Garmin documents FIT export from
-  [Garmin Dive](https://support.garmin.com/et-EE/?faq=NxZWyZYGqL17VNBMKDUjb5),
-  and Suunto documents FIT export for
-  [dives from the Suunto app](https://www.suunto.com/en-im/Support/faq-articles/suunto-app/what-type-of-files-can-i-export-from-the-suunto-app/).
-  DiveFrame uses the public [Garmin FIT protocol](https://developer.garmin.com/fit/protocol/)
-  through the MIT-licensed `fit-file-parser` package.
-- Older Suunto DM5 SDE/SML files and SCUBAPRO TravelTRAK `.asd` files are not
-  parsed because their current official documentation does not publish enough
-  of their structure to implement a reliable importer.
-
-Run the checks with:
-
-```sh
-npm run lint
-npm run typecheck
 npm test
 ```
 
-To exercise the parser against a private local export without checking it into
-source control:
-
-```powershell
-$env:SHEARWATER_DB_FIXTURE='D:\path\to\Shearwater Cloud.db'
-node --test .\tests\import-shearwater.test.mjs
-```
+Product/engineering review notes live in
+[PRODUCT-SPEC.md](docs/PRODUCT-SPEC.md). Maintainer handoff is in
+[HANDOFF.md](HANDOFF.md).
 
 ## License
 
-DiveFrame is free software licensed under the
-[GNU General Public License v3.0 or later](LICENSE). Forks and modifications are
-welcome; redistributed versions must remain open source under the same license.
-
-The bundled
-[`public/backgrounds/bubbles-bg.jpg`](public/backgrounds/bubbles-bg.jpg)
-sample image is copyright DiveFrame developer and licensed under
-[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). See
-[ASSET-LICENSES.md](ASSET-LICENSES.md). The software remains GPL-3.0-or-later;
-the repository is a mixed open-source distribution (GPL code + CC BY-SA asset).
+[GPL-3.0-or-later](LICENSE). The bundled Bubbles sample background is
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — see
+[ASSET-LICENSES.md](ASSET-LICENSES.md).
