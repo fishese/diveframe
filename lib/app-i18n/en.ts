@@ -653,7 +653,7 @@ export const en = {
   diveMemosNoCoordinates: "No coordinates yet",
   diveMemosUseGps: "GPS",
   diveMemosPhotoGps: "Photo",
-  diveMemosClearGps: "Clear coordinates",
+  diveMemosClearGps: "Clear",
   deleteMemo: "Delete memo",
   memoGpsUnsupported: "This browser cannot request device location.",
   memoGpsCaptured: "Coordinates saved on this memo.",

@@ -592,7 +592,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(globalStyles, /color-scheme: dark/);
   assert.match(globalStyles, /env\(safe-area-inset-top/);
   assert.match(globalStyles, /var\(--safe-area-inset-top/);
-  assert.match(globalStyles, /chrome-banner-visible/);
+  assert.match(globalStyles, /body:has\(\.beta-notice\)/);
   assert.match(
     globalStyles,
     /\.topbar\s*\{(?=[^}]*\btop:\s*0)(?=[^}]*padding:[\s\S]*?safe-area-inset-top)[^}]*\}/,

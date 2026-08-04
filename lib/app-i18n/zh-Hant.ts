@@ -654,7 +654,7 @@ export const zhHant: Record<keyof typeof en, string> = {
   diveMemosNoCoordinates: "尚未有座標",
   diveMemosUseGps: "GPS",
   diveMemosPhotoGps: "相片",
-  diveMemosClearGps: "清除座標",
+  diveMemosClearGps: "清除",
   deleteMemo: "刪除備忘",
   memoGpsUnsupported: "此瀏覽器無法取得裝置位置。",
   memoGpsCaptured: "已將座標儲存到此備忘。",

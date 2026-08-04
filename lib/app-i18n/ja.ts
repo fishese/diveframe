@@ -651,7 +651,7 @@ export const ja: Record<keyof typeof en, string> = {
   diveMemosNoCoordinates: "座標はまだありません",
   diveMemosUseGps: "GPS",
   diveMemosPhotoGps: "写真",
-  diveMemosClearGps: "座標を消す",
+  diveMemosClearGps: "Clear",
   deleteMemo: "メモを削除",
   memoGpsUnsupported: "このブラウザでは端末の位置を取得できません。",
   memoGpsCaptured: "このメモに座標を保存しました。",

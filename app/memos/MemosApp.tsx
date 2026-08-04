@@ -40,6 +40,11 @@ const NOTES_PLACEHOLDER =
   "Note other info such as gas mixes, weight, exposures here";
 
 const MINUTE_SUGGESTIONS = [0, 15, 30, 45] as const;
+const SAVE_DEBOUNCE_MS = 400;
+
+function roundCoord(value: number) {
+  return Math.round(value * 1e5) / 1e5;
+}
 
 export function MemosApp() {
   const { t } = useAppI18n();
@@ -155,8 +160,8 @@ export function MemosApp() {
       if (!memo) return;
       await persist({
         ...memo,
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
+        lat: roundCoord(position.coords.latitude),
+        lng: roundCoord(position.coords.longitude),
       });
       setStatus(t("memoGpsCaptured"));
     } catch (error) {
@@ -174,7 +179,11 @@ export function MemosApp() {
     }
     const memo = memos.find((item) => item.id === id);
     if (!memo) return;
-    await persist({ ...memo, lat: gps.lat, lng: gps.lng });
+    await persist({
+      ...memo,
+      lat: roundCoord(gps.lat),
+      lng: roundCoord(gps.lng),
+    });
     setStatus(t("memoGpsCaptured"));
   }
 
@@ -371,35 +380,70 @@ function MemoCard({
   t: AppTranslate;
 }) {
   const headingRef = useRef<HTMLInputElement>(null);
+  const [draft, setDraft] = useState(memo);
+  const draftRef = useRef(draft);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [coordsDraft, setCoordsDraft] = useState(
     formatCoordinatePair(memo.lat, memo.lng),
   );
   const coordsInvalid =
     coordsDraft.trim() !== "" && parseCoordinatePair(coordsDraft) === null;
 
+  draftRef.current = draft;
+
+  useEffect(() => {
+    setDraft(memo);
+    setCoordsDraft(formatCoordinatePair(memo.lat, memo.lng));
+  }, [memo]);
+
   useEffect(() => {
     if (editingHeading) headingRef.current?.focus();
   }, [editingHeading]);
 
   useEffect(() => {
-    setCoordsDraft(formatCoordinatePair(memo.lat, memo.lng));
-  }, [memo.lat, memo.lng]);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  function scheduleSave(next: DiveMemo) {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
+      onChange(next);
+    }, SAVE_DEBOUNCE_MS);
+  }
+
+  function updateDraft(patch: Partial<DiveMemo>) {
+    const next = { ...draftRef.current, ...patch };
+    draftRef.current = next;
+    setDraft(next);
+    scheduleSave(next);
+  }
+
+  function flushSave() {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    onChange(draftRef.current);
+  }
 
   function commitCoordsDraft() {
     if (coordsDraft.trim() === "") {
-      if (memo.lat != null || memo.lng != null) {
-        onChange({ ...memo, lat: null, lng: null });
+      if (draft.lat != null || draft.lng != null) {
+        updateDraft({ lat: null, lng: null });
       }
+      flushSave();
       return;
     }
     const parsed = parseCoordinatePair(coordsDraft);
     if (!parsed) return;
-    if (parsed.latitude === memo.lat && parsed.longitude === memo.lng) return;
-    onChange({
-      ...memo,
-      lat: parsed.latitude,
-      lng: parsed.longitude,
+    updateDraft({
+      lat: roundCoord(parsed.latitude),
+      lng: roundCoord(parsed.longitude),
     });
+    flushSave();
   }
 
   return (
@@ -409,12 +453,13 @@ function MemoCard({
           <input
             ref={headingRef}
             className="memo-heading-input"
-            value={memo.heading}
+            value={draft.heading}
             disabled={busy}
-            onChange={(event) =>
-              onChange({ ...memo, heading: event.target.value })
-            }
-            onBlur={onHeadingBlur}
+            onChange={(event) => updateDraft({ heading: event.target.value })}
+            onBlur={() => {
+              flushSave();
+              onHeadingBlur();
+            }}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.currentTarget.blur();
@@ -428,7 +473,7 @@ function MemoCard({
             className="memo-heading-button"
             onClick={onEditHeading}
           >
-            {memo.heading || t("diveMemosHeading")}
+            {draft.heading || t("diveMemosHeading")}
           </button>
         )}
         <button
@@ -449,9 +494,10 @@ function MemoCard({
             <span>{t("diveMemosDate")}</span>
             <input
               type="date"
-              value={memo.date}
+              value={draft.date}
               disabled={busy}
-              onChange={(event) => onChange({ ...memo, date: event.target.value })}
+              onChange={(event) => updateDraft({ date: event.target.value })}
+              onBlur={flushSave}
             />
           </label>
 
@@ -462,12 +508,7 @@ function MemoCard({
                 type="button"
                 className="button button-quiet memo-step-button"
                 disabled={busy}
-                onClick={() =>
-                  onChange({
-                    ...memo,
-                    hour: stepMemoHour(memo.hour, -1),
-                  })
-                }
+                onClick={() => updateDraft({ hour: stepMemoHour(draft.hour, -1) })}
                 aria-label={t("diveMemosHourDown")}
               >
                 <ChevronLeft size={14} />
@@ -477,31 +518,28 @@ function MemoCard({
                 type="number"
                 min={1}
                 max={12}
-                value={memo.hour ?? ""}
+                value={draft.hour ?? ""}
                 disabled={busy}
                 onChange={(event) => {
                   const raw = event.target.value;
                   if (raw === "") {
-                    onChange({ ...memo, hour: null });
+                    updateDraft({ hour: null });
                     return;
                   }
                   const value = Number(raw);
                   if (!Number.isFinite(value)) return;
-                  const clamped = Math.min(12, Math.max(1, Math.trunc(value)));
-                  onChange({ ...memo, hour: clamped });
+                  updateDraft({
+                    hour: Math.min(12, Math.max(1, Math.trunc(value))),
+                  });
                 }}
+                onBlur={flushSave}
                 aria-label={t("diveMemosHour")}
               />
               <button
                 type="button"
                 className="button button-quiet memo-step-button"
                 disabled={busy}
-                onClick={() =>
-                  onChange({
-                    ...memo,
-                    hour: stepMemoHour(memo.hour, 1),
-                  })
-                }
+                onClick={() => updateDraft({ hour: stepMemoHour(draft.hour, 1) })}
                 aria-label={t("diveMemosHourUp")}
               >
                 <ChevronRight size={14} />
@@ -514,22 +552,24 @@ function MemoCard({
                 max={59}
                 list={`memo-minute-suggestions-${memo.id}`}
                 value={
-                  memo.minute === null || memo.minute === undefined
+                  draft.minute === null || draft.minute === undefined
                     ? ""
-                    : String(normalizeMemoMinute(memo.minute)).padStart(2, "0")
+                    : String(normalizeMemoMinute(draft.minute)).padStart(2, "0")
                 }
                 disabled={busy}
                 onChange={(event) => {
                   const raw = event.target.value;
                   if (raw === "") {
-                    onChange({ ...memo, minute: null });
+                    updateDraft({ minute: null });
                     return;
                   }
                   const value = Number(raw);
                   if (!Number.isFinite(value)) return;
-                  const clamped = Math.min(59, Math.max(0, Math.trunc(value)));
-                  onChange({ ...memo, minute: clamped });
+                  updateDraft({
+                    minute: Math.min(59, Math.max(0, Math.trunc(value))),
+                  });
                 }}
+                onBlur={flushSave}
                 aria-label={t("diveMemosMinute")}
               />
               <datalist id={`memo-minute-suggestions-${memo.id}`}>
@@ -542,14 +582,14 @@ function MemoCard({
               </datalist>
               <select
                 className="memo-meridiem-select"
-                value={memo.meridiem}
+                value={draft.meridiem}
                 disabled={busy}
                 onChange={(event) =>
-                  onChange({
-                    ...memo,
+                  updateDraft({
                     meridiem: event.target.value === "PM" ? "PM" : "AM",
                   })
                 }
+                onBlur={flushSave}
                 aria-label={t("diveMemosMeridiem")}
               >
                 <option value="AM">AM</option>
@@ -563,35 +603,36 @@ function MemoCard({
           <span>{t("diveMemosLocation")}</span>
           <input
             type="text"
-            value={memo.location ?? ""}
+            value={draft.location ?? ""}
             disabled={busy}
             onChange={(event) =>
-              onChange({ ...memo, location: event.target.value || null })
+              updateDraft({ location: event.target.value || null })
             }
+            onBlur={flushSave}
           />
         </label>
 
         <div className="memo-span-2 memo-coords-row">
           <span>{t("diveMemosCoordinates")}</span>
-          <div className="memo-coords-line">
-            <input
-              className="memo-coords-input"
-              type="text"
-              value={coordsDraft}
-              disabled={busy}
-              placeholder="19.09876, 72.87643"
-              autoComplete="off"
-              spellCheck={false}
-              aria-invalid={coordsInvalid}
-              onChange={(event) => setCoordsDraft(event.target.value)}
-              onBlur={() => commitCoordsDraft()}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.currentTarget.blur();
-                }
-              }}
-              aria-label={t("diveMemosCoordinates")}
-            />
+          <input
+            className="memo-coords-input"
+            type="text"
+            value={coordsDraft}
+            disabled={busy}
+            placeholder="19.09876, 72.87643"
+            autoComplete="off"
+            spellCheck={false}
+            aria-invalid={coordsInvalid}
+            onChange={(event) => setCoordsDraft(event.target.value)}
+            onBlur={() => commitCoordsDraft()}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.currentTarget.blur();
+              }
+            }}
+            aria-label={t("diveMemosCoordinates")}
+          />
+          <div className="memo-coord-actions">
             <button
               type="button"
               className="button button-secondary memo-compact-button"
@@ -608,12 +649,16 @@ function MemoCard({
             >
               <ImageIcon size={14} /> {t("diveMemosPhotoGps")}
             </button>
-            {memo.lat != null || memo.lng != null ? (
+            {draft.lat != null || draft.lng != null ? (
               <button
                 type="button"
-                className="button button-quiet memo-compact-button"
+                className="button button-secondary memo-compact-button"
                 disabled={busy}
-                onClick={() => onChange({ ...memo, lat: null, lng: null })}
+                onClick={() => {
+                  setCoordsDraft("");
+                  updateDraft({ lat: null, lng: null });
+                  flushSave();
+                }}
               >
                 {t("diveMemosClearGps")}
               </button>
@@ -625,24 +670,26 @@ function MemoCard({
           <span>{t("buddy")}</span>
           <input
             type="text"
-            value={memo.buddies ?? ""}
+            value={draft.buddies ?? ""}
             disabled={busy}
             onChange={(event) =>
-              onChange({ ...memo, buddies: event.target.value || null })
+              updateDraft({ buddies: event.target.value || null })
             }
+            onBlur={flushSave}
           />
         </label>
 
         <label className="memo-span-2">
           <span>{t("notes")}</span>
           <textarea
-            rows={4}
-            value={memo.notes ?? ""}
+            rows={3}
+            value={draft.notes ?? ""}
             disabled={busy}
             placeholder={NOTES_PLACEHOLDER}
             onChange={(event) =>
-              onChange({ ...memo, notes: event.target.value || null })
+              updateDraft({ notes: event.target.value || null })
             }
+            onBlur={flushSave}
           />
         </label>
       </div>
