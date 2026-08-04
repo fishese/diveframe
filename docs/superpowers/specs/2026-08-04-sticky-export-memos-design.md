@@ -19,9 +19,9 @@ out of scope for this pass.
 
 - Auto-matching memos to dives or showing hint boxes on dive detail.
 - Saving photos attached to memos (photo picker is GPS-only).
-- F-Droid submission / signing process changes.
-- Changing web download behavior beyond optional `navigator.share` when
-  available.
+- Changing F-Droid submission / signing process.
+- Requiring share to succeed for export to count as successful (share is
+  best-effort after save).
 
 ---
 
@@ -48,17 +48,26 @@ desktop layout meaning beyond correct inset handling.
 ## Export image → save + share
 
 **Current:** `exportComposition` → `saveExportFile` only. Settings backups
-already have a separate **Share** action via `shareExportFile`.
+already have a separate **Share** action via `shareExportFile` on Android.
+Web/iOS use browser download (or silent failure in some WebViews).
 
-**Change:** In the composer `exportImage` flow, after a successful save:
+**Goal:** After a successful export, **save** (platform-appropriate) **and open
+a share sheet whenever the platform can**.
 
-- If the result is a native device save with `shareable: true`, call
-  `shareExportFile` (same plugin path as backup share).
-- On web, keep the browser download. If `navigator.share` can accept the file
-  and the user agent supports it, attempt share after download preparation;
-  failures must not fail the export.
+**Android APK:** After `saveExportFile` returns a device save with
+`shareable: true`, call `shareExportFile` (same `FileExportPlugin` path as
+backup share) so the image is in Downloads **and** the system share sheet
+opens.
 
-Status text should still report where the file was saved.
+**Web / iOS Safari / PWA:** Keep preparing the image blob and performing the
+usual browser download / save path where that still applies. Additionally,
+when `navigator.share` / `navigator.canShare` can accept a `File` for the
+exported image, call `navigator.share({ files: […] })` from the Export click
+(user gesture). On iOS this opens the system share sheet (Messages, Save Image,
+AirDrop, etc.). If share is unavailable or rejects the file, do **not** fail
+the export — the save/download result still stands.
+
+Status text should still report where the file was saved when that is known.
 
 ---
 
@@ -199,7 +208,9 @@ is **Set in App**. About copy refers to site assignment only.
 ## Tests
 
 - Contract/CSS: sticky top bars use `top: 0` and safe-area padding-top.
-- Composer export invokes share after native save when shareable.
+- Composer export: after save, Android calls `shareExportFile` when shareable;
+  web/iOS attempts `navigator.share` with the image `File` when
+  `canShare` allows it; share failure does not fail export.
 - Brand home behavior covered where practical (contract or focused unit).
 - Dive-list filter: renamed label; matches `appEditedAt` and legacy app-only
   fields; does not treat composer-only state as edited.
@@ -218,8 +229,9 @@ is **Set in App**. About copy refers to site assignment only.
 
 1. Scrolling the APK logbook no longer tucks the sticky header under the status
    bar.
-2. Export image saves to Downloads (or equivalent) and opens the share sheet on
-   Android.
+2. Export image saves (Downloads / browser download as appropriate) and opens
+   a share sheet when the platform supports it (Android plugin share; iOS/web
+   Web Share API).
 3. Top-bar brand returns to the app home.
 4. **Edited here** reflects in-app dive-data edits, not share-image creation.
 5. Users can create/edit/delete memos from the import-guide entry (and shortcut
