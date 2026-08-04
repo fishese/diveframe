@@ -87,14 +87,15 @@ Shipped on `main` (pushed):
   `docs/2026-08-04-sticky-export-memos-session.md`. **APK-affecting.**
 - About page: softer intro, full Subsurface export called out, personal “why
   this exists” note, click-to-reveal contact email.
-- Android debug APK **1.0.15** (`versionCode 16`) is the current dogfood target
-  for sticky/export/memos + self-hosted fonts. Prior local dogfood was
-  **1.0.14** (`versionCode 15`) from `37e7dd0`. GitHub `releases/latest` /
-  `diveframe-debug.apk` may still point at an older published asset until a
-  new release is uploaded.
-- Current dogfooding state: local `main` includes sticky/export/memos; install
-  **1.0.15** after `native:sync` + `assembleDebug`. Hosted web/PWA updates
-  after push to `origin/main`.
+- Android debug APK **1.0.15** (`versionCode 16`) was rebuilt from commit
+  `5046ab5` (sticky/export/memos + self-hosted fonts) and installed over
+  wireless adb for dogfood. SHA-256 of the local `app-debug.apk` is
+  `FAADEBAEEB1C5D84D90A30C7EB69DAB4E63C708DD148831359AE9FF348DAB103`.
+  GitHub `releases/latest` / `diveframe-debug.apk` may still point at an older
+  published asset until a new release is uploaded.
+- Current dogfooding state: local `main` and the adb-installed **1.0.15** APK
+  include sticky/export/memos. Hosted web/PWA updates after push to
+  `origin/main`.
 
 Open follow-ups:
 

@@ -28,7 +28,15 @@ pick them up.
 - Android long-press shortcut to `/memos`: skipped (Capacitor deep-link /
   BridgeActivity path wiring is messy for a cold-start static shortcut).
 - Memo ↔ dive auto-match UI.
-- New APK / GitHub release (wait for explicit request).
+- GitHub Release asset for **1.0.15** (local dogfood installed; publish when
+  ready).
+
+## Dogfood
+
+- APK **1.0.15** (`versionCode 16`) from `5046ab5`, installed via wireless adb
+  on SM-S9280.
+- SHA-256:
+  `FAADEBAEEB1C5D84D90A30C7EB69DAB4E63C708DD148831359AE9FF348DAB103`.
 
 ## Spec / plan
 

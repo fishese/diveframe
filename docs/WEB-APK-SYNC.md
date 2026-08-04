@@ -172,8 +172,9 @@ The current GitHub release is:
 
 - last GitHub release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.13`
   (stable download URL still serves that asset until a newer `--latest` release)
-- local dogfood APK: **1.0.15** / `versionCode 16` (built from current `main`)
-- local SHA-256: recorded in HANDOFF after each dogfood install
+- local dogfood APK: **1.0.15** / `versionCode 16` from commit `5046ab5`
+- local SHA-256:
+  `FAADEBAEEB1C5D84D90A30C7EB69DAB4E63C708DD148831359AE9FF348DAB103`
 
 The debug APK is still signed by Android's debug tooling. An in-place Android
 update requires the same application ID, a compatible/higher `versionCode`,
