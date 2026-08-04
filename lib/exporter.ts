@@ -3,7 +3,11 @@ import type { Dive } from "./dive-model";
 import { renderComposition } from "./image-composer";
 import { ensureOverlayFont } from "./composer-fonts";
 import { exportFileName } from "./export-file-name";
-import { saveExportFile } from "./file-export";
+import {
+  saveExportFile,
+  shareAfterExport,
+  type SavedExportFile,
+} from "./file-export";
 
 export function outputDimensions(
   image: { width: number; height: number },
@@ -21,26 +25,36 @@ export function outputDimensions(
     : { width: Math.round(longEdge * ratio), height: longEdge };
 }
 
+export type CompositionExportResult = {
+  saved: SavedExportFile;
+  blob: Blob;
+  fileName: string;
+  mimeType: string;
+  shared: boolean;
+};
+
 export async function exportComposition(
   image: CanvasImageSource & { width: number; height: number },
   dive: Dive,
   settings: ComposerSettings,
   logo?: CanvasImageSource & { width: number; height: number },
-) {
+): Promise<CompositionExportResult> {
   await ensureOverlayFont(settings.fontFamily);
   const dimensions = outputDimensions(image, settings);
   const canvas = document.createElement("canvas");
   renderComposition(canvas, image, dive, settings, dimensions.width, dimensions.height, logo);
-  const mime = settings.format === "png" ? "image/png" : "image/jpeg";
+  const mimeType = settings.format === "png" ? "image/png" : "image/jpeg";
   const blob = await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
       (result) => result ? resolve(result) : reject(new Error("Could not create image.")),
-      mime,
+      mimeType,
       settings.jpegQuality,
     ),
   );
   const fileName = `${exportFileName(dive.startDateTime)}.${settings.format === "png" ? "png" : "jpg"}`;
-  return saveExportFile(blob, fileName, mime);
+  const saved = await saveExportFile(blob, fileName, mimeType);
+  const shared = await shareAfterExport(saved, blob, fileName, mimeType);
+  return { saved, blob, fileName, mimeType, shared };
 }
 
 function ratioNumber(ratio: CanvasRatio, original: number) {

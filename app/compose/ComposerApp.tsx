@@ -488,7 +488,7 @@ export function ComposerApp() {
     setExporting(true);
     setStatus(t("renderingImage"));
     try {
-      const saved = await exportComposition(
+      const { saved } = await exportComposition(
         bitmap,
         normalized,
         settings,
@@ -510,7 +510,7 @@ export function ComposerApp() {
   return (
     <main className="composer-page">
       <header className="composer-topbar">
-        <Link href={`/?dive=${encodeURIComponent(dive.id)}`} className="brand">
+        <Link href="/" className="brand" aria-label={t("home")}>
           <span className="brand-mark">
             <Image src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" width={52} height={52} />
           </span>

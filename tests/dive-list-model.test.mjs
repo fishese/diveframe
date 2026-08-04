@@ -14,6 +14,7 @@ const {
   buildDiveListRows,
   compareDives,
   diveMatchesListFilters,
+  diveWasEditedHere,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`
 );
@@ -115,6 +116,32 @@ test("gpsOnly filter matches dives with only user GPS", () => {
   assert.equal(
     diveMatchesListFilters(dive(), defaultFilters({ gpsOnly: true })),
     false,
+  );
+});
+
+test("edited-here filter matches appEditedAt and legacy app-only fields", () => {
+  assert.equal(diveWasEditedHere(dive()), false);
+  assert.equal(diveWasEditedHere(dive({ userSite: "Site A" })), true);
+  assert.equal(
+    diveWasEditedHere(dive({ userGpsLat: 1, userGpsLng: 2 })),
+    true,
+  );
+  assert.equal(diveWasEditedHere(dive({ tripId: "t1" })), true);
+  assert.equal(diveWasEditedHere(dive({ cylinderVolumeL: 12 })), true);
+  assert.equal(
+    diveWasEditedHere(dive({ appEditedAt: "2026-08-04T00:00:00.000Z" })),
+    true,
+  );
+  assert.equal(
+    diveMatchesListFilters(dive({ buddy: "Ada" }), defaultFilters({ appSiteOnly: true })),
+    false,
+  );
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ appEditedAt: "2026-08-04T00:00:00.000Z", buddy: "Ada" }),
+      defaultFilters({ appSiteOnly: true }),
+    ),
+    true,
   );
 });
 

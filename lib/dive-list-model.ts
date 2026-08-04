@@ -25,6 +25,9 @@ export type DiveListItem = {
   gpsEntryLng?: number | null;
   userGpsLat?: number | null;
   userGpsLng?: number | null;
+  cylinderPresetId?: string | null;
+  cylinderVolumeL?: number | null;
+  appEditedAt?: string | null;
   buddy?: string | null;
   notes?: string | null;
   sources?: string[];
@@ -74,6 +77,15 @@ export function compareDives(
   return compareDivesByDate(a, b, option === "date-desc" ? "desc" : "asc");
 }
 
+export function diveWasEditedHere(dive: DiveListItem): boolean {
+  if (dive.appEditedAt) return true;
+  if (dive.userSite) return true;
+  if (dive.userGpsLat != null && dive.userGpsLng != null) return true;
+  if (dive.tripId) return true;
+  if (dive.cylinderPresetId || dive.cylinderVolumeL != null) return true;
+  return false;
+}
+
 export function diveMatchesListFilters(
   dive: DiveListItem,
   filters: Partial<DiveListFilters>,
@@ -115,7 +127,7 @@ export function diveMatchesListFilters(
     return false;
   }
 
-  if (appSiteOnly && !dive.userSite) {
+  if (appSiteOnly && !diveWasEditedHere(dive)) {
     return false;
   }
 

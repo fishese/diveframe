@@ -101,15 +101,24 @@ export function ImportGuide({
             </button>
           </div>
 
-          <aside className="import-guide-backup-card">
-            <Archive size={20} aria-hidden="true" />
-            <p>{t("importGuideBackupPrompt")}</p>
-            <Link
-              className="button button-secondary"
-              href="/settings#backup-transfer"
-            >
-              {t("openBackupTools")}
-            </Link>
+          <aside className="import-guide-side-cards">
+            <div className="import-guide-backup-card">
+              <Archive size={20} aria-hidden="true" />
+              <p>{t("importGuideBackupPrompt")}</p>
+              <Link
+                className="button button-secondary"
+                href="/settings#backup-transfer"
+              >
+                {t("openBackupTools")}
+              </Link>
+            </div>
+            <div className="import-guide-backup-card">
+              <FileText size={20} aria-hidden="true" />
+              <p>{t("importGuideMemosPrompt")}</p>
+              <Link className="button button-secondary" href="/memos">
+                {t("openDiveMemos")}
+              </Link>
+            </div>
           </aside>
         </div>
 

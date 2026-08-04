@@ -126,12 +126,16 @@ button {
   backdrop-filter: blur(20px);
   background: rgba(7, 24, 32, 0.84);
   border-bottom: 1px solid var(--line);
+  box-sizing: border-box;
   display: flex;
-  height: 58px;
   justify-content: space-between;
-  padding: 0 4vw;
+  min-height: calc(58px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  padding:
+    var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
+    4vw
+    0;
   position: sticky;
-  top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  top: 0;
   z-index: 50;
 }
 
@@ -1795,10 +1799,14 @@ button {
   align-items: center;
   background: rgba(5, 21, 28, 0.96);
   border-bottom: 1px solid var(--line);
+  box-sizing: border-box;
   display: flex;
-  height: 64px;
   justify-content: space-between;
-  padding: 0 20px;
+  min-height: calc(64px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  padding:
+    var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
+    20px
+    0;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -2237,8 +2245,11 @@ button {
 
 @media (max-width: 860px) {
   .composer-topbar {
-    height: 58px;
-    padding: 0 10px;
+    min-height: calc(58px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+    padding:
+      var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
+      10px
+      0;
   }
 
   .composer-top-actions .composer-settings-link {
@@ -2255,7 +2266,7 @@ button {
     min-height: 0;
     padding: 9px 10px 8px;
     position: sticky;
-    top: 58px;
+    top: calc(58px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
     z-index: 15;
   }
 
@@ -2425,6 +2436,12 @@ button {
   grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
 }
 
+.import-guide-side-cards {
+  display: grid;
+  gap: 16px;
+  margin-top: clamp(40px, 4vw, 56px);
+}
+
 .import-guide-backup-card {
   align-items: start;
   background: rgba(255, 255, 255, 0.035);
@@ -2432,7 +2449,7 @@ button {
   border-radius: 14px;
   display: grid;
   gap: 12px;
-  margin-top: clamp(40px, 4vw, 56px);
+  margin-top: 0;
   padding: 16px;
 }
 
@@ -2723,6 +2740,174 @@ button {
 
 .android-page {
   min-height: 100vh;
+}
+
+.memos-page {
+  min-height: 100vh;
+}
+
+.memos-shell {
+  margin: 0 auto;
+  max-width: 760px;
+  padding: 36px 24px 90px;
+}
+
+.memos-hero {
+  margin-bottom: 28px;
+  max-width: 640px;
+}
+
+.memos-hero h1 {
+  font-size: clamp(34px, 5vw, 52px);
+  letter-spacing: -0.05em;
+  line-height: 1;
+  margin: 0;
+}
+
+.memos-hero > p:last-of-type {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 14px 0 0;
+}
+
+.memos-list {
+  display: grid;
+  gap: 18px;
+}
+
+.memo-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.memo-card-header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.memo-heading-button,
+.memo-heading-input {
+  background: transparent;
+  border: 0;
+  color: var(--foam);
+  flex: 1;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  min-width: 0;
+  padding: 4px 0;
+  text-align: left;
+}
+
+.memo-heading-button:hover,
+.memo-heading-input:focus {
+  color: var(--teal);
+  outline: none;
+}
+
+.memo-field-grid {
+  display: grid;
+  gap: 14px 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.memo-field-grid label,
+.memo-time-row,
+.memo-coords {
+  display: grid;
+  gap: 8px;
+}
+
+.memo-field-grid label > span,
+.memo-time-row > span,
+.memo-coords > span {
+  color: var(--mist);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.memo-field-grid input,
+.memo-field-grid select,
+.memo-field-grid textarea,
+.memo-time-controls select,
+.memo-stepper input {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--foam);
+  font: inherit;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.memo-field-grid textarea {
+  resize: vertical;
+}
+
+.memo-span-2 {
+  grid-column: 1 / -1;
+}
+
+.memo-time-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.memo-stepper {
+  align-items: center;
+  display: inline-grid;
+  gap: 2px;
+  justify-items: center;
+}
+
+.memo-stepper input {
+  text-align: center;
+  width: 4.2rem;
+}
+
+.memo-time-colon {
+  color: var(--mist);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.memo-coord-values {
+  color: var(--foam);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+  margin: 0;
+}
+
+.memo-coord-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.memos-add {
+  margin-top: 20px;
+}
+
+@media (max-width: 640px) {
+  .memos-shell {
+    padding: 28px 18px 72px;
+  }
+
+  .memo-field-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .about-shell {
@@ -3958,8 +4143,11 @@ button {
 
 @media (max-width: 760px) {
   .topbar {
-    height: 52px;
-    padding: 0 12px;
+    min-height: calc(52px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+    padding:
+      var(--safe-area-inset-top, env(safe-area-inset-top, 0px))
+      12px
+      0;
   }
 
   .brand-mark {
@@ -4515,9 +4703,14 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .import-guide-backup-card {
+  .import-guide-side-cards {
     margin: 0 0 22px;
     max-width: 420px;
+  }
+
+  .import-guide-backup-card {
+    margin: 0;
+    max-width: none;
   }
 
   .import-guide-steps {

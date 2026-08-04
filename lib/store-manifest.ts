@@ -12,6 +12,7 @@ export const STORE_NAMES = {
   deviceCheckpoints: "deviceCheckpoints",
   trips: "trips",
   supplementaryCatalog: "supplementaryCatalog",
+  diveMemos: "diveMemos",
 } as const;
 
 export type StoreName = (typeof STORE_NAMES)[keyof typeof STORE_NAMES];
@@ -38,6 +39,7 @@ export const STORE_MANIFEST: Record<StoreName, StoreErasePolicy> = {
   deviceCheckpoints: { eraseAllData: true, eraseDiveDataOnly: true },
   trips: { eraseAllData: true, eraseDiveDataOnly: true },
   supplementaryCatalog: { eraseAllData: true, eraseDiveDataOnly: false },
+  diveMemos: { eraseAllData: true, eraseDiveDataOnly: false },
 };
 
 export const ALL_STORE_NAMES: StoreName[] = Object.values(STORE_NAMES);

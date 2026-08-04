@@ -2,6 +2,7 @@ import {
   exportLocalBackupSnapshot,
   importLocalBackupSnapshot,
   type BackupImportMode,
+  type DiveMemo,
   type LocalAttachment,
   type LocalBackground,
   type LocalBackupSnapshot,
@@ -22,8 +23,8 @@ export {
 } from "./backup-crypto";
 
 const BACKUP_FORMAT = "diveframe-local-backup";
-const BACKUP_VERSION = 3;
-const SUPPORTED_BACKUP_VERSIONS = [1, 2, 3] as const;
+const BACKUP_VERSION = 4;
+const SUPPORTED_BACKUP_VERSIONS = [1, 2, 3, 4] as const;
 const LEGACY_BACKUP_VERSION = 1;
 
 type EncodedBlobRecord<T> = Omit<T, "blob"> & { blobBase64: string };
@@ -109,6 +110,7 @@ export async function createLocalAppBackup(password?: string) {
       ),
       trips: snapshot.trips,
       supplementaryCatalog: snapshot.supplementaryCatalog,
+      diveMemos: snapshot.diveMemos,
     },
   } satisfies Omit<BackupDocument, "integrity">;
   const document: BackupDocument = {
@@ -235,6 +237,7 @@ async function decodeSnapshot(document: BackupDocument): Promise<LocalBackupSnap
     ),
     trips: document.stores.trips ?? [],
     supplementaryCatalog: document.stores.supplementaryCatalog ?? [],
+    diveMemos: (document.stores.diveMemos ?? []) as DiveMemo[],
   };
 }
 
@@ -386,6 +389,7 @@ function validateBackupDocument(value: unknown): BackupDocument {
     ["device checkpoints", stores.deviceCheckpoints ?? [], "id"],
     ["trips", stores.trips ?? [], "id"],
     ["supplementary catalog", stores.supplementaryCatalog ?? [], "id"],
+    ["dive memos", stores.diveMemos ?? [], "id"],
   ];
   for (const [label, records, key] of keyedStores) {
     const keys = records.map((record) =>
@@ -512,6 +516,7 @@ function arraysPresent(stores: Partial<EncodedStores>) {
       Array.isArray(stores.deviceCheckpoints)) &&
     (stores.trips === undefined || Array.isArray(stores.trips)) &&
     (stores.supplementaryCatalog === undefined ||
-      Array.isArray(stores.supplementaryCatalog))
+      Array.isArray(stores.supplementaryCatalog)) &&
+    (stores.diveMemos === undefined || Array.isArray(stores.diveMemos))
   );
 }

@@ -14,9 +14,9 @@ replace that application's cloud backup and does not write changes back to it.
 > exported.
 >
 > **Schema note:** The one-time IndexedDB **v8** upgrade erased local DiveFrame
-> data on first open of that version. Later upgrades (including **v9** and the
-> v10 repair migration) are additive and keep existing dives, BLE raw records,
-> trips, and overlays. A
+> data on first open of that version. Later upgrades (including **v9**, the
+> v10 repair migration, and **v11** dive memos) are additive and keep existing
+> dives, BLE raw records, trips, overlays, and memos. A
 > pre-v8 backup still does not auto-migrate into v8 — re-import source logs if
 > you are coming from an older schema.
 
@@ -158,7 +158,7 @@ has dives requires confirmation and clears those assignments first.
 
 ### List filters
 
-Below the existing **Named**, **GPS**, and **Set in App** chips, open
+Below the existing **Has site**, **GPS Data**, and **Edited here** chips, open
 **Filters** for a collapsible panel with **From** and **To** date bounds
 (inclusive on dive date; leave a bound empty for no limit) and a **Computer**
 dropdown listing distinct computer models in the logbook.
@@ -169,6 +169,18 @@ does not clear the search box; use the search clear control for typed queries.
 When search or filters are active, a trip header appears only if at least one
 member matches. Non-matching members in that trip are hidden until filters and
 search clear.
+
+## Dive memos
+
+Open **Dive memos** from the import guide (or go to `/memos`) to jot date,
+time, location, GPS, buddies, and notes for a dive before the computer log is
+imported. Headings default to **Dive 1**, **Dive 2**, and so on; tap a heading
+to rename it. Photo location only reads GPS from the selected image and does
+not keep the photo on the memo.
+
+Memos are stored in IndexedDB, included in app-data backups (backup format
+**v4**), and cleared only by **Erase all local DiveFrame data** — not by erase
+dives only. Matching memos to imported dives is not automatic yet.
 
 ## Dive profiles and gas use
 
@@ -298,14 +310,15 @@ Oceanic+, or their cloud services.
 
 To update the original log:
 
-1. Turn on the **Set in App** filter.
+1. Turn on the **Edited here** filter.
 2. Open a dive and note its source-specific dive number.
 3. Find that dive in the source application and enter the correction manually.
 4. Export and import the source log again.
 
 When a later source import supplies a non-empty site name, DiveFrame replaces
-the temporary app-level site assignment and the dive leaves the **Set in App**
-filter.
+the temporary app-level site assignment and the dive leaves the **Edited here**
+filter when that was the only in-app edit. Other in-app edits (GPS, trip,
+cylinder, buddy, notes, location, category) also match this filter.
 
 Open **Edit dive details** to enter or change both the specific dive-site name
 and the broader location. The fields suggest site and location names already

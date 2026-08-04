@@ -958,7 +958,20 @@ export function DiveFrameApp() {
         <button
           type="button"
           className="brand"
-          onClick={() => setMobileDetail(false)}
+          onClick={() => {
+            setImportGuideOpen(false);
+            setBleImportOpen(false);
+            setMobileDetail(false);
+            setSelectMode(false);
+            setSelectedDiveIds(new Set());
+            if (typeof window !== "undefined") {
+              const url = new URL(window.location.href);
+              if (url.searchParams.has("dive")) {
+                url.searchParams.delete("dive");
+                window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}` || "/");
+              }
+            }
+          }}
           aria-label={t("home")}
         >
           <span className="brand-mark">

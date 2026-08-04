@@ -80,6 +80,12 @@ Shipped on `main` (pushed):
   `SYSTEM_OVERLAY_FONT_STACK` in `lib/composer-fonts.ts`. **APK-affecting.**
   Session: `docs/2026-08-04-self-hosted-fonts-session.md`. F-Droid outline:
   `docs/FDROID-PATH.md`.
+- Sticky header safe-area, export save+share, brand→home, **Edited here**
+  filter (`appEditedAt` + historical site/GPS/trip/cylinder), and standalone
+  **Dive memos** (`/memos`, IndexedDB v11, backup v4). Android long-press
+  shortcut deferred. Session:
+  `docs/2026-08-04-sticky-export-memos-session.md`. **APK-affecting** — needs a
+  new debug APK after merge; dogfood **1.0.14** does not include this branch.
 - About page: softer intro, full Subsurface export called out, personal “why
   this exists” note, click-to-reveal contact email.
 - Android debug APK **1.0.14** (`versionCode 15`) was rebuilt from commit

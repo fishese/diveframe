@@ -100,6 +100,39 @@ export async function shareExportFile(
   return true;
 }
 
+/**
+ * After a successful save, open a share sheet when the platform allows it.
+ * Failures are swallowed so export still counts as successful.
+ */
+export async function shareAfterExport(
+  saved: SavedExportFile,
+  blob: Blob,
+  fileName: string,
+  mimeType: string,
+  title?: string,
+): Promise<boolean> {
+  try {
+    if (saved.target === "device" && saved.shareable) {
+      return await shareExportFile(saved, { mimeType, title });
+    }
+    if (typeof navigator === "undefined" || typeof navigator.share !== "function") {
+      return false;
+    }
+    const file = new File([blob], fileName, { type: mimeType });
+    const payload = { files: [file], title };
+    if (
+      typeof navigator.canShare === "function" &&
+      !navigator.canShare(payload)
+    ) {
+      return false;
+    }
+    await navigator.share(payload);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Where the file landed, for flows that report progress to the user. */
 export function savedFileNotice(saved: SavedExportFile, t: AppTranslate) {
   if (saved.target !== "device") return null;

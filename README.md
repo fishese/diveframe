@@ -57,7 +57,7 @@ reviewers.
   sites, unique imported locations, accumulated underwater time, average
   calculable SAC, and unique buddies.
 - OpenStreetMap entry-location maps.
-- Mutually exclusive Site Named, GPS Data, and Set in App filters with an
+- Mutually exclusive Has site, GPS Data, and Edited here filters with an
   explicit clear action.
 - Documented `source:shearwater-only` and `source:subsurface-only` search
   operators for finding records that have not matched across those two logs.

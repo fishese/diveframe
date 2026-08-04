@@ -27,6 +27,8 @@ import {
   type LocalDataChangeReason,
 } from "./cross-tab-sync";
 import { withOptimizedJpeg } from "./media-optimization";
+import type { DiveMemo } from "./dive-memos";
+import { normalizeMemoMinute } from "./dive-memos";
 import type { DiveSiteCatalog } from "./dive-site-catalog";
 import type { WhatsNewDocument } from "./whats-new";
 import {
@@ -34,6 +36,8 @@ import {
   STORE_NAMES,
   storeNamesForErase,
 } from "./store-manifest";
+
+export type { DiveMemo } from "./dive-memos";
 
 export type DiveSource =
   | "shearwater"
@@ -95,6 +99,8 @@ export type LocalDive = {
   userGpsUpdatedAt: string | null;
   exportGpsPreference: ExportGpsPreference;
   tripId: string | null;
+  /** ISO timestamp of the last in-app dive-data edit; not set by import/composer. */
+  appEditedAt?: string | null;
   resolvedLocation: string | null;
   resolvedCity: string | null;
   resolvedCountry: string | null;
@@ -262,12 +268,13 @@ export type LocalBackupSnapshot = {
   deviceCheckpoints: LocalDeviceCheckpoint[];
   trips: LocalTrip[];
   supplementaryCatalog: LocalSupplementaryCatalog[];
+  diveMemos: DiveMemo[];
 };
 
 export type BackupImportMode = "merge" | "replace" | "replace-dives";
 
 const DATABASE_NAME = "diveframe-local";
-export const DATABASE_VERSION = 10;
+export const DATABASE_VERSION = 11;
 const DIVES_STORE = STORE_NAMES.dives;
 const SOURCES_STORE = STORE_NAMES.sourceRecords;
 const ATTACHMENTS_STORE = STORE_NAMES.attachments;
@@ -281,6 +288,7 @@ const RAW_DIVE_RECORDS_STORE = STORE_NAMES.rawDiveRecords;
 const DEVICE_CHECKPOINTS_STORE = STORE_NAMES.deviceCheckpoints;
 const TRIPS_STORE = STORE_NAMES.trips;
 const SUPPLEMENTARY_CATALOG_STORE = STORE_NAMES.supplementaryCatalog;
+const DIVE_MEMOS_STORE = STORE_NAMES.diveMemos;
 
 export async function listLocalDives() {
   const database = await openDatabase();
@@ -966,6 +974,7 @@ export async function updateLocalDiveSite(
     userSiteSource: selection.source,
     userSiteCatalogId: selection.catalogId ?? null,
     userSiteUpdatedAt: now,
+    appEditedAt: now,
   };
   divesStore.put(updated);
 
@@ -1017,6 +1026,7 @@ export async function clearLocalDiveSiteOverride(id: string) {
     userSiteSource: null,
     userSiteCatalogId: null,
     userSiteUpdatedAt: null,
+    appEditedAt: new Date().toISOString(),
   };
   divesStore.put(updated);
   contributionsStore.delete(id);
@@ -1054,6 +1064,7 @@ export async function updateLocalDiveDetails(
       details.endPressureBar === undefined
         ? dive.tankPressuresEndBar
         : replaceFirstPressure(dive.tankPressuresEndBar, details.endPressureBar),
+    appEditedAt: new Date().toISOString(),
   }));
 }
 
@@ -1086,6 +1097,7 @@ export async function updateLocalDiveLocation(
     resolvedLocation: location.label,
     resolvedCity: location.city,
     resolvedCountry: location.country,
+    appEditedAt: new Date().toISOString(),
   }));
 }
 
@@ -1097,6 +1109,7 @@ export async function updateLocalDiveCategory(
     ...dive,
     category,
     categorySource: "user",
+    appEditedAt: new Date().toISOString(),
   }));
 }
 
@@ -1106,6 +1119,42 @@ export async function listLocalTrips() {
     database.transaction(TRIPS_STORE).objectStore(TRIPS_STORE).getAll(),
   );
   return trips.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function listLocalDiveMemos() {
+  const database = await openDatabase();
+  const memos = await request<DiveMemo[]>(
+    database.transaction(DIVE_MEMOS_STORE).objectStore(DIVE_MEMOS_STORE).getAll(),
+  );
+  return memos.sort((a, b) => {
+    const dateOrder = a.date.localeCompare(b.date);
+    return dateOrder || a.createdAt.localeCompare(b.createdAt);
+  });
+}
+
+export async function saveLocalDiveMemo(memo: DiveMemo) {
+  const stored: DiveMemo = {
+    ...memo,
+    minute: normalizeMemoMinute(memo.minute),
+  };
+  const database = await openDatabase();
+  const transaction = database.transaction(DIVE_MEMOS_STORE, "readwrite");
+  transaction.objectStore(DIVE_MEMOS_STORE).put(stored);
+  await transactionComplete(transaction);
+  return stored;
+}
+
+export async function deleteLocalDiveMemo(id: string) {
+  const database = await openDatabase();
+  const transaction = database.transaction(DIVE_MEMOS_STORE, "readwrite");
+  const store = transaction.objectStore(DIVE_MEMOS_STORE);
+  const existing = await request<DiveMemo | undefined>(store.get(id));
+  if (!existing) {
+    transaction.abort();
+    throw new Error("Dive memo not found.");
+  }
+  store.delete(id);
+  await transactionComplete(transaction);
 }
 
 export async function createLocalTrip(name: string) {
@@ -1187,7 +1236,11 @@ export async function setLocalDiveTripId(
     );
     if (!trip) throw new Error("Trip not found.");
   }
-  return updateDive(diveId, (dive) => ({ ...dive, tripId }));
+  return updateDive(diveId, (dive) => ({
+    ...dive,
+    tripId,
+    appEditedAt: new Date().toISOString(),
+  }));
 }
 
 export async function setLocalDiveTripIds(
@@ -1214,7 +1267,11 @@ export async function setLocalDiveTripIds(
       transaction.abort();
       throw new Error("Dive not found in this browser.");
     }
-    divesStore.put({ ...hydrateDive(dive), tripId });
+    divesStore.put({
+      ...hydrateDive(dive),
+      tripId,
+      appEditedAt: new Date().toISOString(),
+    });
   }
   await transactionComplete(transaction);
 }
@@ -1241,6 +1298,7 @@ export async function updateLocalDiveUserGps(
         userGpsLng: null,
         userGpsSource: null,
         userGpsUpdatedAt: null,
+        appEditedAt: now,
       };
     }
     return {
@@ -1249,6 +1307,7 @@ export async function updateLocalDiveUserGps(
       userGpsLng: gps.lng,
       userGpsSource: gps.source,
       userGpsUpdatedAt: now,
+      appEditedAt: now,
     };
   });
 }
@@ -1365,6 +1424,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     deviceCheckpoints,
     trips,
     supplementaryCatalog,
+    diveMemos,
   ] = await Promise.all([
     request<LocalDive[]>(transaction.objectStore(DIVES_STORE).getAll()),
     request<SourceRecord[]>(transaction.objectStore(SOURCES_STORE).getAll()),
@@ -1395,6 +1455,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     request<LocalSupplementaryCatalog[]>(
       transaction.objectStore(SUPPLEMENTARY_CATALOG_STORE).getAll(),
     ),
+    request<DiveMemo[]>(transaction.objectStore(DIVE_MEMOS_STORE).getAll()),
   ]);
   return {
     dives: dives.map(hydrateDive),
@@ -1410,6 +1471,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     deviceCheckpoints,
     trips,
     supplementaryCatalog,
+    diveMemos,
   };
 }
 
@@ -1433,6 +1495,7 @@ export async function importLocalBackupSnapshot(
     [DEVICE_CHECKPOINTS_STORE, snapshot.deviceCheckpoints],
     [TRIPS_STORE, snapshot.trips],
     [SUPPLEMENTARY_CATALOG_STORE, snapshot.supplementaryCatalog],
+    [DIVE_MEMOS_STORE, snapshot.diveMemos],
   ];
   const replacedStoreNames = new Set(
     mode === "replace"
@@ -1510,6 +1573,7 @@ export async function getLocalBackupSizeEstimate() {
     appPreferences,
     trips,
     supplementaryCatalog,
+    diveMemos,
     attachments,
     backgrounds,
     brandingAssets,
@@ -1534,6 +1598,7 @@ export async function getLocalBackupSizeEstimate() {
     request<LocalSupplementaryCatalog[]>(
       transaction.objectStore(SUPPLEMENTARY_CATALOG_STORE).getAll(),
     ),
+    request<DiveMemo[]>(transaction.objectStore(DIVE_MEMOS_STORE).getAll()),
     collectStoreRecords(transaction.objectStore(ATTACHMENTS_STORE), (record) => {
       const value = record as LocalAttachment;
       return {
@@ -1612,6 +1677,7 @@ export async function getLocalBackupSizeEstimate() {
       appPreferences,
       trips,
       supplementaryCatalog,
+      diveMemos,
       attachments: attachments.records,
       backgrounds: backgrounds.records,
       brandingAssets: brandingAssets.records,
@@ -2131,6 +2197,11 @@ function openDatabase() {
       if (previousVersion < 10) {
         createV10ObjectStores(database);
       }
+      // v11 is additive: dive memos only. Repair missing store without
+      // touching existing data.
+      if (previousVersion < 11) {
+        createV11ObjectStores(database);
+      }
     };
     operation.onsuccess = () => resolve(operation.result);
     operation.onerror = () =>
@@ -2204,6 +2275,12 @@ function createV9ObjectStores(database: IDBDatabase) {
 function createV10ObjectStores(database: IDBDatabase) {
   createV8ObjectStores(database);
   createV9ObjectStores(database);
+}
+
+function createV11ObjectStores(database: IDBDatabase) {
+  if (!database.objectStoreNames.contains(DIVE_MEMOS_STORE)) {
+    database.createObjectStore(DIVE_MEMOS_STORE, { keyPath: "id" });
+  }
 }
 
 function request<T>(operation: IDBRequest<T>) {

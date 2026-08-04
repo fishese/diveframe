@@ -62,6 +62,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(importGuide, /href="\/settings#backup-transfer"/);
   assert.match(importGuide, /import Link from "next\/link"/);
   assert.match(importGuide, /importGuideBackupPrompt/);
+  assert.match(importGuide, /importGuideMemosPrompt/);
+  assert.match(importGuide, /href="\/memos"/);
   assert.match(settings, /id="backup-transfer"/);
   assert.match(settings, /window\.location\.hash !== "#backup-transfer"/);
   assert.match(settings, /eraseDivePhotosAction/);
@@ -84,7 +86,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(appI18nJa, /Open Font License|OFL|オープン/);
   assert.match(about, /source:shearwater-only/);
   assert.match(about, /source:subsurface-only/);
-  assert.match(userGuide, /\*\*Set in App\*\*/);
+  assert.match(userGuide, /\*\*Edited here\*\*/);
   assert.match(license, /GPL-3\.0-or-later/);
   assert.match(app, /\.uddf/);
   assert.match(app, /\.fit/);
@@ -199,6 +201,19 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(settings, /t\("backgroundName"\)/);
   assert.match(composer, /TEMPLATES/);
   assert.match(composer, /exportComposition/);
+  const fileExport = await readFile("lib/file-export.ts", "utf8");
+  assert.match(fileExport, /shareAfterExport/);
+  const exporter = await readFile("lib/exporter.ts", "utf8");
+  assert.match(exporter, /shareAfterExport/);
+  const memosApp = await readFile("app/memos/MemosApp.tsx", "utf8");
+  assert.match(memosApp, /listLocalDiveMemos/);
+  assert.match(memosApp, /NOTES_PLACEHOLDER/);
+  assert.match(memosApp, /readPhotoExifGps/);
+  assert.doesNotMatch(memosApp, /saveLocalDivePhoto|addLocalDivePhoto/);
+  const memosPage = await readFile("app/memos/page.tsx", "utf8");
+  assert.match(memosPage, /MemosApp/);
+  assert.match(appI18nEn, /diveMemosTitle:\s*"Dive memos"/);
+  assert.match(appI18nEn, /setInApp:\s*"Edited here"/);
   assert.match(composer, /depth-pressure-temperature/);
   assert.match(composer, /zh-Hant/);
   assert.match(composer, /OVERLAY_FONTS/);
@@ -276,7 +291,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composerPresets, /selectedPhotoId/);
   assert.match(composerPresets, /photoOffsetX/);
   assert.match(storage, /composerPresets/);
-  assert.match(storage, /DATABASE_VERSION = 10/);
+  assert.match(storage, /DATABASE_VERSION = 11/);
   assert.match(storage, /previousVersion < 8/);
   assert.match(storage, /supplementaryCatalog/);
   assert.doesNotMatch(
@@ -288,9 +303,18 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     storeManifest,
     /supplementaryCatalog:[\s\S]*eraseAllData: true[\s\S]*eraseDiveDataOnly: false/,
   );
+  assert.match(storeManifest, /diveMemos/);
+  assert.match(
+    storeManifest,
+    /diveMemos:[\s\S]*eraseAllData: true[\s\S]*eraseDiveDataOnly: false/,
+  );
   assert.match(storage, /createV8ObjectStores/);
   assert.match(storage, /createV9ObjectStores/);
   assert.match(storage, /createV10ObjectStores/);
+  assert.match(storage, /createV11ObjectStores/);
+  assert.match(storage, /listLocalDiveMemos/);
+  assert.match(storage, /saveLocalDiveMemo/);
+  assert.match(storage, /deleteLocalDiveMemo/);
   assert.match(storage, /deleteObjectStore/);
   assert.match(storage, /getLocalSupplementaryCatalog/);
   assert.match(storage, /saveLocalSupplementaryCatalog/);
@@ -439,7 +463,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     bleImportPanel,
     /className="button button-primary ble-history-download"/,
   );
-  assert.match(backup, /BACKUP_VERSION = 3/);
+  assert.match(backup, /BACKUP_VERSION = 4/);
+  assert.match(backup, /diveMemos/);
   assert.match(backup, /rawBytesBase64/);
   assert.match(backup, /fingerprintBase64/);
   assert.match(backup, /composerPresets/);
@@ -567,6 +592,14 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(globalStyles, /color-scheme: dark/);
   assert.match(globalStyles, /env\(safe-area-inset-top/);
   assert.match(globalStyles, /var\(--safe-area-inset-top/);
+  assert.match(
+    globalStyles,
+    /\.topbar\s*\{(?=[^}]*\btop:\s*0)(?=[^}]*padding:[\s\S]*?safe-area-inset-top)[^}]*\}/,
+  );
+  assert.doesNotMatch(
+    globalStyles,
+    /\.topbar\s*\{[^}]*top:\s*var\(--safe-area-inset-top/,
+  );
   assert.match(globalStyles, /\.mobile-home-button/);
   assert.match(globalStyles, /\.composer-preview-pane[\s\S]+position: sticky/);
   assert.match(globalStyles, /\.danger-option \.button[\s\S]+width: 100%/);
