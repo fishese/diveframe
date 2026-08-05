@@ -1,35 +1,74 @@
-# Task 5 Report: What's new Settings UI
+# Task 5 Report: Wire dive detail (gated)
 
 ## Status
 
-Implemented and verified.
-Commit: `ee072ec` — Show What is new in Settings with HTTPS download links.
+**DONE**
+
+**Branch:** `feature/memo-dive-match`  
+**Commit:** `b84edc1` — Show gated nearby-memo hints on dive detail.
 
 ## Summary
 
-- Settings loads the cached What’s new document, refreshes it while online, and persists the refreshed document and fetch time.
-- A collapsible card shows unseen-version state, entries, inline HTTPS links, and HTTPS CTA buttons. Opening the card persists the document version as seen.
-- Added English, Traditional Chinese, and Japanese copy plus responsive card styles.
+Wired `MemoDiveMatchHints` into dive detail in `DiveFrameApp.tsx`, gated by `diveNeedsPlaceNameHint(dive)`. Memos load via `listLocalDiveMemos` when the selected dive lacks a place name. The hint block renders above the site picker. `onDiveChange` updates parent `dives` state (same map pattern as other editors) and syncs local site/location/buddy/notes drafts; `onMemosChange` updates DiveDetail-local memo list. Did not modify `MemosApp` (Task 6).
+
+## Deliverables
+
+| File | Action |
+| --- | --- |
+| `app/DiveFrameApp.tsx` | Modified — gated mount + memo load + callbacks |
+| `tests/app-contract.test.mjs` | Modified — asserts import/gate/list + render above site picker |
+
+## Behavior
+
+- Gate: if `!diveNeedsPlaceNameHint(dive)`, render nothing (and clear loaded memos).
+- Load: `listLocalDiveMemos()` when detail is open and gate is true (`dive.id` / gate deps).
+- Placement: `<MemoDiveMatchHints mode="on-dive" … />` immediately above `.site-picker-card`.
+- Refresh: parent `setDives` on apply/copy; local drafts updated from the returned dive.
 
 ## Verification
 
-- `node --test tests/app-contract.test.mjs` — 1 passed.
-- `npx tsc --noEmit` — passed.
-- `npm test` — 72 passed, 3 skipped, 0 failed.
+```powershell
+node --test tests/app-contract.test.mjs
+```
+
+```
+✔ ships the DiveFrame import, map, photo, and composer workflow
+ℹ pass 1 / fail 0
+```
+
+```powershell
+npm run typecheck
+```
+
+```
+> tsc --noEmit --incremental false
+(exit 0)
+```
+
+Manual browser smoke (dive without site + nearby memo; dive with `userSite` hides block) not run in this session — contract + typecheck only.
+
+## Self-review
+
+- Spec: gated dive detail, load memos, mount above site picker, refresh via onDiveChange/onMemosChange — covered.
+- MemosApp untouched.
+- Contract test fails correctly before wiring (missing `MemoDiveMatchHints`), passes after.
 
 ## Concerns
 
-None blocking. The UI has no browser-level interaction test; the contract test confirms the integration identifiers and full build/type checks passed.
+1. No interactive/browser smoke in this environment; UI behavior relies on Task 4 component + contract placement assertions.
+2. Memos reload only when `dive.id` or gate flips — cross-tab memo creates while detail stays open won’t appear until remount/gate cycle (acceptable for v1; parent already refreshes dives via `subscribeLocalDataChanges`).
 
-## Review fix (Important)
+## Review fix (Important P1)
 
-**Finding:** `app/globals.css` grew ~98 lines with bespoke What's new typography/borders duplicating existing settings patterns.
+**Finding:** Dive detail gates `MemoDiveMatchHints` with `diveNeedsPlaceNameHint(dive)`. Apply empty often sets `userSite`/`location` → immediate `onDiveChange` → gate false → component unmounts before Keep/Delete dialog can show.
 
-**Changes:**
-- Refactored `SettingsApp.tsx` to reuse `settings-card-heading`, `settings-note`, and `settings-actions` for summary, entry body/date, and download CTAs.
-- Slimmed What's new CSS to layout-only rules: card order, collapsible summary, unseen badge, entry list dividers, and one scoped `.settings-note` margin override in the summary.
-- Removed duplicate typography, link styling, box-shadow badge flourish, and `.whats-new-links` (replaced by existing `.settings-actions` including mobile full-width buttons).
+**Fix (in shared `MemoDiveMatchHints`, no parent hold):**
+- Apply empty: after `writeApplyPlan`, defer `onDiveChange`; open post-apply dialog with the updated dive.
+- Keep / Delete completion: then call `onDiveChange(updatedDive)` (and `onMemosChange` / `onMemoChange` as before).
+- Backdrop dismiss: call `onDiveChange` so UI reflects IDB writes, then close dialog.
+- Per-field Copy still calls `onDiveChange` immediately (no dialog).
+- Early empty-candidate return skipped while `postApply` is open.
 
-**CSS delta:** ~−57 lines net in `app/globals.css` vs pre-fix Task 5 styles (~41 lines What's new-specific CSS remain).
+**Verification:** `npm run typecheck` — exit 0.
 
-**Verification:** `node --test tests/app-contract.test.mjs` — 1 passed.
+**Commit:** `Keep memo match hints mounted through post-apply dialog.`

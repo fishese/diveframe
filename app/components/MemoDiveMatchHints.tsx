@@ -204,10 +204,13 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
       (windowLevel === "preferred" && preferredHits === 0));
 
   // Dive detail: omit when nothing to show and no further widen offer.
+  // Keep mounted while the post-apply dialog is open (Apply empty defers
+  // onDiveChange so place-name gates stay true; this covers empty lists too).
   if (
     props.mode === "on-dive" &&
     candidateCount === 0 &&
-    !canShow24h
+    !canShow24h &&
+    !postApply
   ) {
     return null;
   }
@@ -250,7 +253,8 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
     setStatus(null);
     try {
       const updated = await writeApplyPlan(plan, memo, dive);
-      props.onDiveChange(updated);
+      // Defer onDiveChange until Keep/Delete/backdrop so parents that gate on
+      // dive place name keep this component mounted for the post-apply dialog.
       setPostApply({ memo, dive: updated });
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));
@@ -358,6 +362,7 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
           props.onMemoChange(saved);
         }
       }
+      props.onDiveChange(dive);
       setPostApply(null);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));
@@ -368,16 +373,24 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
 
   async function deleteMemoAfterApply() {
     if (!postApply) return;
+    const { memo, dive } = postApply;
     setBusy(true);
     setStatus(null);
     try {
-      await deleteMemo(postApply.memo);
+      await deleteMemo(memo);
+      props.onDiveChange(dive);
       setPostApply(null);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));
     } finally {
       setBusy(false);
     }
+  }
+
+  function dismissPostApplyDialog() {
+    if (busy || !postApply) return;
+    props.onDiveChange(postApply.dive);
+    setPostApply(null);
   }
 
   function renderExpandedFields(memo: DiveMemo, dive: LocalDive) {
@@ -611,7 +624,7 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
         <div
           className="memo-match-dialog-backdrop"
           role="presentation"
-          onClick={() => !busy && setPostApply(null)}
+          onClick={dismissPostApplyDialog}
         >
           <section
             className="memo-match-dialog"
