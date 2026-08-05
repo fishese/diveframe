@@ -15,6 +15,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppI18n } from "../AppI18nProvider";
 import { AndroidAppLink } from "../components/AndroidAppLink";
+import { MemoDiveMatchHints } from "../components/MemoDiveMatchHints";
 import {
   createDiveMemoId,
   defaultDiveMemoFields,
@@ -26,7 +27,9 @@ import {
 import {
   deleteLocalDiveMemo,
   listLocalDiveMemos,
+  listLocalDives,
   saveLocalDiveMemo,
+  type LocalDive,
 } from "@/lib/indexed-db";
 import {
   formatCoordinatePair,
@@ -49,6 +52,7 @@ function roundCoord(value: number) {
 export function MemosApp() {
   const { t } = useAppI18n();
   const [memos, setMemos] = useState<DiveMemo[]>([]);
+  const [dives, setDives] = useState<LocalDive[]>([]);
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(false);
   const [editingHeadingId, setEditingHeadingId] = useState<string | null>(null);
@@ -82,6 +86,39 @@ export function MemosApp() {
       setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
     });
   }, [refresh, t]);
+
+  useEffect(() => {
+    void listLocalDives()
+      .then(setDives)
+      .catch((error) => {
+        setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
+      });
+  }, [t]);
+
+  function handleMemoChange(updated: DiveMemo) {
+    setMemos((current) => {
+      const without = current.filter((memo) => memo.id !== updated.id);
+      return [...without, updated].sort((a, b) =>
+        a.createdAt.localeCompare(b.createdAt),
+      );
+    });
+  }
+
+  function handleDiveChange(updated: LocalDive) {
+    setDives((current) =>
+      current.map((dive) => (dive.id === updated.id ? updated : dive)),
+    );
+  }
+
+  function handleMemoDeleted(id: string) {
+    setMemos((current) => {
+      const remaining = current.filter((memo) => memo.id !== id);
+      if (remaining.length === 0) {
+        void refresh();
+      }
+      return remaining;
+    });
+  }
 
   useEffect(() => {
     if (!scrollToMemoId) return;
@@ -288,11 +325,15 @@ export function MemosApp() {
             <MemoCard
               key={memo.id}
               memo={memo}
+              dives={dives}
               busy={busy}
               editingHeading={editingHeadingId === memo.id}
               onEditHeading={() => setEditingHeadingId(memo.id)}
               onHeadingBlur={() => setEditingHeadingId(null)}
               onChange={(next) => void persist(next)}
+              onMemoChange={handleMemoChange}
+              onDiveChange={handleDiveChange}
+              onMemoDeleted={handleMemoDeleted}
               onDelete={() => void removeMemo(memo.id)}
               onDeviceGps={() => void requestDeviceGps(memo.id)}
               onPhotoGps={() => void pickPhotoGps(memo.id)}
@@ -358,22 +399,30 @@ export function MemosApp() {
 
 function MemoCard({
   memo,
+  dives,
   busy,
   editingHeading,
   onEditHeading,
   onHeadingBlur,
   onChange,
+  onMemoChange,
+  onDiveChange,
+  onMemoDeleted,
   onDelete,
   onDeviceGps,
   onPhotoGps,
   t,
 }: {
   memo: DiveMemo;
+  dives: LocalDive[];
   busy: boolean;
   editingHeading: boolean;
   onEditHeading: () => void;
   onHeadingBlur: () => void;
   onChange: (memo: DiveMemo) => void;
+  onMemoChange: (memo: DiveMemo) => void;
+  onDiveChange: (dive: LocalDive) => void;
+  onMemoDeleted: (id: string) => void;
   onDelete: () => void;
   onDeviceGps: () => void;
   onPhotoGps: () => void;
@@ -704,6 +753,15 @@ function MemoCard({
           />
         </label>
       </div>
+
+      <MemoDiveMatchHints
+        mode="on-memo"
+        memo={memo}
+        dives={dives}
+        onMemoChange={onMemoChange}
+        onDiveChange={onDiveChange}
+        onMemoDeleted={onMemoDeleted}
+      />
     </article>
   );
 }

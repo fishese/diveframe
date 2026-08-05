@@ -207,9 +207,14 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(exporter, /shareAfterExport/);
   const memosApp = await readFile("app/memos/MemosApp.tsx", "utf8");
   assert.match(memosApp, /listLocalDiveMemos/);
+  assert.match(memosApp, /listLocalDives/);
+  assert.match(memosApp, /MemoDiveMatchHints/);
+  assert.match(memosApp, /mode="on-memo"/);
+  assert.match(memosApp, /onMemoDeleted/);
   assert.match(memosApp, /NOTES_PLACEHOLDER/);
   assert.match(memosApp, /readPhotoExifGps/);
   assert.doesNotMatch(memosApp, /saveLocalDivePhoto|addLocalDivePhoto/);
+  assert.doesNotMatch(memosApp, /diveNeedsPlaceNameHint/);
   const memosPage = await readFile("app/memos/page.tsx", "utf8");
   assert.match(memosPage, /MemosApp/);
   assert.match(app, /MemoDiveMatchHints/);
