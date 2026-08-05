@@ -440,7 +440,14 @@ function MemoCard({
 
   draftRef.current = draft;
 
+  // Sync draft from parent when memo changes externally (e.g. Keep linked note).
+  // Cancel any pending debounced persist so a stale draft cannot overwrite it.
   useEffect(() => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    draftRef.current = memo;
     setDraft(memo);
     setCoordsDraft(
       formatCoordinatePair(
@@ -481,6 +488,23 @@ function MemoCard({
       saveTimerRef.current = null;
     }
     onChange(draftRef.current);
+  }
+
+  /** Apply Keep/Delete-driven updates immediately; cancel pending draft persist. */
+  function applyExternalMemo(updated: DiveMemo) {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    draftRef.current = updated;
+    setDraft(updated);
+    setCoordsDraft(
+      formatCoordinatePair(
+        updated.lat == null ? null : roundCoord(updated.lat),
+        updated.lng == null ? null : roundCoord(updated.lng),
+      ),
+    );
+    onMemoChange(updated);
   }
 
   function commitCoordsDraft() {
@@ -758,7 +782,7 @@ function MemoCard({
         mode="on-memo"
         memo={memo}
         dives={dives}
-        onMemoChange={onMemoChange}
+        onMemoChange={applyExternalMemo}
         onDiveChange={onDiveChange}
         onMemoDeleted={onMemoDeleted}
       />
