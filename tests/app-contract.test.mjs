@@ -212,6 +212,20 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(memosApp, /saveLocalDivePhoto|addLocalDivePhoto/);
   const memosPage = await readFile("app/memos/page.tsx", "utf8");
   assert.match(memosPage, /MemosApp/);
+  assert.match(app, /MemoDiveMatchHints/);
+  assert.match(app, /diveNeedsPlaceNameHint/);
+  assert.match(app, /listLocalDiveMemos/);
+  assert.match(app, /mode="on-dive"/);
+  {
+    const hintRenderIdx = app.indexOf('<MemoDiveMatchHints');
+    const sitePickerIdx = app.indexOf("site-picker-card");
+    assert.ok(
+      hintRenderIdx >= 0 &&
+        sitePickerIdx >= 0 &&
+        hintRenderIdx < sitePickerIdx,
+      "gated memo match hints should render above the site picker",
+    );
+  }
   assert.match(appI18nEn, /diveMemosTitle:\s*"Jot a dive memo"/);
   assert.match(appI18nEn, /setInApp:\s*"Edited here"/);
   assert.match(composer, /depth-pressure-temperature/);

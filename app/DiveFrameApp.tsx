@@ -56,6 +56,7 @@ import {
   getLocalSupplementaryCatalog,
   listLocalAttachments,
   listLocalBackgrounds,
+  listLocalDiveMemos,
   listLocalDives,
   listLocalTrips,
   renameLocalTrip,
@@ -127,6 +128,9 @@ import { diveFrameApiUrl } from "@/lib/diveframe-api";
 import { useAppI18n } from "./AppI18nProvider";
 import { BleImportPanel } from "./components/BleImportPanel";
 import { ImportGuide } from "./components/ImportGuide";
+import { MemoDiveMatchHints } from "./components/MemoDiveMatchHints";
+import type { DiveMemo } from "@/lib/dive-memos";
+import { diveNeedsPlaceNameHint } from "@/lib/memo-dive-match";
 
 type Dive = LocalDive;
 type Attachment = LocalAttachment;
@@ -1451,6 +1455,13 @@ export function DiveFrameApp() {
                   onCreateTrip={createTripForDive}
                   onRenameTrip={renameTrip}
                   onDeleteTrip={removeTrip}
+                  onDiveChange={(updated) => {
+                    setDives((current) =>
+                      current.map((dive) =>
+                        dive.id === updated.id ? updated : dive,
+                      ),
+                    );
+                  }}
                 />
               ) : (
                 <div className="no-selection">{t("chooseDive")}</div>
@@ -1616,6 +1627,7 @@ function DiveDetail({
   onCreateTrip,
   onRenameTrip,
   onDeleteTrip,
+  onDiveChange,
 }: {
   dive: Dive;
   attachments: Attachment[];
@@ -1650,6 +1662,7 @@ function DiveDetail({
   onCreateTrip: (diveId: string, name: string) => Promise<boolean>;
   onRenameTrip: (tripId: string, name: string) => Promise<boolean>;
   onDeleteTrip: (tripId: string) => Promise<boolean>;
+  onDiveChange: (dive: Dive) => void;
 }) {
   const { language, t } = useAppI18n();
   const calculated = safeJson(dive.calculatedJson);
@@ -1687,9 +1700,29 @@ function DiveDetail({
   const [newTripNameDraft, setNewTripNameDraft] = useState("");
   const [tripRenameOpen, setTripRenameOpen] = useState(false);
   const [tripRenameDraft, setTripRenameDraft] = useState("");
+  const [matchMemos, setMatchMemos] = useState<DiveMemo[]>([]);
+  const showMemoMatchHints = diveNeedsPlaceNameHint(dive);
   const currentTrip = dive.tripId
     ? trips.find((trip) => trip.id === dive.tripId) ?? null
     : null;
+
+  useEffect(() => {
+    if (!showMemoMatchHints) {
+      setMatchMemos([]);
+      return;
+    }
+    let active = true;
+    void listLocalDiveMemos()
+      .then((listed) => {
+        if (active) setMatchMemos(listed);
+      })
+      .catch(() => {
+        if (active) setMatchMemos([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [dive.id, showMemoMatchHints]);
 
   useEffect(() => {
     let active = true;
@@ -2258,6 +2291,22 @@ function DiveDetail({
       </div>
 
       <DiveProfilePanel dive={dive} />
+
+      {showMemoMatchHints ? (
+        <MemoDiveMatchHints
+          mode="on-dive"
+          dive={dive}
+          memos={matchMemos}
+          onMemosChange={setMatchMemos}
+          onDiveChange={(updated) => {
+            setManualSite(updated.userSite ?? updated.site ?? "");
+            setLocationDraft(updated.location ?? "");
+            setBuddyDraft(updated.buddy ?? "");
+            setNotesDraft(updated.notes ?? "");
+            onDiveChange(updated);
+          }}
+        />
+      ) : null}
 
       <details
         ref={siteEditorRef}
