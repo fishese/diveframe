@@ -91,10 +91,12 @@ Shipped on `main` (pushed):
   insets. Session: `docs/2026-08-05-chrome-memos-polish-session.md`.
   **APK-affecting.**
 - About page: softer intro, full Subsurface export called out, personal “why
-  this exists” note, click-to-reveal contact email.
-- Android debug APK **1.0.16** (`versionCode 17`) published as GitHub
-  `v0.1.0-debug.14` from commit `2c4edc1`. SHA-256:
-  `4F7616053D36B1DB7EF0C8C711FC6AFE3B76C839DF7119131B117CE42EA32F63`.
+  this exists” note, click-to-reveal contact email. About now leads with Why
+  DiveFrame Exists (Read more for solo/contact), then companion overview, Open
+  source, and Advanced search; teal eyebrows restored on those sections.
+- Android debug APK **1.0.17** (`versionCode 18`) published as GitHub
+  `v0.1.0-debug.15` from commit `45633b5`. SHA-256:
+  `DAED77D8C09F901C5CFC23115AA317033B8AE4A815050EC3DFCDBA7E0E4A151E`.
   Stable download:
   https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
 - Trilingual copy for newer memo strings may still need a dedicated pass in
