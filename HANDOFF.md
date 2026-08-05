@@ -31,7 +31,7 @@ APK uses its own WebView origin (`https://localhost`), so PWA and APK data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-05)
+## Current status (2026-08-06)
 
 Shipped on `main` (pushed):
 
@@ -89,6 +89,10 @@ Shipped on `main` (pushed):
   **Jot a memo** hero. Chrome: What's New scrolls away; sticky `.app-safe-top`
   + topbar `top: safe-area`; Android injects `--safe-area-inset-*` from window
   insets. Session: `docs/2026-08-05-chrome-memos-polish-session.md`.
+  **APK-affecting.**
+- Memo↔dive match hints: compact expandable rows on dive detail when the dive
+  lacks a place name and on `/memos` (always); progressive ±6/±12/±24h
+  windows, apply-empty, per-field copy, and post-apply Keep/Delete.
   **APK-affecting.**
 - About page: softer intro, full Subsurface export called out, personal “why
   this exists” note, click-to-reveal contact email. About now leads with Why
