@@ -82,6 +82,37 @@ export function normalizeMemoMinute(
   return truncated;
 }
 
+/** Local wall-clock ms from memo date + 12h time; invalid input → null. */
+export function memoWallClockMs(
+  memo: Pick<DiveMemo, "date" | "hour" | "minute" | "meridiem">,
+): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(memo.date);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (memo.hour === null || !Number.isFinite(memo.hour)) return null;
+  const hour12 = Math.trunc(memo.hour);
+  if (hour12 < 1 || hour12 > 12) return null;
+  const hour24 =
+    memo.meridiem === "AM"
+      ? hour12 === 12
+        ? 0
+        : hour12
+      : hour12 === 12
+        ? 12
+        : hour12 + 12;
+  const timestamp = new Date(
+    year,
+    month - 1,
+    day,
+    hour24,
+    normalizeMemoMinute(memo.minute),
+    0,
+  ).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
+}
+
 export function createDiveMemoId(): string {
   return crypto.randomUUID();
 }
