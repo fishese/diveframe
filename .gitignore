@@ -57,3 +57,7 @@ next-env.d.ts
 *.ssrf
 /imports/
 /private/
+
+# Local git worktrees
+.worktrees/
+
