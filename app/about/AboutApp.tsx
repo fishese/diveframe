@@ -49,6 +49,20 @@ export function AboutApp() {
       </header>
 
       <div className="about-shell">
+        <section className="about-license about-dev">
+          <p className="eyebrow">{t("aboutDevEyebrow")}</p>
+          <h2>{t("aboutDevTitle")}</h2>
+          <p>{t("aboutDevBody")}</p>
+          <details className="about-dev-more">
+            <summary>
+              <span className="about-dev-more-closed">{t("aboutDevReadMore")}</span>
+              <span className="about-dev-more-open">{t("aboutDevReadLess")}</span>
+            </summary>
+            <p>{t("aboutDevSolo")}</p>
+            <AboutContact />
+          </details>
+        </section>
+
         <section className="about-hero">
           <p className="eyebrow">{t("aboutEyebrow")}</p>
           <h1>{t("aboutTitle")}</h1>
@@ -110,6 +124,13 @@ export function AboutApp() {
         </section>
 
         <section className="about-license">
+          <p className="eyebrow">{t("aboutLicenseEyebrow")}</p>
+          <h2>{t("aboutLicenseTitle")}</h2>
+          <p>{t("aboutLicenseDescription")}</p>
+          <p>{t("aboutAssetLicense")}</p>
+        </section>
+
+        <section className="about-license">
           <p className="eyebrow">{t("aboutSearchEyebrow")}</p>
           <h2>{t("aboutSearchTitle")}</h2>
           <p>{t("aboutSearchDescription")}</p>
@@ -118,21 +139,6 @@ export function AboutApp() {
             <li><code>source:subsurface-only</code> — {t("aboutSearchSubsurface")}</li>
           </ul>
           <p>{t("aboutSacRule")}</p>
-        </section>
-
-        <section className="about-license about-dev">
-          <p className="eyebrow">{t("aboutDevEyebrow")}</p>
-          <h2>{t("aboutDevTitle")}</h2>
-          <p>{t("aboutDevBody")}</p>
-          <p>{t("aboutDevSolo")}</p>
-          <AboutContact />
-        </section>
-
-        <section className="about-license">
-          <p className="eyebrow">{t("aboutLicenseEyebrow")}</p>
-          <h2>{t("aboutLicenseTitle")}</h2>
-          <p>{t("aboutLicenseDescription")}</p>
-          <p>{t("aboutAssetLicense")}</p>
         </section>
 
         <div className="about-actions">

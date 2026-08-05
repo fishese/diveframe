@@ -102,6 +102,8 @@ export const zhHant: Record<keyof typeof en, string> = {
   aboutDevRevealEmail: "顯示電郵",
   aboutDevCopyEmail: "複製",
   aboutDevEmailCopied: "已複製",
+  aboutDevReadMore: "顯示更多",
+  aboutDevReadLess: "顯示較少",
   aboutLicenseEyebrow: "開放源碼",
   aboutLicenseTitle: "歡迎建立分支及改進，並請保持開放源碼。",
   aboutLicenseDescription: "DiveFrame 是依 GNU 通用公眾授權條款第 3 版或任何後續版本發布的自由軟件。歡迎建立分支、研究、修改及再發布；再發布的版本須繼續以相同的開放源碼授權條款提供。",

@@ -5,7 +5,7 @@
     {
       "id": "2026-08-05-i18n-refresh",
       "title": "UI copy refresh",
-      "body": "English, Japanese, and Traditional Chinese (HK) strings were refreshed across the app. Android debug APK 1.0.17 includes the same updates.",
+      "body": "English, Japanese, and Traditional Chinese (HK) strings were refreshed across the app. The About page now leads with Why DiveFrame Exists (with a Read more for the rest), then the companion overview, Open source, and Advanced search. Android debug APK 1.0.17 includes the same updates.",
       "date": "2026-08-05",
       "links": [
         {

@@ -89,6 +89,8 @@ export const en = {
   aboutDevRevealEmail: "Show email",
   aboutDevCopyEmail: "Copy",
   aboutDevEmailCopied: "Copied",
+  aboutDevReadMore: "Read more",
+  aboutDevReadLess: "Show less",
   aboutLicenseEyebrow: "Open source",
   aboutLicenseTitle: "Fork it. Improve it. Keep it open.",
   aboutLicenseDescription: "DiveFrame is free software licensed under the GNU General Public License v3.0 or later. You are welcome to fork, study, modify, and redistribute it, provided redistributed versions remain available under the same open-source license.",

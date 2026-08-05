@@ -102,6 +102,8 @@ export const ja: Record<keyof typeof en, string> = {
   aboutDevRevealEmail: "メールを表示",
   aboutDevCopyEmail: "コピー",
   aboutDevEmailCopied: "コピーしました",
+  aboutDevReadMore: "続きを読む",
+  aboutDevReadLess: "閉じる",
   aboutLicenseEyebrow: "オープンソース",
   aboutLicenseTitle: "フォークして、改善して、オープンなままに。",
   aboutLicenseDescription: "DiveFrameはGNU General Public License v3.0以降で提供されるフリーソフトウェアです。フォーク、調査、変更、再配布が可能ですが、再配布版も同じオープンソースライセンスで利用できる状態にしてください。",
