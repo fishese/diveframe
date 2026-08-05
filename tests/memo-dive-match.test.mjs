@@ -44,6 +44,56 @@ test("memoWallClockMs builds local wall clock from date and 12h time", () => {
   assert.equal(ms, new Date(2026, 7, 5, 11, 0, 0).getTime());
 });
 
+test("memoWallClockMs defaults missing/invalid hour to 10:00 AM", () => {
+  const expected = new Date(2026, 7, 5, 10, 0, 0).getTime();
+  assert.equal(
+    memoWallClockMs({
+      date: "2026-08-05",
+      hour: null,
+      minute: 0,
+      meridiem: "AM",
+    }),
+    expected,
+  );
+  assert.equal(
+    memoWallClockMs({
+      date: "2026-08-05",
+      hour: Number.NaN,
+      minute: null,
+      meridiem: "AM",
+    }),
+    expected,
+  );
+  assert.equal(
+    memoWallClockMs({
+      date: "2026-08-05",
+      hour: 99,
+      minute: 0,
+      meridiem: "AM",
+    }),
+    expected,
+  );
+  // Invalid meridiem defaults to AM with the 10:00 default hour.
+  assert.equal(
+    memoWallClockMs({
+      date: "2026-08-05",
+      hour: null,
+      minute: 0,
+      meridiem: "nope",
+    }),
+    expected,
+  );
+  assert.equal(
+    memoWallClockMs({
+      date: "not-a-date",
+      hour: null,
+      minute: 0,
+      meridiem: "AM",
+    }),
+    null,
+  );
+});
+
 test("diveNeedsPlaceNameHint is false when any place string is set", () => {
   assert.equal(
     diveNeedsPlaceNameHint({ userSite: null, site: null, location: null }),

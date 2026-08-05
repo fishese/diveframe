@@ -82,7 +82,9 @@ export function normalizeMemoMinute(
   return truncated;
 }
 
-/** Local wall-clock ms from memo date + 12h time; invalid input → null. */
+/** Local wall-clock ms from memo date + 12h time; invalid/missing date → null.
+ *  Missing/invalid hour defaults to 10 (same as defaultDiveMemoFields).
+ *  Non-PM meridiem is treated as AM. */
 export function memoWallClockMs(
   memo: Pick<DiveMemo, "date" | "hour" | "minute" | "meridiem">,
 ): number | null {
@@ -91,17 +93,19 @@ export function memoWallClockMs(
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  if (memo.hour === null || !Number.isFinite(memo.hour)) return null;
-  const hour12 = Math.trunc(memo.hour);
-  if (hour12 < 1 || hour12 > 12) return null;
-  const hour24 =
-    memo.meridiem === "AM"
-      ? hour12 === 12
-        ? 0
-        : hour12
-      : hour12 === 12
-        ? 12
-        : hour12 + 12;
+  let hour12 =
+    memo.hour === null || !Number.isFinite(memo.hour)
+      ? 10
+      : Math.trunc(memo.hour);
+  if (hour12 < 1 || hour12 > 12) hour12 = 10;
+  const isPm = memo.meridiem === "PM";
+  const hour24 = isPm
+    ? hour12 === 12
+      ? 12
+      : hour12 + 12
+    : hour12 === 12
+      ? 0
+      : hour12;
   const timestamp = new Date(
     year,
     month - 1,
