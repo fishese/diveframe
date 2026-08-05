@@ -16,6 +16,7 @@ import {
 } from "@/lib/indexed-db";
 import {
   appendLinkedDiveNote,
+  isMemoDiveApplyPlanEmpty,
   planApplyEmptyMemoFields,
   preferredDiveNumberLabel,
   type MemoDiveApplyPlan,
@@ -240,10 +241,14 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
   }
 
   async function applyEmpty(memo: DiveMemo, dive: LocalDive) {
+    const plan = planApplyEmptyMemoFields(memo, dive);
+    if (isMemoDiveApplyPlanEmpty(plan)) {
+      setStatus(t("memoMatchNothingToApply"));
+      return;
+    }
     setBusy(true);
     setStatus(null);
     try {
-      const plan = planApplyEmptyMemoFields(memo, dive);
       const updated = await writeApplyPlan(plan, memo, dive);
       props.onDiveChange(updated);
       setPostApply({ memo, dive: updated });
@@ -376,6 +381,8 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
   }
 
   function renderExpandedFields(memo: DiveMemo, dive: LocalDive) {
+    const applyPlan = planApplyEmptyMemoFields(memo, dive);
+    const canApplyEmpty = !isMemoDiveApplyPlanEmpty(applyPlan);
     const coords = formatCoordinatePair(memo.lat, memo.lng);
     return (
       <div className="memo-match-expand">
@@ -472,7 +479,7 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
           <button
             type="button"
             className="button button-primary memo-compact-button"
-            disabled={busy}
+            disabled={busy || !canApplyEmpty}
             onClick={() => void applyEmpty(memo, dive)}
           >
             {t("memoMatchApplyEmpty")}

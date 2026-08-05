@@ -662,6 +662,7 @@ export const zhHant: Record<keyof typeof en, string> = {
   memoMatchShow12h: "顯示更多（±12 小時）",
   memoMatchShow24h: "顯示更多（±24 小時）",
   memoMatchApplyEmpty: "套用空白欄位",
+  memoMatchNothingToApply: "沒有可套用的內容。",
   memoMatchCopyLocation: "使用地點",
   memoMatchCopyGps: "使用座標",
   memoMatchCopyBuddies: "使用潛伴",

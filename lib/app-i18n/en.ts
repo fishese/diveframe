@@ -661,6 +661,7 @@ export const en = {
   memoMatchShow12h: "Show more (±12 hours)",
   memoMatchShow24h: "Show more (±24 hours)",
   memoMatchApplyEmpty: "Apply empty fields",
+  memoMatchNothingToApply: "Nothing to apply.",
   memoMatchCopyLocation: "Use location",
   memoMatchCopyGps: "Use coordinates",
   memoMatchCopyBuddies: "Use buddies",

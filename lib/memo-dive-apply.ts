@@ -79,6 +79,10 @@ export function planApplyEmptyMemoFields(
   return plan;
 }
 
+export function isMemoDiveApplyPlanEmpty(plan: MemoDiveApplyPlan): boolean {
+  return Object.keys(plan).length === 0;
+}
+
 export function preferredDiveNumberLabel(dive: {
   diveNumber: number | null;
   sourceDiveNumbers: Partial<
