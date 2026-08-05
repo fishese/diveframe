@@ -1,7 +1,19 @@
 {
   "version": "2026-08-05",
-  "updatedAt": "2026-08-05T00:00:00.000Z",
+  "updatedAt": "2026-08-05T14:30:00.000Z",
   "entries": [
+    {
+      "id": "2026-08-05-i18n-refresh",
+      "title": "UI copy refresh",
+      "body": "English, Japanese, and Traditional Chinese (HK) strings were refreshed across the app. Android debug APK 1.0.17 includes the same updates.",
+      "date": "2026-08-05",
+      "links": [
+        {
+          "label": "Download Android APK",
+          "href": "https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk"
+        }
+      ]
+    },
     {
       "id": "2026-08-05-dive-memos",
       "title": "Dive memos",
