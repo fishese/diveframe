@@ -212,7 +212,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(memosApp, /saveLocalDivePhoto|addLocalDivePhoto/);
   const memosPage = await readFile("app/memos/page.tsx", "utf8");
   assert.match(memosPage, /MemosApp/);
-  assert.match(appI18nEn, /diveMemosTitle:\s*"Jot a memo"/);
+  assert.match(appI18nEn, /diveMemosTitle:\s*"Jot a dive memo"/);
   assert.match(appI18nEn, /setInApp:\s*"Edited here"/);
   assert.match(composer, /depth-pressure-temperature/);
   assert.match(composer, /zh-Hant/);
