@@ -1503,8 +1503,33 @@ function EmptyState({
   const { t } = useAppI18n();
   return (
     <section className="empty-state">
-      <div className="empty-orbit orbit-one" />
-      <div className="empty-orbit orbit-two" />
+      <svg
+        className="empty-dive-profile"
+        viewBox="0 0 1000 420"
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          d="M36 86
+             C110 86 145 92 175 128
+             C215 178 245 245 285 285
+             C320 318 360 330 410 324
+             C450 319 475 305 510 312
+             C545 319 570 336 610 330
+             C650 324 680 308 715 300
+             C755 290 790 275 820 235
+             C840 205 850 188 870 178
+             L915 178
+             C940 178 955 150 968 112"
+          fill="none"
+          stroke="rgba(141, 235, 215, 0.08)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
       <div className="empty-content">
         <span className="empty-icon">
           <DatabaseIcon size={34} />
