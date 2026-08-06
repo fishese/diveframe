@@ -1,21 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {
-  ArrowLeft,
   Database,
   Download,
   Filter,
   HardDrive,
   Image as ImageIcon,
   MapPinned,
-  Settings,
   Waves,
 } from "lucide-react";
 import { useState } from "react";
 import { useAppI18n } from "../AppI18nProvider";
-import { AndroidAppLink } from "../components/AndroidAppLink";
+import { AppTopbar } from "../components/AppTopbar";
 
 /** Assembled in the browser so the raw address is not in the initial HTML. */
 function contactEmail() {
@@ -27,26 +24,12 @@ export function AboutApp() {
 
   return (
     <main className="about-page">
-      <header className="topbar">
-        <Link href="/" className="brand" aria-label={t("backToDives")}>
-          <span className="brand-mark">
-            <Image src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" width={52} height={52} />
-          </span>
-          <span>
-            <strong>DiveFrame</strong>
-            <small>{t("about")}</small>
-          </span>
-        </Link>
-        <div className="topbar-actions">
-          <Link href="/settings" className="button button-quiet">
-            <Settings size={16} /> {t("settings")}
-          </Link>
-          <AndroidAppLink />
-          <Link href="/" className="button button-quiet">
-            <ArrowLeft size={16} /> {t("backToDives")}
-          </Link>
-        </div>
-      </header>
+      <AppTopbar
+        subtitle={t("about")}
+        brand={{ mode: "link", href: "/", ariaLabel: t("home") }}
+        showHome
+        showImportCluster
+      />
 
       <div className="about-shell">
         <section className="about-license about-dev">

@@ -33,7 +33,17 @@ store distribution are not started yet.
 
 ## Current status (2026-08-06)
 
-Shipped on `main` (pushed):
+Shipped on `main` (this release):
+
+- Memo ↔ dive match hints (place-name gate on dive detail; always on `/memos`),
+  shared `AppTopbar` chrome, dive open/return scrolling, dive date **HH:MM**,
+  composer back arrow, delete-dive on the bottom left. Session:
+  `docs/2026-08-06-memo-match-topbar-session.md`. **APK-affecting.**
+- Android debug APK **1.0.18** (`versionCode 19`) published as GitHub
+  `v0.1.0-debug.16` (SHA-256 recorded after publish). Stable download:
+  https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
+
+Previously shipped on `main`:
 
 - IndexedDB **v10** additive schema: trips, user GPS overlays, BLE raw /
   checkpoints (from v8), persistent **supplementary** dive-site catalog, and a
@@ -71,38 +81,14 @@ Shipped on `main` (pushed):
   remain open; session notes are in `docs/2026-08-03-audit-and-ui-session.md`.
 - UI/export/settings fixes: Delete dive below the photo gallery; buddy
   autocomplete (`,` / `，` / `、`); full Subsurface logbook export at
-  `version="3"` with hex site UUIDs, skipping incomplete dives and showing
-  inline status; compact Settings language/install/default-tank presentation.
-- Bubbles background relicensed **CC BY-SA 4.0** (DiveFrame developer). Overlay
-  fonts are self-hosted OFL WOFF2 under `public/fonts/` with local
-  `app/overlay-fonts.css`; refresh via `npm run bundle:overlay-fonts`. Noto Sans
-  TC remains the default; if Noto is dropped later, use
-  `SYSTEM_OVERLAY_FONT_STACK` in `lib/composer-fonts.ts`. **APK-affecting.**
-  Session: `docs/2026-08-04-self-hosted-fonts-session.md`. F-Droid outline:
-  `docs/FDROID-PATH.md`.
-- Sticky header safe-area, export save+share, brand→home, **Edited here**
-  filter (`appEditedAt` + historical site/GPS/trip/cylinder), and standalone
-  **Dive memos** (`/memos`, IndexedDB v11, backup v4). Android long-press
-  shortcut deferred. Session:
-  `docs/2026-08-04-sticky-export-memos-session.md`. **APK-affecting.**
-- Memo UI polish: one-line time stepper, select-on-focus, coords+actions row,
-  **Jot a memo** hero. Chrome: What's New scrolls away; sticky `.app-safe-top`
-  + topbar `top: safe-area`; Android injects `--safe-area-inset-*` from window
-  insets. Session: `docs/2026-08-05-chrome-memos-polish-session.md`.
-  **APK-affecting.**
-- Memo↔dive match hints: compact expandable rows on dive detail when the dive
-  lacks a place name and on `/memos` (always); progressive ±6/±12/±24h
-  windows, apply-empty, per-field copy, and post-apply Keep/Delete.
-  **APK-affecting.**
-- About page: softer intro, full Subsurface export called out, personal “why
-  this exists” note, click-to-reveal contact email. About now leads with Why
-  DiveFrame Exists (Read more for solo/contact), then companion overview, Open
-  source, and Advanced search; teal eyebrows restored on those sections.
-- Android debug APK **1.0.17** (`versionCode 18`) published as GitHub
-  `v0.1.0-debug.15` from commit `45633b5`. SHA-256:
-  `DAED77D8C09F901C5CFC23115AA317033B8AE4A815050EC3DFCDBA7E0E4A151E`.
-  Stable download:
-  https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
+  Settings; Bubbles background licensed CC BY-SA 4.0; About page reordered
+  (Why DiveFrame Exists first). Session notes in
+  `docs/2026-08-04-ui-export-about-session.md`.
+- Self-hosted overlay fonts and chrome/memos polish:
+  `docs/2026-08-04-self-hosted-fonts-session.md`,
+  `docs/2026-08-05-chrome-memos-polish-session.md`.
+- Previous Android debug APK **1.0.17** (`versionCode 18`) was GitHub
+  `v0.1.0-debug.15` from commit `45633b5`.
 - Trilingual copy for newer memo strings may still need a dedicated pass in
   `lib/app-i18n/{en,ja,zh-Hant}.ts` (planned by the maintainer).
 
@@ -139,6 +125,9 @@ Session detail: `docs/2026-08-01-ble-product-import-session.md`.
 2026-08-04 self-hosted overlay fonts:
 `docs/2026-08-04-self-hosted-fonts-session.md`.
 
+2026-08-06 memo–dive match and shared top bar:
+`docs/2026-08-06-memo-match-topbar-session.md`.
+
 Deep review findings and follow-up recommendations:
 `docs/2026-08-03-deep-code-audit.md`.
 
@@ -155,6 +144,8 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 
 - `app/DiveFrameApp.tsx` — main logbook UI, imports, maps, gallery, and entry
   point to the composer.
+- `app/components/AppTopbar.tsx` — shared top-bar chrome (brand, home, about,
+  settings, BLE/Android app, memos, import).
 - `app/compose/ComposerApp.tsx` — live preview and composer controls.
 - `app/settings/SettingsApp.tsx` — device-local settings and catalog maintenance
   tools, including the reusable background library.

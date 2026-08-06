@@ -657,7 +657,7 @@ export const zhHant: Record<keyof typeof en, string> = {
   diveMemosUseGps: "GPS",
   diveMemosPhotoGps: "相片",
   diveMemosClearGps: "清除",
-  memoMatchTitle: "附近的備忘",
+  memoMatchTitle: "可能的備忘配對",
   memoMatchTitleFromMemo: "附近的潛水",
   memoMatchShow12h: "顯示更多（±12 小時）",
   memoMatchShow24h: "顯示更多（±24 小時）",

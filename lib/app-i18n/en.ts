@@ -656,7 +656,7 @@ export const en = {
   diveMemosUseGps: "GPS",
   diveMemosPhotoGps: "Photo",
   diveMemosClearGps: "Clear",
-  memoMatchTitle: "Nearby memos",
+  memoMatchTitle: "Possible Memo Match",
   memoMatchTitleFromMemo: "Nearby dives",
   memoMatchShow12h: "Show more (±12 hours)",
   memoMatchShow24h: "Show more (±24 hours)",

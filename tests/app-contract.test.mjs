@@ -72,8 +72,17 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(appI18n, /Erase all local DiveFrame data/);
   assert.match(appI18n, /Perdix 3/);
   assert.match(importGuide, /supported-dive-computers/);
-  assert.match(app, /href="\/about"/);
+  assert.match(app, /AppTopbar/);
+  {
+    const topbar = await readFile("app/components/AppTopbar.tsx", "utf8");
+    assert.match(topbar, /href="\/memos"/);
+    assert.match(topbar, /NotebookPen/);
+    assert.match(topbar, /href="\/about"/);
+    assert.match(topbar, /Info/);
+    assert.match(topbar, /showImportCluster/);
+  }
   assert.match(app, /status !== t\("importDiveLog"\)/);
+  assert.match(about, /AppTopbar/);
   assert.match(about, /t\("aboutImportsTitle"\)/);
   assert.match(about, /t\("aboutSourceStepFilter"\)/);
   assert.match(about, /t\("aboutLicenseTitle"\)/);
@@ -165,7 +174,11 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /deleteDiveConfirmOpen/);
   assert.match(app, /onDeletePhoto/);
   assert.match(app, /t\("addPhotos"\)/);
-  assert.match(app, /t\("createShareImage"\)/);
+  assert.match(app, /show-mobile-detail/);
+  assert.match(app, /hourCycle: "h23"/);
+  assert.match(app, /getElementById\("dive-gallery"\)/);
+  assert.match(app, /href=\{`\/compose\?dive=\$\{encodeURIComponent\(dive\.id\)\}`\}/);
+  assert.doesNotMatch(app, /href="#dive-gallery"/);
   assert.match(app, /\/compose\?dive=/);
   assert.match(app, /openstreetmap\.org/);
   assert.match(app, /api\/geocode/);
@@ -219,17 +232,27 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(memosPage, /MemosApp/);
   assert.match(app, /MemoDiveMatchHints/);
   assert.match(app, /diveNeedsPlaceNameHint/);
+  assert.match(app, /listMemosNearDive/);
+  assert.match(app, /MEMO_MATCH_WINDOWS_MS\.widest/);
   assert.match(app, /listLocalDiveMemos/);
   assert.match(app, /mode="on-dive"/);
+  assert.match(app, /dive-row-\$\{/);
+  assert.match(app, /scrollIntoView/);
   {
-    const hintRenderIdx = app.indexOf('<MemoDiveMatchHints');
-    const sitePickerIdx = app.indexOf("site-picker-card");
+    const hintRenderIdx = app.indexOf("<MemoDiveMatchHints");
+    const detailHeroIdx = app.indexOf('className="detail-hero"');
     assert.ok(
       hintRenderIdx >= 0 &&
-        sitePickerIdx >= 0 &&
-        hintRenderIdx < sitePickerIdx,
-      "gated memo match hints should render above the site picker",
+        detailHeroIdx >= 0 &&
+        hintRenderIdx < detailHeroIdx,
+      "gated memo match hints should render at the top of dive detail",
     );
+  }
+  assert.match(appI18nEn, /memoMatchTitle:\s*"Possible Memo Match"/);
+  {
+    const memoMatchCss = await readFile("app/globals.css", "utf8");
+    assert.match(memoMatchCss, /\.memo-match-callout\s*\{/);
+    assert.match(memoMatchCss, /--memo-match-callout-bg/);
   }
   assert.match(appI18nEn, /diveMemosTitle:\s*"Jot a dive memo"/);
   assert.match(appI18nEn, /setInApp:\s*"Edited here"/);
@@ -240,8 +263,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /showLogo/);
   assert.match(composer, /logoOffsetX/);
   assert.match(composer, /logoOffsetY/);
-  assert.match(composer, /composer-home-link/);
+  assert.match(composer, /AppTopbar/);
+  assert.match(composer, /showImportCluster=\{false\}/);
   assert.match(composer, /composer-back-link/);
+  assert.match(composer, /\?dive=\$/);
   assert.doesNotMatch(composer, /AndroidAppLink/);
   assert.doesNotMatch(composer, /className="composer-back"/);
   assert.match(composerSettings, /logoOffsetX: 0/);
@@ -434,9 +459,12 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(await readFile("lib/ble-import-session.ts", "utf8"), /nativeLimitForQuantity/);
   assert.match(await readFile("lib/ble-import-session.ts", "utf8"), /kind: "full"/);
   assert.match(app, /BleImportPanel/);
-  assert.match(app, /downloadFromComputer/);
+  {
+    const topbar = await readFile("app/components/AppTopbar.tsx", "utf8");
+    assert.match(topbar, /downloadFromComputer/);
+    assert.match(topbar, /AndroidAppLink/);
+  }
   assert.match(appI18n, /downloadFromComputer/);
-  assert.match(app, /AndroidAppLink/);
   assert.match(androidLink, /href="\/android"/);
   assert.match(androidLink, /diveComputerCapability.isAvailable/);
   assert.match(androidPage, /releases\/latest/);
@@ -523,7 +551,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /useAppI18n/);
   assert.doesNotMatch(app, /catalogNotesForDive/);
   assert.match(app, /photo-gallery-actions/);
-  assert.match(app, /mobile-home-button/);
+  assert.match(app, /onHomeFront|goFrontOfApp|showHome=/);
   assert.doesNotMatch(app, /mobile-back/);
   assert.match(app, /from "@\/lib\/dive-list-model"/);
   assert.match(app, /buildDiveListRows/);

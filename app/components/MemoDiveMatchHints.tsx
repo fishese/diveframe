@@ -503,7 +503,13 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
   }
 
   return (
-    <section className="memo-match-hints">
+    <section
+      className={
+        props.mode === "on-dive"
+          ? "memo-match-hints memo-match-callout"
+          : "memo-match-hints"
+      }
+    >
       <h3 className="memo-match-title">
         {props.mode === "on-dive"
           ? t("memoMatchTitle")

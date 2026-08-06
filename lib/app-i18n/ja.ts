@@ -654,7 +654,7 @@ export const ja: Record<keyof typeof en, string> = {
   diveMemosUseGps: "GPS",
   diveMemosPhotoGps: "写真",
   diveMemosClearGps: "クリア",
-  memoMatchTitle: "近くのメモ",
+  memoMatchTitle: "メモの候補",
   memoMatchTitleFromMemo: "近くのダイブ",
   memoMatchShow12h: "さらに表示（±12時間）",
   memoMatchShow24h: "さらに表示（±24時間）",

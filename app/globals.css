@@ -205,11 +205,15 @@ button {
   border-radius: 9px;
   color: var(--teal);
   cursor: pointer;
-  display: none;
+  display: inline-flex;
   height: 34px;
   justify-content: center;
   padding: 0;
   width: 34px;
+}
+
+.topbar-memos-link {
+  padding: 8px;
 }
 
 .topbar-back-button {
@@ -633,6 +637,7 @@ button {
   gap: 13px;
   grid-template-columns: 46px minmax(0, 1fr) auto;
   padding: 14px 18px;
+  scroll-margin-top: calc(64px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
   text-align: left;
   transition: background 160ms ease;
   width: 100%;
@@ -2690,7 +2695,7 @@ button {
 
 .dive-delete-action {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   margin-top: 20px;
 }
 
@@ -2751,13 +2756,13 @@ button {
 
 .memos-page {
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
 .memos-shell {
   margin: 0 auto;
   max-width: 760px;
   min-width: 0;
+  overflow-x: hidden;
   padding: 16px 24px 72px;
   width: 100%;
 }
@@ -3058,6 +3063,33 @@ button {
   margin-top: 10px;
   min-width: 0;
   padding-top: 10px;
+}
+
+/* Dive-detail match panel theme — tweak these vars to restyle later. */
+.memo-match-callout {
+  --memo-match-callout-bg: rgba(255, 236, 179, 0.16);
+  --memo-match-callout-border: rgba(232, 196, 88, 0.45);
+  --memo-match-callout-title: #f0d78c;
+  --memo-match-callout-text: #f7efd2;
+  background: var(--memo-match-callout-bg);
+  border: 1px solid var(--memo-match-callout-border);
+  border-radius: 14px;
+  border-top: 1px solid var(--memo-match-callout-border);
+  margin: 0 0 14px;
+  padding: 12px 14px;
+}
+
+.memo-match-callout .memo-match-title {
+  color: var(--memo-match-callout-title);
+}
+
+.memo-match-callout .memo-match-summary {
+  color: var(--memo-match-callout-text);
+}
+
+.memo-match-callout .memo-match-summary:hover,
+.memo-match-callout .memo-match-summary:focus-visible {
+  color: var(--memo-match-callout-title);
 }
 
 .memo-match-title {
@@ -4649,6 +4681,10 @@ button {
 
   .workspace.show-detail .detail-panel {
     display: block;
+  }
+
+  .app-shell.show-mobile-detail .overview {
+    display: none;
   }
 
   .browser-heading {

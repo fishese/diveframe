@@ -1,7 +1,19 @@
 {
-  "version": "2026-08-05",
-  "updatedAt": "2026-08-05T14:30:00.000Z",
+  "version": "2026-08-06",
+  "updatedAt": "2026-08-06T13:00:00.000Z",
   "entries": [
+    {
+      "id": "2026-08-06-memo-match-topbar",
+      "title": "Memo match and top bar",
+      "body": "Dive detail and Dive memos can suggest nearby memos or dives by time. The top bar is shared across pages (Home, About, Settings, Bluetooth/Android app, memos, Import). Dive dates show HH:MM. Android debug APK 1.0.18 includes the same updates.",
+      "date": "2026-08-06",
+      "links": [
+        {
+          "label": "Download Android APK",
+          "href": "https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk"
+        }
+      ]
+    },
     {
       "id": "2026-08-05-i18n-refresh",
       "title": "UI copy refresh",

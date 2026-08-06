@@ -1,10 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
 import {
   Archive,
-  ArrowLeft,
   Camera,
   ChevronDown,
   Database,
@@ -21,6 +18,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+import { AppTopbar } from "../components/AppTopbar";
 import {
   type ChangeEvent,
   useEffect,
@@ -103,7 +101,6 @@ import {
   type WhatsNewDocument,
 } from "@/lib/whats-new";
 import { useAppI18n } from "../AppI18nProvider";
-import { AndroidAppLink } from "../components/AndroidAppLink";
 import { PwaInstallCard } from "../PwaInstall";
 
 type SiteContributionDraft = LocalSiteContribution & {
@@ -921,23 +918,13 @@ export function SettingsApp() {
 
   return (
     <main className="settings-page">
-      <header className="topbar settings-topbar">
-        <Link href="/" className="brand settings-brand" aria-label={t("backToDives")}>
-          <span className="brand-mark">
-            <Image src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" width={52} height={52} />
-          </span>
-          <span>
-            <strong>DiveFrame</strong>
-            <small>{t("settings")}</small>
-          </span>
-        </Link>
-        <div className="topbar-actions">
-          <AndroidAppLink />
-          <Link href="/" className="button button-quiet">
-            <ArrowLeft size={16} /> {t("backToDives")}
-          </Link>
-        </div>
-      </header>
+      <AppTopbar
+        className="settings-topbar"
+        subtitle={t("settings")}
+        brand={{ mode: "link", href: "/", ariaLabel: t("home") }}
+        showHome
+        showImportCluster
+      />
 
       <div className="settings-shell">
         <section className="settings-hero">

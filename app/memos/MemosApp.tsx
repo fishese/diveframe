@@ -1,9 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import {
-  ArrowLeft,
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
@@ -14,7 +12,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppI18n } from "../AppI18nProvider";
-import { AndroidAppLink } from "../components/AndroidAppLink";
+import { AppTopbar } from "../components/AppTopbar";
 import { MemoDiveMatchHints } from "../components/MemoDiveMatchHints";
 import {
   createDiveMemoId,
@@ -271,29 +269,12 @@ export function MemosApp() {
 
   return (
     <main className="memos-page">
-      <header className="topbar">
-        <Link href="/" className="brand" aria-label={t("home")}>
-          <span className="brand-mark">
-            <Image
-              src="/icons/diveframe-icon.svg"
-              alt=""
-              aria-hidden="true"
-              width={52}
-              height={52}
-            />
-          </span>
-          <span>
-            <strong>DiveFrame</strong>
-            <small>{t("diveMemosTitle")}</small>
-          </span>
-        </Link>
-        <div className="topbar-actions">
-          <AndroidAppLink />
-          <Link href="/" className="button button-quiet">
-            <ArrowLeft size={16} /> {t("backToDives")}
-          </Link>
-        </div>
-      </header>
+      <AppTopbar
+        subtitle={t("diveMemosTitle")}
+        brand={{ mode: "link", href: "/", ariaLabel: t("home") }}
+        showHome
+        showImportCluster
+      />
 
       <div className="memos-shell">
         <section className="memos-hero">

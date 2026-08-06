@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowLeft, BookmarkPlus, ChevronDown, Crop, Download, House, ImagePlus, LoaderCircle, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowLeft, BookmarkPlus, ChevronDown, Crop, Download, ImagePlus, LoaderCircle, RotateCcw, Trash2 } from "lucide-react";
+import { AppTopbar } from "../components/AppTopbar";
 import {
   useEffect,
   useMemo,
@@ -509,22 +509,17 @@ export function ComposerApp() {
 
   return (
     <main className="composer-page">
-      <header className="composer-topbar">
-        <Link href="/" className="brand" aria-label={t("home")}>
-          <span className="brand-mark">
-            <Image src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" width={52} height={52} />
-          </span>
-          <span><strong>DiveFrame</strong><small>{t("composer")}</small></span>
-        </Link>
-        <div className="composer-top-actions">
-          <Link
-            href="/"
-            className="button button-quiet composer-home-link"
-            aria-label={t("home")}
-            title={t("home")}
-          >
-            <House size={17} />
-          </Link>
+      <AppTopbar
+        className="composer-topbar"
+        subtitle={t("composer")}
+        brand={{
+          mode: "link",
+          href: `/?dive=${encodeURIComponent(dive.id)}`,
+          ariaLabel: t("allDives"),
+        }}
+        showHome
+        showImportCluster={false}
+        afterHomeActions={
           <Link
             href={`/?dive=${encodeURIComponent(dive.id)}`}
             className="button button-quiet composer-back-link"
@@ -533,11 +528,13 @@ export function ComposerApp() {
           >
             <ArrowLeft size={17} />
           </Link>
+        }
+        trailingActions={
           <button className="button button-primary" onClick={exportImage} disabled={!bitmap || exporting}>
             {exporting ? <LoaderCircle size={16} className="spin" /> : <Download size={16} />} {t("exportImage")}
           </button>
-        </div>
-      </header>
+        }
+      />
 
       <div className="composer-shell">
         <section className="composer-preview-pane">

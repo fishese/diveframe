@@ -1,9 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
 import {
-  ArrowLeft,
   Bluetooth,
   Camera,
   Download,
@@ -11,9 +8,9 @@ import {
   Monitor,
   ShieldCheck,
   Smartphone,
-  Settings,
 } from "lucide-react";
 import { useAppI18n } from "../AppI18nProvider";
+import { AppTopbar } from "../components/AppTopbar";
 
 const ANDROID_RELEASE_URL =
   "https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk";
@@ -24,25 +21,12 @@ export function AndroidAppPage() {
 
   return (
     <main className="android-page">
-      <header className="topbar">
-        <Link href="/" className="brand" aria-label={t("backToDives")}>
-          <span className="brand-mark">
-            <Image src="/icons/diveframe-icon.svg" alt="" aria-hidden="true" width={52} height={52} />
-          </span>
-          <span>
-            <strong>DiveFrame</strong>
-            <small>{t("androidAppLink")}</small>
-          </span>
-        </Link>
-        <div className="topbar-actions">
-          <Link href="/settings" className="button button-quiet">
-            <Settings size={16} /> {t("settings")}
-          </Link>
-          <Link href="/" className="button button-quiet">
-            <ArrowLeft size={16} /> {t("backToDives")}
-          </Link>
-        </div>
-      </header>
+      <AppTopbar
+        subtitle={t("androidAppLink")}
+        brand={{ mode: "link", href: "/", ariaLabel: t("home") }}
+        showHome
+        showImportCluster
+      />
 
       <div className="android-shell">
         <section className="android-hero">

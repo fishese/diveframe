@@ -172,15 +172,20 @@ search clear.
 
 ## Dive memos
 
-Open **Dive memos** from the import guide (or go to `/memos`) to jot date,
-time, location, GPS, buddies, and notes for a dive before the computer log is
-imported. Headings default to **Dive 1**, **Dive 2**, and so on; tap a heading
-to rename it. Photo location only reads GPS from the selected image and does
-not keep the photo on the memo.
+Open **Dive memos** from the import guide, the notepad icon in the top bar, or
+`/memos` to jot date, time, location, GPS, buddies, and notes for a dive before
+the computer log is imported. Headings default to **Dive 1**, **Dive 2**, and so
+on; tap a heading to rename it. Photo location only reads GPS from the selected
+image and does not keep the photo on the memo.
 
 Memos are stored in IndexedDB, included in app-data backups (backup format
 **v4**), and cleared only by **Erase all local DiveFrame data** — not by erase
-dives only. Matching memos to imported dives is not automatic yet.
+dives only.
+
+When a dive is open and still lacks a place name, DiveFrame may show
+**Possible Memo Match** hints for memos near that dive’s start time. On the
+memos page, nearby dives are always offered. You can apply empty fields, copy
+individual fields, then Keep or Delete the memo.
 
 ## Dive profiles and gas use
 
@@ -421,8 +426,9 @@ positioning can therefore be checked without repeatedly returning to the top.
 The control groups can be expanded and collapsed to keep the editor compact
 without removing any options.
 
-When a dive is open on mobile, use the small home button in the top bar to
-return to the dive list.
+When a dive is open on mobile, Brand or the home button returns to the dive
+list with that dive near the top of the screen. In the image composer, Home
+goes to the front of the app; the back arrow returns to the open dive.
 
 **Bottom Profile** keeps a compact chart and statistics band in the lower
 third. **Full-width Graph** starts its information band higher and gives the

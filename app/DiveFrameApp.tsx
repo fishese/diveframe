@@ -1,13 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {
   AlertTriangle,
   ArrowDownToLine,
-  ArrowLeft,
   Briefcase,
-  Bluetooth,
   Camera,
   CheckSquare,
   ChevronDown,
@@ -16,24 +13,20 @@ import {
   Database as DatabaseIcon,
   Droplets,
   Gauge,
-  House,
   ImagePlus,
-  Info,
   LoaderCircle,
   MapPin,
   Pencil,
   Search,
-  Settings,
   Share2,
   Sparkles,
   Square,
   Thermometer,
-  Upload,
   Users,
   Waves,
   X,
 } from "lucide-react";
-import { AndroidAppLink } from "./components/AndroidAppLink";
+import { AppTopbar } from "./components/AppTopbar";
 import {
   type ChangeEvent,
   type ReactNode,
@@ -130,7 +123,11 @@ import { BleImportPanel } from "./components/BleImportPanel";
 import { ImportGuide } from "./components/ImportGuide";
 import { MemoDiveMatchHints } from "./components/MemoDiveMatchHints";
 import type { DiveMemo } from "@/lib/dive-memos";
-import { diveNeedsPlaceNameHint } from "@/lib/memo-dive-match";
+import {
+  diveNeedsPlaceNameHint,
+  listMemosNearDive,
+  MEMO_MATCH_WINDOWS_MS,
+} from "@/lib/memo-dive-match";
 
 type Dive = LocalDive;
 type Attachment = LocalAttachment;
@@ -214,6 +211,7 @@ export function DiveFrameApp() {
   // the web platform, so checking during render would hide the control forever.
   const [bleImportAvailable, setBleImportAvailable] = useState(false);
   const refreshGenerationRef = useRef(0);
+  const scrolledDiveDetailRef = useRef<string | null>(null);
   const [storageEstimate, setStorageEstimate] = useState<Awaited<
     ReturnType<typeof getLocalBackupSizeEstimate>
   > | null>(null);
@@ -299,7 +297,14 @@ export function DiveFrameApp() {
 
   useEffect(() => {
     const requestedDiveId = new URLSearchParams(window.location.search).get("dive");
-    if (!requestedDiveId || requestedDiveId !== selectedId || !mobileDetail) return;
+    if (!requestedDiveId || requestedDiveId !== selectedId || !mobileDetail) {
+      if (!mobileDetail) scrolledDiveDetailRef.current = null;
+      return;
+    }
+    // Only auto-scroll once per dive open from ?dive=. Re-running was
+    // yanking the page back to the detail hero after Share image → gallery.
+    if (scrolledDiveDetailRef.current === requestedDiveId) return;
+    scrolledDiveDetailRef.current = requestedDiveId;
     const frame = window.requestAnimationFrame(() => {
       document.getElementById("dive-detail")?.scrollIntoView({
         behavior: "smooth",
@@ -317,6 +322,70 @@ export function DiveFrameApp() {
     });
     return () => window.cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const openImport = params.get("import") === "1";
+    const openBle = params.get("ble") === "1";
+    if (!openImport && !openBle) return;
+    if (openImport) {
+      setImportGuideOpen(true);
+      setBleImportOpen(false);
+      setMobileDetail(false);
+    } else if (openBle) {
+      setBleImportOpen(true);
+      setImportGuideOpen(false);
+      setMobileDetail(false);
+    }
+    params.delete("import");
+    params.delete("ble");
+    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", next || "/");
+  }, []);
+
+  function goFrontOfApp() {
+    setImportGuideOpen(false);
+    setBleImportOpen(false);
+    setMobileDetail(false);
+    setSelectMode(false);
+    setSelectedDiveIds(new Set());
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("dive")) {
+        url.searchParams.delete("dive");
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}` || "/");
+      }
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+  }
+
+  function returnToDiveListAtCurrentDive() {
+    const returnToDiveId = selectedId;
+    setImportGuideOpen(false);
+    setBleImportOpen(false);
+    setMobileDetail(false);
+    setSelectMode(false);
+    setSelectedDiveIds(new Set());
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("dive")) {
+        url.searchParams.delete("dive");
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}` || "/");
+      }
+    }
+    if (!returnToDiveId) return;
+    // Wait until the list is shown again (mobile detail unmounts it) before
+    // pinning the current dive to the top of the viewport.
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById(`dive-row-${returnToDiveId}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  }
 
   const selected = useMemo(
     () => dives.find((dive) => dive.id === selectedId) ?? null,
@@ -772,6 +841,17 @@ export function DiveFrameApp() {
   function chooseDive(id: string) {
     setSelectedId(id);
     setMobileDetail(true);
+    // Mobile detail replaces the list in the same window scroller; land on the
+    // dive hero (not the overview "Your logs, enhanced." block above it).
+    scrolledDiveDetailRef.current = id;
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById("dive-detail")?.scrollIntoView({
+          behavior: "auto",
+          block: "start",
+        });
+      });
+    });
   }
 
   function handleDiveRowClick(id: string) {
@@ -957,112 +1037,47 @@ export function DiveFrameApp() {
   }
 
   return (
-    <main className="app-shell">
-      <header className="topbar">
-        <button
-          type="button"
-          className="brand"
-          onClick={() => {
-            setImportGuideOpen(false);
-            setBleImportOpen(false);
-            setMobileDetail(false);
-            setSelectMode(false);
-            setSelectedDiveIds(new Set());
-            if (typeof window !== "undefined") {
-              const url = new URL(window.location.href);
-              if (url.searchParams.has("dive")) {
-                url.searchParams.delete("dive");
-                window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}` || "/");
+    <main className={`app-shell${mobileDetail ? " show-mobile-detail" : ""}`}>
+      <AppTopbar
+        subtitle={t("diveLogCompanion")}
+        brand={{
+          mode: "button",
+          onClick: mobileDetail ? returnToDiveListAtCurrentDive : goFrontOfApp,
+          ariaLabel: mobileDetail ? t("allDives") : t("home"),
+        }}
+        showHome={mobileDetail || importGuideOpen || bleImportOpen}
+        onHomeFront={mobileDetail ? returnToDiveListAtCurrentDive : goFrontOfApp}
+        showImportCluster
+        onImportLog={() => {
+          setBleImportOpen(false);
+          setImportGuideOpen(true);
+        }}
+        onBleImport={
+          bleImportAvailable
+            ? () => {
+                setImportGuideOpen(false);
+                setBleImportOpen(true);
               }
-            }
-          }}
-          aria-label={t("home")}
-        >
-          <span className="brand-mark">
-            <Image
-              src="/icons/diveframe-icon.svg"
-              alt=""
-              aria-hidden="true"
-              width={52}
-              height={52}
-            />
-          </span>
-          <span>
-            <strong>DiveFrame</strong>
-            <small>{t("diveLogCompanion")}</small>
-          </span>
-        </button>
-        <div className="topbar-actions">
-          {importGuideOpen ? (
-            <button
-              type="button"
-              className="topbar-back-button"
-              onClick={() => setImportGuideOpen(false)}
-              aria-label={t("importGuideBack")}
-              title={t("importGuideBack")}
-            >
-              <ArrowLeft size={17} />
-            </button>
-          ) : mobileDetail ? (
-            <button
-              type="button"
-              className="mobile-home-button"
-              onClick={() => setMobileDetail(false)}
-              aria-label={t("allDives")}
-              title={t("allDives")}
-            >
-              <House size={17} />
-            </button>
-          ) : null}
-          {status !== t("importDiveLog") ? (
+            : undefined
+        }
+        importBusy={busy}
+        leadingActions={
+          status !== t("importDiveLog") ? (
             <span className="status-pill">
               {busy ? <LoaderCircle size={14} className="spin" /> : <Droplets size={14} />}
               {status}
             </span>
-          ) : null}
-          <Link href="/about" className="button button-quiet">
-            <Info size={16} />
-            {t("about")}
-          </Link>
-          <Link href="/settings" className="button button-quiet">
-            <Settings size={16} />
-            {t("settings")}
-          </Link>
-          {bleImportAvailable ? (
-            <button
-              type="button"
-              className="button button-quiet"
-              onClick={() => setBleImportOpen(true)}
-              disabled={busy}
-            >
-              <Bluetooth size={17} />
-              {t("downloadFromComputer")}
-            </button>
-          ) : (
-            <AndroidAppLink />
-          )}
-          <button
-            type="button"
-            className="button button-primary"
-            onClick={() => {
-              setBleImportOpen(false);
-              setImportGuideOpen(true);
-            }}
-            disabled={busy}
-          >
-            <Upload size={17} />
-            {t("importLog")}
-          </button>
-          <input
-            ref={importInput}
-            type="file"
-            accept=".db,.sqlite,.sqlite3,.ssrf,.xml,.uddf,.fit,application/x-sqlite3,application/xml,text/xml,application/octet-stream"
-            multiple
-            className="visually-hidden"
-            onChange={importDatabase}
-          />
-        </div>
-      </header>
+          ) : null
+        }
+      />
+      <input
+        ref={importInput}
+        type="file"
+        accept=".db,.sqlite,.sqlite3,.ssrf,.xml,.uddf,.fit,application/x-sqlite3,application/xml,text/xml,application/octet-stream"
+        multiple
+        className="visually-hidden"
+        onChange={importDatabase}
+      />
 
       {bleImportOpen && !importGuideOpen ? (
         <BleImportPanel
@@ -1569,6 +1584,7 @@ function DiveRowButton({
   return (
     <button
       type="button"
+      id={`dive-row-${dive.id}`}
       className={[
         "dive-row",
         member ? "dive-row-trip-member" : "",
@@ -1701,13 +1717,17 @@ function DiveDetail({
   const [tripRenameOpen, setTripRenameOpen] = useState(false);
   const [tripRenameDraft, setTripRenameDraft] = useState("");
   const [matchMemos, setMatchMemos] = useState<DiveMemo[]>([]);
-  const showMemoMatchHints = diveNeedsPlaceNameHint(dive);
+  const needsPlaceName = diveNeedsPlaceNameHint(dive);
+  const showMemoMatchHints =
+    needsPlaceName &&
+    listMemosNearDive(dive, matchMemos, MEMO_MATCH_WINDOWS_MS.widest).length >
+      0;
   const currentTrip = dive.tripId
     ? trips.find((trip) => trip.id === dive.tripId) ?? null
     : null;
 
   useEffect(() => {
-    if (!showMemoMatchHints) {
+    if (!needsPlaceName) {
       setMatchMemos([]);
       return;
     }
@@ -1722,7 +1742,7 @@ function DiveDetail({
     return () => {
       active = false;
     };
-  }, [dive.id, showMemoMatchHints]);
+  }, [dive.id, needsPlaceName]);
 
   useEffect(() => {
     let active = true;
@@ -2218,7 +2238,23 @@ function DiveDetail({
 
   return (
     <div className="detail-content">
-      <div className="detail-hero">
+      {showMemoMatchHints ? (
+        <MemoDiveMatchHints
+          mode="on-dive"
+          dive={dive}
+          memos={matchMemos}
+          onMemosChange={setMatchMemos}
+          onDiveChange={(updated) => {
+            setManualSite(updated.userSite ?? updated.site ?? "");
+            setLocationDraft(updated.location ?? "");
+            setBuddyDraft(updated.buddy ?? "");
+            setNotesDraft(updated.notes ?? "");
+            onDiveChange(updated);
+          }}
+        />
+      ) : null}
+
+      <div className="detail-hero" id="dive-hero">
         <div className="hero-topline">
           <span>{t("dive")} {dive.diveNumber ?? "—"}</span>
           <span>{formatDate(dive.diveDate, language, t("dateUnknown"))}</span>
@@ -2237,12 +2273,18 @@ function DiveDetail({
               <Pencil size={17} />
             </button>
           </div>
-          <Link
-            href="#dive-gallery"
+          <button
+            type="button"
             className="button button-secondary compose-hero-button"
+            onClick={() => {
+              document.getElementById("dive-gallery")?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }}
           >
             <Share2 size={16} /> {t("shareImage")}
-          </Link>
+          </button>
         </div>
         <div className="detail-hero-actions">
           <p>
@@ -2291,22 +2333,6 @@ function DiveDetail({
       </div>
 
       <DiveProfilePanel dive={dive} />
-
-      {showMemoMatchHints ? (
-        <MemoDiveMatchHints
-          mode="on-dive"
-          dive={dive}
-          memos={matchMemos}
-          onMemosChange={setMatchMemos}
-          onDiveChange={(updated) => {
-            setManualSite(updated.userSite ?? updated.site ?? "");
-            setLocationDraft(updated.location ?? "");
-            setBuddyDraft(updated.buddy ?? "");
-            setNotesDraft(updated.notes ?? "");
-            onDiveChange(updated);
-          }}
-        />
-      ) : null}
 
       <details
         ref={siteEditorRef}
@@ -3467,14 +3493,21 @@ function formatDate(value: string | null, language: AppLanguage, fallback: strin
   if (!value) return fallback;
   const date = new Date(value.replace(" ", "T"));
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(
-    language === "zh-Hant" ? "zh-HK" : language === "ja" ? "ja-JP" : "en",
-    {
+  const locale =
+    language === "zh-Hant" ? "zh-HK" : language === "ja" ? "ja-JP" : "en";
+  const datePart = new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
-    },
-  ).format(date);
+  }).format(date);
+  // Keep date-only strings as dates; otherwise append 24h HH:MM.
+  if (!/[T ]\d{1,2}:\d{2}/.test(value)) return datePart;
+  const timePart = new Intl.DateTimeFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+  return `${datePart}, ${timePart}`;
 }
 
 function averageDepthForDive(dive: Dive) {
