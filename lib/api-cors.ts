@@ -1,3 +1,5 @@
+import { DIVEFRAME_HOSTED_WEB_ORIGINS } from "./diveframe-origins";
+
 const CAPACITOR_ORIGINS = new Set([
   "https://localhost",
   "http://localhost",
@@ -5,9 +7,14 @@ const CAPACITOR_ORIGINS = new Set([
   "ionic://localhost",
 ]);
 
+const ALLOWED_ORIGINS = new Set([
+  ...CAPACITOR_ORIGINS,
+  ...DIVEFRAME_HOSTED_WEB_ORIGINS,
+]);
+
 export function corsHeaders(request: Request): HeadersInit {
   const origin = request.headers.get("origin");
-  if (!origin || !CAPACITOR_ORIGINS.has(origin)) {
+  if (!origin || !ALLOWED_ORIGINS.has(origin)) {
     return {};
   }
   return {

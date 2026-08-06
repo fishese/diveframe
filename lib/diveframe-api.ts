@@ -1,7 +1,14 @@
 import { Capacitor } from "@capacitor/core";
+import {
+  DIVEFRAME_HOSTED_WEB_ORIGINS,
+  DIVEFRAME_PRODUCTION_ORIGIN,
+} from "./diveframe-origins";
 
-/** Canonical hosted origin used for public, cross-origin app feeds. */
-export const DIVEFRAME_PRODUCTION_ORIGIN = "https://divelog.fishese.cc";
+export {
+  DIVEFRAME_HOSTED_WEB_ORIGINS,
+  DIVEFRAME_PRODUCTION_ORIGIN,
+  DIVEFRAME_WORKER_ORIGIN,
+} from "./diveframe-origins";
 
 /**
  * Absolute origin for same-site API helpers when the app is not served from
@@ -17,7 +24,7 @@ export function diveFrameApiOrigin(): string {
   if (Capacitor.isNativePlatform()) {
     const override = process.env.NEXT_PUBLIC_DIVEFRAME_API_ORIGIN?.trim();
     if (override) return override.replace(/\/$/, "");
-    return "https://divelog.fishese.cc";
+    return DIVEFRAME_PRODUCTION_ORIGIN;
   }
   return "";
 }
@@ -30,4 +37,19 @@ export function diveFrameApiUrl(path: string) {
 export function diveFrameProductionApiUrl(path: string) {
   const normalized = path.startsWith("/") ? path : `/${path}`;
   return `${DIVEFRAME_PRODUCTION_ORIGIN}${normalized}`;
+}
+
+/**
+ * What's New should prefer the page's own `/api/whats-new` when already on a
+ * hosted DiveFrame origin (avoids workers.dev → custom-domain CORS). Local
+ * vinext and the APK still read the published production feed.
+ */
+export function diveFrameWhatsNewUrl(): string {
+  if (
+    typeof window !== "undefined" &&
+    DIVEFRAME_HOSTED_WEB_ORIGINS.has(window.location.origin)
+  ) {
+    return "/api/whats-new";
+  }
+  return diveFrameProductionApiUrl("/api/whats-new");
 }

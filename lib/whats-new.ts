@@ -1,4 +1,4 @@
-import { diveFrameProductionApiUrl } from "./diveframe-api";
+import { diveFrameWhatsNewUrl } from "./diveframe-api";
 
 export type WhatsNewLink = {
   label: string;
@@ -165,9 +165,9 @@ export function renderWhatsNewBody(body: string): WhatsNewBodyPart[] {
 }
 
 export async function fetchWhatsNewDocument(): Promise<WhatsNewDocument> {
-  // What's New is a release feed, so local development and the APK should
-  // read the same document published by the hosted Cloudflare deployment.
-  const response = await fetch(diveFrameProductionApiUrl("/api/whats-new"));
+  // Hosted web uses same-origin `/api/whats-new`. Local vinext and the APK
+  // read the published production feed (see diveFrameWhatsNewUrl).
+  const response = await fetch(diveFrameWhatsNewUrl());
   if (!response.ok) {
     throw new Error("What's new feed is unavailable.");
   }

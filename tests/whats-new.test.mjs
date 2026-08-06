@@ -23,14 +23,17 @@ const {
   renderWhatsNewBody,
 } = whatsNew;
 
-test("fetches the release feed from the hosted production origin", async () => {
+test("fetches What's New via same-origin on hosted web, production otherwise", async () => {
   const whatsNewSource = await readFile("lib/whats-new.ts", "utf8");
-  assert.match(
-    whatsNewSource,
-    /diveFrameProductionApiUrl\("\/api\/whats-new"\)/,
-  );
+  assert.match(whatsNewSource, /diveFrameWhatsNewUrl\(\)/);
   const apiSource = await readFile("lib/diveframe-api.ts", "utf8");
-  assert.match(apiSource, /https:\/\/divelog\.fishese\.cc/);
+  assert.match(apiSource, /diveFrameWhatsNewUrl/);
+  assert.match(apiSource, /return "\/api\/whats-new"/);
+  const originsSource = await readFile("lib/diveframe-origins.ts", "utf8");
+  assert.match(originsSource, /https:\/\/divelog\.fishese\.cc/);
+  assert.match(originsSource, /https:\/\/diveframe\.fishese\.workers\.dev/);
+  const corsSource = await readFile("lib/api-cors.ts", "utf8");
+  assert.match(corsSource, /DIVEFRAME_HOSTED_WEB_ORIGINS/);
 });
 
 test("accepts document with APK download link", () => {
