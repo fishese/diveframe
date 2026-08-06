@@ -37,7 +37,9 @@ store distribution are not started yet.
   Updates banner shows newest What's New entry (`Launched beta test`). Session
   polish on empty CTAs. **APK-affecting.**
 - Android debug APK **1.0.19** (`versionCode 20`) published as GitHub
-  `v0.1.0-debug.17` (SHA-256 recorded after publish). Stable download:
+  `v0.1.0-debug.17` from commit `799d565`. SHA-256:
+  `547C629E92EBDCF421D8AF688BA18AC5F8AF563C0D541BECC0BC94123ACDB302`.
+  Stable download:
   https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
 
 Shipped on `main` (previous release):

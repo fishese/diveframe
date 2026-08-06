@@ -171,9 +171,11 @@ installation. It is not a Play Store, signed production, or F-Droid release.
 The current GitHub release is:
 
 - last GitHub release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.17`
-- APK **1.0.19** / `versionCode 20` (SHA-256 recorded after publish)
+- APK **1.0.19** / `versionCode 20` from commit `799d565`
 - Stable download:
   `https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk`
+- SHA-256:
+  `547C629E92EBDCF421D8AF688BA18AC5F8AF563C0D541BECC0BC94123ACDB302`
 
 The debug APK is still signed by Android's debug tooling. An in-place Android
 update requires the same application ID, a compatible/higher `versionCode`,
