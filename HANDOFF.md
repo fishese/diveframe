@@ -33,12 +33,19 @@ store distribution are not started yet.
 
 ## Current status (2026-08-06)
 
-Shipped on `main` (this release):
+- Empty-state hero uses a faint edge-to-edge dive-profile line (no orbit rings);
+  Updates banner shows newest What's New entry (`Launched beta test`). Session
+  polish on empty CTAs. **APK-affecting.**
+- Android debug APK **1.0.19** (`versionCode 20`) published as GitHub
+  `v0.1.0-debug.17` (SHA-256 recorded after publish). Stable download:
+  https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
+
+Shipped on `main` (previous release):
 
 - Memo ↔ dive match hints (place-name gate on dive detail; always on `/memos`),
   shared `AppTopbar` chrome, dive open/return scrolling, dive date **HH:MM**,
   composer back arrow, delete-dive on the bottom left. Session:
-  `docs/2026-08-06-memo-match-topbar-session.md`. **APK-affecting.**
+  `docs/2026-08-06-memo-match-topbar-session.md`.
 - Android debug APK **1.0.18** (`versionCode 19`) published as GitHub
   `v0.1.0-debug.16` from commit `5dc6740`. SHA-256:
   `12B1A80CA0A53C22D5E33875D494B45B9A28B0E896559F012C3100A58A461EFB`.

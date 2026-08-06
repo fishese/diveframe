@@ -1506,34 +1506,30 @@ function EmptyState({
       <svg
         className="empty-dive-profile"
         viewBox="0 0 1000 420"
-        preserveAspectRatio="xMidYMid meet"
+        preserveAspectRatio="none"
         aria-hidden="true"
         focusable="false"
       >
         <path
-          d="M36 86
-             C110 86 145 92 175 128
-             C215 178 245 245 285 285
-             C320 318 360 330 410 324
-             C450 319 475 305 510 312
-             C545 319 570 336 610 330
-             C650 324 680 308 715 300
-             C755 290 790 275 820 235
-             C840 205 850 188 870 178
-             L915 178
-             C940 178 955 150 968 112"
+          d="M0 86
+             C80 86 130 92 165 128
+             C210 185 245 270 285 320
+             C320 358 360 372 410 366
+             C450 361 475 345 510 352
+             C545 359 570 378 610 372
+             C650 366 680 348 715 340
+             C755 328 790 290 820 245
+             C840 210 850 188 870 178
+             L920 178
+             C950 178 980 145 1000 112"
           fill="none"
           stroke="rgba(141, 235, 215, 0.08)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
         />
       </svg>
       <div className="empty-content">
-        <span className="empty-icon">
-          <DatabaseIcon size={34} />
-        </span>
         <p className="eyebrow">{t("startWithExport")}</p>
         <h1>{t("emptyTitle")}</h1>
         <p>{t("emptyDescription")}</p>
@@ -1556,7 +1552,9 @@ function EmptyState({
             {t("loadSampleLog")}
           </button>
         </div>
-        <span className="empty-status">{status}</span>
+        {status && status !== t("importDiveLog") && status !== t("loadingLogbook") ? (
+          <span className="empty-status">{status}</span>
+        ) : null}
       </div>
       <div className="empty-proof">
         <span><Sparkles size={16} /> {t("proofMaps")}</span>

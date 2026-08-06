@@ -49,7 +49,7 @@ export function BetaNotice() {
   }, []);
 
   const unread = whatsNew !== null && whatsNew.version !== lastSeenVersion;
-  const latestEntry = whatsNew?.entries[whatsNew.entries.length - 1] ?? null;
+  const latestEntry = whatsNew?.entries[0] ?? null;
 
   return (
     <aside

@@ -943,7 +943,7 @@ export function SettingsApp() {
               <summary className="whats-new-summary">
                 <div>
                   <p className="eyebrow">{t("whatsNew")}</p>
-                  <strong>{whatsNew.entries[whatsNew.entries.length - 1]?.title ?? whatsNew.version}</strong>
+                  <strong>{whatsNew.entries[0]?.title ?? whatsNew.version}</strong>
                   <small>v{whatsNew.version}</small>
                 </div>
                 <span className="whats-new-badge" aria-label={t("whatsNew")} />

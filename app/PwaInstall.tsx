@@ -70,8 +70,19 @@ export function PwaManager() {
             )
             .catch(() => undefined);
         }
-      } else {
+      } else if (process.env.NODE_ENV === "production") {
         navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+      } else {
+        // Dev must not keep a cache-first SW, or stale modules can resurrect
+        // old UI (e.g. empty-state orbit rings) after a markup change.
+        void navigator.serviceWorker
+          .getRegistrations()
+          .then((registrations) => {
+            for (const registration of registrations) {
+              void registration.unregister();
+            }
+          })
+          .catch(() => undefined);
       }
     }
 

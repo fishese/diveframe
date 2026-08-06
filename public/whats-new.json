@@ -1,7 +1,19 @@
 {
-  "version": "2026-08-06",
-  "updatedAt": "2026-08-06T13:00:00.000Z",
+  "version": "2026-08-06-beta",
+  "updatedAt": "2026-08-06T15:20:00.000Z",
   "entries": [
+    {
+      "id": "2026-08-06-beta-launch",
+      "title": "Launched beta test",
+      "body": "DiveFrame beta testing is open. Import a dive log, try Dive memos, and share feedback. Android debug APK 1.0.19 includes the empty-state dive-profile refresh and related UI polish.",
+      "date": "2026-08-06",
+      "links": [
+        {
+          "label": "Download Android APK",
+          "href": "https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk"
+        }
+      ]
+    },
     {
       "id": "2026-08-06-memo-match-topbar",
       "title": "Memo match and top bar",

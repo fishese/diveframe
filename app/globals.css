@@ -2624,20 +2624,6 @@ button {
   z-index: 2;
 }
 
-.empty-icon {
-  align-items: center;
-  background: rgba(141, 235, 215, 0.1);
-  border: 1px solid rgba(141, 235, 215, 0.2);
-  border-radius: 24px;
-  color: var(--teal);
-  display: inline-flex;
-  height: 76px;
-  justify-content: center;
-  margin-bottom: 30px;
-  transform: rotate(-5deg);
-  width: 76px;
-}
-
 .empty-content h1 {
   font-size: clamp(44px, 7vw, 88px);
   letter-spacing: -0.065em;
@@ -2699,20 +2685,16 @@ button {
   margin-top: 20px;
 }
 
-.empty-orbit {
-  border: 1px solid rgba(141, 235, 215, 0.08);
-  border-radius: 50%;
-  height: 700px;
+.empty-dive-profile {
+  height: min(58vh, 560px);
+  left: 0;
+  max-width: none;
+  pointer-events: none;
   position: absolute;
-  width: 700px;
-}
-
-.orbit-one {
-  transform: rotate(12deg) scaleY(0.36);
-}
-
-.orbit-two {
-  transform: rotate(-24deg) scaleY(0.56);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  z-index: 1;
 }
 
 .empty-proof {
