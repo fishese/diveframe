@@ -2224,6 +2224,30 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
+      "id": "hk-au-yue-tsui",
+      "name": "Au Yue Tsui",
+      "aliases": [
+        "坳魚咀",
+        "拗魚咀"
+      ],
+      "coordinates": {
+        "latitude": 22.513333,
+        "longitude": 114.278333
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Yan Chau Tong"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "user-seed:2026-08-06"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-06T00:00:00.000Z"
+    },
+    {
       "id": "hk-basalt-island",
       "name": "Basalt Island",
       "aliases": [
@@ -2529,6 +2553,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-31T02:56:00.000Z"
+    },
+    {
+      "id": "hk-ngau-shi-wu-wan",
+      "name": "Ngau Shi Wu Wan",
+      "aliases": [
+        "牛屎湖灣"
+      ],
+      "coordinates": {
+        "latitude": 22.522222,
+        "longitude": 114.278333
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Yan Chau Tong"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "user-seed:2026-08-06"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-06T00:00:00.000Z"
     },
     {
       "id": "hk-north-ninepin",
