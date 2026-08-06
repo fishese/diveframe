@@ -40,7 +40,9 @@ Shipped on `main` (this release):
   composer back arrow, delete-dive on the bottom left. Session:
   `docs/2026-08-06-memo-match-topbar-session.md`. **APK-affecting.**
 - Android debug APK **1.0.18** (`versionCode 19`) published as GitHub
-  `v0.1.0-debug.16` (SHA-256 recorded after publish). Stable download:
+  `v0.1.0-debug.16` from commit `5dc6740`. SHA-256:
+  `12B1A80CA0A53C22D5E33875D494B45B9A28B0E896559F012C3100A58A461EFB`.
+  Stable download:
   https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
 
 Previously shipped on `main`:
