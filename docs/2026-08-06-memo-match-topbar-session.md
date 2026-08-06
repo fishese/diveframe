@@ -39,7 +39,8 @@ APK from the same commit.
 ## Dogfood / release
 
 - APK **1.0.18** (`versionCode 19`), GitHub tag **`v0.1.0-debug.16`**, asset
-  `diveframe-debug.apk` (digest recorded in `HANDOFF.md` / `docs/WEB-APK-SYNC.md`
-  after publish).
+  `diveframe-debug.apk`, commit `5dc6740`.
+- SHA-256:
+  `12B1A80CA0A53C22D5E33875D494B45B9A28B0E896559F012C3100A58A461EFB`.
 - Stable download:
   https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
