@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="memos"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_memos_short"
+        android:shortcutLongLabel="@string/shortcut_memos_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="cc.fishese.divelog"
+            android:targetClass="cc.fishese.divelog.MainActivity"
+            android:data="https://localhost/memos" />
+    </shortcut>
+</shortcuts>

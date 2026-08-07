@@ -391,6 +391,31 @@ test("exports are written natively because the WebView drops blob downloads", as
   assert.match(pwa, /getLocalStoragePersistenceStatus\(!native\)/);
 });
 
+test("Android launcher exposes a localized Memos shortcut to /memos", async () => {
+  const [manifest, mainActivity, shortcuts, strings] = await Promise.all([
+    readFile(files.manifest, "utf8"),
+    readFile(files.mainActivity, "utf8"),
+    readFile(
+      new URL("../android/app/src/main/res/xml/shortcuts.xml", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../android/app/src/main/res/values/strings.xml", import.meta.url),
+      "utf8",
+    ),
+  ]);
+
+  assert.match(manifest, /android\.app\.shortcuts/);
+  assert.match(manifest, /@xml\/shortcuts/);
+  assert.match(manifest, /android:pathPrefix="\/memos"/);
+  assert.match(shortcuts, /android:shortcutId="memos"/);
+  assert.match(shortcuts, /https:\/\/localhost\/memos/);
+  assert.match(strings, /shortcut_memos_short/);
+  assert.match(mainActivity, /handleLaunchPath/);
+  assert.match(mainActivity, /DiveFrameNative/);
+  assert.match(mainActivity, /setLightStatusBars/);
+});
+
 function major(versionRange) {
   const match = String(versionRange).match(/\d+/);
   assert.ok(match, `expected a semver range, received ${versionRange}`);

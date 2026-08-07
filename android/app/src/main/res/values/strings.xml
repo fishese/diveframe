@@ -4,4 +4,6 @@
     <string name="title_activity_main">DiveFrame</string>
     <string name="package_name">cc.fishese.divelog</string>
     <string name="custom_url_scheme">cc.fishese.divelog</string>
+    <string name="shortcut_memos_short">Memos</string>
+    <string name="shortcut_memos_long">Dive memos</string>
 </resources>

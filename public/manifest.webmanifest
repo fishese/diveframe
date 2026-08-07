@@ -35,6 +35,12 @@
       "url": "/"
     },
     {
+      "name": "Memos",
+      "short_name": "Memos",
+      "url": "/memos",
+      "description": "Open dive memos"
+    },
+    {
       "name": "Settings",
       "url": "/settings"
     }
