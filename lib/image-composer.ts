@@ -59,6 +59,9 @@ export function renderComposition(
   // 1. Photo
   redrawPhoto();
 
+  // Stats first so panel height can grow with visible field count (solid-band).
+  const stats = collectStatItems(dive, settings);
+
   // 2–3. Panel + chart geometry
   const panel = panelRect(
     settings.panelEdge,
@@ -66,6 +69,10 @@ export function renderComposition(
     height,
     settings.chartHeight,
     settings.panelDensity,
+    {
+      statCount: stats.length,
+      presentation: recipe.statsPresentation,
+    },
   );
   const chartRect = offsetRect(
     chartHomeRect(
@@ -91,6 +98,9 @@ export function renderComposition(
   // 5. Chart when above the panel (before panel fill so frost does not cover it)
   let renderedChart = false;
   if (recipe.chartRegion === "above-panel" && settings.chartMode !== "hidden") {
+    if (settings.graphGradient) {
+      drawGraphAreaGradient(context, chartRect);
+    }
     renderedChart = renderDiveChart(context, chartRect, dive, settings);
   }
 
@@ -128,6 +138,17 @@ export function renderComposition(
     ? resolveSiteName(dive, settings.siteNameOverride)
     : null;
   const titleSize = Math.round(Math.min(width, height) * 0.055 * settings.fontSize);
+  const siteInside = Boolean(siteName) && isInsidePanel(settings.blockPositions.site);
+  const categoryInside =
+    settings.visibleFields.category &&
+    settings.blockPositions.category !== "hidden" &&
+    isInsidePanel(settings.blockPositions.category);
+  const dateText = formatDateTime(dive, settings);
+  const dateInside =
+    Boolean(dateText) &&
+    settings.blockPositions.date !== "hidden" &&
+    isInsidePanel(settings.blockPositions.date);
+
   if (siteName && settings.blockPositions.site !== "hidden") {
     const siteAnchor = blockAnchor(settings.blockPositions.site, panel, width, height, margin);
     context.font = `700 ${titleSize}px ${fontStack}`;
@@ -153,7 +174,6 @@ export function renderComposition(
     );
     metaY += titleSize * 0.55;
   }
-  const dateText = formatDateTime(dive, settings);
   if (dateText && settings.blockPositions.date !== "hidden") {
     const dateAnchor = blockAnchor(settings.blockPositions.date, panel, width, height, margin);
     const dateSharesSite =
@@ -190,8 +210,13 @@ export function renderComposition(
     }
   }
 
-  // 8. Stats
-  const stats = collectStatItems(dive, settings);
+  // 8. Stats — stack below inside-panel titles / in-panel chart when needed
+  let titleReserveTop = 0;
+  if (siteInside) titleReserveTop += titleSize * 1.2;
+  if (categoryInside) titleReserveTop += titleSize * 0.55;
+  if (dateInside) titleReserveTop += titleSize * 0.55;
+  if (titleReserveTop > 0) titleReserveTop += titleSize * 0.25;
+
   if (settings.blockPositions.statistics !== "hidden") {
     drawComposerStats(
       context,
@@ -200,6 +225,12 @@ export function renderComposition(
       recipe.statsPresentation,
       settings,
       fontStack,
+      {
+        chartRegion: recipe.chartRegion,
+        chartRect,
+        chartVisible: renderedChart,
+        titleReserveTop,
+      },
     );
   }
 
@@ -269,6 +300,26 @@ function applyTextTreatment(context: CanvasRenderingContext2D, settings: Compose
   context.shadowColor = settings.textTreatment === "shadow" ? "rgba(0,0,0,.8)" : "transparent";
   context.shadowBlur = settings.textTreatment === "shadow" ? 12 : 0;
   context.shadowOffsetY = settings.textTreatment === "shadow" ? 3 : 0;
+}
+
+/** Soft vertical wash behind above-panel chart (legacy “gradient behind graph”). */
+function drawGraphAreaGradient(
+  context: CanvasRenderingContext2D,
+  chartRect: { x: number; y: number; width: number; height: number },
+) {
+  const pad = chartRect.height * 0.35;
+  const top = Math.max(0, chartRect.y - pad * 0.35);
+  const bottom = chartRect.y + chartRect.height + pad * 0.15;
+  const gradient = context.createLinearGradient(0, top, 0, bottom);
+  gradient.addColorStop(0, "rgba(3, 20, 29, 0)");
+  gradient.addColorStop(0.4, "rgba(3, 20, 29, 0.28)");
+  gradient.addColorStop(1, "rgba(3, 20, 29, 0.5)");
+  context.fillStyle = gradient;
+  context.fillRect(chartRect.x, top, chartRect.width, bottom - top);
+}
+
+function isInsidePanel(position: ComposerSettings["blockPositions"]["site"]) {
+  return position === "inside-panel" || position === "above-graph";
 }
 
 function drawAlignedText(context: CanvasRenderingContext2D, text: string, x: number, y: number, width: number, align: ComposerSettings["textAlign"], settings: ComposerSettings) {

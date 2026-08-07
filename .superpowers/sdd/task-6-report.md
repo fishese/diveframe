@@ -1,32 +1,85 @@
-# Task 6 Report: Collapsible date/computer filters + Reset + search haystack
+# Task 6 Report: Contract tests, polish, verification
 
-## Status
-
-**DONE**
-
-**Branch:** `feature/trip-user-gps-editors`
-**Commit:** `34fd83f` — Add collapsible date and computer dive list filters.
+**Status:** DONE  
+**Branch:** `feature/compose-preset-redesign`
 
 ## Summary
 
-Refactored `visibleDives` to filter via `diveMatchesListFilters` (from `lib/dive-list-model.ts`) instead of the old inline predicate, then sort and hand off to `buildDiveListRows` — search now includes `computerModel` for free via the shared model. Added a collapsible "Filters" panel (chevron toggle, `filtersOpen` state) below the existing chip row with From/To date inputs and a computer `<select>` populated from distinct `dive.computerModel` values (sorted). The existing "Clear" button now calls `resetFilters`, which clears `namedOnly`/`gpsOnly`/`appSiteOnly`/`dateFrom`/`dateTo`/`computerFilter` but leaves the search query untouched; it's disabled via `hasActiveFilters` when nothing is active.
+Cleared remaining retired layout assertions from `tests/app-contract.test.mjs`, locked the four recipe ids plus new panel/chart default fields, and wired the new unit test files into `npm test`. Skipped whats-new / PRODUCT-SPEC (YAGNI).
 
-## Files changed
+## Changes by file
 
-| File | Action |
-|---|---|
-| `app/DiveFrameApp.tsx` | Modified — `dateFrom`/`dateTo`/`computerFilter`/`filtersOpen` state, `computerModels` memo, `hasActiveFilters`, `resetFilters`, refactored `visibleDives` to use `diveMatchesListFilters`, filter-panel JSX |
-| `app/globals.css` | Modified — `.filter-toggle-chevron`, `.filter-panel`, `.filter-panel-field` |
-| `lib/app-i18n.ts` | Modified — `moreFilters`, `dateFrom`, `dateTo`, `computerFilterLabel`, `allComputers` (EN, zh-Hant, ja) |
-| `tests/app-contract.test.mjs` | Modified — filter state/handler/class/i18n asserts, `resetFilters` body checks it doesn't touch `setQuery` |
+### `tests/app-contract.test.mjs`
 
-## Tests
+- Assert `TEMPLATES` includes `bottom-profile`, `right-panel`, `bottom-stats-dock`, `solid-info-band`.
+- Assert retired ids (`full-width-graph`, `landscape-dashboard`, `cinematic-split`) are absent from `TEMPLATES`.
+- Assert `defaultComposerSettings` keys: `panelEdge`, `panelFillMode`, `panelDensity`, `textContrastBoost`, `chartOffsetX`, `chartOffsetY`.
+- Replace retired `layout === "graph|dashboard|split"` positive matches with recipe pipeline asserts (`panelRect`, `chartHomeRect`, `drawComposerPanel`, `drawComposerStats`) and `doesNotMatch` for retired layout/`lowerPanelY`.
 
-```
+### `package.json`
+
+Added to `test` script: `chart-series`, `composer-layout`, `composer-settings-normalize`, `composer-stats`.
+
+## Scope notes
+
+- `landscape-dashboard` remains only in `tests/composer-settings-normalize.test.mjs` as the retired-id coercion fixture (intentional).
+- Docs / `.superpowers` historical mentions left alone.
+- Did not commit `data/dive-sites.*` or `__pycache__`.
+
+## Verification
+
+```bash
+npm run typecheck
+# pass
+
+node --test tests/composer-settings-normalize.test.mjs tests/composer-layout.test.mjs tests/composer-stats.test.mjs tests/chart-series.test.mjs tests/composer-presets.test.mjs tests/composer-output.test.mjs tests/app-contract.test.mjs
+# 11 pass, 0 fail
+
 npm test
+# build + typecheck + 129 pass, 3 skipped, 0 fail
 ```
-67 pass, 3 skipped (pre-existing), 0 fail — includes `vinext build` (TS/type check) and `tests/dive-list-model.test.mjs` (already covered dateFrom/dateTo/computerModel predicates and search-includes-computerModel from Task 1, unchanged).
+
+## Commit
+
+```
+Lock composer preset redesign with contract and unit coverage.
+```
+
+Hash: `72948a7`  
+Files: `tests/app-contract.test.mjs`, `package.json`.
 
 ## Concerns
 
-None blocking. `lib/dive-list-model.ts` and its tests already fully implemented `diveMatchesListFilters`/`buildDiveListRows` per Task 1, so this task was pure UI wiring + refactor of the stale inline filter in `DiveFrameApp.tsx`. Did not touch Task 7 docs or run `adb install`.
+- Manual UI smoke for dock/band looks still not run (carried from Task 5).
+- `task-6-brief.md` on disk still described an unrelated trip-filters task; used plan Task 6 from `docs/superpowers/plans/2026-08-07-compose-preset-redesign.md`.
+
+---
+
+## Branch review fixes (Critical + Important)
+
+**Status:** DONE  
+**Date:** 2026-08-07
+
+### Fixes
+
+1. **Critical — right-panel stats vs titles:** `drawComposerStats` / `textStackStartY` take `StatsLayoutContext` (`titleReserveTop`, `chartRegion`, `chartRect`, `chartVisible`). Vertical text-stack starts below inside-panel titles and below in-panel chart (not at the same top as site/category/date).
+2. **Important — `graphGradient`:** When true and chart is `above-panel`, `drawGraphAreaGradient` paints a soft vertical wash behind the chart home rect before the chart. Settings field + Chart checkbox kept; not tied to `panelGradient` (panel fill remains separate).
+3. **Important — personal preset apply:** `applySelectedPreset` runs `normalizeComposerSettings(applyComposerPreset(...))` before `setSettings`.
+4. **Important — solid-info-band height:** `panelRect` accepts optional `contentHint` `{ statCount, presentation }`; horizontal bands grow with visible stats (esp. `solid-band`), capped at 42% frame height. `image-composer` collects stats before computing the panel.
+5. **Important — Overlay Positions honesty:** Removed `chart` and `statistics` from the Overlay Positions UI (positions beyond `hidden` were unused for chart; chart uses Chart mode, stats use field visibility). `blockPositions.statistics === "hidden"` still honored if set. Settings fields retained for compatibility.
+
+### Verification
+
+```bash
+npm run typecheck
+# pass
+
+node --test tests/composer-layout.test.mjs tests/composer-stats.test.mjs tests/composer-settings-normalize.test.mjs tests/chart-series.test.mjs tests/app-contract.test.mjs
+# 10 pass, 0 fail
+```
+
+### Files
+
+- `lib/composer-layout.ts`, `lib/composer-stats.ts`, `lib/image-composer.ts`
+- `app/compose/ComposerApp.tsx`
+- `tests/composer-layout.test.mjs`, `tests/composer-stats.test.mjs`, `tests/app-contract.test.mjs`

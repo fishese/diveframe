@@ -297,10 +297,18 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(imageComposer, /chartHomeRect\(/);
   assert.match(imageComposer, /drawComposerPanel/);
   assert.match(imageComposer, /drawComposerStats/);
+  assert.match(imageComposer, /graphGradient/);
+  assert.match(imageComposer, /drawGraphAreaGradient|createLinearGradient/);
   assert.doesNotMatch(imageComposer, /template\.layout === "graph"/);
   assert.doesNotMatch(imageComposer, /template\.layout === "dashboard"/);
   assert.doesNotMatch(imageComposer, /template\.layout === "split"/);
   assert.doesNotMatch(imageComposer, /lowerPanelY/);
+  assert.match(composer, /\(\["site", "category", "date"\]/);
+  assert.doesNotMatch(
+    composer,
+    /\(\["site", "category", "date", "chart", "statistics"\]/,
+  );
+  assert.match(composer, /normalizeComposerSettings\(\s*applyComposerPreset/);
   assert.match(imageComposer, /settings\.textColor/);
   assert.match(chart, /drawAxisLabels/);
   assert.match(chart, /strokeInset/);

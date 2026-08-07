@@ -39,3 +39,17 @@ test("chart offset free-floats without clamping to panel", () => {
   assert.equal(moved.x, 200);
   assert.equal(moved.y, 400);
 });
+
+test("solid-band panel grows with stat count up to 42% height", () => {
+  const few = layout.panelRect("bottom", 1000, 1000, 0.24, "comfortable", {
+    statCount: 2,
+    presentation: "solid-band",
+  });
+  const many = layout.panelRect("bottom", 1000, 1000, 0.24, "comfortable", {
+    statCount: 10,
+    presentation: "solid-band",
+  });
+  assert.ok(many.height > few.height);
+  assert.ok(many.height <= 1000 * 0.42 + 1e-6);
+  assert.equal(many.y + many.height, 1000);
+});

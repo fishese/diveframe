@@ -18,6 +18,15 @@ export type StatItem = {
   value: string;
 };
 
+/** Layout hints so text-stack / vertical panels avoid titles and in-panel charts. */
+export type StatsLayoutContext = {
+  chartRegion?: "above-panel" | "in-panel";
+  chartRect?: LayoutRect | null;
+  chartVisible?: boolean;
+  /** Extra top inset inside the panel reserved for site/category/date. */
+  titleReserveTop?: number;
+};
+
 const DENSITY_SCALE = {
   compact: 0.85,
   comfortable: 1,
@@ -144,6 +153,7 @@ export function drawComposerStats(
   presentation: StatsPresentation,
   settings: ComposerSettings,
   fontStack: string,
+  layout?: StatsLayoutContext,
 ) {
   const limited = limitStatsForPresentation(items, presentation);
   if (!limited.length) return;
@@ -166,7 +176,42 @@ export function drawComposerStats(
     return;
   }
 
-  drawTextStack(context, panel, limited, settings, fontStack, margin, base);
+  drawTextStack(
+    context,
+    panel,
+    limited,
+    settings,
+    fontStack,
+    margin,
+    base,
+    layout,
+  );
+}
+
+/** Exported for layout tests: where vertical text-stack stats begin. */
+export function textStackStartY(
+  panel: LayoutRect,
+  itemCount: number,
+  base: number,
+  margin: number,
+  layout?: StatsLayoutContext,
+): number {
+  const rowHeight = base * 1.35;
+  const titlePad = Math.max(0, layout?.titleReserveTop ?? 0);
+  const afterTitles = panel.y + margin + titlePad;
+  const chartInPanel =
+    layout?.chartVisible &&
+    layout.chartRegion === "in-panel" &&
+    layout.chartRect;
+  if (chartInPanel && layout.chartRect) {
+    const afterChart =
+      layout.chartRect.y + layout.chartRect.height + margin * 0.45;
+    return Math.min(
+      Math.max(afterTitles, afterChart),
+      panel.y + panel.height - margin - rowHeight,
+    );
+  }
+  return afterTitles;
 }
 
 function drawIconGrid(
@@ -281,6 +326,7 @@ function drawTextStack(
   fontStack: string,
   margin: number,
   base: number,
+  layout?: StatsLayoutContext,
 ) {
   const isVertical = panel.height > panel.width * 1.15;
   const innerWidth = panel.width - margin * 2;
@@ -292,15 +338,16 @@ function drawTextStack(
         Math.max(1, Math.floor(innerWidth / Math.max(1, base * 2.55))),
       );
   const rowHeight = base * 1.35;
-  const totalHeight = Math.ceil(items.length / columns) * rowHeight;
+  const visible = items.slice(0, 8);
+  const totalHeight = Math.ceil(visible.length / columns) * rowHeight;
   const startY = isVertical
-    ? panel.y + margin
+    ? textStackStartY(panel, visible.length, base, margin, layout)
     : panel.y + panel.height - margin - totalHeight;
   const cellWidth = innerWidth / columns;
   const valueSize = Math.round(base * 0.55);
   const labelSize = Math.round(base * 0.25);
 
-  items.slice(0, 8).forEach((item, index) => {
+  visible.forEach((item, index) => {
     const column = index % columns;
     const row = Math.floor(index / columns);
     const x = panel.x + margin + column * cellWidth;

@@ -329,9 +329,12 @@ export function ComposerApp() {
   function applySelectedPreset() {
     const preset = presets.find((item) => item.id === selectedPresetId);
     if (!preset) return;
-    setSettings((current) =>
-      current ? applyComposerPreset(current, preset.settings) : current,
-    );
+    setSettings((current) => {
+      if (!current) return current;
+      return normalizeComposerSettings(
+        applyComposerPreset(current, preset.settings),
+      );
+    });
     setStatus(t("composerPresetApplied", { name: preset.name }));
   }
 
@@ -802,7 +805,7 @@ export function ComposerApp() {
           </ControlSection>
 
           <ControlSection title={t("overlayPositions")}>
-            {(["site", "category", "date", "chart", "statistics"] as const).map((block) => (
+            {(["site", "category", "date"] as const).map((block) => (
               <Control key={block} label={`${blockLabel(block, t)} ${t("position")}`}>
                 <select value={settings.blockPositions[block]} onChange={(event) => update("blockPositions", { ...settings.blockPositions, [block]: event.target.value as BlockPosition })}>
                   {positions.map((position) => <option value={position} key={position}>{positionLabel(position, t)}</option>)}
