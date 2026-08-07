@@ -96,11 +96,24 @@ export function renderComposition(
 
   // Soft blur under panel when fill is not already frosted
   if (settings.blurBehindText && settings.panelFillMode !== "frosted") {
-    blurBehindPanel(context, panel, width, height, redrawPhoto);
+    blurBehindPanel(
+      context,
+      panel,
+      width,
+      height,
+      redrawPhoto,
+      settings.backgroundDimming,
+    );
   }
 
   // 6. Panel fill (frosted may call redrawPhoto clipped)
-  drawComposerPanel(context, panel, settings, redrawPhoto);
+  drawComposerPanel(
+    context,
+    panel,
+    settings,
+    redrawPhoto,
+    settings.backgroundDimming,
+  );
 
   // Chart inside panel must paint after the fill
   if (recipe.chartRegion === "in-panel" && settings.chartMode !== "hidden") {

@@ -6,6 +6,7 @@ export function drawComposerPanel(
   panel: LayoutRect,
   settings: ComposerSettings,
   redrawPhoto: () => void,
+  backgroundDimming = 0,
 ) {
   const opacity =
     settings.panelFillMode === "solid"
@@ -24,6 +25,8 @@ export function drawComposerPanel(
       // filter unsupported — fall through to tint
     }
     context.filter = "none";
+    // redrawPhoto wipes canvas dimming; restore it before frost tint
+    applyBackgroundDimming(context, panel, backgroundDimming);
     context.fillStyle = hexToRgba(settings.panelColor, opacity * 0.55);
     context.fillRect(panel.x, panel.y, panel.width, panel.height);
     context.restore();
@@ -52,6 +55,7 @@ export function blurBehindPanel(
   canvasWidth: number,
   canvasHeight: number,
   redrawPhoto: () => void,
+  backgroundDimming = 0,
 ) {
   context.save();
   context.beginPath();
@@ -63,7 +67,20 @@ export function blurBehindPanel(
   } catch {
     // ignore unsupported filter
   }
+  context.filter = "none";
+  // redrawPhoto wipes canvas dimming; restore it under the panel
+  applyBackgroundDimming(context, panel, backgroundDimming);
   context.restore();
+}
+
+function applyBackgroundDimming(
+  context: CanvasRenderingContext2D,
+  panel: LayoutRect,
+  backgroundDimming: number,
+) {
+  if (!(backgroundDimming > 0)) return;
+  context.fillStyle = `rgba(2, 14, 21, ${backgroundDimming})`;
+  context.fillRect(panel.x, panel.y, panel.width, panel.height);
 }
 
 export function hexToRgba(hex: string, alpha: number): string {
