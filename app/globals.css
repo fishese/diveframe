@@ -317,13 +317,23 @@ button {
   background: var(--icon-btn-bg);
   border: 1px solid var(--icon-btn-border);
   border-radius: 9px;
+  box-sizing: border-box;
   color: var(--teal);
   cursor: pointer;
   display: inline-flex;
+  flex-shrink: 0;
   height: 34px;
   justify-content: center;
+  line-height: 0;
   padding: 0;
   width: 34px;
+}
+
+.mobile-home-button svg {
+  display: block;
+  flex-shrink: 0;
+  height: 17px;
+  width: 17px;
 }
 
 .topbar-memos-link {
@@ -4767,6 +4777,15 @@ button {
     font-size: 0;
     gap: 0;
     padding: 8px;
+  }
+
+  .topbar .mobile-home-button {
+    padding: 0;
+  }
+
+  .topbar .mobile-home-button svg {
+    height: 18px;
+    width: 18px;
   }
 
   .mobile-home-button {
