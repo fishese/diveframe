@@ -6,6 +6,31 @@ import { formatDepthValue, formatDuration } from "./unit-conversion";
 
 export type ChartRect = { x: number; y: number; width: number; height: number };
 
+export type ChartSeries = {
+  id: string;
+  color: string;
+  dash?: number[];
+  widthScale?: number;
+  valuesFor: (sample: DiveSample) => number | null;
+};
+
+export function buildPressureSeries(
+  dive: Dive,
+  settings: Pick<ComposerSettings, "pressureColor">,
+): ChartSeries[] {
+  const cylinders = Math.max(
+    0,
+    ...dive.samples.map((sample) => sample.pressuresBar.length),
+  );
+  return Array.from({ length: cylinders }, (_, cylinder) => ({
+    id: `pressure-${cylinder}`,
+    color: settings.pressureColor,
+    dash: cylinder ? [10, 7] : undefined,
+    widthScale: Math.max(0.55, 1 - cylinder * 0.12),
+    valuesFor: (sample: DiveSample) => sample.pressuresBar[cylinder] ?? null,
+  }));
+}
+
 export function downsampleProfile(samples: DiveSample[], maximumPoints: number) {
   if (samples.length <= maximumPoints) return samples;
   const bucketSize = Math.max(1, Math.ceil(samples.length / Math.floor(maximumPoints / 2)));
@@ -118,17 +143,16 @@ export function renderDiveChart(
   const wantsPressure = settings.chartMode.includes("pressure");
   const wantsTemperature = settings.chartMode.includes("temperature");
   if (wantsPressure) {
-    const cylinders = Math.max(...samples.map((sample) => sample.pressuresBar.length), 0);
-    for (let cylinder = 0; cylinder < cylinders; cylinder += 1) {
+    for (const series of buildPressureSeries(dive, settings)) {
       renderSparseLine(
         context,
         samples,
         dataPlot,
         maximumTime,
-        (sample) => sample.pressuresBar[cylinder],
-        settings.pressureColor,
-        settings.lineThickness * Math.max(0.55, 1 - cylinder * 0.12),
-        cylinder ? [10, 7] : [],
+        (sample) => series.valuesFor(sample) ?? undefined,
+        series.color,
+        settings.lineThickness * (series.widthScale ?? 1),
+        series.dash ?? [],
       );
     }
   }
