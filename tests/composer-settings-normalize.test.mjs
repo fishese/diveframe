@@ -26,6 +26,13 @@ test("retired templateId coerces to bottom-stats-dock", () => {
     templateId: "landscape-dashboard",
   });
   assert.equal(normalized.templateId, "bottom-stats-dock");
+  assert.equal(normalized.ratio, "16:9");
+  assert.equal(normalized.panelFillMode, "frosted");
+  assert.ok(Math.abs(normalized.panelOpacity - 0.55) < 0.001);
+  assert.equal(normalized.visibleFields.duration, true);
+  assert.equal(normalized.visibleFields.maxDepth, true);
+  assert.equal(normalized.visibleFields.temperature, true);
+  assert.equal(normalized.visibleFields.gasMix, false);
 });
 
 test("missing panel fields fill from active recipe", () => {

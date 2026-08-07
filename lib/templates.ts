@@ -223,7 +223,7 @@ export function isTemplateId(value: string): value is TemplateId {
   return TEMPLATES.some((template) => template.id === value);
 }
 
-export function getTemplate(id: string) {
+export function getTemplate(id: string): TemplateDefinition {
   return TEMPLATES.find((template) => template.id === id) ?? getTemplate(FALLBACK_TEMPLATE_ID);
 }
 
