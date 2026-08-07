@@ -299,7 +299,6 @@ export function DiveFrameApp() {
 
   useEffect(() => {
     if (dives.length === 0 || importGuideOpen || bleImportOpen) {
-      document.documentElement.classList.remove("workspace-docked");
       return;
     }
 
@@ -308,7 +307,6 @@ export function DiveFrameApp() {
     if (!anchor) return;
 
     const TOPBAR_HEIGHT = 58;
-    let docked = false;
     let syncFrame = 0;
 
     const stickyTop = () => {
@@ -325,30 +323,14 @@ export function DiveFrameApp() {
         Math.round(anchor.getBoundingClientRect().top + window.scrollY - stickyTop()),
       );
 
-    const setDocked = (next: boolean) => {
-      if (docked === next) return;
-      docked = next;
-      document.documentElement.classList.toggle("workspace-docked", next);
-    };
-
     const sync = () => {
-      if (!desktopQuery.matches) {
-        setDocked(false);
-        return;
-      }
+      if (!desktopQuery.matches) return;
       const lock = lockY();
-      const y = window.scrollY;
-      // Hysteresis avoids dock flicker (and layout thrash) during fast scrolls.
-      if (y > lock) {
+      // Clamp only — do not toggle overflow:hidden on html/body; that breaks
+      // position:sticky and makes the top bar disappear at max scroll.
+      if (window.scrollY > lock) {
         window.scrollTo(0, lock);
-        setDocked(true);
-        return;
       }
-      if (docked) {
-        if (y < lock - 8) setDocked(false);
-        return;
-      }
-      if (y >= lock - 1) setDocked(true);
     };
 
     const scheduleSync = () => {
@@ -357,17 +339,6 @@ export function DiveFrameApp() {
         syncFrame = 0;
         sync();
       });
-    };
-
-    const onWheel = (event: WheelEvent) => {
-      if (!desktopQuery.matches || !docked || event.deltaY >= 0) return;
-      setDocked(false);
-      window.scrollTo(0, Math.max(0, lockY() + event.deltaY));
-    };
-
-    const onDesktopChange = () => {
-      if (!desktopQuery.matches) setDocked(false);
-      scheduleSync();
     };
 
     // Benign browser signal when a ResizeObserver callback causes more layout
@@ -385,18 +356,15 @@ export function DiveFrameApp() {
     sync();
     window.addEventListener("scroll", scheduleSync, { passive: true });
     window.addEventListener("resize", scheduleSync);
-    window.addEventListener("wheel", onWheel, { passive: true });
     window.addEventListener("error", onResizeObserverNoise);
-    desktopQuery.addEventListener("change", onDesktopChange);
+    desktopQuery.addEventListener("change", scheduleSync);
 
     return () => {
       if (syncFrame) window.cancelAnimationFrame(syncFrame);
       window.removeEventListener("scroll", scheduleSync);
       window.removeEventListener("resize", scheduleSync);
-      window.removeEventListener("wheel", onWheel);
       window.removeEventListener("error", onResizeObserverNoise);
-      desktopQuery.removeEventListener("change", onDesktopChange);
-      document.documentElement.classList.remove("workspace-docked");
+      desktopQuery.removeEventListener("change", scheduleSync);
     };
   }, [bleImportOpen, dives.length, importGuideOpen]);
 

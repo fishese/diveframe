@@ -1,7 +1,19 @@
 {
-  "version": "2026-08-06-beta",
-  "updatedAt": "2026-08-06T15:20:00.000Z",
+  "version": "2026-08-07-theme-shortcuts",
+  "updatedAt": "2026-08-07T13:00:00.000Z",
   "entries": [
+    {
+      "id": "2026-08-07-light-theme-memos-shortcuts",
+      "title": "Light theme and Memos shortcut",
+      "body": "Choose Light or Dark in Settings (saved on this device). Long-press the app icon or use the PWA shortcut to open Dive memos. Android debug APK 1.0.20 includes the same updates.",
+      "date": "2026-08-07",
+      "links": [
+        {
+          "label": "Download Android APK",
+          "href": "https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk"
+        }
+      ]
+    },
     {
       "id": "2026-08-06-beta-launch",
       "title": "Launched beta test",

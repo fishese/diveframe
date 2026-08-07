@@ -89,8 +89,8 @@ as a GitHub Release asset.
 1. Review `git diff --name-only` and use the matrix above.
 2. For an APK release, increment `versionCode` and update `versionName` in
    `android/app/build.gradle`. The first debug release used `versionCode 1` /
-   `versionName "1.0"`; the current dogfood debug build uses `versionCode 20` /
-   `versionName "1.0.19"`. Confirm the build uses the same signing key as the
+   `versionName "1.0"`; the current dogfood debug build uses `versionCode 21` /
+   `versionName "1.0.20"`. Confirm the build uses the same signing key as the
    APK it is expected to update.
 3. Run `npm test`, commit the intended source changes, and push that commit to
    `main`. Record the commit ID; the APK release tag must target it.
@@ -128,8 +128,8 @@ as a GitHub Release asset.
    https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
    ```
 
-   The GitHub-published release asset is `v0.1.0-debug.17` (**1.0.19** /
-   `versionCode 20`). Because the stable URL uses GitHub's `releases/latest`
+   The GitHub-published release asset is `v0.1.0-debug.18` (**1.0.20** /
+   `versionCode 21`). Because the stable URL uses GitHub's `releases/latest`
    alias, debug releases are currently published as normal latest releases
    rather than GitHub prereleases. If that policy changes, the download-link
    strategy must change too.
@@ -166,16 +166,14 @@ as a GitHub Release asset.
 
 ## Current distribution boundary
 
-As of 2026-08-06, the published Android build is an arm64 debug APK for manual
+As of 2026-08-07, the published Android build is an arm64 debug APK for manual
 installation. It is not a Play Store, signed production, or F-Droid release.
 The current GitHub release is:
 
-- last GitHub release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.17`
-- APK **1.0.19** / `versionCode 20` from commit `799d565`
+- last GitHub release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.18`
+- APK **1.0.20** / `versionCode 21` (commit and SHA-256 recorded in HANDOFF)
 - Stable download:
   `https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk`
-- SHA-256:
-  `547C629E92EBDCF421D8AF688BA18AC5F8AF563C0D541BECC0BC94123ACDB302`
 
 The debug APK is still signed by Android's debug tooling. An in-place Android
 update requires the same application ID, a compatible/higher `versionCode`,

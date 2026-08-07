@@ -31,7 +31,18 @@ APK uses its own WebView origin (`https://localhost`), so PWA and APK data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-06)
+## Current status (2026-08-07)
+
+- Light/dark theme (explicit toggle, device-local persistence), PWA + Android
+  Memos shortcuts, light-theme contrast polish, and desktop logbook scroll
+  docking. Session: `docs/2026-08-07-light-theme-memos-shortcuts-session.md`.
+  **APK-affecting.**
+- Android debug APK **1.0.20** (`versionCode 21`) published as GitHub
+  `v0.1.0-debug.18` (SHA-256 filled after publish).
+  Stable download:
+  https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
+
+Shipped on `main` (previous release):
 
 - Empty-state hero uses a faint edge-to-edge dive-profile line (no orbit rings);
   Updates banner shows newest What's New entry (`Launched beta test`). Session
@@ -42,7 +53,7 @@ store distribution are not started yet.
   Stable download:
   https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
 
-Shipped on `main` (previous release):
+Previously shipped:
 
 - Memo ↔ dive match hints (place-name gate on dive detail; always on `/memos`),
   shared `AppTopbar` chrome, dive open/return scrolling, dive date **HH:MM**,
