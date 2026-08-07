@@ -45,6 +45,9 @@ bump. Rebuild and publish the debug APK from the same release commit.
 ## Dogfood / release
 
 - APK **1.0.20** (`versionCode 21`), GitHub tag **`v0.1.0-debug.18`**, asset
-  `diveframe-debug.apk` (digest recorded in HANDOFF after publish).
+  `diveframe-debug.apk`, commit `84e0f4b`.
+- SHA-256:
+  `419EA0C0D6793D6073767A9D39F99CB5E83201F1DBC2BF96E4CC3EA78FAC38F7`.
 - Stable download:
   https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
+- Installed over wireless adb on the maintainer Galaxy S24 Ultra after publish.

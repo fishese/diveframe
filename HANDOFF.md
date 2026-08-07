@@ -38,7 +38,8 @@ store distribution are not started yet.
   docking. Session: `docs/2026-08-07-light-theme-memos-shortcuts-session.md`.
   **APK-affecting.**
 - Android debug APK **1.0.20** (`versionCode 21`) published as GitHub
-  `v0.1.0-debug.18` (SHA-256 filled after publish).
+  `v0.1.0-debug.18` from commit `84e0f4b`. SHA-256:
+  `419EA0C0D6793D6073767A9D39F99CB5E83201F1DBC2BF96E4CC3EA78FAC38F7`.
   Stable download:
   https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
 
@@ -149,6 +150,9 @@ Session detail: `docs/2026-08-01-ble-product-import-session.md`.
 
 2026-08-06 memo–dive match and shared top bar:
 `docs/2026-08-06-memo-match-topbar-session.md`.
+
+2026-08-07 light theme and Memos shortcuts:
+`docs/2026-08-07-light-theme-memos-shortcuts-session.md`.
 
 Deep review findings and follow-up recommendations:
 `docs/2026-08-03-deep-code-audit.md`.
