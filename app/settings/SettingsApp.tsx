@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   Languages,
   LoaderCircle,
+  Palette,
   RefreshCw,
   Share2,
   ShieldCheck,
@@ -101,6 +102,7 @@ import {
   type WhatsNewDocument,
 } from "@/lib/whats-new";
 import { useAppI18n } from "../AppI18nProvider";
+import { useColorTheme } from "../ThemeProvider";
 import { PwaInstallCard } from "../PwaInstall";
 
 type SiteContributionDraft = LocalSiteContribution & {
@@ -111,6 +113,7 @@ const BUILT_IN_CATALOG = bundledCatalog as DiveSiteCatalog;
 
 export function SettingsApp() {
   const { language, setLanguage, t } = useAppI18n();
+  const { colorTheme, setColorTheme } = useColorTheme();
   const [contributions, setContributions] = useState<LocalSiteContribution[]>([]);
   const [reviewedSites, setReviewedSites] = useState<SiteContributionDraft[]>([]);
   const [catalog, setCatalog] = useState<DiveSiteCatalog>(BUILT_IN_CATALOG);
@@ -1004,6 +1007,31 @@ export function SettingsApp() {
               <option value="en">{t("english")}</option>
               <option value="zh-Hant">{t("traditionalChineseHK")}</option>
               <option value="ja">{t("japanese")}</option>
+            </select>
+          </label>
+        </section>
+
+        <section className="settings-card theme-settings">
+          <div className="settings-card-heading">
+            <span className="settings-icon"><Palette size={21} /></span>
+            <div>
+              <p className="eyebrow">{t("appearance")}</p>
+              <h2>{t("colorTheme")}</h2>
+            </div>
+          </div>
+          <p className="settings-note">{t("colorThemeDescription")}</p>
+          <label className="language-select">
+            <span className="visually-hidden">{t("colorTheme")}</span>
+            <select
+              value={colorTheme}
+              onChange={(event) => {
+                void setColorTheme(
+                  event.target.value as "light" | "dark",
+                ).catch(() => setStatus(t("settingsSaveFailed")));
+              }}
+            >
+              <option value="dark">{t("colorThemeDark")}</option>
+              <option value="light">{t("colorThemeLight")}</option>
             </select>
           </label>
         </section>

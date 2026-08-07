@@ -1,7 +1,8 @@
 @import "./overlay-fonts.css";
 @import "tailwindcss";
 
-:root {
+:root,
+[data-theme="dark"] {
   --ink: #071820;
   --ink-soft: #0d2731;
   --panel: #102e38;
@@ -13,6 +14,92 @@
   --line: rgba(196, 233, 225, 0.12);
   --coral: #ff8f76;
   --shadow: 0 28px 70px rgba(0, 9, 14, 0.28);
+  --text: #f5fbfa;
+  --text-bright: #ffffff;
+  --topbar-bg: rgba(7, 24, 32, 0.84);
+  --select-bg: #102a33;
+  --select-text: #f2faf8;
+  --body-radial: rgba(56, 196, 172, 0.12);
+  --fill-01: rgba(255, 255, 255, 0.025);
+  --fill-02: rgba(255, 255, 255, 0.035);
+  --fill-03: rgba(255, 255, 255, 0.045);
+  --fill-04: rgba(255, 255, 255, 0.055);
+  --fill-05: rgba(255, 255, 255, 0.04);
+  --surface-deep: #061117;
+  --surface-deeper: #041118;
+  --surface-panel: #0a222b;
+  --surface-raised: #0b2029;
+  --surface-muted: #0f2428;
+  --surface-soft: #081a22;
+  --button-primary-hover: #adf3e4;
+  --button-secondary-bg: rgba(141, 235, 215, 0.1);
+  --button-secondary-border: rgba(141, 235, 215, 0.22);
+  --button-quiet-hover: rgba(255, 255, 255, 0.055);
+  --icon-btn-bg: rgba(141, 235, 215, 0.08);
+  --icon-btn-border: rgba(141, 235, 215, 0.18);
+  --beta-bg: rgba(255, 143, 118, 0.12);
+  --beta-border: rgba(255, 143, 118, 0.28);
+  --beta-text: #ffe4dc;
+  --whats-new-bg: rgba(141, 235, 215, 0.1);
+  --whats-new-border: rgba(141, 235, 215, 0.25);
+  --danger-soft-bg: rgba(255, 143, 118, 0.08);
+  --danger-btn-bg: rgba(255, 143, 118, 0.16);
+  --danger-btn-border: rgba(255, 143, 118, 0.35);
+  --danger-btn-hover: rgba(255, 143, 118, 0.24);
+  --proof-muted: #71949b;
+  --profile-stroke: rgba(141, 235, 215, 0.08);
+  --theme-color: #071820;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --ink: #eef6f4;
+  --ink-soft: #e2f0ed;
+  --panel: #ffffff;
+  --panel-light: #f5fbfa;
+  --teal: #0d8f7c;
+  --teal-strong: #0a7263;
+  --mist: #123038;
+  --muted: #5a7378;
+  --line: rgba(18, 48, 56, 0.12);
+  --coral: #c95a45;
+  --shadow: 0 18px 48px rgba(12, 40, 48, 0.1);
+  --text: #123038;
+  --text-bright: #071820;
+  --topbar-bg: rgba(238, 246, 244, 0.92);
+  --select-bg: #ffffff;
+  --select-text: #123038;
+  --body-radial: rgba(13, 143, 124, 0.1);
+  --fill-01: rgba(18, 48, 56, 0.03);
+  --fill-02: rgba(18, 48, 56, 0.045);
+  --fill-03: rgba(18, 48, 56, 0.06);
+  --fill-04: rgba(18, 48, 56, 0.075);
+  --fill-05: rgba(18, 48, 56, 0.055);
+  --surface-deep: #ffffff;
+  --surface-deeper: #f7fcfb;
+  --surface-panel: #ffffff;
+  --surface-raised: #f5fbfa;
+  --surface-muted: #e8f2ef;
+  --surface-soft: #f0f7f5;
+  --button-primary-hover: #0a7263;
+  --button-secondary-bg: rgba(13, 143, 124, 0.1);
+  --button-secondary-border: rgba(13, 143, 124, 0.28);
+  --button-quiet-hover: rgba(18, 48, 56, 0.06);
+  --icon-btn-bg: rgba(13, 143, 124, 0.1);
+  --icon-btn-border: rgba(13, 143, 124, 0.22);
+  --beta-bg: rgba(201, 90, 69, 0.1);
+  --beta-border: rgba(201, 90, 69, 0.28);
+  --beta-text: #6b2e22;
+  --whats-new-bg: rgba(13, 143, 124, 0.1);
+  --whats-new-border: rgba(13, 143, 124, 0.28);
+  --danger-soft-bg: rgba(201, 90, 69, 0.08);
+  --danger-btn-bg: rgba(201, 90, 69, 0.12);
+  --danger-btn-border: rgba(201, 90, 69, 0.32);
+  --danger-btn-hover: rgba(201, 90, 69, 0.2);
+  --proof-muted: #5a7378;
+  --profile-stroke: rgba(13, 143, 124, 0.14);
+  --theme-color: #eef6f4;
+  color-scheme: light;
 }
 
 * {
@@ -26,9 +113,9 @@ html {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at 70% -10%, rgba(56, 196, 172, 0.12), transparent 34rem),
+    radial-gradient(circle at 70% -10%, var(--body-radial), transparent 34rem),
     var(--ink);
-  color: #f5fbfa;
+  color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh;
 }
@@ -40,20 +127,20 @@ textarea {
 }
 
 select {
-  color-scheme: dark;
+  color-scheme: inherit;
   font: inherit;
 }
 
 select option {
-  background: #102a33;
-  color: #f2faf8;
+  background: var(--select-bg);
+  color: var(--select-text);
 }
 
 .beta-notice {
   align-items: center;
-  background: rgba(255, 143, 118, 0.12);
-  border-bottom: 1px solid rgba(255, 143, 118, 0.28);
-  color: #ffe4dc;
+  background: var(--beta-bg);
+  border-bottom: 1px solid var(--beta-border);
+  color: var(--beta-text);
   display: flex;
   font-size: 12px;
   gap: 9px;
@@ -71,8 +158,8 @@ select option {
 }
 
 .beta-notice.whats-new-notice {
-  background: rgba(141, 235, 215, 0.1);
-  border-bottom-color: rgba(141, 235, 215, 0.25);
+  background: var(--whats-new-bg);
+  border-bottom-color: var(--whats-new-border);
 }
 
 .beta-notice.whats-new-notice > svg {
@@ -140,7 +227,7 @@ button {
 .topbar {
   align-items: center;
   backdrop-filter: blur(20px);
-  background: rgba(7, 24, 32, 0.84);
+  background: var(--topbar-bg);
   border-bottom: 1px solid var(--line);
   box-sizing: border-box;
   display: flex;
@@ -200,8 +287,8 @@ button {
 
 .mobile-home-button {
   align-items: center;
-  background: rgba(141, 235, 215, 0.08);
-  border: 1px solid rgba(141, 235, 215, 0.18);
+  background: var(--icon-btn-bg);
+  border: 1px solid var(--icon-btn-border);
   border-radius: 9px;
   color: var(--teal);
   cursor: pointer;
@@ -270,12 +357,12 @@ button {
 }
 
 .button-primary:hover {
-  background: #adf3e4;
+  background: var(--button-primary-hover);
 }
 
 .button-secondary {
-  background: rgba(141, 235, 215, 0.1);
-  border: 1px solid rgba(141, 235, 215, 0.22);
+  background: var(--button-secondary-bg);
+  border: 1px solid var(--button-secondary-border);
   color: var(--teal);
 }
 
@@ -286,17 +373,17 @@ button {
 }
 
 .button-quiet:hover {
-  background: rgba(255, 255, 255, 0.055);
+  background: var(--button-quiet-hover);
 }
 
 .button-danger {
-  background: rgba(255, 143, 118, 0.16);
-  border: 1px solid rgba(255, 143, 118, 0.35);
+  background: var(--danger-btn-bg);
+  border: 1px solid var(--danger-btn-border);
   color: var(--coral);
 }
 
 .button-danger:hover {
-  background: rgba(255, 143, 118, 0.24);
+  background: var(--danger-btn-hover);
 }
 
 .button-large {
@@ -370,7 +457,7 @@ button {
 }
 
 .stat {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 14px;
   align-content: center;
@@ -398,7 +485,7 @@ button {
 }
 
 .stat-warning {
-  background: rgba(255, 143, 118, 0.08);
+  background: var(--danger-soft-bg);
   border-color: rgba(255, 143, 118, 0.34);
 }
 
@@ -420,7 +507,7 @@ button {
 }
 
 .dive-browser {
-  background: #0a222b;
+  background: var(--surface-panel);
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
@@ -462,7 +549,7 @@ button {
 
 .sort-control select {
   appearance: none;
-  background: rgba(255, 255, 255, 0.055);
+  background: var(--fill-04);
   border: 1px solid var(--line);
   border-radius: 9px;
   color: var(--mist);
@@ -478,7 +565,7 @@ button {
 
 .search-box {
   align-items: center;
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid transparent;
   border-radius: 12px;
   color: var(--muted);
@@ -496,7 +583,7 @@ button {
 .search-box input {
   background: transparent;
   border: 0;
-  color: #fff;
+  color: var(--text-bright);
   flex: 1;
   font-size: 13px;
   min-width: 0;
@@ -505,7 +592,7 @@ button {
 }
 
 .search-box input::placeholder {
-  color: #64838a;
+  color: var(--muted);
 }
 
 .search-box button {
@@ -538,7 +625,7 @@ button {
 
 .filter-row button {
   align-items: center;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--fill-05);
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--muted);
@@ -599,7 +686,7 @@ button {
 .filter-panel-field input,
 .filter-panel-field select {
   appearance: none;
-  background: rgba(255, 255, 255, 0.055);
+  background: var(--fill-04);
   border: 1px solid var(--line);
   border-radius: 9px;
   color: var(--mist);
@@ -659,7 +746,7 @@ button {
 }
 
 .dive-number small {
-  color: #5f858c;
+  color: var(--muted);
   display: block;
   font-size: 8px;
   letter-spacing: 0.14em;
@@ -702,7 +789,7 @@ button {
 
 .select-mode-toggle {
   align-items: center;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--fill-05);
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--muted);
@@ -750,7 +837,7 @@ button {
 }
 
 .select-action-buttons select {
-  background: rgba(255, 255, 255, 0.055);
+  background: var(--fill-04);
   border: 1px solid var(--line);
   border-radius: 9px;
   color: var(--mist);
@@ -765,10 +852,10 @@ button {
 }
 
 .select-new-trip-form input {
-  background: rgba(255, 255, 255, 0.055);
+  background: var(--fill-04);
   border: 1px solid var(--line);
   border-radius: 9px;
-  color: #fff;
+  color: var(--text-bright);
   font-size: 12px;
   padding: 8px 9px;
 }
@@ -884,7 +971,7 @@ button {
 
 .detail-site-edit-button {
   align-items: center;
-  background: rgba(255, 255, 255, 0.055);
+  background: var(--fill-04);
   border: 1px solid var(--line);
   border-radius: 9px;
   color: var(--muted);
@@ -930,7 +1017,7 @@ button {
 }
 
 .metric {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 17px;
   align-content: center;
@@ -1022,7 +1109,7 @@ button {
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 20px;
   overflow: hidden;
@@ -1070,7 +1157,7 @@ button {
 
 .map-placeholder {
   align-items: center;
-  color: #668890;
+  color: var(--muted);
   display: flex;
   flex-direction: column;
   height: 300px;
@@ -1168,10 +1255,10 @@ button {
 .details-editor input,
 .details-editor select,
 .details-editor textarea {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid var(--line);
   border-radius: 9px;
-  color: #fff;
+  color: var(--text-bright);
   outline: none;
   padding: 10px 11px;
   resize: vertical;
@@ -1223,10 +1310,10 @@ button {
 }
 
 .trip-rename-row input {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid var(--line);
   border-radius: 9px;
-  color: #fff;
+  color: var(--text-bright);
   flex: 1;
   min-width: 120px;
   padding: 8px 10px;
@@ -1241,7 +1328,7 @@ button {
 }
 
 .user-gps-editor {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--fill-01);
   border: 1px solid var(--line);
   border-radius: 14px;
   display: grid;
@@ -1287,10 +1374,10 @@ button {
 }
 
 .coordinate-pair-field input {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid var(--line);
   border-radius: 9px;
-  color: #fff;
+  color: var(--text-bright);
   font-variant-numeric: tabular-nums;
   outline: none;
   padding: 10px 11px;
@@ -1315,7 +1402,7 @@ button {
 }
 
 .coordinate-input-error {
-  color: #ffab9c;
+  color: var(--coral);
   font-size: 12px;
   margin: 0;
 }
@@ -1452,10 +1539,10 @@ button {
 }
 
 .site-location-editor input {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid var(--line);
   border-radius: 9px;
-  color: #fff;
+  color: var(--text-bright);
   min-height: 40px;
   padding: 8px 10px;
   width: 100%;
@@ -1627,10 +1714,10 @@ button {
 }
 
 .manual-site input {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid var(--line);
   border-radius: 11px;
-  color: #fff;
+  color: var(--text-bright);
   flex: 1;
   min-width: 0;
   outline: none;
@@ -1654,7 +1741,7 @@ button {
 
 .photo-tile {
   aspect-ratio: 4 / 3;
-  background: #061117;
+  background: var(--surface-deep);
   overflow: hidden;
   position: relative;
 }
@@ -1704,7 +1791,7 @@ button {
   background: #d9534f;
   border: 0;
   border-radius: 4px;
-  color: #fff;
+  color: var(--text-bright);
   cursor: pointer;
   display: flex;
   height: 21px;
@@ -1733,7 +1820,7 @@ button {
 }
 
 .background-tile {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 12px;
   display: grid;
@@ -1779,10 +1866,10 @@ button {
 }
 
 .background-tile label input {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid var(--line);
   border-radius: 7px;
-  color: #fff;
+  color: var(--text-bright);
   font-size: 11px;
   min-width: 0;
   padding: 6px 7px;
@@ -1808,8 +1895,8 @@ button {
 }
 
 .composer-page {
-  background: #041118;
-  color: #f5fbfc;
+  background: var(--surface-deeper);
+  color: var(--text);
   min-height: 100vh;
 }
 
@@ -1939,7 +2026,7 @@ button {
 }
 
 .composer-controls {
-  background: #081a22;
+  background: var(--surface-soft);
   border-left: 1px solid var(--line);
   height: calc(100vh - 64px);
   overflow-y: auto;
@@ -1996,10 +2083,10 @@ button {
 }
 
 .preset-save-row input {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid var(--line);
   border-radius: 9px;
-  color: #fff;
+  color: var(--text-bright);
   min-width: 0;
   padding: 7px 9px;
 }
@@ -2044,10 +2131,10 @@ button {
 }
 
 .photo-choice-tile {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 10px;
-  color: #fff;
+  color: var(--text-bright);
   cursor: pointer;
   min-width: 0;
   overflow: hidden;
@@ -2066,7 +2153,7 @@ button {
 
 .photo-choice-thumb {
   aspect-ratio: 4 / 3;
-  background: #061117;
+  background: var(--surface-deep);
   display: block;
   overflow: hidden;
   position: relative;
@@ -2119,7 +2206,7 @@ button {
 }
 
 .composer-control > span {
-  color: #a8bbc2;
+  color: var(--muted);
   display: flex;
   font-size: 11px;
   justify-content: space-between;
@@ -2129,17 +2216,17 @@ button {
 .composer-control select,
 .composer-control input:not([type="range"]):not([type="color"]),
 .composer-section-body > select {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid var(--line);
   border-radius: 9px;
-  color: #fff;
+  color: var(--text-bright);
   min-height: 38px;
   padding: 7px 9px;
   width: 100%;
 }
 
 .composer-control option {
-  background: #0b2029;
+  background: var(--surface-raised);
 }
 
 .composer-range input {
@@ -2170,10 +2257,10 @@ button {
 }
 
 .template-picker button {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--fill-01);
   border: 1px solid var(--line);
   border-radius: 10px;
-  color: #fff;
+  color: var(--text-bright);
   cursor: pointer;
   padding: 10px;
   text-align: left;
@@ -2204,7 +2291,7 @@ button {
 }
 
 .field-grid label {
-  color: #c3d0d4;
+  color: var(--muted);
   font-size: 11px;
 }
 
@@ -2217,7 +2304,7 @@ button {
 }
 
 .composer-check {
-  color: #c3d0d4;
+  color: var(--muted);
   display: block;
   font-size: 11px;
   margin: 10px 0;
@@ -2233,10 +2320,10 @@ button {
 }
 
 .font-preview {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 9px;
-  color: #fff;
+  color: var(--text-bright);
   font-size: 20px;
   margin: -4px 0 14px;
   padding: 12px;
@@ -2250,7 +2337,7 @@ button {
 
 .composer-loading {
   align-items: center;
-  background: #041118;
+  background: var(--surface-deeper);
   color: var(--muted);
   display: flex;
   gap: 10px;
@@ -2336,7 +2423,7 @@ button {
 }
 
 .photo-drop strong {
-  color: #fff;
+  color: var(--text-bright);
   font-size: 15px;
   margin-top: 12px;
 }
@@ -2364,7 +2451,7 @@ button {
 }
 
 .shared-background-choice {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--fill-05);
   border: 1px dashed rgba(148, 211, 214, 0.42);
   border-radius: 10px;
   color: var(--text);
@@ -2396,7 +2483,7 @@ button {
 .shared-background-thumb small {
   background: rgba(5, 18, 26, 0.76);
   bottom: 4px;
-  color: #fff;
+  color: var(--text-bright);
   font-size: 9px;
   left: 4px;
   letter-spacing: 0.02em;
@@ -2456,7 +2543,7 @@ button {
 
 .import-guide-backup-card {
   align-items: start;
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 14px;
   display: grid;
@@ -2527,7 +2614,7 @@ button {
 .import-guide-step,
 .import-guide-note,
 .import-guide-support {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 14px;
@@ -2649,7 +2736,7 @@ button {
 }
 
 .empty-status {
-  color: #6f939a;
+  color: var(--muted);
   display: block;
   font-size: 11px;
   margin-top: 15px;
@@ -2706,7 +2793,7 @@ button {
 
 .empty-proof span {
   align-items: center;
-  color: #71949b;
+  color: var(--proof-muted);
   display: flex;
   font-size: 11px;
   gap: 7px;
@@ -2779,7 +2866,7 @@ button {
 }
 
 .memo-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--fill-01);
   border: 1px solid var(--line);
   border-radius: 12px;
   display: grid;
@@ -2803,7 +2890,7 @@ button {
 .memo-heading-input {
   background: transparent;
   border: 0;
-  color: #f5fbfa;
+  color: var(--text);
   flex: 1;
   font: inherit;
   font-size: 18px;
@@ -2854,7 +2941,7 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
-  color: #f5fbfa;
+  color: var(--text);
   font: inherit;
   font-size: 14px;
   max-width: 100%;
@@ -2925,7 +3012,7 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
-  color: #f5fbfa;
+  color: var(--text);
   flex: 0 0 2.75rem;
   font: inherit;
   font-size: 14px;
@@ -2957,7 +3044,7 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
-  color: #f5fbfa;
+  color: var(--text);
   flex: 0 0 3.6rem;
   font: inherit;
   font-size: 14px;
@@ -2989,7 +3076,7 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
-  color: #f5fbfa;
+  color: var(--text);
   flex: 1 1 auto;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 12px;
@@ -3110,7 +3197,7 @@ button {
 .memo-match-summary {
   background: transparent;
   border: 0;
-  color: #f5fbfa;
+  color: var(--text);
   cursor: pointer;
   flex: 1;
   font: inherit;
@@ -3217,7 +3304,7 @@ button {
 }
 
 .memo-match-dialog {
-  background: #0f2428;
+  background: var(--surface-muted);
   border: 1px solid var(--line);
   border-radius: 14px;
   display: grid;
@@ -3296,7 +3383,7 @@ button {
 
 .about-card {
   align-items: flex-start;
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 20px;
   display: flex;
@@ -3549,7 +3636,7 @@ button {
 
 .android-card {
   align-items: flex-start;
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 20px;
   display: flex;
@@ -3655,7 +3742,7 @@ button {
 }
 
 .settings-card {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 20px;
 }
@@ -3765,7 +3852,7 @@ button {
 }
 
 .settings-advanced {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--fill-01);
   border: 1px solid var(--line);
   border-radius: 20px;
   margin-top: 14px;
@@ -3846,7 +3933,7 @@ button {
 
 .duplicate-review,
 .backup-preview {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--fill-01);
   border: 1px solid var(--line);
   border-radius: 14px;
   margin-top: 18px;
@@ -3855,7 +3942,7 @@ button {
 
 .backup-encryption-toggle {
   align-items: flex-start;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--fill-01);
   border: 1px solid var(--line);
   border-radius: 12px;
   cursor: pointer;
@@ -3909,10 +3996,10 @@ button {
 .backup-password-fields input,
 .encrypted-backup-unlock input,
 .manual-merge-selects select {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid var(--line);
   border-radius: 9px;
-  color: #fff;
+  color: var(--text-bright);
   min-height: 40px;
   padding: 7px 9px;
   width: 100%;
@@ -3979,7 +4066,7 @@ button {
 }
 
 .backup-counts span {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border-radius: 10px;
   display: grid;
   font-size: 10px;
@@ -4015,7 +4102,7 @@ button {
 }
 
 .duplicate-dive {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border-radius: 10px;
   display: grid;
   gap: 4px;
@@ -4082,7 +4169,7 @@ button {
 }
 
 .storage-summary > div {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--fill-02);
   border: 1px solid var(--line);
   border-radius: 12px;
   display: grid;
@@ -4133,7 +4220,7 @@ button {
 .button-danger-secondary {
   background: rgba(255, 143, 118, 0.1);
   border: 1px solid rgba(255, 143, 118, 0.28);
-  color: #ffb29f;
+  color: var(--coral);
 }
 
 .settings-icon-danger {
@@ -4154,10 +4241,10 @@ button {
 }
 
 .language-select select {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid var(--line);
   border-radius: 9px;
-  color: #fff;
+  color: var(--text-bright);
   min-height: 40px;
   padding: 7px 9px;
 }
@@ -4277,7 +4364,7 @@ button {
 }
 
 .catalog-summary > div {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--fill-01);
   border: 1px solid var(--line);
   border-radius: 14px;
   display: grid;
@@ -4355,7 +4442,7 @@ button {
 
 .site-review-item {
   align-items: end;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--fill-01);
   border: 1px solid var(--line);
   border-radius: 13px;
   display: grid;
@@ -4383,10 +4470,10 @@ button {
 }
 
 .site-review-fields input {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-03);
   border: 1px solid var(--line);
   border-radius: 9px;
-  color: #fff;
+  color: var(--text-bright);
   min-height: 38px;
   padding: 7px 9px;
   width: 100%;
@@ -4432,7 +4519,7 @@ button {
 }
 
 .settings-inline-link:hover {
-  color: #c8fff3;
+  color: var(--teal);
 }
 
 .settings-actions {

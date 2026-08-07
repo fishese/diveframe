@@ -206,6 +206,7 @@ export type LocalBrandingAsset = {
 export type LocalAppPreferences = {
   id: "app";
   uiLanguage: "en" | "zh-Hant" | "ja";
+  colorTheme?: "light" | "dark";
   defaultCylinderPresetId?: string;
   lastComposerOutputSize?: ComposerSettings["outputSize"];
   lastComposerFormat?: ComposerSettings["format"];
@@ -842,6 +843,7 @@ export async function saveLocalAppPreferences(
     Pick<
       LocalAppPreferences,
       | "uiLanguage"
+      | "colorTheme"
       | "defaultCylinderPresetId"
       | "lastComposerOutputSize"
       | "lastComposerFormat"
@@ -859,6 +861,8 @@ export async function saveLocalAppPreferences(
     ...existing,
     id: "app",
     uiLanguage: preferences.uiLanguage ?? existing?.uiLanguage ?? "en",
+    colorTheme:
+      preferences.colorTheme ?? existing?.colorTheme ?? "dark",
     defaultCylinderPresetId:
       preferences.defaultCylinderPresetId ??
       existing?.defaultCylinderPresetId ??

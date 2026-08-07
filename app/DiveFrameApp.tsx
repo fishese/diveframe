@@ -1523,7 +1523,7 @@ function EmptyState({
              L920 178
              C950 178 980 145 1000 112"
           fill="none"
-          stroke="rgba(141, 235, 215, 0.08)"
+          stroke="var(--profile-stroke)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"

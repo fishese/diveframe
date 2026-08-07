@@ -248,7 +248,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
       "gated memo match hints should render at the top of dive detail",
     );
   }
-  assert.match(appI18nEn, /memoMatchTitle:\s*"Possible Memo Match"/);
+  assert.match(appI18nEn, /memoMatchTitle:\s*"Possible matching memo"/);
   {
     const memoMatchCss = await readFile("app/globals.css", "utf8");
     assert.match(memoMatchCss, /\.memo-match-callout\s*\{/);
@@ -590,7 +590,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v7/);
+  assert.match(serviceWorker, /diveframe-shell-v8/);
   assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);
   assert.match(serviceWorker, /examples\/sample-dive\.uddf/);
   assert.match(serviceWorker, /examples\/dive-site-catalog-ai-prompt\.md/);
@@ -691,6 +691,19 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.equal(pwa.name, "DiveFrame (Web)");
   assert.equal(pwa.short_name, "DiveFrame (Web)");
   assert.equal(pwa.display, "standalone");
+  assert.ok(
+    pwa.shortcuts.some((shortcut) => shortcut.url === "/memos"),
+    "PWA manifest should include a /memos shortcut",
+  );
+
+  const layout = await readFile("app/layout.tsx", "utf8");
+  assert.match(layout, /ThemeProvider/);
+  assert.match(layout, /diveframe-color-theme/);
+  assert.match(settings, /useColorTheme/);
+  assert.match(settings, /colorTheme/);
+  assert.match(appI18n, /colorThemeLight/);
+  assert.match(appI18n, /shortcutMemos/);
+  assert.match(storage, /colorTheme/);
 
   const sampleLog = await readFile("public/examples/sample-dive.uddf", "utf8");
   assert.match(sampleLog, /<name>Sample Dive<\/name>/);

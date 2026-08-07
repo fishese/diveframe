@@ -4,6 +4,9 @@ import "./globals.css";
 import { AppI18nProvider } from "./AppI18nProvider";
 import { BetaNotice } from "./BetaNotice";
 import { PwaManager } from "./PwaInstall";
+import { ThemeProvider } from "./ThemeProvider";
+
+const THEME_BOOTSTRAP = `(function(){try{var t=localStorage.getItem("diveframe-color-theme");if(t!=="light"&&t!=="dark")t="dark";var r=document.documentElement;r.setAttribute("data-theme",t);r.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="light"?"#eef6f4":"#071820");}catch(e){}})();`;
 
 const CANONICAL_ORIGIN = "https://divelog.fishese.cc";
 
@@ -66,19 +69,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#071820" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AppI18nProvider>
-          <PwaManager />
-          <div className="app-safe-top" aria-hidden="true" />
-          <BetaNotice />
-          {children}
+          <ThemeProvider>
+            <PwaManager />
+            <div className="app-safe-top" aria-hidden="true" />
+            <BetaNotice />
+            {children}
+          </ThemeProvider>
         </AppI18nProvider>
       </body>
     </html>
