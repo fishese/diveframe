@@ -271,7 +271,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(composer, /className="composer-back"/);
   assert.match(composerSettings, /logoOffsetX: 0/);
   assert.match(composerSettings, /logoOffsetY: 0/);
-  assert.match(composer, /repairLegacyTemplatePositions/);
+  assert.match(composer, /normalizeComposerSettings/);
   assert.match(composer, /cropMode/);
   assert.match(composer, /onPointerMove/);
   assert.match(composer, /drawCropGuide/);
@@ -315,7 +315,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composerSettings, /textColor: "#ffffff"/);
   assert.match(composerSettings, /outputSize: "social"/);
   assert.match(composerSettings, /format: "jpeg"/);
-  assert.match(composer, /template\.defaultRatio/);
+  assert.match(composer, /applyTemplateRecipe/);
   assert.match(composer, /composer-section-toggle/);
   assert.match(composer, /photo\.displayName \|\| photo\.fileName/);
   assert.match(composer, /!appPreferences\?\.bundledBackgroundHidden/);
@@ -324,7 +324,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /removeBundledBackground/);
   assert.match(composer, /photo-choice-grid/);
   assert.match(composer, /transparentPhotoChoice/);
-  assert.match(composer, /personalComposerPresets/);
+  assert.match(composer, /savedLooks/);
   assert.match(composer, /<option value="ja">/);
   assert.match(composer, /lastComposerOutputSize/);
   assert.match(storage, /lastComposerFormat/);
