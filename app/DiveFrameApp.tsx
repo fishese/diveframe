@@ -213,6 +213,7 @@ export function DiveFrameApp() {
   const [bleImportAvailable, setBleImportAvailable] = useState(false);
   const refreshGenerationRef = useRef(0);
   const scrolledDiveDetailRef = useRef<string | null>(null);
+  const workspaceAnchorRef = useRef<HTMLDivElement>(null);
   const [storageEstimate, setStorageEstimate] = useState<Awaited<
     ReturnType<typeof getLocalBackupSizeEstimate>
   > | null>(null);
@@ -295,6 +296,77 @@ export function DiveFrameApp() {
       )
       .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (dives.length === 0 || importGuideOpen || bleImportOpen) {
+      document.documentElement.classList.remove("workspace-docked");
+      return;
+    }
+
+    const desktopQuery = window.matchMedia("(min-width: 861px)");
+    const anchor = workspaceAnchorRef.current;
+    if (!anchor) return;
+
+    const TOPBAR_HEIGHT = 58;
+    let docked = false;
+
+    const stickyTop = () => {
+      const raw = getComputedStyle(document.documentElement)
+        .getPropertyValue("--safe-area-inset-top")
+        .trim();
+      const safe = Number.parseFloat(raw) || 0;
+      return safe + TOPBAR_HEIGHT;
+    };
+
+    const lockY = () =>
+      Math.max(
+        0,
+        Math.round(anchor.getBoundingClientRect().top + window.scrollY - stickyTop()),
+      );
+
+    const setDocked = (next: boolean) => {
+      if (docked === next) return;
+      docked = next;
+      document.documentElement.classList.toggle("workspace-docked", next);
+    };
+
+    const sync = () => {
+      if (!desktopQuery.matches) {
+        setDocked(false);
+        return;
+      }
+      const lock = lockY();
+      if (window.scrollY > lock) {
+        window.scrollTo(0, lock);
+      }
+      setDocked(window.scrollY >= lock - 1);
+    };
+
+    const onWheel = (event: WheelEvent) => {
+      if (!desktopQuery.matches || !docked || event.deltaY >= 0) return;
+      setDocked(false);
+      window.scrollTo(0, Math.max(0, lockY() + event.deltaY));
+    };
+
+    const onDesktopChange = () => {
+      if (!desktopQuery.matches) setDocked(false);
+      sync();
+    };
+
+    sync();
+    window.addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("resize", sync);
+    window.addEventListener("wheel", onWheel, { passive: true });
+    desktopQuery.addEventListener("change", onDesktopChange);
+
+    return () => {
+      window.removeEventListener("scroll", sync);
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("wheel", onWheel);
+      desktopQuery.removeEventListener("change", onDesktopChange);
+      document.documentElement.classList.remove("workspace-docked");
+    };
+  }, [bleImportOpen, dives.length, importGuideOpen]);
 
   useEffect(() => {
     const requestedDiveId = new URLSearchParams(window.location.search).get("dive");
@@ -1164,6 +1236,7 @@ export function DiveFrameApp() {
             </div>
           </section>
 
+          <div className="workspace-dock-anchor" ref={workspaceAnchorRef}>
           <section className={`workspace ${mobileDetail ? "show-detail" : ""}`}>
             <aside className="dive-browser">
               <div className="browser-heading">
@@ -1484,6 +1557,7 @@ export function DiveFrameApp() {
               )}
             </section>
           </section>
+          </div>
         </>
       )}
     </main>

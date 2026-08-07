@@ -520,15 +520,34 @@ button {
   color: var(--coral);
 }
 
+.workspace-dock-anchor {
+  /* Static sentinel so scroll-lock math stays correct while .workspace is sticky. */
+  height: calc(100dvh - var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) - 58px);
+  margin: 0 auto;
+  max-width: 1540px;
+}
+
 .workspace {
   border: 1px solid var(--line);
   border-radius: 26px 26px 0 0;
   display: grid;
   grid-template-columns: minmax(310px, 390px) minmax(0, 1fr);
-  margin: 0 auto;
-  max-width: 1540px;
-  height: calc(100dvh - 96px);
-  min-height: 680px;
+  height: 100%;
+  margin: 0;
+  max-width: none;
+  /* Fill the viewport under the sticky top bar; stick so overview can
+     scroll away without growing a second page-scroll region below. */
+  position: sticky;
+  top: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 58px);
+  min-height: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* While the logbook workspace is docked, lock document scroll so only the
+   list/detail panes scroll — avoids a second page scrollbar beside them. */
+html.workspace-docked,
+html.workspace-docked body {
   overflow: hidden;
 }
 
@@ -2228,9 +2247,9 @@ button {
 }
 
 .photo-choice-source {
-  background: rgba(4, 18, 24, 0.78);
+  background: rgba(4, 18, 24, 0.92);
   bottom: 4px;
-  color: var(--teal);
+  color: #ffffff;
   font-size: 8px;
   left: 4px;
   padding: 3px 5px;
@@ -2551,9 +2570,9 @@ button {
 }
 
 .shared-background-thumb small {
-  background: rgba(5, 18, 26, 0.76);
+  background: rgba(5, 18, 26, 0.92);
   bottom: 4px;
-  color: var(--text-bright);
+  color: #ffffff;
   font-size: 9px;
   left: 4px;
   letter-spacing: 0.02em;
@@ -4821,6 +4840,11 @@ button {
     font-size: 17px;
   }
 
+  .workspace-dock-anchor {
+    height: auto;
+    max-width: none;
+  }
+
   .workspace {
     border-left: 0;
     border-radius: 22px 22px 0 0;
@@ -4829,6 +4853,9 @@ button {
     height: auto;
     min-height: calc(100vh - 300px);
     overflow: visible;
+    position: static;
+    top: auto;
+    z-index: auto;
   }
 
   .dive-browser {
