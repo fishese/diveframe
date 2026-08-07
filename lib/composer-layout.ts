@@ -82,13 +82,3 @@ export function offsetRect(
     y: rect.y + offsetY * canvasHeight,
   };
 }
-
-// TODO Task 3: remove when image-composer uses panelRect
-export function lowerPanelY(
-  layout: "bottom" | "right",
-  chartHeight: number,
-  height: number,
-): number {
-  if (layout === "right") return 0;
-  return panelRect("bottom", 1000, height, chartHeight, "comfortable").y;
-}

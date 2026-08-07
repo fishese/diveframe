@@ -77,9 +77,9 @@ const fieldLabels: Array<[DisplayField, AppTranslationKey]> = [
 const templateTranslationKeys = {
   "bottom-profile": { name: "bottomProfile", description: "bottomProfileDescription" },
   "right-panel": { name: "rightPanel", description: "rightPanelDescription" },
-  "full-width-graph": { name: "fullWidthGraph", description: "fullWidthGraphDescription" },
-  "landscape-dashboard": { name: "landscapeDashboard", description: "landscapeDashboardDescription" },
-  "cinematic-split": { name: "cinematicSplit", description: "cinematicSplitDescription" },
+  // Task 5 will add dedicated i18n keys; reuse closest existing copy for typecheck.
+  "bottom-stats-dock": { name: "bottomProfile", description: "bottomProfileDescription" },
+  "solid-info-band": { name: "rightPanel", description: "rightPanelDescription" },
 } as const satisfies Record<
   (typeof TEMPLATES)[number]["id"],
   { name: AppTranslationKey; description: AppTranslationKey }
@@ -1032,23 +1032,12 @@ function repairLegacyTemplatePositions(settings: ComposerSettings) {
     settings.blockPositions = { ...replacement.defaultPositions };
   }
   if (
-    ["bottom-profile", "full-width-graph"].includes(settings.templateId) &&
+    settings.templateId === "bottom-profile" &&
     settings.blockPositions.logo === "top-right"
   ) {
     settings.blockPositions = {
       ...settings.blockPositions,
       logo: "top-centre",
-    };
-  }
-  if (
-    settings.templateId === "full-width-graph" &&
-    settings.blockPositions.chart === "bottom-centre" &&
-    settings.blockPositions.statistics === "bottom-centre"
-  ) {
-    settings.blockPositions = {
-      ...settings.blockPositions,
-      chart: "above-graph",
-      statistics: "inside-panel",
     };
   }
 }
