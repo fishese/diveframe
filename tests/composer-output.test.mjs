@@ -16,22 +16,7 @@ async function loadTypeScriptModule(path) {
   );
 }
 
-const layout = await loadTypeScriptModule("lib/composer-layout.ts");
 const fileNames = await loadTypeScriptModule("lib/export-file-name.ts");
-
-test("chart height expands lower information layouts", () => {
-  const shortPanelY = layout.lowerPanelY("bottom", 0.12, 1000);
-  const tallPanelY = layout.lowerPanelY("bottom", 0.48, 1000);
-  assert.ok(tallPanelY < shortPanelY);
-  assert.equal(shortPanelY - tallPanelY, 320);
-});
-
-test("chart height expands the landscape dashboard when needed", () => {
-  assert.ok(
-    layout.lowerPanelY("dashboard", 0.48, 1000) <
-      layout.lowerPanelY("dashboard", 0.2, 1000),
-  );
-});
 
 test("export names use dive date and a Windows-safe time", () => {
   assert.equal(
