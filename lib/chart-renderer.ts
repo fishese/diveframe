@@ -70,7 +70,7 @@ export function renderDiveChart(
 
   context.save();
   if (settings.showAxisLabels) {
-    drawAxisGrid(context, plot, labelSize);
+    drawAxisGrid(context, plot, labelSize, settings.textColor);
   }
   context.save();
   context.beginPath();
@@ -175,13 +175,26 @@ function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
+function isDarkInk(color: string) {
+  const hex = color.trim().replace(/^#/, "");
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) return false;
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  return (red * 299 + green * 587 + blue * 114) / 1000 < 150;
+}
+
 function drawAxisGrid(
   context: CanvasRenderingContext2D,
   plot: ChartRect,
   labelSize: number,
+  textColor: string,
 ) {
+  const dark = isDarkInk(textColor);
   context.save();
-  context.strokeStyle = "rgba(255, 255, 255, 0.2)";
+  context.strokeStyle = dark
+    ? "rgba(18, 48, 56, 0.18)"
+    : "rgba(255, 255, 255, 0.2)";
   context.lineWidth = Math.max(1, labelSize * 0.06);
   context.setLineDash([labelSize * 0.35, labelSize * 0.5]);
   for (let index = 0; index <= 3; index += 1) {
@@ -192,7 +205,9 @@ function drawAxisGrid(
     context.stroke();
   }
   context.setLineDash([]);
-  context.strokeStyle = "rgba(255, 255, 255, 0.56)";
+  context.strokeStyle = dark
+    ? "rgba(18, 48, 56, 0.55)"
+    : "rgba(255, 255, 255, 0.56)";
   context.beginPath();
   context.moveTo(plot.x, plot.y);
   context.lineTo(plot.x, plot.y + plot.height);
@@ -210,13 +225,16 @@ function drawAxisLabels(
   labelSize: number,
   settings: ComposerSettings,
 ) {
+  const dark = isDarkInk(settings.textColor);
   context.save();
   context.fillStyle = settings.textColor;
   context.font = `500 ${labelSize}px ${getOverlayFont(settings.fontFamily).stack}`;
   context.textBaseline = "top";
-  context.shadowColor = "rgba(0, 0, 0, 0.75)";
-  context.shadowBlur = labelSize * 0.22;
-  context.shadowOffsetY = labelSize * 0.08;
+  context.shadowColor = dark
+    ? "rgba(238, 246, 244, 0.85)"
+    : "rgba(0, 0, 0, 0.75)";
+  context.shadowBlur = dark ? labelSize * 0.08 : labelSize * 0.22;
+  context.shadowOffsetY = dark ? 0 : labelSize * 0.08;
 
   const timeIntervals =
     plot.width < labelSize * 22 ? 1 : plot.width < labelSize * 34 ? 2 : 3;

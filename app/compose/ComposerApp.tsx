@@ -729,10 +729,10 @@ export function ComposerApp() {
 
           <ControlSection title={t("chart")}>
             <Control label={t("mode")}><select value={settings.chartMode} onChange={(event) => update("chartMode", event.target.value as ComposerSettings["chartMode"])}>
-              <option value="depth" disabled={!availability.depth}>{t("depthOnly")}</option>
-              <option value="depth-pressure" disabled={!availability.pressure}>{t("depthPressure")}</option>
-              <option value="depth-temperature" disabled={!availability.temperature}>{t("depthTemperature")}</option>
-              <option value="depth-pressure-temperature" disabled={!availability.pressure || !availability.temperature}>{t("depthPressureTemperature")}</option>
+              <option value="depth" disabled={!availability.depth}>{chartModeOption(t("depthOnly"), availability.depth)}</option>
+              <option value="depth-pressure" disabled={!availability.pressure}>{chartModeOption(t("depthPressure"), availability.pressure)}</option>
+              <option value="depth-temperature" disabled={!availability.temperature}>{chartModeOption(t("depthTemperature"), availability.temperature)}</option>
+              <option value="depth-pressure-temperature" disabled={!availability.pressure || !availability.temperature}>{chartModeOption(t("depthPressureTemperature"), availability.pressure && availability.temperature)}</option>
               <option value="hidden">{t("hidden")}</option>
             </select></Control>
             <Color label={t("depthLine")} value={settings.depthColor} onChange={(value) => update("depthColor", value)} />
@@ -1065,6 +1065,10 @@ function fieldAvailable(field: DisplayField, dive: LocalDive) {
     diveNumber: dive.diveNumber !== null, computerModel: Boolean(dive.computerModel),
   };
   return checks[field] ?? true;
+}
+
+function chartModeOption(label: string, available: boolean) {
+  return available ? label : `— ${label}`;
 }
 
 function blockLabel(

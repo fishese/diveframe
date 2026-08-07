@@ -28,6 +28,7 @@ export const ja: Record<keyof typeof en, string> = {
   traditionalChineseHK: "繁體中文（香港）",
   japanese: "日本語",
   appearance: "表示",
+  theme: "テーマ",
   colorTheme: "カラーテーマ",
   colorThemeDark: "ダーク",
   colorThemeLight: "ライト",

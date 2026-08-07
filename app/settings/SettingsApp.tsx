@@ -10,9 +10,7 @@ import {
   Gauge,
   GitMerge,
   Image as ImageIcon,
-  Languages,
   LoaderCircle,
-  Palette,
   RefreshCw,
   Share2,
   ShieldCheck,
@@ -986,54 +984,40 @@ export function SettingsApp() {
           </section>
         ) : null}
 
-        <section className="settings-card language-settings">
-          <div className="settings-card-heading">
-            <span className="settings-icon"><Languages size={21} /></span>
-            <div>
-              <p className="eyebrow">{t("language")}</p>
-              <h2>{t("appLanguage")}</h2>
-            </div>
+        <section className="settings-card prefs-settings">
+          <div className="prefs-settings-grid">
+            <label className="language-select">
+              <span className="eyebrow">{t("language")}</span>
+              <select
+                value={language}
+                onChange={(event) => {
+                  void setLanguage(
+                    event.target.value as "en" | "zh-Hant" | "ja",
+                  ).catch(() => setStatus(t("settingsSaveFailed")));
+                }}
+                aria-label={t("appLanguage")}
+              >
+                <option value="en">{t("english")}</option>
+                <option value="zh-Hant">{t("traditionalChineseHK")}</option>
+                <option value="ja">{t("japanese")}</option>
+              </select>
+            </label>
+            <label className="language-select">
+              <span className="eyebrow">{t("theme")}</span>
+              <select
+                value={colorTheme}
+                onChange={(event) => {
+                  void setColorTheme(
+                    event.target.value as "light" | "dark",
+                  ).catch(() => setStatus(t("settingsSaveFailed")));
+                }}
+                aria-label={t("colorTheme")}
+              >
+                <option value="dark">{t("colorThemeDark")}</option>
+                <option value="light">{t("colorThemeLight")}</option>
+              </select>
+            </label>
           </div>
-          <label className="language-select">
-            <span className="visually-hidden">{t("appLanguage")}</span>
-            <select
-              value={language}
-              onChange={(event) => {
-                void setLanguage(
-                  event.target.value as "en" | "zh-Hant" | "ja",
-                ).catch(() => setStatus(t("settingsSaveFailed")));
-              }}
-            >
-              <option value="en">{t("english")}</option>
-              <option value="zh-Hant">{t("traditionalChineseHK")}</option>
-              <option value="ja">{t("japanese")}</option>
-            </select>
-          </label>
-        </section>
-
-        <section className="settings-card theme-settings">
-          <div className="settings-card-heading">
-            <span className="settings-icon"><Palette size={21} /></span>
-            <div>
-              <p className="eyebrow">{t("appearance")}</p>
-              <h2>{t("colorTheme")}</h2>
-            </div>
-          </div>
-          <p className="settings-note">{t("colorThemeDescription")}</p>
-          <label className="language-select">
-            <span className="visually-hidden">{t("colorTheme")}</span>
-            <select
-              value={colorTheme}
-              onChange={(event) => {
-                void setColorTheme(
-                  event.target.value as "light" | "dark",
-                ).catch(() => setStatus(t("settingsSaveFailed")));
-              }}
-            >
-              <option value="dark">{t("colorThemeDark")}</option>
-              <option value="light">{t("colorThemeLight")}</option>
-            </select>
-          </label>
         </section>
 
         <PwaInstallCard />

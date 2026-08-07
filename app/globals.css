@@ -49,6 +49,19 @@
   --proof-muted: #71949b;
   --profile-stroke: rgba(141, 235, 215, 0.08);
   --theme-color: #071820;
+  --input-bg: rgba(0, 0, 0, 0.22);
+  --filter-bar-bg: rgba(4, 18, 24, 0.88);
+  --filter-chip-bg: rgba(255, 255, 255, 0.04);
+  --filter-chip-border: var(--line);
+  --filter-chip-text: var(--muted);
+  --filter-chip-active-bg: rgba(141, 235, 215, 0.14);
+  --filter-chip-active-border: rgba(141, 235, 215, 0.42);
+  --filter-chip-active-text: var(--teal);
+  --suggest-bg: rgba(141, 235, 215, 0.06);
+  --suggest-border: rgba(141, 235, 215, 0.28);
+  --suggest-border-hover: rgba(141, 235, 215, 0.42);
+  --suggest-border-active: rgba(141, 235, 215, 0.5);
+  --tile-bg: var(--fill-02);
   color-scheme: dark;
 }
 
@@ -99,6 +112,19 @@
   --proof-muted: #5a7378;
   --profile-stroke: rgba(13, 143, 124, 0.14);
   --theme-color: #eef6f4;
+  --input-bg: #ffffff;
+  --filter-bar-bg: #0d8f7c;
+  --filter-chip-bg: rgba(255, 255, 255, 0.14);
+  --filter-chip-border: rgba(255, 255, 255, 0.28);
+  --filter-chip-text: #ffffff;
+  --filter-chip-active-bg: rgba(255, 255, 255, 0.28);
+  --filter-chip-active-border: rgba(255, 255, 255, 0.55);
+  --filter-chip-active-text: #ffffff;
+  --suggest-bg: #ffffff;
+  --suggest-border: rgba(13, 143, 124, 0.34);
+  --suggest-border-hover: rgba(13, 143, 124, 0.5);
+  --suggest-border-active: rgba(13, 143, 124, 0.62);
+  --tile-bg: #ffffff;
   color-scheme: light;
 }
 
@@ -612,7 +638,7 @@ button {
 }
 
 .filter-row {
-  background: rgba(4, 18, 24, 0.88);
+  background: var(--filter-bar-bg);
   border-bottom: 1px solid var(--line);
   display: flex;
   flex-wrap: wrap;
@@ -625,10 +651,10 @@ button {
 
 .filter-row button {
   align-items: center;
-  background: var(--fill-05);
-  border: 1px solid var(--line);
+  background: var(--filter-chip-bg);
+  border: 1px solid var(--filter-chip-border);
   border-radius: 999px;
-  color: var(--muted);
+  color: var(--filter-chip-text);
   cursor: pointer;
   display: flex;
   font-size: 10px;
@@ -638,9 +664,9 @@ button {
 }
 
 .filter-row button.active {
-  background: rgba(141, 235, 215, 0.14);
-  border-color: rgba(141, 235, 215, 0.42);
-  color: var(--teal);
+  background: var(--filter-chip-active-bg);
+  border-color: var(--filter-chip-active-border);
+  color: var(--filter-chip-active-text);
 }
 
 .filter-row button:disabled {
@@ -661,7 +687,7 @@ button {
 }
 
 .filter-panel {
-  background: rgba(4, 18, 24, 0.88);
+  background: var(--filter-bar-bg);
   border-bottom: 1px solid var(--line);
   display: flex;
   flex-wrap: wrap;
@@ -681,6 +707,37 @@ button {
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
+}
+
+[data-theme="light"] .filter-panel-field span {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+[data-theme="light"] .filter-panel-field input,
+[data-theme="light"] .filter-panel-field select {
+  background: rgba(255, 255, 255, 0.96);
+  color: #123038;
+}
+
+[data-theme="light"] .filter-panel-field input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+
+[data-theme="light"] .filter-row {
+  border-bottom-color: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="light"] .composer-control option:disabled,
+[data-theme="light"] .composer-section-body > select option:disabled {
+  color: #9aadb2;
+  font-weight: 400;
+  opacity: 1;
+}
+
+[data-theme="light"] .composer-control option:not(:disabled),
+[data-theme="light"] .composer-section-body > select option:not(:disabled) {
+  color: #071820;
+  font-weight: 700;
 }
 
 .filter-panel-field input,
@@ -1017,7 +1074,7 @@ button {
 }
 
 .metric {
-  background: var(--fill-02);
+  background: var(--tile-bg);
   border: 1px solid var(--line);
   border-radius: 17px;
   align-content: center;
@@ -1109,7 +1166,7 @@ button {
 }
 
 .card {
-  background: var(--fill-02);
+  background: var(--tile-bg);
   border: 1px solid var(--line);
   border-radius: 20px;
   overflow: hidden;
@@ -1588,8 +1645,8 @@ button {
 
 .site-suggestion-name {
   align-items: flex-start;
-  background: rgba(141, 235, 215, 0.06);
-  border: 1px solid rgba(141, 235, 215, 0.14);
+  background: var(--suggest-bg);
+  border: 1px solid var(--suggest-border);
   border-radius: 13px;
   color: var(--mist);
   cursor: pointer;
@@ -1603,13 +1660,13 @@ button {
 }
 
 .site-suggestion-name:hover {
-  background: rgba(141, 235, 215, 0.12);
-  border-color: rgba(141, 235, 215, 0.32);
+  background: var(--suggest-bg);
+  border-color: var(--suggest-border-hover);
 }
 
 .site-suggestion-name[aria-pressed="true"] {
-  background: rgba(141, 235, 215, 0.17);
-  border-color: rgba(141, 235, 215, 0.5);
+  background: var(--suggest-bg);
+  border-color: var(--suggest-border-active);
 }
 
 .site-suggestion-name:disabled,
@@ -1622,8 +1679,8 @@ button {
 .site-alias-expand {
   align-items: center;
   align-self: stretch;
-  background: rgba(141, 235, 215, 0.06);
-  border: 1px solid rgba(141, 235, 215, 0.14);
+  background: var(--suggest-bg);
+  border: 1px solid var(--suggest-border);
   border-radius: 13px;
   color: var(--muted);
   cursor: pointer;
@@ -1635,8 +1692,8 @@ button {
 }
 
 .site-alias-expand:hover {
-  background: rgba(141, 235, 215, 0.12);
-  border-color: rgba(141, 235, 215, 0.32);
+  background: var(--suggest-bg);
+  border-color: var(--suggest-border-hover);
   color: var(--mist);
 }
 
@@ -1902,7 +1959,7 @@ button {
 
 .composer-topbar {
   align-items: center;
-  background: rgba(5, 21, 28, 0.96);
+  background: var(--topbar-bg);
   border-bottom: 1px solid var(--line);
   box-sizing: border-box;
   display: flex;
@@ -2227,6 +2284,19 @@ button {
 
 .composer-control option {
   background: var(--surface-raised);
+  color: var(--text-bright);
+}
+
+.composer-control option:disabled,
+.composer-section-body > select option:disabled {
+  color: var(--muted);
+  opacity: 0.45;
+}
+
+.composer-control option:not(:disabled),
+.composer-section-body > select option:not(:disabled) {
+  color: var(--text-bright);
+  font-weight: 600;
 }
 
 .composer-range input {
@@ -2937,7 +3007,7 @@ button {
 .memo-field-grid input,
 .memo-field-grid select,
 .memo-field-grid textarea {
-  background: rgba(0, 0, 0, 0.22);
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
@@ -3008,7 +3078,7 @@ button {
 .memo-field-grid .memo-minute-input {
   -moz-appearance: textfield;
   appearance: textfield;
-  background: rgba(0, 0, 0, 0.22);
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
@@ -3040,7 +3110,7 @@ button {
 }
 
 .memo-field-grid .memo-meridiem-select {
-  background: rgba(0, 0, 0, 0.22);
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
@@ -3072,7 +3142,7 @@ button {
 }
 
 .memo-field-grid .memo-coords-input {
-  background: rgba(0, 0, 0, 0.22);
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-sizing: border-box;
@@ -3704,6 +3774,10 @@ button {
   order: 2;
 }
 
+.prefs-settings {
+  order: 2;
+}
+
 .pwa-settings {
   order: 3;
 }
@@ -3759,6 +3833,7 @@ button {
 .pwa-settings,
 .subsurface-export-settings,
 .language-settings,
+.prefs-settings,
 .duplicate-settings,
 .storage-settings,
 .danger-settings,
@@ -4247,6 +4322,27 @@ button {
   color: var(--text-bright);
   min-height: 40px;
   padding: 7px 9px;
+}
+
+.prefs-settings-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.prefs-settings .language-select {
+  margin-top: 0;
+  max-width: none;
+}
+
+.prefs-settings .language-select .eyebrow {
+  margin: 0 0 8px;
+}
+
+@media (max-width: 560px) {
+  .prefs-settings-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .background-settings > .empty-compact {

@@ -119,6 +119,7 @@ import type { AppLanguage, AppTranslate } from "@/lib/app-i18n";
 import { diveComputerCapability } from "@/lib/dive-computer-capability";
 import { diveFrameApiUrl } from "@/lib/diveframe-api";
 import { useAppI18n } from "./AppI18nProvider";
+import { useColorTheme } from "./ThemeProvider";
 import { BleImportPanel } from "./components/BleImportPanel";
 import { ImportGuide } from "./components/ImportGuide";
 import { MemoDiveMatchHints } from "./components/MemoDiveMatchHints";
@@ -3381,6 +3382,7 @@ function Metric({ label, value, icon }: { label: string; value: string; icon: Re
 
 function DiveProfilePanel({ dive }: { dive: Dive }) {
   const { language, t } = useAppI18n();
+  const { colorTheme } = useColorTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showPressure, setShowPressure] = useState(false);
   const normalized = useMemo(() => toNormalizedDive(dive), [dive]);
@@ -3407,6 +3409,7 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
       settings.lineThickness = 2;
       settings.fillOpacity = 0.18;
       settings.showAxisLabels = true;
+      settings.textColor = colorTheme === "light" ? "#123038" : "#ffffff";
       renderDiveChart(
         context,
         { x: 14, y: 12, width: width - 28, height: height - 18 },
@@ -3418,7 +3421,15 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [availability.depth, availability.pressure, dive.id, language, normalized, showPressure]);
+  }, [
+    availability.depth,
+    availability.pressure,
+    colorTheme,
+    dive.id,
+    language,
+    normalized,
+    showPressure,
+  ]);
 
   return (
     <section className="card profile-card">

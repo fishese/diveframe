@@ -15,6 +15,7 @@ export const en = {
   traditionalChineseHK: "繁體中文（HK）",
   japanese: "日本語",
   appearance: "Appearance",
+  theme: "Theme",
   colorTheme: "Color theme",
   colorThemeDark: "Dark",
   colorThemeLight: "Light",

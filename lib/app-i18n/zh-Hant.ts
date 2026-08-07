@@ -28,6 +28,7 @@ export const zhHant: Record<keyof typeof en, string> = {
   traditionalChineseHK: "繁體中文（香港）",
   japanese: "日本語",
   appearance: "外觀",
+  theme: "主題",
   colorTheme: "色彩主題",
   colorThemeDark: "深色",
   colorThemeLight: "淺色",
