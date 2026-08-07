@@ -309,6 +309,7 @@ export function DiveFrameApp() {
 
     const TOPBAR_HEIGHT = 58;
     let docked = false;
+    let syncFrame = 0;
 
     const stickyTop = () => {
       const raw = getComputedStyle(document.documentElement)
@@ -336,10 +337,26 @@ export function DiveFrameApp() {
         return;
       }
       const lock = lockY();
-      if (window.scrollY > lock) {
+      const y = window.scrollY;
+      // Hysteresis avoids dock flicker (and layout thrash) during fast scrolls.
+      if (y > lock) {
         window.scrollTo(0, lock);
+        setDocked(true);
+        return;
       }
-      setDocked(window.scrollY >= lock - 1);
+      if (docked) {
+        if (y < lock - 8) setDocked(false);
+        return;
+      }
+      if (y >= lock - 1) setDocked(true);
+    };
+
+    const scheduleSync = () => {
+      if (syncFrame) return;
+      syncFrame = window.requestAnimationFrame(() => {
+        syncFrame = 0;
+        sync();
+      });
     };
 
     const onWheel = (event: WheelEvent) => {
@@ -350,19 +367,34 @@ export function DiveFrameApp() {
 
     const onDesktopChange = () => {
       if (!desktopQuery.matches) setDocked(false);
-      sync();
+      scheduleSync();
+    };
+
+    // Benign browser signal when a ResizeObserver callback causes more layout
+    // work in the same frame; vinext's overlay otherwise treats it as fatal.
+    const onResizeObserverNoise = (event: ErrorEvent) => {
+      if (
+        typeof event.message === "string" &&
+        event.message.includes("ResizeObserver loop")
+      ) {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+      }
     };
 
     sync();
-    window.addEventListener("scroll", sync, { passive: true });
-    window.addEventListener("resize", sync);
+    window.addEventListener("scroll", scheduleSync, { passive: true });
+    window.addEventListener("resize", scheduleSync);
     window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("error", onResizeObserverNoise);
     desktopQuery.addEventListener("change", onDesktopChange);
 
     return () => {
-      window.removeEventListener("scroll", sync);
-      window.removeEventListener("resize", sync);
+      if (syncFrame) window.cancelAnimationFrame(syncFrame);
+      window.removeEventListener("scroll", scheduleSync);
+      window.removeEventListener("resize", scheduleSync);
       window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("error", onResizeObserverNoise);
       desktopQuery.removeEventListener("change", onDesktopChange);
       document.documentElement.classList.remove("workspace-docked");
     };
@@ -3469,9 +3501,21 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
       const width = Math.max(320, canvas.clientWidth);
       const height = Math.max(190, Math.min(280, width * 0.34));
       const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(width * pixelRatio);
-      canvas.height = Math.round(height * pixelRatio);
-      canvas.style.height = `${height}px`;
+      const nextWidth = Math.round(width * pixelRatio);
+      const nextHeight = Math.round(height * pixelRatio);
+      const nextCssHeight = `${height}px`;
+      // Skip no-op updates — writing canvas size/style inside ResizeObserver
+      // re-triggers observation and can surface the "loop completed" error.
+      if (
+        canvas.width === nextWidth &&
+        canvas.height === nextHeight &&
+        canvas.style.height === nextCssHeight
+      ) {
+        return;
+      }
+      canvas.width = nextWidth;
+      canvas.height = nextHeight;
+      canvas.style.height = nextCssHeight;
       const context = canvas.getContext("2d");
       if (!context) return;
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
@@ -3492,9 +3536,19 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
       );
     };
     draw();
-    const observer = new ResizeObserver(draw);
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        draw();
+      });
+    });
     observer.observe(canvas);
-    return () => observer.disconnect();
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [
     availability.depth,
     availability.pressure,

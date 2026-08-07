@@ -134,6 +134,7 @@
 
 html {
   background: var(--ink);
+  scrollbar-gutter: stable;
 }
 
 body {
