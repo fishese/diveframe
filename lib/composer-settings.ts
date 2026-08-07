@@ -6,9 +6,8 @@ import type { OverlayFontId } from "./composer-fonts";
 export type TemplateId =
   | "bottom-profile"
   | "right-panel"
-  | "full-width-graph"
-  | "landscape-dashboard"
-  | "cinematic-split";
+  | "bottom-stats-dock"
+  | "solid-info-band";
 export type CanvasRatio = "original" | "1:1" | "4:5" | "9:16" | "16:9";
 export type ChartMode =
   | "depth"
@@ -28,6 +27,16 @@ export type BlockPosition =
   | "bottom-centre"
   | "bottom-right"
   | "hidden";
+
+export type PanelEdge = "top" | "bottom" | "left" | "right";
+export type PanelFillMode = "solid" | "frosted" | "tint";
+export type PanelDensity = "compact" | "comfortable" | "roomy";
+export type PanelGradient = {
+  enabled: boolean;
+  colorA: string;
+  colorB: string;
+  angle: number;
+};
 
 export type DisplayField =
   | "site"
@@ -74,8 +83,16 @@ export type ComposerSettings = {
   textColor: string;
   textAlign: "left" | "centre" | "right";
   textTreatment: "shadow" | "outline" | "none";
+  panelEdge: PanelEdge;
+  panelFillMode: PanelFillMode;
+  panelColor: string;
+  panelGradient: PanelGradient;
   panelOpacity: number;
+  panelDensity: PanelDensity;
+  textContrastBoost: boolean;
   chartHeight: number;
+  chartOffsetX: number;
+  chartOffsetY: number;
   safeMargin: number;
   chartMode: ChartMode;
   showAxisLabels: boolean;
@@ -130,8 +147,21 @@ export function defaultComposerSettings(diveId: string): ComposerSettings {
     textColor: "#ffffff",
     textAlign: "left",
     textTreatment: "shadow",
+    panelEdge: "bottom",
+    panelFillMode: "tint",
+    panelColor: "#03141d",
+    panelGradient: {
+      enabled: true,
+      colorA: "#03141d",
+      colorB: "#03141d",
+      angle: 90,
+    },
     panelOpacity: 0.68,
+    panelDensity: "comfortable",
+    textContrastBoost: false,
     chartHeight: 0.27,
+    chartOffsetX: 0,
+    chartOffsetY: 0,
     safeMargin: 0.055,
     chartMode: "depth",
     showAxisLabels: true,

@@ -25,13 +25,13 @@ test("composer presets exclude dive and crop-specific state", () => {
     photoOffsetX: 0.2,
     photoOffsetY: -0.1,
     photoRotation: 90,
-    templateId: "landscape-dashboard",
+    templateId: "bottom-stats-dock",
     textColor: "#f0f0f0",
     updatedAt: "2026-07-29T00:00:00.000Z",
   };
 
   const reusable = presets.reusableComposerSettings(current);
-  assert.equal(reusable.templateId, "landscape-dashboard");
+  assert.equal(reusable.templateId, "bottom-stats-dock");
   assert.equal(reusable.textColor, "#f0f0f0");
   assert.equal("siteNameOverride" in reusable, false);
   assert.equal("selectedPhotoId" in reusable, false);
@@ -54,11 +54,11 @@ test("applying a preset preserves the destination dive and crop", () => {
     updatedAt: "old",
   };
   const applied = presets.applyComposerPreset(current, {
-    templateId: "cinematic-split",
+    templateId: "right-panel",
     textColor: "#ffccaa",
   });
 
-  assert.equal(applied.templateId, "cinematic-split");
+  assert.equal(applied.templateId, "right-panel");
   assert.equal(applied.textColor, "#ffccaa");
   assert.equal(applied.diveId, "dive-2");
   assert.equal(applied.siteNameOverride, "Local site");

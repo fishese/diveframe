@@ -278,8 +278,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /resetCrop/);
   assert.match(templates, /defaultChartHeight/);
   assert.match(templates, /defaultRatio/);
-  assert.match(templates, /landscape-dashboard/);
-  assert.match(templates, /cinematic-split/);
+  assert.match(templates, /bottom-stats-dock/);
+  assert.match(templates, /solid-info-band/);
   assert.doesNotMatch(templates, /id: "minimal"/);
   assert.doesNotMatch(templates, /id: "poster"/);
   assert.match(imageComposer, /template\.layout === "graph"/);
