@@ -545,13 +545,6 @@ button {
   z-index: 1;
 }
 
-/* While the logbook workspace is docked, lock document scroll so only the
-   list/detail panes scroll — avoids a second page scrollbar beside them. */
-html.workspace-docked,
-html.workspace-docked body {
-  overflow: hidden;
-}
-
 .dive-browser {
   background: var(--surface-panel);
   border-right: 1px solid var(--line);

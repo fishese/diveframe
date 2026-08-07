@@ -3497,7 +3497,7 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !availability.depth) return;
-    const draw = () => {
+    const draw = (force = false) => {
       const width = Math.max(320, canvas.clientWidth);
       const height = Math.max(190, Math.min(280, width * 0.34));
       const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
@@ -3507,6 +3507,7 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
       // Skip no-op updates — writing canvas size/style inside ResizeObserver
       // re-triggers observation and can surface the "loop completed" error.
       if (
+        !force &&
         canvas.width === nextWidth &&
         canvas.height === nextHeight &&
         canvas.style.height === nextCssHeight
@@ -3535,13 +3536,13 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
         settings,
       );
     };
-    draw();
+    draw(true);
     let frame = 0;
     const observer = new ResizeObserver(() => {
       if (frame) return;
       frame = window.requestAnimationFrame(() => {
         frame = 0;
-        draw();
+        draw(false);
       });
     });
     observer.observe(canvas);
