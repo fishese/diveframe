@@ -25,6 +25,19 @@ export type StatsLayoutContext = {
   chartVisible?: boolean;
   /** Extra top inset inside the panel reserved for site/category/date. */
   titleReserveTop?: number;
+  /** Prefer bottom-aligned stats (classic right-panel / bottom-profile). */
+  pinToBottom?: boolean;
+  /** Extra left inset (e.g. Bottom Profile over photo). */
+  insetLeft?: number;
+  /** Extra bottom inset. */
+  insetBottom?: number;
+  /**
+   * Canvas-relative type scale (like the old titleSize base).
+   * When set, text-stack uses this instead of a panel-fraction base.
+   */
+  typeBase?: number;
+  /** Cell text alignment for solid-band / icon-grid. */
+  align?: "left" | "centre";
 };
 
 const DENSITY_SCALE = {
@@ -39,6 +52,11 @@ export function limitStatsForPresentation(
 ): StatItem[] {
   if (presentation === "icon-grid") return items.slice(0, 6);
   return items;
+}
+
+/** Keep the icon/value/label block readable when the dock wraps to two rows. */
+export function iconGridRowScale(rows: number): number {
+  return rows > 1 ? Math.min(1, 0.76 / Math.sqrt(rows / 2)) : 1;
 }
 
 export function collectStatItems(
@@ -146,6 +164,31 @@ export function collectStatItems(
   return result;
 }
 
+/** Estimate vertical text-stack height so in-panel charts can leave room. */
+export function estimateTextStackHeight(
+  itemCount: number,
+  panel: LayoutRect,
+  settings: ComposerSettings,
+  typeBase?: number,
+): number {
+  if (itemCount <= 0) return 0;
+  const density = DENSITY_SCALE[settings.panelDensity];
+  const base = Math.round(
+    typeBase ??
+      Math.min(panel.width, panel.height) * 0.12 * settings.fontSize * density,
+  );
+  const innerWidth = panel.width - panel.width * 0.12;
+  const columns = panel.height > panel.width * 1.15
+    ? Math.min(2, itemCount)
+    : Math.min(
+        4,
+        itemCount,
+        Math.max(1, Math.floor(innerWidth / Math.max(1, base * 2.4))),
+      );
+  const rows = Math.ceil(Math.min(8, itemCount) / columns);
+  return rows * base * 1.45;
+}
+
 export function drawComposerStats(
   context: CanvasRenderingContext2D,
   panel: LayoutRect,
@@ -162,8 +205,16 @@ export function drawComposerStats(
   const margin = Math.round(
     Math.min(panel.width, panel.height) * 0.06 * density,
   );
+  const baseScale =
+    presentation === "icon-grid"
+      ? 0.28
+      : presentation === "solid-band"
+        ? 0.34
+        : 0.12;
   const base = Math.round(
-    Math.min(panel.width, panel.height) * 0.12 * settings.fontSize * density,
+    (layout?.typeBase ??
+      Math.min(panel.width, panel.height) * baseScale * settings.fontSize) *
+      density,
   );
 
   if (presentation === "icon-grid") {
@@ -172,7 +223,17 @@ export function drawComposerStats(
   }
 
   if (presentation === "solid-band") {
-    drawSolidBand(context, panel, limited, settings, fontStack, margin, base);
+    drawSolidBand(
+      context,
+      panel,
+      limited,
+      settings,
+      fontStack,
+      margin,
+      base,
+      layout?.align ?? "centre",
+      layout?.titleReserveTop ?? 0,
+    );
     return;
   }
 
@@ -196,7 +257,20 @@ export function textStackStartY(
   margin: number,
   layout?: StatsLayoutContext,
 ): number {
-  const rowHeight = base * 1.35;
+  const rowHeight = base * 1.45;
+  const innerWidth = panel.width - margin * 2;
+  const columns = Math.min(
+    4,
+    itemCount,
+    Math.max(1, Math.floor(innerWidth / Math.max(1, base * 2.4))),
+  );
+  const rows = Math.ceil(Math.max(1, itemCount) / columns);
+  const totalHeight = rows * rowHeight;
+  const insetBottom = Math.max(0, layout?.insetBottom ?? 0);
+  if (layout?.pinToBottom !== false) {
+    // Classic right-panel / bottom-profile: pin the block to the bottom.
+    return panel.y + panel.height - margin - insetBottom - totalHeight;
+  }
   const titlePad = Math.max(0, layout?.titleReserveTop ?? 0);
   const afterTitles = panel.y + margin + titlePad;
   const chartInPanel =
@@ -227,44 +301,64 @@ function drawIconGrid(
   const rows = Math.ceil(items.length / columns);
   const cellWidth = (panel.width - margin * 2) / columns;
   const cellHeight = (panel.height - margin * 2) / Math.max(rows, 1);
-  const iconSize = Math.min(base * 0.55, cellHeight * 0.28);
+  const rowScale = iconGridRowScale(rows);
+  const scaledBase = base * rowScale;
+  const iconSize = Math.min(
+    scaledBase,
+    cellHeight * (rows > 1 ? 0.3 : 0.32),
+  );
+
+  drawCellDividers(
+    context,
+    panel,
+    margin,
+    columns,
+    rows,
+    items.length,
+    settings,
+  );
 
   items.forEach((item, index) => {
     const column = index % columns;
     const row = Math.floor(index / columns);
     const x = panel.x + margin + column * cellWidth;
     const y = panel.y + margin + row * cellHeight;
-    const iconX = x + cellWidth * 0.08;
-    const iconY = y + cellHeight * 0.22;
+    const iconX = x + (cellWidth - iconSize) / 2;
+    const valueSize = Math.round(scaledBase * 0.86);
+    const labelSize = Math.round(scaledBase * 0.24);
+    const iconTextGap = cellHeight * (rows > 1 ? 0.025 : 0.035);
+    const blockHeight =
+      iconSize + valueSize * 1.08 + labelSize * 1.14 + iconTextGap;
+    const iconY = y + Math.max(0, (cellHeight - blockHeight) / 2);
 
     context.save();
     context.fillStyle = settings.textColor;
-    context.globalAlpha = 0.85;
+    context.globalAlpha = 0.9;
     drawStatIcon(context, item.field, iconX, iconY, iconSize);
     context.restore();
 
-    const textX = iconX + iconSize * 1.35;
-    const valueSize = Math.round(base * 0.72);
-    const labelSize = Math.round(base * 0.28);
+    const textX = x + cellWidth / 2;
     paintStatText(
       context,
       item.value,
       textX,
-      y + cellHeight * 0.18,
-      cellWidth * 0.7,
+      iconY + iconSize + iconTextGap,
+      cellWidth * 0.9,
       `700 ${valueSize}px ${fontStack}`,
       settings,
       valueSize,
+      "centre",
     );
     paintStatText(
       context,
       item.label,
       textX,
-      y + cellHeight * 0.18 + valueSize * 1.05,
-      cellWidth * 0.7,
+      iconY + iconSize + valueSize * 1.08 + iconTextGap,
+      cellWidth * 0.9,
       `500 ${labelSize}px ${fontStack}`,
       settings,
       labelSize,
+      "centre",
     );
   });
 }
@@ -277,6 +371,8 @@ function drawSolidBand(
   fontStack: string,
   margin: number,
   base: number,
+  align: "left" | "centre" = "centre",
+  titleReserveTop = 0,
 ) {
   const innerWidth = panel.width - margin * 2;
   const columns = Math.min(
@@ -286,36 +382,101 @@ function drawSolidBand(
   );
   const rows = Math.ceil(items.length / columns);
   const cellWidth = innerWidth / columns;
-  const cellHeight = (panel.height - margin * 2) / rows;
-  const valueSize = Math.round(Math.min(base * 0.58, cellHeight * 0.42));
-  const labelSize = Math.round(Math.min(base * 0.26, cellHeight * 0.22));
+  const contentTop = panel.y + margin + Math.max(0, titleReserveTop);
+  const contentHeight = panel.height - margin * 2 - Math.max(0, titleReserveTop);
+  const cellHeight = contentHeight / rows;
+  const vertical = panel.height > panel.width * 1.15;
+  const valueSize = Math.round(
+    Math.min(base * (vertical ? 0.56 : 0.62), cellHeight * 0.28, cellWidth * 0.24),
+  );
+  const labelSize = Math.round(
+    Math.min(base * 0.2, cellHeight * 0.14, cellWidth * 0.12),
+  );
+
+  drawCellDividers(
+    context,
+    panel,
+    margin,
+    columns,
+    rows,
+    items.length,
+    settings,
+    contentTop,
+    contentHeight,
+  );
 
   items.forEach((item, index) => {
     const column = index % columns;
     const row = Math.floor(index / columns);
-    const x = panel.x + margin + column * cellWidth;
-    const y = panel.y + margin + row * cellHeight + cellHeight * 0.12;
+    const cellX = panel.x + margin + column * cellWidth;
+    const textBlockHeight = valueSize * 1.14 + labelSize * 1.14;
+    const y = contentTop + row * cellHeight + Math.max(0, (cellHeight - textBlockHeight) / 2);
+    const textX =
+      align === "centre" ? cellX + cellWidth / 2 : cellX + cellWidth * 0.06;
     paintStatText(
       context,
       item.value,
-      x,
+      textX,
       y,
-      cellWidth * 0.92,
+      cellWidth * 0.88,
       `700 ${valueSize}px ${fontStack}`,
       settings,
       valueSize,
+      align,
     );
     paintStatText(
       context,
       item.label,
-      x,
-      y + valueSize * 1.12,
-      cellWidth * 0.92,
+      textX,
+      y + valueSize * 1.14,
+      cellWidth * 0.88,
       `500 ${labelSize}px ${fontStack}`,
       settings,
       labelSize,
+      align,
     );
   });
+}
+
+function drawCellDividers(
+  context: CanvasRenderingContext2D,
+  panel: LayoutRect,
+  margin: number,
+  columns: number,
+  rows: number,
+  itemCount: number,
+  settings: ComposerSettings,
+  contentTop = panel.y + margin,
+  contentHeight = panel.height - margin * 2,
+) {
+  if (!settings.statsDivider || itemCount < 2) return;
+  const opacity = Math.min(1, Math.max(0, settings.statsDividerOpacity));
+  if (opacity <= 0) return;
+
+  const innerWidth = panel.width - margin * 2;
+  const cellWidth = innerWidth / columns;
+  const cellHeight = contentHeight / Math.max(rows, 1);
+
+  context.save();
+  context.strokeStyle = settings.textColor;
+  context.globalAlpha = opacity;
+  context.lineWidth = Math.max(1, Math.min(panel.width, panel.height) * 0.0025);
+
+  for (let column = 1; column < columns; column += 1) {
+    const x = panel.x + margin + column * cellWidth;
+    context.beginPath();
+    context.moveTo(x, panel.y + margin * 0.55);
+    context.lineTo(x, panel.y + panel.height - margin * 0.55);
+    context.stroke();
+  }
+  for (let row = 1; row < rows; row += 1) {
+    const y = contentTop + row * cellHeight;
+    context.beginPath();
+    context.moveTo(panel.x + margin * 0.55, y);
+    context.lineTo(panel.x + panel.width - margin * 0.55, y);
+    context.stroke();
+  }
+  context.restore();
 }
 
 function drawTextStack(
@@ -328,29 +489,34 @@ function drawTextStack(
   base: number,
   layout?: StatsLayoutContext,
 ) {
-  const isVertical = panel.height > panel.width * 1.15;
-  const innerWidth = panel.width - margin * 2;
-  const columns = isVertical
-    ? 1
-    : Math.min(
-        4,
-        items.length,
-        Math.max(1, Math.floor(innerWidth / Math.max(1, base * 2.55))),
-      );
-  const rowHeight = base * 1.35;
+  const insetLeft = Math.max(0, layout?.insetLeft ?? 0);
+  const insetBottom = Math.max(0, layout?.insetBottom ?? 0);
+  const innerWidth = panel.width - margin * 2 - insetLeft;
+  const columns = Math.min(
+    4,
+    items.length,
+    Math.max(1, Math.floor(innerWidth / Math.max(1, base * 2.4))),
+  );
+  // Match classic Bottom Profile hierarchy: large values, readable labels.
+  const valueSize = Math.round(base * 0.62);
+  const labelSize = Math.round(base * 0.36);
+  const rowHeight = Math.max(base * 1.45, valueSize + labelSize * 1.35);
   const visible = items.slice(0, 8);
   const totalHeight = Math.ceil(visible.length / columns) * rowHeight;
-  const startY = isVertical
-    ? textStackStartY(panel, visible.length, base, margin, layout)
-    : panel.y + panel.height - margin - totalHeight;
+  const startY = panel.height > panel.width * 1.15
+    ? textStackStartY(panel, visible.length, base, margin, {
+        ...layout,
+        pinToBottom: layout?.pinToBottom !== false,
+        insetBottom,
+      })
+    : panel.y + panel.height - margin - insetBottom - totalHeight;
   const cellWidth = innerWidth / columns;
-  const valueSize = Math.round(base * 0.55);
-  const labelSize = Math.round(base * 0.25);
+  const originX = panel.x + margin + insetLeft;
 
   visible.forEach((item, index) => {
     const column = index % columns;
     const row = Math.floor(index / columns);
-    const x = panel.x + margin + column * cellWidth;
+    const x = originX + column * cellWidth;
     const y = startY + row * rowHeight;
     paintStatText(
       context,
@@ -366,7 +532,7 @@ function drawTextStack(
       context,
       item.label,
       x,
-      y + base * 0.62,
+      y + valueSize * 1.12,
       cellWidth * 0.9,
       `500 ${labelSize}px ${fontStack}`,
       settings,
@@ -384,19 +550,23 @@ function paintStatText(
   font: string,
   settings: ComposerSettings,
   fontPixels: number,
+  align: "left" | "centre" = "left",
 ) {
   context.save();
   context.font = font;
-  context.textAlign = "left";
+  context.textAlign = align === "centre" ? "center" : "left";
   context.textBaseline = "top";
   context.fillStyle = settings.textColor;
+  const drawX = align === "centre" ? x : x;
 
   if (settings.textContrastBoost) {
     const metrics = context.measureText(text);
     const width = Math.min(metrics.width, maxWidth);
     const height = fontPixels * 1.15;
+    const scrimX =
+      align === "centre" ? drawX - width / 2 : drawX;
     context.fillStyle = "rgba(0,0,0,0.35)";
-    context.fillRect(x - 2, y - 1, width + 4, height + 2);
+    context.fillRect(scrimX - 2, y - 1, width + 4, height + 2);
     context.fillStyle = settings.textColor;
   }
 
@@ -406,14 +576,14 @@ function paintStatText(
       2,
       fontPixels * (settings.textContrastBoost ? 0.08 : 0.055),
     );
-    context.strokeText(text, x, y, maxWidth);
+    context.strokeText(text, drawX, y, maxWidth);
   }
   if (settings.textTreatment === "shadow") {
     context.shadowColor = "rgba(0,0,0,.8)";
     context.shadowBlur = 12;
     context.shadowOffsetY = 3;
   }
-  context.fillText(text, x, y, maxWidth);
+  context.fillText(text, drawX, y, maxWidth);
   context.restore();
 }
 
@@ -427,7 +597,7 @@ function drawStatIcon(
   const color = String(context.fillStyle);
   context.strokeStyle = color;
   context.fillStyle = color;
-  context.lineWidth = Math.max(1.5, size * 0.1);
+  context.lineWidth = Math.max(1.6, size * 0.11);
   context.lineCap = "round";
   context.lineJoin = "round";
 
@@ -438,15 +608,19 @@ function drawStatIcon(
       drawClockIcon(context, x, y, size);
       break;
     case "maxDepth":
+      drawMaxDepthIcon(context, x, y, size);
+      break;
     case "averageDepth":
-      drawDepthIcon(context, x, y, size);
+      drawAvgDepthIcon(context, x, y, size);
       break;
     case "temperature":
       drawThermometerIcon(context, x, y, size);
       break;
     case "startPressure":
+      drawPressureIcon(context, x, y, size, 0.72);
+      break;
     case "endPressure":
-      drawPressureIcon(context, x, y, size);
+      drawPressureIcon(context, x, y, size, 0.28);
       break;
     case "gasMix":
       drawGasIcon(context, x, y, size);
@@ -475,19 +649,68 @@ function drawClockIcon(
   context.moveTo(cx, cy);
   context.lineTo(cx + r * 0.4, cy + r * 0.15);
   context.stroke();
+  context.beginPath();
+  context.arc(cx, cy, Math.max(1.2, size * 0.055), 0, Math.PI * 2);
+  context.fill();
 }
 
-function drawDepthIcon(
+/** Max depth: arrow pointing to a floor line. */
+function drawMaxDepthIcon(
   context: CanvasRenderingContext2D,
   x: number,
   y: number,
   size: number,
 ) {
+  const cx = x + size / 2;
   context.beginPath();
-  context.moveTo(x + size * 0.2, y + size * 0.2);
-  context.lineTo(x + size * 0.5, y + size * 0.82);
-  context.lineTo(x + size * 0.8, y + size * 0.2);
+  context.moveTo(cx, y + size * 0.12);
+  context.lineTo(cx, y + size * 0.68);
   context.stroke();
+  context.beginPath();
+  context.moveTo(cx - size * 0.22, y + size * 0.48);
+  context.lineTo(cx, y + size * 0.72);
+  context.lineTo(cx + size * 0.22, y + size * 0.48);
+  context.stroke();
+  context.beginPath();
+  context.moveTo(x + size * 0.18, y + size * 0.86);
+  context.lineTo(x + size * 0.82, y + size * 0.86);
+  context.stroke();
+}
+
+/** Average depth: a water line with a centred depth marker. */
+function drawAvgDepthIcon(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number,
+) {
+  const cx = x + size / 2;
+  context.beginPath();
+  context.moveTo(cx, y + size * 0.2);
+  context.lineTo(cx, y + size * 0.78);
+  context.stroke();
+  context.beginPath();
+  context.moveTo(x + size * 0.12, y + size * 0.48);
+  context.bezierCurveTo(
+    x + size * 0.25,
+    y + size * 0.38,
+    x + size * 0.34,
+    y + size * 0.58,
+    x + size * 0.47,
+    y + size * 0.48,
+  );
+  context.bezierCurveTo(
+    x + size * 0.6,
+    y + size * 0.38,
+    x + size * 0.69,
+    y + size * 0.58,
+    x + size * 0.88,
+    y + size * 0.48,
+  );
+  context.stroke();
+  context.beginPath();
+  context.arc(cx, y + size * 0.48, size * 0.105, 0, Math.PI * 2);
+  context.fill();
 }
 
 function drawThermometerIcon(
@@ -496,14 +719,29 @@ function drawThermometerIcon(
   y: number,
   size: number,
 ) {
-  const cx = x + size * 0.45;
+  const cx = x + size * 0.44;
+  const stemRadius = size * 0.12;
+  const bulbRadius = size * 0.2;
   context.beginPath();
-  context.moveTo(cx, y + size * 0.12);
-  context.lineTo(cx, y + size * 0.62);
+  context.moveTo(cx - stemRadius, y + size * 0.18);
+  context.arc(cx, y + size * 0.18, stemRadius, Math.PI, 0);
+  context.lineTo(cx + stemRadius, y + size * 0.62);
+  context.arc(cx, y + size * 0.7, bulbRadius, -0.72, Math.PI + 0.72);
+  context.lineTo(cx - stemRadius, y + size * 0.18);
   context.stroke();
   context.beginPath();
-  context.arc(cx, y + size * 0.72, size * 0.18, 0, Math.PI * 2);
+  context.moveTo(cx, y + size * 0.3);
+  context.lineTo(cx, y + size * 0.68);
+  context.stroke();
+  context.beginPath();
+  context.arc(cx, y + size * 0.7, size * 0.105, 0, Math.PI * 2);
   context.fill();
+  context.beginPath();
+  context.moveTo(cx + size * 0.16, y + size * 0.22);
+  context.lineTo(cx + size * 0.32, y + size * 0.22);
+  context.moveTo(cx + size * 0.16, y + size * 0.36);
+  context.lineTo(cx + size * 0.28, y + size * 0.36);
+  context.stroke();
 }
 
 function drawPressureIcon(
@@ -511,14 +749,22 @@ function drawPressureIcon(
   x: number,
   y: number,
   size: number,
+  needleFraction: number,
 ) {
+  const cx = x + size / 2;
+  const cy = y + size * 0.58;
+  const r = size * 0.36;
   context.beginPath();
-  context.arc(x + size / 2, y + size / 2, size * 0.38, 0.75 * Math.PI, 0.25 * Math.PI);
+  context.arc(cx, cy, r, 0.85 * Math.PI, 0.15 * Math.PI);
+  context.stroke();
+  const angle = Math.PI * (0.85 - needleFraction * 0.7);
+  context.beginPath();
+  context.moveTo(cx, cy);
+  context.lineTo(cx + Math.cos(angle) * r * 0.75, cy - Math.sin(angle) * r * 0.75);
   context.stroke();
   context.beginPath();
-  context.moveTo(x + size * 0.5, y + size * 0.5);
-  context.lineTo(x + size * 0.72, y + size * 0.28);
-  context.stroke();
+  context.arc(cx, cy, size * 0.06, 0, Math.PI * 2);
+  context.fill();
 }
 
 function drawGasIcon(
@@ -528,13 +774,24 @@ function drawGasIcon(
   size: number,
 ) {
   context.beginPath();
-  context.rect(x + size * 0.3, y + size * 0.15, size * 0.4, size * 0.7);
+  context.moveTo(x + size * 0.34, y + size * 0.28);
+  context.quadraticCurveTo(x + size * 0.34, y + size * 0.2, x + size * 0.42, y + size * 0.18);
+  context.lineTo(x + size * 0.58, y + size * 0.18);
+  context.quadraticCurveTo(x + size * 0.66, y + size * 0.2, x + size * 0.66, y + size * 0.28);
+  context.lineTo(x + size * 0.66, y + size * 0.78);
+  context.quadraticCurveTo(x + size * 0.66, y + size * 0.86, x + size * 0.58, y + size * 0.88);
+  context.lineTo(x + size * 0.42, y + size * 0.88);
+  context.quadraticCurveTo(x + size * 0.34, y + size * 0.86, x + size * 0.34, y + size * 0.78);
+  context.closePath();
   context.stroke();
   context.beginPath();
-  context.moveTo(x + size * 0.38, y + size * 0.15);
-  context.lineTo(x + size * 0.38, y + size * 0.05);
-  context.lineTo(x + size * 0.62, y + size * 0.05);
-  context.lineTo(x + size * 0.62, y + size * 0.15);
+  context.moveTo(x + size * 0.41, y + size * 0.18);
+  context.lineTo(x + size * 0.41, y + size * 0.08);
+  context.lineTo(x + size * 0.59, y + size * 0.08);
+  context.lineTo(x + size * 0.59, y + size * 0.18);
+  context.stroke();
+  context.beginPath();
+  context.arc(x + size * 0.5, y + size * 0.51, size * 0.09, 0, Math.PI * 2);
   context.stroke();
 }
 

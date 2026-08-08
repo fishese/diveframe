@@ -1,74 +1,52 @@
-# Task 5 Report: Wire dive detail (gated)
+# Task 5 Report: Composer control IA + recipe apply + load normalize
 
-## Status
-
-**DONE**
-
-**Branch:** `feature/memo-dive-match`  
-**Commit:** `b84edc1` — Show gated nearby-memo hints on dive detail.
+**Status:** DONE
+**Branch:** `feature/compose-preset-redesign`
 
 ## Summary
 
-Wired `MemoDiveMatchHints` into dive detail in `DiveFrameApp.tsx`, gated by `diveNeedsPlaceNameHint(dive)`. Memos load via `listLocalDiveMemos` when the selected dive lacks a place name. The hint block renders above the site picker. `onDiveChange` updates parent `dives` state (same map pattern as other editors) and syncs local site/location/buddy/notes drafts; `onMemosChange` updates DiveDetail-local memo list. Did not modify `MemosApp` (Task 6).
+Rebuilt composer sidebar IA into ten collapsible sections (Photo / Layout preset / Panel open by default). Layout cards call `applyTemplateRecipe` for a full panel+layout reset. Load path uses `normalizeComposerSettings` instead of `repairLegacyTemplatePositions`. Added i18n for new presets and panel controls; removed retired template keys.
 
-## Deliverables
+## Changes by file
 
-| File | Action |
-| --- | --- |
-| `app/DiveFrameApp.tsx` | Modified — gated mount + memo load + callbacks |
-| `tests/app-contract.test.mjs` | Modified — asserts import/gate/list + render above site picker |
+### `app/compose/ComposerApp.tsx`
 
-## Behavior
+- Import `applyTemplateRecipe` + `normalizeComposerSettings`.
+- Load: merge defaults → `normalizeComposerSettings` → logo soft-fix if `hidden`.
+- Preset picker: `applyTemplateRecipe(current, template.id)`.
+- Sections rebuilt per spec order; Panel (edge/fill/color/gradient/opacity/density/contrast/blur); Chart offsets + `graphGradient`; Canvas & export includes dimming/safe margins/export; Saved looks at end.
+- Removed `repairLegacyTemplatePositions`.
 
-- Gate: if `!diveNeedsPlaceNameHint(dive)`, render nothing (and clear loaded memos).
-- Load: `listLocalDiveMemos()` when detail is open and gate is true (`dive.id` / gate deps).
-- Placement: `<MemoDiveMatchHints mode="on-dive" … />` immediately above `.site-picker-card`.
-- Refresh: parent `setDives` on apply/copy; local drafts updated from the returned dive.
+### `lib/app-i18n/{en,ja,zh-Hant}.ts`
+
+- Added layout/panel/section keys (+ gradient A/B/angle labels).
+- Removed `fullWidthGraph*`, `landscapeDashboard*`, `cinematicSplit*`.
+- `templateTranslationKeys` maps all four template ids.
+
+### `tests/app-contract.test.mjs`
+
+- Assertions updated for normalize / recipe apply / `savedLooks`.
 
 ## Verification
 
-```powershell
-node --test tests/app-contract.test.mjs
-```
-
-```
-✔ ships the DiveFrame import, map, photo, and composer workflow
-ℹ pass 1 / fail 0
-```
-
-```powershell
+```bash
 npm run typecheck
+# pass
 ```
 
+Manual smoke (`npm run dev`): **skipped** (no practical browser pass in this run).
+
+## Commit
+
 ```
-> tsc --noEmit --incremental false
-(exit 0)
+Reorganize composer controls around layout presets and panel settings.
 ```
 
-Manual browser smoke (dive without site + nearby memo; dive with `userSite` hides block) not run in this session — contract + typecheck only.
-
-## Self-review
-
-- Spec: gated dive detail, load memos, mount above site picker, refresh via onDiveChange/onMemosChange — covered.
-- MemosApp untouched.
-- Contract test fails correctly before wiring (missing `MemoDiveMatchHints`), passes after.
+Hash: `81eb109`
+Files: ComposerApp, en/ja/zh-Hant i18n, app-contract test.
 
 ## Concerns
 
-1. No interactive/browser smoke in this environment; UI behavior relies on Task 4 component + contract placement assertions.
-2. Memos reload only when `dive.id` or gate flips — cross-tab memo creates while detail stays open won’t appear until remount/gate cycle (acceptable for v1; parent already refreshes dives via `subscribeLocalDataChanges`).
-
-## Review fix (Important P1)
-
-**Finding:** Dive detail gates `MemoDiveMatchHints` with `diveNeedsPlaceNameHint(dive)`. Apply empty often sets `userSite`/`location` → immediate `onDiveChange` → gate false → component unmounts before Keep/Delete dialog can show.
-
-**Fix (in shared `MemoDiveMatchHints`, no parent hold):**
-- Apply empty: after `writeApplyPlan`, defer `onDiveChange`; open post-apply dialog with the updated dive.
-- Keep / Delete completion: then call `onDiveChange(updatedDive)` (and `onMemosChange` / `onMemoChange` as before).
-- Backdrop dismiss: call `onDiveChange` so UI reflects IDB writes, then close dialog.
-- Per-field Copy still calls `onDiveChange` immediately (no dialog).
-- Early empty-candidate return skipped while `postApply` is open.
-
-**Verification:** `npm run typecheck` — exit 0.
-
-**Commit:** `Keep memo match hints mounted through post-apply dialog.`
+- Manual UI smoke not run; panel left/right + dock/band looks need a quick human check.
+- `personalComposerPresets` i18n key retained unused (section title is `savedLooks`).
+- Contract still asserts retired `layout === "graph|dashboard|split"` branches in image-composer (pre-existing; outside this task).

@@ -44,3 +44,21 @@ test("missing panel fields fill from active recipe", () => {
   assert.equal(normalized.chartOffsetX, 0);
   assert.equal(normalized.chartOffsetY, 0);
 });
+
+test("dock and solid-band recipes seed their intended fields", () => {
+  const dock = templatesMod.getTemplate("bottom-stats-dock");
+  assert.equal(dock.statsPresentation, "icon-grid");
+  assert.equal(dock.defaultVisibleFields.duration, true);
+  assert.equal(dock.defaultVisibleFields.maxDepth, true);
+  assert.equal(dock.defaultVisibleFields.temperature, true);
+  assert.equal(dock.defaultVisibleFields.averageDepth, false);
+
+  const solid = templatesMod.getTemplate("solid-info-band");
+  assert.equal(solid.statsPresentation, "solid-band");
+  assert.equal(solid.panel.edge, "left");
+  assert.equal(solid.defaultPositions.logo, "top-right");
+  assert.equal(solid.defaultVisibleFields.duration, true);
+  assert.equal(solid.defaultVisibleFields.maxDepth, true);
+  assert.equal(solid.defaultVisibleFields.temperature, true);
+  assert.equal(solid.defaultVisibleFields.gasMix, true);
+});

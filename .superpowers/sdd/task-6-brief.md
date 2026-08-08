@@ -1,27 +1,36 @@
-### Task 6: Collapsible date/computer filters + Reset + search haystack
+### Task 6: Contract tests, polish, verification
 
 **Files:**
-- Modify: `app/DiveFrameApp.tsx`
-- Modify: `app/globals.css`
-- Modify: `lib/app-i18n.ts`
 - Modify: `tests/app-contract.test.mjs`
-- Modify: `tests/dive-list-model.test.mjs` if filter wiring needs extra cases
+- Modify: any remaining references to retired templates (`rg` the repo)
+- Optional: `docs/PRODUCT-SPEC.md` or `public/whats-new.json` only if this ships in the same release train — otherwise skip (YAGNI for this branch until release)
 
-**Interfaces:**
-- Consumes: `diveMatchesListFilters` / `buildDiveListRows` from Task 1
-
-- [ ] **Step 1:** State `dateFrom`, `dateTo`, `computerFilter`, `filtersOpen`. Distinct computers from `dives.map(d => d.computerModel).filter(Boolean)` sorted.
-
-- [ ] **Step 2:** Collapsible panel with date inputs + computer `<select>`. Pipeline: filter with `diveMatchesListFilters` (include search + chips + new fields) → `buildDiveListRows`.
-
-- [ ] **Step 3:** **Reset filters** clears `dateFrom`/`dateTo`/`computerFilter` + named/gps/appSite chips. Does **not** clear search text. Disable/hide emphasis when nothing active (extend existing `filter-clear` or add `resetFilters` control).
-
-- [ ] **Step 4:** Ensure search needle includes `computerModel` (in model helper).
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 1: Search and clear retired ids**
 
 ```bash
-git commit -m "Add collapsible date and computer dive list filters."
+rg "full-width-graph|landscape-dashboard|cinematic-split|lowerPanelY|layout === \"graph\"" -g "!node_modules" -g "!docs/**"
+```
+
+Fix remaining code references (docs/spec may still mention them historically — fine).
+
+- [ ] **Step 2: Strengthen app-contract asserts**
+
+Assert `composer-settings` / `templates` contain the four ids and new default keys (`panelEdge`, `chartOffsetX`, etc.), and do **not** contain retired ids in `TEMPLATES`.
+
+- [ ] **Step 3: Full verification**
+
+```bash
+npm run typecheck
+node --test tests/composer-settings-normalize.test.mjs tests/composer-layout.test.mjs tests/composer-stats.test.mjs tests/chart-series.test.mjs tests/composer-presets.test.mjs tests/composer-output.test.mjs tests/app-contract.test.mjs
+```
+
+Expected: all PASS. If time allows: `npm test` (includes build).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add tests/app-contract.test.mjs
+git commit -m "Lock composer preset redesign with contract and unit coverage."
 ```
 
 ---

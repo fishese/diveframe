@@ -60,24 +60,24 @@ test("icon-grid presentation keeps at most six items", () => {
   assert.equal(capped.length, 6);
 });
 
-test("vertical text-stack starts below titles and in-panel chart", () => {
+test("icon-grid scales its cells when it wraps to two rows", () => {
+  assert.equal(stats.iconGridRowScale(1), 1);
+  assert.ok(stats.iconGridRowScale(2) < 1);
+});
+
+test("vertical text-stack uses two columns and pins to the bottom", () => {
   const panel = { x: 660, y: 0, width: 340, height: 1000 };
   const margin = 20;
   const base = 40;
-  const titleReserveTop = 120;
-  const chartRect = { x: 680, y: 550, width: 300, height: 220 };
-
-  const withTitlesOnly = stats.textStackStartY(panel, 4, base, margin, {
-    titleReserveTop,
-  });
-  assert.ok(withTitlesOnly >= panel.y + margin + titleReserveTop);
-
-  const withChart = stats.textStackStartY(panel, 4, base, margin, {
-    titleReserveTop,
+  const itemCount = 4;
+  const startY = stats.textStackStartY(panel, itemCount, base, margin, {
+    titleReserveTop: 120,
     chartRegion: "in-panel",
-    chartRect,
+    chartRect: { x: 680, y: 200, width: 300, height: 220 },
     chartVisible: true,
+    pinToBottom: true,
   });
-  assert.ok(withChart >= chartRect.y + chartRect.height);
-  assert.ok(withChart > withTitlesOnly);
+  const expected =
+    panel.y + panel.height - margin - Math.ceil(itemCount / 2) * base * 1.45;
+  assert.equal(startY, expected);
 });

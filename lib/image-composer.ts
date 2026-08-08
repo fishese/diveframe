@@ -3,7 +3,11 @@ import { chartHomeRect, offsetRect, panelRect } from "./composer-layout";
 import { getOverlayFont } from "./composer-fonts";
 import { blurBehindPanel, drawComposerPanel } from "./composer-panel";
 import type { ComposerSettings } from "./composer-settings";
-import { collectStatItems, drawComposerStats } from "./composer-stats";
+import {
+  collectStatItems,
+  drawComposerStats,
+  estimateTextStackHeight,
+} from "./composer-stats";
 import { formattedCoordinates, type Dive } from "./dive-model";
 import { translate } from "./i18n";
 import { getTemplate } from "./templates";
@@ -53,6 +57,7 @@ export function renderComposition(
   const recipe = getTemplate(settings.templateId);
   const fontStack = getOverlayFont(settings.fontFamily).stack;
   const margin = Math.round(Math.min(width, height) * settings.safeMargin);
+  const titleSize = Math.round(Math.min(width, height) * 0.055 * settings.fontSize);
 
   const redrawPhoto = () => drawPhoto(context, image, width, height, settings);
 
@@ -71,9 +76,44 @@ export function renderComposition(
     settings.panelDensity,
     {
       statCount: stats.length,
-      presentation: recipe.statsPresentation,
+      presentation: settings.statsPresentation,
     },
   );
+
+  const siteName = settings.visibleFields.site
+    ? resolveSiteName(dive, settings.siteNameOverride)
+    : null;
+  const siteInside = Boolean(siteName) && isInsidePanel(settings.blockPositions.site);
+  const categoryInside =
+    settings.visibleFields.category &&
+    settings.blockPositions.category !== "hidden" &&
+    isInsidePanel(settings.blockPositions.category);
+  const dateText = formatDateTime(dive, settings);
+  const dateInside =
+    Boolean(dateText) &&
+    settings.blockPositions.date !== "hidden" &&
+    isInsidePanel(settings.blockPositions.date);
+
+  let titleReserveTop = 0;
+  if (siteInside) titleReserveTop += titleSize * 1.15;
+  if (categoryInside) titleReserveTop += titleSize * 0.48;
+  if (dateInside) titleReserveTop += titleSize * 0.48;
+  if (titleReserveTop > 0) titleReserveTop += titleSize * 0.2;
+
+  const statsTypeBase =
+    recipe.id === "bottom-profile"
+      ? Math.round(titleSize * 1.28)
+      : recipe.id === "right-panel"
+        ? Math.round(titleSize * 0.9)
+        : undefined;
+
+  const statsReserveBottom =
+    recipe.chartRegion === "in-panel" &&
+    settings.blockPositions.statistics !== "hidden"
+      ? estimateTextStackHeight(stats.length, panel, settings, statsTypeBase) +
+        margin * 0.35
+      : 0;
+
   const chartRect = offsetRect(
     chartHomeRect(
       recipe.chartRegion,
@@ -82,6 +122,11 @@ export function renderComposition(
       height,
       settings.chartHeight,
       margin,
+      {
+        titleReserveTop,
+        statsReserveBottom,
+        chartPanelGap: 0.028,
+      },
     ),
     settings.chartOffsetX,
     settings.chartOffsetY,
@@ -104,8 +149,12 @@ export function renderComposition(
     renderedChart = renderDiveChart(context, chartRect, dive, settings);
   }
 
-  // Soft blur under panel when fill is not already frosted
-  if (settings.blurBehindText && settings.panelFillMode !== "frosted") {
+  // Soft blur under panel when fill is not already frosted / none
+  if (
+    settings.blurBehindText &&
+    settings.panelFillMode !== "frosted" &&
+    settings.panelFillMode !== "none"
+  ) {
     blurBehindPanel(
       context,
       panel,
@@ -116,7 +165,7 @@ export function renderComposition(
     );
   }
 
-  // 6. Panel fill (frosted may call redrawPhoto clipped)
+  // 6. Panel fill (skipped when fillMode is none — Bottom Profile)
   drawComposerPanel(
     context,
     panel,
@@ -134,20 +183,6 @@ export function renderComposition(
   context.fillStyle = settings.textColor;
   context.textBaseline = "top";
   applyTextTreatment(context, settings);
-  const siteName = settings.visibleFields.site
-    ? resolveSiteName(dive, settings.siteNameOverride)
-    : null;
-  const titleSize = Math.round(Math.min(width, height) * 0.055 * settings.fontSize);
-  const siteInside = Boolean(siteName) && isInsidePanel(settings.blockPositions.site);
-  const categoryInside =
-    settings.visibleFields.category &&
-    settings.blockPositions.category !== "hidden" &&
-    isInsidePanel(settings.blockPositions.category);
-  const dateText = formatDateTime(dive, settings);
-  const dateInside =
-    Boolean(dateText) &&
-    settings.blockPositions.date !== "hidden" &&
-    isInsidePanel(settings.blockPositions.date);
 
   if (siteName && settings.blockPositions.site !== "hidden") {
     const siteAnchor = blockAnchor(settings.blockPositions.site, panel, width, height, margin);
@@ -210,19 +245,15 @@ export function renderComposition(
     }
   }
 
-  // 8. Stats — stack below inside-panel titles / in-panel chart when needed
-  let titleReserveTop = 0;
-  if (siteInside) titleReserveTop += titleSize * 1.2;
-  if (categoryInside) titleReserveTop += titleSize * 0.55;
-  if (dateInside) titleReserveTop += titleSize * 0.55;
-  if (titleReserveTop > 0) titleReserveTop += titleSize * 0.25;
-
+  // 8. Stats — Bottom Profile floats over photo with left/bottom inset; right panel pins to bottom
+  const floatStats =
+    settings.panelFillMode === "none" || recipe.id === "bottom-profile";
   if (settings.blockPositions.statistics !== "hidden") {
     drawComposerStats(
       context,
       panel,
       stats,
-      recipe.statsPresentation,
+      settings.statsPresentation,
       settings,
       fontStack,
       {
@@ -230,6 +261,11 @@ export function renderComposition(
         chartRect,
         chartVisible: renderedChart,
         titleReserveTop,
+        pinToBottom: true,
+        insetLeft: floatStats ? margin : 0,
+        insetBottom: floatStats ? margin * 0.65 : 0,
+        typeBase: statsTypeBase,
+        align: settings.statsPresentation === "solid-band" ? "centre" : "left",
       },
     );
   }

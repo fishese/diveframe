@@ -259,6 +259,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composer, /depth-pressure-temperature/);
   assert.match(composer, /zh-Hant/);
   assert.match(composer, /OVERLAY_FONTS/);
+  assert.doesNotMatch(composer, /templateTranslationKeys\[template\.id\]\.description/);
   assert.match(composer, /getLocalOverlayLogo/);
   assert.match(composer, /showLogo/);
   assert.match(composer, /logoOffsetX/);
@@ -288,9 +289,12 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(templates, /id: "minimal"/);
   assert.doesNotMatch(templates, /id: "poster"/);
   assert.match(composerSettings, /panelEdge: "bottom"/);
-  assert.match(composerSettings, /panelFillMode: "tint"/);
+  assert.match(composerSettings, /panelFillMode: "none"/);
   assert.match(composerSettings, /panelDensity: "comfortable"/);
   assert.match(composerSettings, /textContrastBoost: false/);
+  assert.match(composerSettings, /statsPresentation: "text-stack"/);
+  assert.match(composerSettings, /statsDivider: false/);
+  assert.match(composerSettings, /statsDividerOpacity: 0.28/);
   assert.match(composerSettings, /chartOffsetX: 0/);
   assert.match(composerSettings, /chartOffsetY: 0/);
   assert.match(imageComposer, /panelRect\(/);

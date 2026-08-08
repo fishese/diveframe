@@ -8,6 +8,10 @@ export function drawComposerPanel(
   redrawPhoto: () => void,
   backgroundDimming = 0,
 ) {
+  if (settings.panelFillMode === "none") {
+    return;
+  }
+
   const opacity =
     settings.panelFillMode === "solid"
       ? Math.max(settings.panelOpacity, 0.92)

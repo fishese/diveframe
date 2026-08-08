@@ -29,7 +29,7 @@ export type BlockPosition =
   | "hidden";
 
 export type PanelEdge = "top" | "bottom" | "left" | "right";
-export type PanelFillMode = "solid" | "frosted" | "tint";
+export type PanelFillMode = "solid" | "frosted" | "tint" | "none";
 export type PanelDensity = "compact" | "comfortable" | "roomy";
 export type PanelGradient = {
   enabled: boolean;
@@ -37,6 +37,7 @@ export type PanelGradient = {
   colorB: string;
   angle: number;
 };
+export type StatsPresentation = "text-stack" | "icon-grid" | "solid-band";
 
 export type DisplayField =
   | "site"
@@ -90,6 +91,10 @@ export type ComposerSettings = {
   panelOpacity: number;
   panelDensity: PanelDensity;
   textContrastBoost: boolean;
+  statsPresentation: StatsPresentation;
+  /** Vertical/horizontal rules between dock / solid-band cells. */
+  statsDivider: boolean;
+  statsDividerOpacity: number;
   chartHeight: number;
   chartOffsetX: number;
   chartOffsetY: number;
@@ -148,17 +153,20 @@ export function defaultComposerSettings(diveId: string): ComposerSettings {
     textAlign: "left",
     textTreatment: "shadow",
     panelEdge: "bottom",
-    panelFillMode: "tint",
+    panelFillMode: "none",
     panelColor: "#03141d",
     panelGradient: {
-      enabled: true,
+      enabled: false,
       colorA: "#03141d",
       colorB: "#03141d",
       angle: 90,
     },
-    panelOpacity: 0.68,
+    panelOpacity: 0,
     panelDensity: "comfortable",
     textContrastBoost: false,
+    statsPresentation: "text-stack",
+    statsDivider: false,
+    statsDividerOpacity: 0.28,
     chartHeight: 0.27,
     chartOffsetX: 0,
     chartOffsetY: 0,

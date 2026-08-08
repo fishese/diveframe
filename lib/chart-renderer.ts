@@ -69,7 +69,7 @@ export function renderDiveChart(
   const samples = downsampleProfile(dive.samples, Math.max(240, Math.round(rect.width / 2)));
   const maximumTime = Math.max(...samples.map((sample) => sample.elapsedSeconds), 1);
   const maximumDepth = Math.max(...samples.map((sample) => sample.depthM), 1);
-  const labelSize = Math.max(10, Math.round(Math.min(rect.width, rect.height) * 0.045));
+  const labelSize = Math.max(11, Math.round(Math.min(rect.width, rect.height) * 0.055));
   const axisPadding = settings.showAxisLabels
     ? {
         left: Math.max(labelSize * 4.2, rect.width * 0.1),

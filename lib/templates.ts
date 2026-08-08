@@ -6,6 +6,7 @@ import type {
   PanelEdge,
   PanelFillMode,
   PanelGradient,
+  StatsPresentation,
   TemplateId,
 } from "./composer-settings";
 
@@ -16,12 +17,12 @@ export type TemplateDefinition = {
   accent: string;
   defaultRatio: CanvasRatio;
   defaultChartHeight: number;
-  /** Transitional until Task 3 removes layout branches in image-composer */
-  layout: "bottom" | "right";
   /** How stats are laid out inside the panel */
-  statsPresentation: "text-stack" | "icon-grid" | "solid-band";
+  statsPresentation: StatsPresentation;
   /** Chart home: lower band above horizontal panel, or compact inside vertical panel stack */
   chartRegion: "above-panel" | "in-panel";
+  statsDivider: boolean;
+  statsDividerOpacity: number;
   panel: {
     edge: PanelEdge;
     fillMode: PanelFillMode;
@@ -76,11 +77,11 @@ const solidInfoBandVisibleFields: ComposerSettings["visibleFields"] = {
   startTime: false,
   duration: true,
   maxDepth: true,
-  averageDepth: true,
+  averageDepth: false,
   temperature: true,
   gasMix: true,
-  startPressure: true,
-  endPressure: true,
+  startPressure: false,
+  endPressure: false,
   coordinates: false,
   diveNumber: false,
   computerModel: false,
@@ -109,10 +110,24 @@ export const TEMPLATES: TemplateDefinition[] = [
     accent: "#8debd7",
     defaultRatio: "4:5",
     defaultChartHeight: 0.27,
-    layout: "bottom",
     statsPresentation: "text-stack",
     chartRegion: "above-panel",
-    panel: tintPanel,
+    statsDivider: false,
+    statsDividerOpacity: 0.28,
+    panel: {
+      edge: "bottom",
+      fillMode: "none",
+      color: "#03141d",
+      gradient: {
+        enabled: false,
+        colorA: "#03141d",
+        colorB: "#03141d",
+        angle: 90,
+      },
+      opacity: 0,
+      density: "comfortable",
+      textContrastBoost: false,
+    },
     defaultPositions: {
       site: "top-left",
       category: "top-left",
@@ -130,9 +145,10 @@ export const TEMPLATES: TemplateDefinition[] = [
     accent: "#73d7ff",
     defaultRatio: "4:5",
     defaultChartHeight: 0.22,
-    layout: "right",
     statsPresentation: "text-stack",
     chartRegion: "in-panel",
+    statsDivider: false,
+    statsDividerOpacity: 0.28,
     panel: {
       ...tintPanel,
       edge: "right",
@@ -154,9 +170,10 @@ export const TEMPLATES: TemplateDefinition[] = [
     accent: "#8debd7",
     defaultRatio: "16:9",
     defaultChartHeight: 0.28,
-    layout: "bottom",
     statsPresentation: "icon-grid",
     chartRegion: "above-panel",
+    statsDivider: true,
+    statsDividerOpacity: 0.28,
     panel: {
       edge: "bottom",
       fillMode: "frosted",
@@ -184,15 +201,16 @@ export const TEMPLATES: TemplateDefinition[] = [
   {
     id: "solid-info-band",
     name: "Solid Info Band",
-    description: "A solid horizontal band that scales with more dive fields.",
+    description: "A solid side band with centered dive information.",
     accent: "#8debd7",
-    defaultRatio: "4:5",
+    defaultRatio: "16:9",
     defaultChartHeight: 0.24,
-    layout: "bottom",
     statsPresentation: "solid-band",
     chartRegion: "above-panel",
+    statsDivider: true,
+    statsDividerOpacity: 0.28,
     panel: {
-      edge: "bottom",
+      edge: "left",
       fillMode: "solid",
       color: "#03141d",
       gradient: {
@@ -206,12 +224,12 @@ export const TEMPLATES: TemplateDefinition[] = [
       textContrastBoost: false,
     },
     defaultPositions: {
-      site: "top-left",
-      category: "top-left",
-      date: "top-right",
+      site: "inside-panel",
+      category: "inside-panel",
+      date: "inside-panel",
       chart: "above-graph",
       statistics: "inside-panel",
-      logo: "top-centre",
+      logo: "top-right",
     },
     defaultVisibleFields: { ...solidInfoBandVisibleFields },
   },
@@ -248,6 +266,9 @@ export function applyTemplateRecipe(
     panelOpacity: recipe.panel.opacity,
     panelDensity: recipe.panel.density,
     textContrastBoost: recipe.panel.textContrastBoost,
+    statsPresentation: recipe.statsPresentation,
+    statsDivider: recipe.statsDivider,
+    statsDividerOpacity: recipe.statsDividerOpacity,
   };
 }
 
@@ -268,6 +289,10 @@ export function normalizeComposerSettings(raw: ComposerSettings): ComposerSettin
     panelGradient: withTemplate.panelGradient ?? { ...recipe.panel.gradient },
     panelDensity: withTemplate.panelDensity ?? recipe.panel.density,
     textContrastBoost: withTemplate.textContrastBoost ?? recipe.panel.textContrastBoost,
+    statsPresentation: withTemplate.statsPresentation ?? recipe.statsPresentation,
+    statsDivider: withTemplate.statsDivider ?? recipe.statsDivider,
+    statsDividerOpacity:
+      withTemplate.statsDividerOpacity ?? recipe.statsDividerOpacity,
     chartOffsetX: withTemplate.chartOffsetX ?? 0,
     chartOffsetY: withTemplate.chartOffsetY ?? 0,
   };

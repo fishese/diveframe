@@ -200,10 +200,10 @@ Seed the four recipes per spec:
 | `bottom-profile` | 4:5 | 0.27 | above-panel | text-stack | bottom / tint / opacity 0.68 |
 | `right-panel` | 4:5 | 0.22 | in-panel | text-stack | right / tint / opacity 0.68 |
 | `bottom-stats-dock` | 16:9 | 0.28 | above-panel | icon-grid | bottom / frosted / opacity ~0.55 |
-| `solid-info-band` | 4:5 | 0.24 | above-panel | solid-band | bottom / solid / opacity 1 |
+| `solid-info-band` | 16:9 | 0.24 | above-panel | solid-band | left / solid / opacity 1 |
 
 `bottom-stats-dock` `defaultVisibleFields`: only `duration`, `maxDepth`, `temperature` true among stats; keep site/category/date true as today for overlay; pressures/gas false.  
-`solid-info-band`: duration, maxDepth, averageDepth, temperature, startPressure, endPressure, gasMix true.
+`solid-info-band`: duration, maxDepth, temperature, gasMix true; logo at top-right.
 
 ```ts
 export const FALLBACK_TEMPLATE_ID: TemplateId = "bottom-stats-dock";

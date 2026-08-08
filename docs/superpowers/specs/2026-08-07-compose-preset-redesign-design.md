@@ -52,7 +52,7 @@ Composer layout presets are too similar. Three of five templates (`full-width-gr
 | `bottom-profile` | Bottom Profile | 4:5 | On — lower band | Bottom, **tint** | Text rows with chart | Keep current defaults |
 | `right-panel` | Right Information Panel | 4:5 | On — compact | Right, **tint** | Vertical stack | Keep current defaults |
 | `bottom-stats-dock` | Bottom Stats Dock | **16:9** | On — lower band above dock | Bottom, **frosted** | Icon + value grid, ≤ **3×2** | Duration, max depth, temperature |
-| `solid-info-band` | Solid Info Band | 4:5 | On — lower band above band | Bottom, **solid** | Label + value; columns/height grow with fields | Richer: duration, max depth, average depth, temperature, start/end pressure, gas mix |
+| `solid-info-band` | Solid Info Band | 16:9 | On — lower band beside band | Left, **solid** | Label + value; columns/height grow with fields | Duration, max depth, average temperature, gas mix |
 
 ### Bottom Stats Dock
 
@@ -62,9 +62,10 @@ Composer layout presets are too similar. Three of five templates (`full-width-gr
 
 ### Solid Info Band
 
-- Solid, non-transparent horizontal bottom band by default.
+- Solid, non-transparent left information band by default.
 - Band height grows as more fields are enabled rather than overflowing awkwardly.
 - Same panel settings apply if the user later moves the panel to left / right / top.
+- The logo defaults to the photo's top-right so it does not overlap the site and date inside the band.
 
 ## Panel model
 

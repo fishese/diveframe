@@ -53,3 +53,35 @@ test("solid-band panel grows with stat count up to 42% height", () => {
   assert.ok(many.height <= 1000 * 0.42 + 1e-6);
   assert.equal(many.y + many.height, 1000);
 });
+
+test("chart-to-dock gap leaves space above the bottom panel", () => {
+  const panel = layout.panelRect("bottom", 1600, 900, 0.28, "comfortable", {
+    statCount: 3,
+    presentation: "icon-grid",
+  });
+  const chart = layout.chartHomeRect(
+    "above-panel",
+    panel,
+    1600,
+    900,
+    0.28,
+    40,
+    { chartPanelGap: 0.028 },
+  );
+  assert.ok(panel.y - (chart.y + chart.height) >= 900 * 0.028 - 1e-6);
+});
+
+test("in-panel chart starts under titles and leaves room for bottom stats", () => {
+  const panel = { x: 660, y: 0, width: 340, height: 1000 };
+  const chart = layout.chartHomeRect(
+    "in-panel",
+    panel,
+    1000,
+    1000,
+    0.22,
+    20,
+    { titleReserveTop: 140, statsReserveBottom: 220 },
+  );
+  assert.ok(chart.y >= panel.y + 20 + 140 - 1e-6);
+  assert.ok(chart.y + chart.height <= panel.y + panel.height - 20 - 220 + 1e-6);
+});

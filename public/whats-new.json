@@ -1,7 +1,19 @@
 {
-  "version": "2026-08-07-theme-shortcuts",
-  "updatedAt": "2026-08-07T13:00:00.000Z",
+  "version": "2026-08-08-compose-presets",
+  "updatedAt": "2026-08-08T16:00:00.000Z",
   "entries": [
+    {
+      "id": "2026-08-08-compose-presets",
+      "title": "New image composer presets",
+      "body": "Create share images with four refined presets: Bottom Profile, Right Information Panel, Bottom Stats Dock, and Solid Info Band. Every seeded layout can be recreated with the composer controls. Android debug APK 1.0.21 includes the same presets and updated dive-site catalog.",
+      "date": "2026-08-08",
+      "links": [
+        {
+          "label": "Download Android APK",
+          "href": "https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk"
+        }
+      ]
+    },
     {
       "id": "2026-08-07-light-theme-memos-shortcuts",
       "title": "Light theme and Memos shortcut",

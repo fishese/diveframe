@@ -38,6 +38,7 @@ yarn-error.log*
 
 # typescript
 next-env.d.ts
+*.tsbuildinfo
 /dist/
 /dist-native/
 /.wrangler/
@@ -57,7 +58,11 @@ next-env.d.ts
 *.ssrf
 /imports/
 /private/
+__pycache__/
 
 # Local git worktrees
 .worktrees/
+
+# Local spec-driven development work packets (tracked reports remain tracked)
+/.superpowers/sdd/
 

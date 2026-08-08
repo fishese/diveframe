@@ -79,13 +79,13 @@ const fieldLabels: Array<[DisplayField, AppTranslationKey]> = [
   ["diveNumber", "diveNumber"], ["computerModel", "computerModel"],
 ];
 const templateTranslationKeys = {
-  "bottom-profile": { name: "bottomProfile", description: "bottomProfileDescription" },
-  "right-panel": { name: "rightPanel", description: "rightPanelDescription" },
-  "bottom-stats-dock": { name: "bottomStatsDock", description: "bottomStatsDockDescription" },
-  "solid-info-band": { name: "solidInfoBand", description: "solidInfoBandDescription" },
+  "bottom-profile": "bottomProfile",
+  "right-panel": "rightPanel",
+  "bottom-stats-dock": "bottomStatsDock",
+  "solid-info-band": "solidInfoBand",
 } as const satisfies Record<
   (typeof TEMPLATES)[number]["id"],
-  { name: AppTranslationKey; description: AppTranslationKey }
+  AppTranslationKey
 >;
 
 export function ComposerApp() {
@@ -651,7 +651,7 @@ export function ComposerApp() {
                     )
                   }
                 >
-                  <strong>{t(templateTranslationKeys[template.id].name)}</strong><small>{t(templateTranslationKeys[template.id].description)}</small>
+                  <strong>{t(templateTranslationKeys[template.id])}</strong>
                 </button>
               ))}
             </div>
@@ -681,6 +681,7 @@ export function ComposerApp() {
                 <option value="solid">{t("fillSolid")}</option>
                 <option value="frosted">{t("fillFrosted")}</option>
                 <option value="tint">{t("fillTint")}</option>
+                <option value="none">{t("fillNone")}</option>
               </select>
             </Control>
             <Color
@@ -749,6 +750,36 @@ export function ComposerApp() {
                 <option value="roomy">{t("densityRoomy")}</option>
               </select>
             </Control>
+            <Control label={t("statsLayout")}>
+              <select
+                value={settings.statsPresentation}
+                onChange={(event) =>
+                  update("statsPresentation", event.target.value as ComposerSettings["statsPresentation"])
+                }
+              >
+                <option value="text-stack">{t("statsLayoutText")}</option>
+                <option value="icon-grid">{t("statsLayoutIcons")}</option>
+                <option value="solid-band">{t("statsLayoutBand")}</option>
+              </select>
+            </Control>
+            <label className="composer-check">
+              <input
+                type="checkbox"
+                checked={settings.statsDivider}
+                onChange={(event) => update("statsDivider", event.target.checked)}
+              />{" "}
+              {t("statsDivider")}
+            </label>
+            {settings.statsDivider ? (
+              <Range
+                label={t("statsDividerOpacity")}
+                value={settings.statsDividerOpacity}
+                min={0}
+                max={1}
+                step={0.05}
+                onChange={(value) => update("statsDividerOpacity", value)}
+              />
+            ) : null}
             <label className="composer-check">
               <input
                 type="checkbox"

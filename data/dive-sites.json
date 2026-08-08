@@ -2251,7 +2251,8 @@
       "id": "hk-basalt-island",
       "name": "Basalt Island",
       "aliases": [
-        "火石洲"
+        "火石洲",
+        "火石"
       ],
       "coordinates": {
         "latitude": 22.3158,
@@ -2265,10 +2266,10 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "user-seed:2026-07-28"
+        "reference": "regional-curation:hong-kong:2026-08-07"
       },
       "status": "active",
-      "updatedAt": "2026-07-31T02:53:00.000Z"
+      "updatedAt": "2026-08-07T00:00:00.000Z"
     },
     {
       "id": "hk-beaufort-island",
@@ -2316,6 +2317,30 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "hk-breaker-reef",
+      "name": "Breaker Reef",
+      "aliases": [
+        "浪花排",
+        "三支香"
+      ],
+      "coordinates": {
+        "latitude": 22.46138,
+        "longitude": 114.4203
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Tai Po"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
     },
     {
       "id": "hk-cape-daguilar",
@@ -2370,7 +2395,8 @@
       "name": "East Dam",
       "aliases": [
         "High Island Reservoir East Dam",
-        "萬宜水庫東壩"
+        "萬宜水庫東壩",
+        "東壩"
       ],
       "coordinates": {
         "latitude": 22.3618,
@@ -2384,10 +2410,10 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:hong-kong:2026-07-28"
+        "reference": "regional-curation:hong-kong:2026-08-07"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-07T00:00:00.000Z"
     },
     {
       "id": "hk-east-ninepin",
@@ -2412,6 +2438,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "hk-fo-siu-pai",
+      "name": "Fo Siu Pai",
+      "aliases": [
+        "火燒排"
+      ],
+      "coordinates": {
+        "latitude": 22.275833,
+        "longitude": 114.359722
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
     },
     {
       "id": "hk-hoi-ha-mlc",
@@ -2508,6 +2557,29 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "hk-lan-tau-pai",
+      "name": "Lan Tau Pai",
+      "aliases": [
+        "爛頭排"
+      ],
+      "coordinates": {
+        "latitude": 22.40576,
+        "longitude": 114.38775
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
+    },
+    {
       "id": "hk-little-palm-beach",
       "name": "Little Palm Beach",
       "aliases": [
@@ -2555,6 +2627,31 @@
       "updatedAt": "2026-07-31T02:56:00.000Z"
     },
     {
+      "id": "hk-long-ke-wan",
+      "name": "Long Ke Wan",
+      "aliases": [
+        "Long Ke",
+        "浪茄",
+        "浪茄灣"
+      ],
+      "coordinates": {
+        "latitude": 22.368889,
+        "longitude": 114.381944
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
+    },
+    {
       "id": "hk-ngau-shi-wu-wan",
       "name": "Ngau Shi Wu Wan",
       "aliases": [
@@ -2576,6 +2673,31 @@
       },
       "status": "active",
       "updatedAt": "2026-08-06T00:00:00.000Z"
+    },
+    {
+      "id": "hk-ninepin-group",
+      "name": "Ninepin Group",
+      "aliases": [
+        "Kwo Chau Islands",
+        "果洲群島",
+        "果洲"
+      ],
+      "coordinates": {
+        "latitude": 22.26417,
+        "longitude": 114.35806
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
     },
     {
       "id": "hk-north-ninepin",
@@ -2600,6 +2722,53 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "hk-pak-lap-tsai",
+      "name": "Pak Lap Tsai",
+      "aliases": [
+        "白腊仔"
+      ],
+      "coordinates": {
+        "latitude": 22.353333,
+        "longitude": 114.367778
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
+    },
+    {
+      "id": "hk-ping-min-chau",
+      "name": "Ping Min Chau",
+      "aliases": [
+        "Table Island",
+        "平面洲"
+      ],
+      "coordinates": {
+        "latitude": 22.31186,
+        "longitude": 114.31868
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
     },
     {
       "id": "hk-po-toi-island",
@@ -2721,6 +2890,31 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "hk-shek-ngau-chau",
+      "name": "Shek Ngau Chau",
+      "aliases": [
+        "石牛洲",
+        "獨牛洲",
+        "獨牛"
+      ],
+      "coordinates": {
+        "latitude": 22.46533,
+        "longitude": 114.4282
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Tai Po"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
+    },
+    {
       "id": "hk-shelter-island-ngau-tau-wan",
       "name": "Ngau Tau Wan",
       "aliases": [
@@ -2792,6 +2986,53 @@
       "updatedAt": "2026-07-31T02:53:00.000Z"
     },
     {
+      "id": "hk-sung-kong",
+      "name": "Sung Kong",
+      "aliases": [
+        "Sung Kong Island",
+        "宋崗"
+      ],
+      "coordinates": {
+        "latitude": 22.190694,
+        "longitude": 114.280111
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "Islands District",
+        "locality": "Po Toi Islands"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
+    },
+    {
+      "id": "hk-tai-chau-tai-long-wan",
+      "name": "Tai Chau",
+      "aliases": [
+        "大洲"
+      ],
+      "coordinates": {
+        "latitude": 22.403056,
+        "longitude": 114.385833
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
+    },
+    {
       "id": "hk-tai-pai",
       "name": "Tai Pai",
       "aliases": [
@@ -2837,6 +3078,78 @@
       },
       "status": "active",
       "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "hk-tar-long-pai",
+      "name": "Tar Long Pai",
+      "aliases": [
+        "Ta Long Pai",
+        "打浪排"
+      ],
+      "coordinates": {
+        "latitude": 22.257103,
+        "longitude": 114.346958
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
+    },
+    {
+      "id": "hk-trio-island",
+      "name": "Trio Island",
+      "aliases": [
+        "Tai Lak Lei",
+        "大癩痢",
+        "癩痢"
+      ],
+      "coordinates": {
+        "latitude": 22.300833,
+        "longitude": 114.320278
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
+    },
+    {
+      "id": "hk-tsim-chau",
+      "name": "Tsim Chau",
+      "aliases": [
+        "尖洲"
+      ],
+      "coordinates": {
+        "latitude": 22.40167,
+        "longitude": 114.38628
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
     },
     {
       "id": "hk-tung-lung-chau",
@@ -2956,6 +3269,30 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "hk-victor-rock",
+      "name": "Victor Rock",
+      "aliases": [
+        "Seven Stars Reef",
+        "七星排"
+      ],
+      "coordinates": {
+        "latitude": 22.30011,
+        "longitude": 114.43363
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
+    },
+    {
       "id": "hk-waglan-island",
       "name": "Waglan Island",
       "aliases": [
@@ -2982,11 +3319,12 @@
       "id": "hk-wang-chau",
       "name": "Wang Chau",
       "aliases": [
-        "橫洲"
+        "橫洲",
+        "Wan Chau"
       ],
       "coordinates": {
-        "latitude": 22.3465,
-        "longitude": 114.382
+        "latitude": 22.32961,
+        "longitude": 114.3736
       },
       "place": {
         "countryCode": "HK",
@@ -2996,10 +3334,10 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:hong-kong:2026-07-28"
+        "reference": "regional-curation:hong-kong:2026-08-07"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-07T00:00:00.000Z"
     },
     {
       "id": "hk-whisky-bay",
@@ -3024,6 +3362,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "hk-yin-tsz-ngam",
+      "name": "Yin Tsz Ngam",
+      "aliases": [
+        "燕子岩"
+      ],
+      "coordinates": {
+        "latitude": 22.38791,
+        "longitude": 114.39021
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Sai Kung"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:hong-kong:2026-08-07"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-07T00:00:00.000Z"
     },
     {
       "id": "hr-baron-gautsch",
