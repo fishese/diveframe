@@ -51,7 +51,6 @@ export function AndroidAppPage() {
               <Globe2 size={17} /> {t("androidAppSource")}
             </a>
           </div>
-          <p className="android-download-note">{t("androidAppDownloadNote")}</p>
         </section>
 
         <section className="android-grid" aria-label={t("androidAppTitle")}>

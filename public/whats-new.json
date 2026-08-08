@@ -5,7 +5,7 @@
     {
       "id": "2026-08-08-compose-presets",
       "title": "New image composer presets",
-      "body": "Create share images with four refined presets: Bottom Profile, Right Information Panel, Bottom Stats Dock, and Solid Info Band. Every seeded layout can be recreated with the composer controls. The signed GitHub nightly APK includes the same presets and updated dive-site catalog; its version name and code are generated for each workflow run.",
+      "body": "Create share images with four refined presets: Bottom Profile, Right Information Panel, Bottom Stats Dock, and Solid Info Band. Every seeded layout can be recreated with the composer controls. The signed GitHub APK includes the same presets and updated dive-site catalog.",
       "date": "2026-08-08",
       "links": [
         {

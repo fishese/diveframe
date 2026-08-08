@@ -66,3 +66,6 @@ __pycache__/
 # Local spec-driven development work packets (tracked reports remain tracked)
 /.superpowers/sdd/
 
+# Local maintainer handoff notes
+/docs/.local/
+
