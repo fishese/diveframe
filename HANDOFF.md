@@ -547,11 +547,9 @@ saved composer settings. Export filenames use the dive start time in
 `diveframe-YYYYMMDD HH-MM.jpg` form; the hyphen keeps the filename valid on
 Windows.
 
-Five original data-driven templates are currently exposed: Bottom Profile,
-Right Information Panel, Full-width Graph, Landscape Dashboard, and Cinematic
-Split. The latter two default to 16:9 and use genuinely horizontal
-chart/statistics arrangements. They share one high-resolution renderer rather
-than duplicating fixed component coordinates.
+Four data-driven presets are currently exposed: Bottom Profile, Right
+Information Panel, Bottom Stats Dock, and Solid Info Band. They share one
+high-resolution renderer rather than duplicating fixed component coordinates.
 The preview is rendered at a smaller working size; export rerenders the same
 geometry at social, 3000-pixel, or source-photo-area dimensions.
 
@@ -559,9 +557,8 @@ Crop mode is transient UI over the existing persisted photo-fit, zoom, and
 offset settings. Pointer dragging updates normalized offsets and wheel input
 updates zoom; touch dragging is enabled with pointer capture. The
 rule-of-thirds guide is drawn after the preview composition only, so export
-never includes it. Bottom Profile uses a compact lower-third chart while
-Full-width Graph begins its panel higher and uses a larger template-default
-chart height.
+never includes it. Bottom Profile uses a compact lower-third chart; the other
+presets use their own panel or dock chart placement.
 
 Logo placement combines the existing data-driven anchor with normalized
 `logoOffsetX` and `logoOffsetY` values. The renderer applies each offset as a
@@ -616,10 +613,10 @@ hidden per dive. The depth fill supports solid and upward transparent-fade
 modes. One reusable transparent PNG or SVG logo is managed in Settings; the
 composer controls its visibility, preset anchor, and horizontal/vertical
 offsets. Template defaults reserve separate title, date, chart, statistics,
-and branding zones. Removed Minimal and Poster settings migrate to Bottom
-Profile, while the earlier Full-width Graph overlap repair remains in place.
-Composer control groups are collapsible so the full control set remains
-available without requiring one continuously long sidebar.
+and branding zones. Retired preset IDs normalize to Bottom Stats Dock.
+Composer control groups are
+collapsible so the full control set remains available without requiring one
+continuously long sidebar.
 
 The chart-height value is measured against the full canvas. Lower information
 panels now expand upward when a taller chart is requested instead of silently

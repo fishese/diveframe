@@ -50,4 +50,4 @@ bump. Rebuild and publish the debug APK from the same release commit.
   `419EA0C0D6793D6073767A9D39F99CB5E83201F1DBC2BF96E4CC3EA78FAC38F7`.
 - Stable download:
   https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
-- Installed over wireless adb on the maintainer Galaxy S24 Ultra after publish.
+- Smoke-tested the published APK after release.

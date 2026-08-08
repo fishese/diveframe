@@ -39,3 +39,11 @@ These fonts were acquired via the Google Fonts CSS API for packaging only.
 DiveFrame does not load `fonts.googleapis.com` or `fonts.gstatic.com` at
 runtime. Device Sans continues to use the device system font stack and is not
 an OFL bundle.
+
+## Native libdivecomputer
+
+The Android classic Shearwater BLE bridge links the pinned libdivecomputer
+source recorded in `android/app/src/main/cpp/libdivecomputer.pin`. It is
+licensed under LGPL-2.1-or-later. The Windows and portable Unix fetch helpers
+prepare the corresponding source and generated version headers for the native
+build.

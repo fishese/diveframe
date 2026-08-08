@@ -3,7 +3,7 @@
 
     <uses-feature
         android:name="android.hardware.bluetooth_le"
-        android:required="true" />
+        android:required="false" />
 
     <!-- Android 12+ (API 31): scan/connect only; never request advertise. -->
     <uses-permission

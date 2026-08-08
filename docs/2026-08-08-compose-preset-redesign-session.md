@@ -21,7 +21,7 @@ ship from the same release commit.
 - Refined Solid Info Band typography and moved its seeded logo to the photo's
   top-right to avoid the site/date block.
 - Reduced the mobile preset picker to compact name-only buttons.
-- Updated the bundled dive-site catalog from the maintainer's revised database.
+- Updated the bundled dive-site catalog.
 - Kept every seeded preset choice reproducible through the customization UI.
 
 ## Product decisions

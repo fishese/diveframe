@@ -12,6 +12,16 @@ const clientDir = resolve(root, "dist", "client");
 const indexHtml = resolve(clientDir, "index.html");
 const outDir = resolve(root, "dist-native");
 
+const wasmPrep = spawnSync(
+  process.execPath,
+  [resolve(root, "scripts/ensure-sql-wasm.mjs")],
+  { cwd: root, stdio: "inherit" },
+);
+
+if (wasmPrep.status !== 0) {
+  process.exit(wasmPrep.status ?? 1);
+}
+
 const build = spawnSync(
   process.platform === "win32" ? "npx.cmd" : "npx",
   ["vinext", "build"],

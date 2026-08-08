@@ -304,8 +304,10 @@ exports.
 When a dive has no attached photos, the gallery offers reusable and bundled
 backgrounds as quick-start tiles into the composer.
 
-The composer provides five original templates, including two horizontal 16:9
-layouts. Templates are data-driven. Available controls include:
+The composer provides four data-driven presets: Bottom Profile, Right
+Information Panel, Bottom Stats Dock, and Solid Info Band. Each preset seeds
+selections that remain editable through the composer controls. Available
+controls include:
 
 - canvas ratio and output resolution;
 - PNG/JPEG and JPEG quality;

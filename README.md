@@ -8,8 +8,8 @@ shareable dive images.
 **Try it:** [divelog.fishese.cc](https://divelog.fishese.cc)
 
 Pull location from a dive photo to get nearby site suggestions, fix the name
-once, and keep the result when you re-import. No account. Nothing leaves your
-browser or phone unless you export it.
+once, and keep the result when you re-import. No account. Your logbook stays
+on the device; map-name and nearby-site lookups use network services.
 
 > **Beta.** Keep your original exports and a recent DiveFrame backup while
 > workflows are still changing.
@@ -21,13 +21,14 @@ browser or phone unless you export it.
 - **Import & merge.** Shearwater Cloud Desktop, Subsurface `.ssrf`/XML, UDDF
   (including Oceanic+), and Garmin Dive / Suunto app `.fit` — matching dives
   combine so you keep the richer profile, GPS, notes, and source dive numbers.
-- **Share images.** Five layouts, depth profiles, optional tank pressure and
-  temperature, logo, and overlays in English, 繁體中文, or 日本語.
+- **Share images.** Four layouts—Bottom Profile, Right Information Panel,
+  Bottom Stats Dock, and Solid Info Band—with depth profiles, optional tank
+  pressure and temperature, logo, and overlays in English, 繁體中文, or 日本語.
 - **Trips, edits, memos.** Group dives, correct site and location, and jot
   pre-import memos so details aren’t lost between the water and the log.
 - **Export & backup.** Full Subsurface logbook export, plus a private on-device
   backup (optional password) for browser ↔ browser or browser ↔ Android —
-  your data stays offline.
+  your logbook data stays on the device.
 - **Android APK.** Same app, plus classic Shearwater Bluetooth download and
   native save/share —
   [download the debug APK](https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk).

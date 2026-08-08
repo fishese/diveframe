@@ -37,13 +37,12 @@ an AI assistant to research a compatible regional file. AI-generated entries
 must be reviewed by a person before use or publication; DiveFrame validates the
 shape of the JSON but cannot verify that names or coordinates are true.
 
-Users who are comfortable doing so are invited to share a reviewed regional
-catalog with the DiveFrame developer for possible inclusion in a future
-bundled catalog. Sharing is optional. There is deliberately no upload endpoint
-or contact workflow in the app yet.
+Users may share a reviewed regional catalog for possible inclusion in a future
+bundled catalog. Sharing is optional; the app has no upload endpoint or contact
+workflow.
 
-See `docs/dive-site-validation.md` for the full validation rules and the
-maintainer command-line workflow.
+See `docs/dive-site-validation.md` for the validation rules and command-line
+workflow.
 
 ## JSON format
 

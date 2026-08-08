@@ -17,7 +17,8 @@ endif()
 if(NOT EXISTS "${LIBDIVECOMPUTER_ROOT}/src/version.c")
     message(FATAL_ERROR
         "Pinned libdivecomputer source is missing. "
-        "Run scripts/fetch-libdivecomputer.ps1 first."
+        "Run scripts/fetch-libdivecomputer.ps1 on Windows or "
+        "scripts/fetch-libdivecomputer.sh on Linux/macOS first."
     )
 endif()
 

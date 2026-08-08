@@ -3,6 +3,7 @@ apply plugin: 'com.android.application'
 android {
     namespace = "cc.fishese.divelog"
     compileSdk = rootProject.ext.compileSdkVersion
+    ndkVersion = rootProject.ext.ndkVersion
     defaultConfig {
         applicationId "cc.fishese.divelog"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -11,8 +12,7 @@ android {
         versionName "1.0.21"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
-            // The research build targets the architecture used by current
-            // Android phones. Expand only after the transport spike succeeds.
+            // The native build currently targets arm64-v8a.
             abiFilters "arm64-v8a"
         }
         externalNativeBuild {
@@ -60,12 +60,3 @@ dependencies {
 }
 
 apply from: 'capacitor.build.gradle'
-
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-    }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
-}

@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "vinext dev",
     "dev:lan": "vinext dev -H 0.0.0.0",
-    "build": "vinext build",
+    "build": "npm run prepare:sql-wasm && vinext build",
+    "prepare:sql-wasm": "node scripts/ensure-sql-wasm.mjs",
     "start": "vinext start",
     "native:web": "node scripts/build-native-web.mjs",
     "native:spike": "vite build --config vite.native.config.mjs --configLoader native",

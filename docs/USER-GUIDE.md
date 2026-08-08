@@ -430,12 +430,16 @@ When a dive is open on mobile, Brand or the home button returns to the dive
 list with that dive near the top of the screen. In the image composer, Home
 goes to the front of the app; the back arrow returns to the open dive.
 
-**Bottom Profile** keeps a compact chart and statistics band in the lower
-third. **Full-width Graph** starts its information band higher and gives the
-profile substantially more height, so the two presets remain visually
-distinct regardless of the selected photograph. **Landscape Dashboard** and
-**Cinematic Split** automatically switch the canvas to 16:9 and provide
-horizontal lower-band and sidecar arrangements respectively.
+The four presets seed the same choices exposed in the composer:
+
+- **Bottom Profile** keeps a compact chart and statistics band in the lower
+  third.
+- **Right Information Panel** places the chart and statistics in a right-side
+  information panel.
+- **Bottom Stats Dock** uses a frosted bottom dock with centered stat cells.
+- **Solid Info Band** uses a solid information band with centered stat cells.
+
+After choosing a preset, every seeded setting can be adjusted in the composer.
 
 New dives start with social-media resolution and JPEG output. DiveFrame
 remembers the last selected resolution, format, and JPEG quality for the next

@@ -95,6 +95,7 @@ test("BLE permissions, scan, cancel, and classic GATT transport are wired", asyn
   assert.match(manifest, /android\.permission\.ACCESS_MEDIA_LOCATION/);
   assert.match(manifest, /neverForLocation/);
   assert.match(manifest, /android\.hardware\.bluetooth_le/);
+  assert.match(manifest, /android:required="false"/);
 
   assert.match(javaPlugin, /requestPermissions/);
   assert.match(javaPlugin, /startScan/);
@@ -121,6 +122,16 @@ test("BLE permissions, scan, cancel, and classic GATT transport are wired", asyn
   assert.match(capability, /downloadProgress/);
   assert.match(capability, /diveCaptured/);
   assert.match(capability, /deviceFound/);
+});
+
+test("Android native build pins the NDK version", async () => {
+  const [buildGradle, variables] = await Promise.all([
+    readFile(new URL("../android/app/build.gradle", import.meta.url), "utf8"),
+    readFile(new URL("../android/variables.gradle", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(buildGradle, /ndkVersion = rootProject\.ext\.ndkVersion/);
+  assert.match(variables, /ndkVersion = '27\.0\.12077973'/);
 });
 
 test("Android location-photo picker requests original MediaStore EXIF and releases temporary photos", async () => {
