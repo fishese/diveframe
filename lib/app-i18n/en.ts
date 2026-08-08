@@ -29,7 +29,7 @@ export const en = {
   androidAppIntro: "The Android APK keeps the same private, offline-first logbook while adding direct Bluetooth downloads from classic Shearwater computers and access to location data embedded in photos, which may be unavailable in the web version due to Google’s privacy restrictions.",
   androidAppDownload: "Download the Android APK",
   androidAppSource: "View source on GitHub",
-  androidAppDownloadNote: "The button downloads the latest debug APK from GitHub Releases. Install it on Android, then open DiveFrame and grant permissions only when you use the related feature.",
+  androidAppDownloadNote: "The button downloads the signed GitHub nightly APK. Install it on Android, then open DiveFrame and grant permissions only when you use the related feature. Nightly version names and codes are generated for each workflow run.",
   androidAppFeaturesTitle: "What the APK adds",
   androidAppFeaturesBody: "The web and APK versions use the same DiveFrame workflows and local data model.",
   androidAppFeatureBluetooth: "Download dives from classic Shearwater computers over Bluetooth.",

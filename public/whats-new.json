@@ -5,12 +5,12 @@
     {
       "id": "2026-08-08-compose-presets",
       "title": "New image composer presets",
-      "body": "Create share images with four refined presets: Bottom Profile, Right Information Panel, Bottom Stats Dock, and Solid Info Band. Every seeded layout can be recreated with the composer controls. Android debug APK 1.0.21 includes the same presets and updated dive-site catalog.",
+      "body": "Create share images with four refined presets: Bottom Profile, Right Information Panel, Bottom Stats Dock, and Solid Info Band. Every seeded layout can be recreated with the composer controls. The signed GitHub nightly APK includes the same presets and updated dive-site catalog; its version name and code are generated for each workflow run.",
       "date": "2026-08-08",
       "links": [
         {
-          "label": "Download Android APK",
-          "href": "https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk"
+          "label": "Download nightly Android APK",
+          "href": "https://github.com/fishese/diveframe/releases/download/nightly/diveframe-nightly.apk"
         }
       ]
     },

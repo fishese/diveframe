@@ -42,7 +42,7 @@ export const ja: Record<keyof typeof en, string> = {
   androidAppIntro: "Android版APKは、これまでと同様のプライベートでオフラインファーストなログブックを維持しつつ、従来のShearwater製ダイブコンピュータからのBluetooth直接ダウンロード機能を追加しました。また、Web版ではGoogleのプライバシー制限により利用できない場合がある、写真内の位置情報も読み取れます。",
   androidAppDownload: "Android APK をダウンロード",
   androidAppSource: "GitHub でソースを見る",
-  androidAppDownloadNote: "GitHub Releasesから最新のdebug APKをダウンロードします。AndroidにインストールしてDiveFrameを開き、関連機能を使うときだけ必要な権限を許可してください。",
+  androidAppDownloadNote: "GitHub Releasesから署名済みのnightly APKをダウンロードします。AndroidにインストールしてDiveFrameを開き、関連機能を使うときだけ必要な権限を許可してください。nightlyのバージョン名とコードは、ワークフローの実行ごとに生成されます。",
   androidAppFeaturesTitle: "APK で追加される機能",
   androidAppFeaturesBody: "Web版とAPK版は、同じDiveFrameの操作フローとローカルデータ形式を使用します。",
   androidAppFeatureBluetooth: "従来モデルのShearwaterダイブコンピューターからBluetoothでダイブをダウンロードできます。",

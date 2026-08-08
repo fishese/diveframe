@@ -42,7 +42,7 @@ export const zhHant: Record<keyof typeof en, string> = {
   androidAppIntro: "Android APK 版保留同樣私隱安全、離線優先的潛水日誌，並加入從舊款 Shearwater 潛水電腦透過藍牙直接下載紀錄，以及讀取相片內位置資料的功能。由於 Google 的私隱限制，這些位置資料在網頁版中可能無法使用。",
   androidAppDownload: "下載 Android APK",
   androidAppSource: "在 GitHub 查看原始碼",
-  androidAppDownloadNote: "此按鈕會從 GitHub Releases 下載最新的 debug APK。安裝後開啟 DiveFrame，並只在使用相關功能時授予所需權限。",
+  androidAppDownloadNote: "此按鈕會從 GitHub Releases 下載已簽署的 nightly APK。安裝後開啟 DiveFrame，並只在使用相關功能時授予所需權限。每次工作流程執行都會產生新的 nightly 版本名稱及版本編號。",
   androidAppFeaturesTitle: "APK 新增功能",
   androidAppFeaturesBody: "網頁版和 APK 版使用相同的 DiveFrame 操作流程及資料格式。",
   androidAppFeatureBluetooth: "透過 Bluetooth 從舊款 Shearwater 潛水電腦下載潛水紀錄。",

@@ -90,11 +90,13 @@ that commit. Do not commit the generated APK into the Git repository—publish i
 as a GitHub Release asset.
 
 1. Review `git diff --name-only` and use the matrix above.
-2. For an APK release, increment `versionCode` and update `versionName` in
-   `android/app/build.gradle`. The first debug release used `versionCode 1` /
-   `versionName "1.0"`; the current dogfood debug build uses `versionCode 22` /
-   `versionName "1.0.21"`. Confirm the build uses the same signing key as the
-   APK it is expected to update.
+2. For a deliberate legacy debug release, increment `versionCode` and update
+   `versionName` in `android/app/build.gradle`. The first debug release used
+   `versionCode 1` / `versionName "1.0"`; the last dogfood debug build used
+   `versionCode 22` / `versionName "1.0.21"`. Confirm the build uses the same
+   signing key as the APK it is expected to update. Normal GitHub distribution
+   now uses the signed nightly workflow below, which supplies its own version
+   name and code.
 3. Run `npm test`, commit the intended source changes, and push that commit to
    `main`. Record the commit ID; the APK release tag must target it.
 4. Confirm the checkout still points to the pushed commit, then build the
@@ -177,9 +179,10 @@ the prerelease asset at:
 https://github.com/fishese/diveframe/releases/download/nightly/diveframe-nightly.apk
 ```
 
-Nightly version codes are derived from the GitHub Actions run number so signed
-nightlies can update one another. F-Droid remains a separate, slower release
-channel with its own signing key and versioning.
+Nightly version names use `nightly.<workflow run>.<commit short SHA>` and
+version codes use `100000 + the GitHub Actions run number`, so signed nightlies
+can update one another. F-Droid remains a separate, slower release channel
+with its own signing key and deliberate release versioning.
 
 Before switching between GitHub nightly and F-Droid, export app data, uninstall
 the current APK, install the other channel, and import the backup. Android
@@ -188,24 +191,24 @@ APK removes its private WebView IndexedDB.
 
 ## Current distribution boundary
 
-As of 2026-08-08, the legacy published Android build is an arm64 debug APK for
-manual installation. The scheduled workflow publishes signed GitHub nightlies;
-they are separate from F-Droid builds and are not Play Store releases.
-The current GitHub release is:
+As of 2026-08-08, the current public Android build is the arm64 signed GitHub
+nightly for manual installation:
 
-- last GitHub release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.19`
-- APK **1.0.21** / `versionCode 22` from commit `cce6fa1`
-- Stable download:
-  `https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk`
-- SHA-256:
-  `AC4EC92688EF32AAC63C2745C4017B93B73F88D7363A6F9BF2FBC2B6EBCF48B6`
+- APK: `https://github.com/fishese/diveframe/releases/download/nightly/diveframe-nightly.apk`
+- version name: `nightly.<workflow run>.<commit short SHA>`
+- version code: `100000 + the GitHub Actions run number`
+- signing: the private GitHub Actions keystore, never committed to the repository
 
-The legacy debug APK is signed by Android's debug tooling. An in-place Android
-update requires the same application ID, a compatible/higher `versionCode`,
-and the same signing key. Keep the GitHub keystore in GitHub Actions secrets
-and never commit it. Before changing to a production or F-Droid signing key,
-export an app-data backup; changing signatures requires uninstalling the
-current APK, which removes its private IndexedDB data.
+F-Droid is not listed yet. It will use its own signing key and deliberate
+release versions after accumulated changes. The previous debug release
+(`v0.1.0-debug.19`, APK **1.0.21** / `versionCode 22`, commit `cce6fa1`) is kept
+as historical build information only; the old `releases/latest` debug URL is no
+longer used by the current download UI.
+
+An in-place Android update requires the same application ID, a compatible or
+higher `versionCode`, and the same signing key. Before changing between the
+GitHub nightly and F-Droid signing keys, export an app-data backup, uninstall
+the current APK, install the other channel, and import the backup.
 
 Keep signing-key custody, reproducible build inputs, supported ABIs, update
 channels, versioning, and the stable APK download link documented when those

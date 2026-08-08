@@ -495,7 +495,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(appI18n, /downloadFromComputer/);
   assert.match(androidLink, /href="\/android"/);
   assert.match(androidLink, /diveComputerCapability.isAvailable/);
-  assert.match(androidPage, /releases\/latest/);
+  assert.match(androidPage, /releases\/download\/nightly\/diveframe-nightly\.apk/);
   assert.match(androidPage, /androidAppPermissionsTitle/);
   assert.match(androidPage, /androidAppIosTitle/);
   assert.match(androidPage, /androidAppPcTitle/);
