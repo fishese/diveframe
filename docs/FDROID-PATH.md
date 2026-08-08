@@ -36,6 +36,10 @@ release commit from this repository.
   The script installs the locked npm dependencies, fetches the pinned native
   source, regenerates the sql.js wasm asset, builds the static web client, and
   runs Capacitor sync.
+- For a Linux checkout where the wrapper is not executable, use
+  `(cd android && bash gradlew assembleRelease)`. The project wrapper is pinned
+  to Gradle `8.14.2`, which is covered by the F-Droid wrapper's verified
+  distribution list.
 - Record ABI targets (today: arm64) and versionCode/versionName policy before
   the first non-debug channel. The current NDK pin is `27.0.12077973`.
 
