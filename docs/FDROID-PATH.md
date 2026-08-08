@@ -13,6 +13,19 @@ repository and should point to a full release commit from this repository.
   hygiene; that work is tracked separately and should already be on `main`
   before packaging changes.
 
+## Release cadence and requests
+
+- A request to “update the GitHub APK” means to rebuild the signed nightly from
+  `main` using `.github/workflows/nightly-apk.yml` and verify the `nightly`
+  release asset. It does not create an F-Droid release.
+- Prepare or update F-Droid metadata only when explicitly requested.
+- For a major feature or a substantial accumulation of changes, remind the
+  maintainer that it is a good point to prepare a deliberate F-Droid version
+  and submit a metadata merge request. F-Droid should not follow every nightly.
+- GitHub nightlies and F-Droid builds are separately signed; switching between
+  them requires an app-data backup, uninstall, installation of the other APK,
+  and restore.
+
 ## Signing
 
 - Moving off the Android debug keystore changes the signing identity.

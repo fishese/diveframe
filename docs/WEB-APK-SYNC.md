@@ -19,6 +19,27 @@ unchanged. Record that decision in the commit/release notes when it is not
 obvious. Do not describe the APK as matching the web app if their runtime
 commits differ.
 
+## Release request policy
+
+Use these rules for future release requests:
+
+- “Update the GitHub APK”, “update the APK on GitHub”, or “refresh the
+  nightly” means: push the intended source changes to `main`, run the signed
+  `.github/workflows/nightly-apk.yml` workflow, wait for it to succeed, and
+  verify the published asset at
+  `https://github.com/fishese/diveframe/releases/download/nightly/diveframe-nightly.apk`.
+  The workflow supplies the GitHub signing key and replaces the `nightly`
+  prerelease asset.
+- Do not use the legacy manual debug-release checklist for a normal GitHub APK
+  update. It is retained only for historical or deliberate debug releases.
+- “Update F-Droid” means an explicit request to prepare a new F-Droid release.
+  Do not submit every GitHub nightly to F-Droid. When a requested change is a
+  major feature or enough changes have accumulated for a user-facing release,
+  remind the maintainer that the F-Droid metadata should also be updated.
+- GitHub and F-Droid APKs have different signing keys. Any reminder about an
+  F-Droid update should also mention the backup/export, uninstall, install,
+  and restore steps required when switching channels.
+
 ## What must stay in sync
 
 The web/PWA and APK are two delivery surfaces for the same application. These
