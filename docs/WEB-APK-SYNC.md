@@ -80,7 +80,10 @@ server.
 
 When a push mixes categories, follow the broadest requirement.
 
-## APK build and publication checklist
+## Legacy manual debug publication checklist
+
+The scheduled workflow above is the normal path for signed GitHub nightlies.
+The following checklist is retained for deliberate legacy debug releases.
 
 Use the exact commit that was pushed to `main`; the release tag must point to
 that commit. Do not commit the generated APK into the Git repository—publish it
@@ -164,10 +167,30 @@ as a GitHub Release asset.
 10. Update `public/whats-new.json` when the APK update should be announced in the
    app, and confirm the production feed is deployed.
 
+## Signed GitHub nightly channel
+
+The scheduled workflow in `.github/workflows/nightly-apk.yml` builds `main`,
+signs the release APK with the GitHub Actions keystore secrets, and publishes
+the prerelease asset at:
+
+```text
+https://github.com/fishese/diveframe/releases/download/nightly/diveframe-nightly.apk
+```
+
+Nightly version codes are derived from the GitHub Actions run number so signed
+nightlies can update one another. F-Droid remains a separate, slower release
+channel with its own signing key and versioning.
+
+Before switching between GitHub nightly and F-Droid, export app data, uninstall
+the current APK, install the other channel, and import the backup. Android
+rejects an in-place update when the signing keys differ, and uninstalling the
+APK removes its private WebView IndexedDB.
+
 ## Current distribution boundary
 
-As of 2026-08-08, the published Android build is an arm64 debug APK for manual
-installation. It is not a Play Store, signed production, or F-Droid release.
+As of 2026-08-08, the legacy published Android build is an arm64 debug APK for
+manual installation. The scheduled workflow publishes signed GitHub nightlies;
+they are separate from F-Droid builds and are not Play Store releases.
 The current GitHub release is:
 
 - last GitHub release: `https://github.com/fishese/diveframe/releases/tag/v0.1.0-debug.19`
@@ -177,15 +200,13 @@ The current GitHub release is:
 - SHA-256:
   `AC4EC92688EF32AAC63C2745C4017B93B73F88D7363A6F9BF2FBC2B6EBCF48B6`
 
-The debug APK is still signed by Android's debug tooling. An in-place Android
+The legacy debug APK is signed by Android's debug tooling. An in-place Android
 update requires the same application ID, a compatible/higher `versionCode`,
-and the same signing key. A debug build produced with a different debug key
-will not update the installed release. Keep the key used for the published
-debug channel in a private backup and never commit it. Before changing to a
-production or F-Droid signing key, tell users to export an app-data backup;
-changing signatures may require uninstalling the debug APK, which removes its
-private IndexedDB data.
+and the same signing key. Keep the GitHub keystore in GitHub Actions secrets
+and never commit it. Before changing to a production or F-Droid signing key,
+export an app-data backup; changing signatures requires uninstalling the
+current APK, which removes its private IndexedDB data.
 
-When signing/F-Droid work begins, document signing-key custody, reproducible
-build inputs, supported ABIs, update channels, versioning, and whether the
-stable web download link should point to a universal APK or a release page.
+Keep signing-key custody, reproducible build inputs, supported ABIs, update
+channels, versioning, and the stable APK download link documented when those
+details change.

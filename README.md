@@ -31,7 +31,12 @@ on the device; map-name and nearby-site lookups use network services.
   your logbook data stays on the device.
 - **Android APK.** Same app, plus classic Shearwater Bluetooth download and
   native save/share —
-  [download the debug APK](https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk).
+  [download the signed GitHub nightly APK](https://github.com/fishese/diveframe/releases/download/nightly/diveframe-nightly.apk).
+
+  GitHub nightlies and F-Droid builds use different signing keys. Before
+  switching between them, use **Settings → Export app data**, uninstall the
+  current APK, install the other channel, then use **Settings → Import app
+  data**. Android cannot update an installed APK across signing keys.
 
 Full how-to: [User guide](docs/USER-GUIDE.md)
 

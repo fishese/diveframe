@@ -18,6 +18,10 @@ release commit from this repository.
 - Moving off the Android debug keystore changes the signing identity.
 - Tell users to **Export app data** before installing a differently signed
   build; uninstalling the debug APK deletes private WebView IndexedDB.
+- GitHub nightly APKs use the private GitHub signing keystore; F-Droid signs
+  its builds separately. Switching between these channels requires exporting
+  app data, uninstalling the current APK, installing the other channel, and
+  importing the backup.
 - Avoid committing any production keystore. Prefer F-Droid's signing model
   (or documented maintainer key custody) over ad-hoc private debug keys.
 
