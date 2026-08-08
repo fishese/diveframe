@@ -40,5 +40,16 @@ ship from the same release commit.
   6-item layouts and the compact mobile preset selector.
 - Dive-site catalog validation.
 - Capacitor native sync and Android `assembleDebug` for APK 1.0.21
-  (`versionCode 22`). Release commit and SHA-256 are recorded in
-  `docs/WEB-APK-SYNC.md` after publication.
+  (`versionCode 22`).
+
+## Dogfood release
+
+- GitHub tag: `v0.1.0-debug.19`
+- Release/source commit: `cce6fa1ffd82ef3d0682fd910b3882a149f7e6e0`
+- Asset: `diveframe-debug.apk` (15,828,183 bytes)
+- SHA-256:
+  `AC4EC92688EF32AAC63C2745C4017B93B73F88D7363A6F9BF2FBC2B6EBCF48B6`
+- Stable download:
+  https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk
+- Debug-signed arm64 package; classic Shearwater Bluetooth only. Perdix 3 is
+  not supported.
