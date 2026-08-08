@@ -63,9 +63,18 @@ __pycache__/
 # Local git worktrees
 .worktrees/
 
-# Local spec-driven development work packets (tracked reports remain tracked)
+# Local spec-driven development work packets
 /.superpowers/sdd/
 
 # Local maintainer handoff notes
 /docs/.local/
+
+# Local planning, design, and session notes; keep code and user references tracked
+/docs/superpowers/
+/docs/*-planning.md
+/docs/*-session.md
+/docs/*-audit.md
+/docs/PRODUCT-SPEC.md
+/docs/WEB-APK-SYNC.md
+/docs/FDROID-PATH.md
 
