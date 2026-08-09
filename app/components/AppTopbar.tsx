@@ -6,6 +6,7 @@ import {
   Bluetooth,
   House,
   Info,
+  MapPinned,
   NotebookPen,
   Settings,
   Upload,
@@ -35,10 +36,12 @@ type AppTopbarProps = {
   /** Client-side home when already on `/` (e.g. leave dive detail). */
   onHomeFront?: () => void;
   /**
-   * About, Bluetooth / Android app, memo, and import log.
+   * About, Dive Map, Bluetooth / Android app, memo, and import log.
    * Hidden on the image composer.
    */
   showImportCluster?: boolean;
+  /** Link to the device-local Dive Map. Hide on the map page itself. */
+  showDiveMap?: boolean;
   onImportLog?: () => void;
   onBleImport?: () => void;
   importBusy?: boolean;
@@ -55,7 +58,7 @@ type AppTopbarProps = {
  * - Home: every page except the home list → front of the app.
  * - About: every page except image compose.
  * - Settings: every page.
- * - BLE/Android + memo + import: every page except image compose.
+ * - Dive Map + BLE/Android + memo + import: every page except image compose.
  */
 export function AppTopbar({
   subtitle,
@@ -63,6 +66,7 @@ export function AppTopbar({
   showHome = true,
   onHomeFront,
   showImportCluster = true,
+  showDiveMap = showImportCluster,
   onImportLog,
   onBleImport,
   importBusy = false,
@@ -137,6 +141,17 @@ export function AppTopbar({
           <Settings size={16} />
           {t("settings")}
         </Link>
+        {showDiveMap ? (
+          <Link
+            href="/map"
+            className="button button-quiet topbar-dive-map-link"
+            aria-label={t("diveMap")}
+            title={t("diveMap")}
+          >
+            <MapPinned size={17} />
+            <span>{t("diveMap")}</span>
+          </Link>
+        ) : null}
         {showImportCluster ? (
           <>
             {bleAvailable ? (
