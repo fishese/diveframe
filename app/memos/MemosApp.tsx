@@ -334,7 +334,11 @@ export function MemosApp() {
         <section className="memos-hero">
           <h1>{t("diveMemosTitle")}</h1>
           <p>{t("diveMemosIntro")}</p>
-          {status ? <p className="composer-status">{status}</p> : null}
+          {status ? (
+            <p className="composer-status" role="status" aria-live="polite">
+              {status}
+            </p>
+          ) : null}
         </section>
 
         <input

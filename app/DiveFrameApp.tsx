@@ -1121,7 +1121,12 @@ export function DiveFrameApp() {
         importBusy={busy}
         leadingActions={
           status !== t("importDiveLog") ? (
-            <span className="status-pill">
+            <span
+              className="status-pill"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               {busy ? <LoaderCircle size={14} className="spin" /> : <Droplets size={14} />}
               {status}
             </span>

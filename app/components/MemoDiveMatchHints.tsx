@@ -459,7 +459,15 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
           : t("memoMatchTitleFromMemo")}
       </h3>
 
-      {status ? <p className="composer-status memo-match-status">{status}</p> : null}
+      {status ? (
+        <p
+          className="composer-status memo-match-status"
+          role="status"
+          aria-live="polite"
+        >
+          {status}
+        </p>
+      ) : null}
 
       {props.mode === "on-memo" && candidateCount === 0 ? (
         <p className="memo-match-empty">{t("memoMatchNoCandidates")}</p>
