@@ -1101,7 +1101,9 @@ export async function updateLocalDiveDetails(
     locationSource:
       details.location === undefined
         ? dive.locationSource
-        : details.locationSource ?? "manual",
+        : details.location?.trim()
+          ? details.locationSource ?? "manual"
+          : null,
     buddy: details.buddy?.trim() || null,
     notes: details.notes?.trim() || null,
     cylinderPresetId: details.cylinderPresetId ?? dive.cylinderPresetId ?? null,

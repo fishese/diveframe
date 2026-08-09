@@ -49,12 +49,15 @@ export function clearedDiveFrameSiteData(dive: {
   location: string | null;
   locationSource: DiveLocationOverrideSource;
   sourceLocations: SourceValues;
+  userSiteSource?: string | null;
+  userGpsSource?: string | null;
 }) {
+  const importedLocation = preferredImportedLocation(dive.sourceLocations);
+  const hasDiveFramePlaceOverride = Boolean(
+    dive.locationSource || dive.userSiteSource || dive.userGpsSource,
+  );
   return {
-    location:
-      dive.locationSource === null
-        ? dive.location
-        : preferredImportedLocation(dive.sourceLocations),
+    location: hasDiveFramePlaceOverride ? importedLocation : dive.location,
     locationSource: null,
     userSite: null,
     userSiteSource: null,

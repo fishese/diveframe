@@ -1811,6 +1811,9 @@ function DiveDetail({
       dive.resolvedCity ||
       dive.resolvedCountry,
   );
+  const siteLocationDraftDirty =
+    manualSite.trim() !== (dive.userSite ?? dive.site ?? "").trim() ||
+    (locationDraft.trim() || null) !== (dive.location?.trim() || null);
   const currentTrip = dive.tripId
     ? trips.find((trip) => trip.id === dive.tripId) ?? null
     : null;
@@ -2351,7 +2354,7 @@ function DiveDetail({
               <button
                 type="submit"
                 className="button button-primary"
-                disabled={busy || (!manualSite.trim() && !locationDraft.trim())}
+                disabled={busy || !siteLocationDraftDirty}
               >
                 {t("saveSite")}
               </button>

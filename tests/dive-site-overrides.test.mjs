@@ -52,6 +52,20 @@ test("clear preserves an imported location when no DiveFrame override exists", (
   assert.equal(cleared.location, "Imported region");
 });
 
+test("clear removes an untracked location when a DiveFrame place override exists", () => {
+  const cleared = clearedDiveFrameSiteData({
+    location: "Hong Kong",
+    locationSource: null,
+    sourceLocations: {},
+    userSiteSource: "catalog",
+    userGpsSource: "memo",
+  });
+  assert.equal(cleared.location, null);
+  assert.equal(cleared.locationSource, null);
+  assert.equal(cleared.userSite, null);
+  assert.equal(cleared.userGpsSource, null);
+});
+
 test("legacy memo-applied location is inferred conservatively", () => {
   assert.equal(
     inferLegacyLocationOverride({
