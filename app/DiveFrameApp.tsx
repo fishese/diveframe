@@ -2546,7 +2546,9 @@ function DiveDetail({
                 ? t("locationSourcePhotoExif")
                 : dive.userGpsSource === "memo"
                   ? t("locationSourceMemo")
-                : t("locationSourceManual")}
+                  : dive.userGpsSource === "catalog"
+                    ? t("locationSourceCatalog")
+                    : t("locationSourceManual")}
             </p>
           )}
           {!mapCoordinates && resolvedLocation && (

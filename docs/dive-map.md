@@ -40,19 +40,33 @@ longitude within -180…180. Invalid or partial coordinate pairs are rejected.
 The map never guesses coordinates from free text. It uses:
 
 1. valid dive-computer entry GPS;
-2. valid user/photo/memo GPS stored on the dive;
-3. coordinates for the dive's selected active DiveFrame catalog site.
+2. valid dive-computer exit GPS;
+3. valid user/photo/memo/catalog GPS stored on the dive;
+4. coordinates for the dive's selected active DiveFrame catalog site.
 
 A dive without one of those sources is reported as unmappable.
 
 ## Aggregation
 
-Known catalog site identity wins: every dive with the same catalog site ID is
-grouped even when its stored GPS readings differ slightly. Different known
-site IDs are never merged merely for being close together. Dives without a
-known site ID use deterministic 250-metre single-link geographic clustering,
-calculated with the Haversine distance. The threshold is intentionally small
-and lives in `lib/dive-map.ts` so it can be tuned after real-world testing.
+Every dive with the same catalog site ID remains grouped even when its stored
+GPS readings differ. All resolved dives also use deterministic 250-metre
+single-link geographic clustering, calculated with the Haversine distance.
+This prevents catalog and coordinate-only markers at the same place from
+overlapping and hiding one another. Nearby sites can therefore share one place
+marker; its detail panel groups the dive list by site and sorts dives newest
+first within each group. The threshold is intentionally small and lives in
+`lib/dive-map.ts` so it can be tuned after real-world testing.
 
-The map keeps distinct known-site markers and relies on zoom for dense areas.
-Marker details preserve every represented dive and sort them newest first.
+## On-demand site-name audit
+
+The map can explicitly check named dives that still have no usable coordinate.
+This check runs only when the user presses the audit button; it is not part of
+normal rendering or background data refresh. The comparison uses normalized
+exact matches against active catalog site names and aliases. Location names are
+shown side by side for human verification but are never used to assign a site
+silently.
+
+After verification, the chosen catalog coordinate and catalog ID are stored as
+user data on all dives in that matching site/location group. Names not found in
+the active catalog are listed separately so they can be entered manually or
+used to prepare a supplementary dive-site JSON catalog.

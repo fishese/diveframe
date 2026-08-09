@@ -248,16 +248,20 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(memosApp, /discardOnUnmountRef/);
   assert.match(memosApp, /deleteMemoSafely/);
   assert.match(memosApp, /onDeleteMemo/);
-  const [diveMapPage, diveMapApp, diveMapLogic, diveMapAsset, diveMapDocs] =
+  const [diveMapPage, diveMapApp, diveMapLogic, diveMapAudit, diveMapAsset, diveMapDocs] =
     await Promise.all([
       readFile("app/map/page.tsx", "utf8"),
       readFile("app/map/DiveMapApp.tsx", "utf8"),
       readFile("lib/dive-map.ts", "utf8"),
+      readFile("lib/dive-map-site-audit.ts", "utf8"),
       readFile("public/maps/world-dive-map.svg", "utf8"),
       readFile("docs/dive-map.md", "utf8"),
     ]);
   assert.match(diveMapPage, /DiveMapApp/);
   assert.match(diveMapApp, /buildDiveMapData/);
+  assert.match(diveMapApp, /buildDiveSiteCoordinateAudit/);
+  assert.match(diveMapApp, /applyCatalogSiteCoordinatesToLocalDives/);
+  assert.match(diveMapApp, /groupDivesBySite/);
   assert.match(diveMapApp, /subscribeLocalDataChanges/);
   assert.match(diveMapApp, /href={`\/\?dive=\$\{encodeURIComponent\(dive\.id\)\}`}/);
   assert.match(diveMapApp, /Fit|fitToDives/);
@@ -266,7 +270,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapLogic, /UNKNOWN_DIVE_CLUSTER_RADIUS_KM = 0\.25/);
   assert.match(diveMapLogic, /userSiteCatalogId/);
   assert.match(diveMapLogic, /haversineDistanceKm/);
+  assert.match(diveMapLogic, /gpsExitLat/);
   assert.doesNotMatch(diveMapLogic, /geocod|fetch\s*\(/i);
+  assert.match(diveMapAudit, /exact user action|explicit user action/i);
+  assert.doesNotMatch(diveMapAudit, /fetch\s*\(/);
   assert.match(diveMapAsset, /viewBox="0 0 1200 600"/);
   assert.match(diveMapAsset, /Natural Earth 5\.1\.0/);
   assert.match(diveMapAsset, /Hong Kong/);
@@ -445,6 +452,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /export async function deleteLocalTrip/);
   assert.match(storage, /export async function setLocalDiveTripIds/);
   assert.match(storage, /export async function updateLocalDiveUserGps/);
+  assert.match(storage, /export async function applyCatalogSiteCoordinatesToLocalDives/);
+  assert.match(storage, /shouldStoreSelectedCoordinates/);
   assert.match(app, /from "@\/lib\/dive-gps"/);
   assert.match(app, /resolveDiveMapCoordinates/);
   assert.match(app, /from "@\/lib\/photo-exif-gps"/);

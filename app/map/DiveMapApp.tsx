@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ChevronRight,
   Crosshair,
+  Database,
   LoaderCircle,
   MapPinned,
   Minus,
@@ -30,6 +31,13 @@ import {
   type DiveMapMarker,
 } from "@/lib/dive-map";
 import {
+  buildDiveSiteCoordinateAudit,
+  catalogSiteLocation,
+  type DiveSiteCoordinateAudit,
+  type DiveSiteAuditGroup,
+} from "@/lib/dive-map-site-audit";
+import {
+  applyCatalogSiteCoordinatesToLocalDives,
   getLocalSupplementaryCatalog,
   listLocalDives,
   type LocalDive,
@@ -62,6 +70,10 @@ export function DiveMapApp() {
   const [error, setError] = useState<string | null>(null);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
   const [unmappedOpen, setUnmappedOpen] = useState(false);
+  const [siteAudit, setSiteAudit] = useState<DiveSiteCoordinateAudit | null>(null);
+  const [siteAuditBusy, setSiteAuditBusy] = useState(false);
+  const [applyingAuditKey, setApplyingAuditKey] = useState<string | null>(null);
+  const [siteAuditStatus, setSiteAuditStatus] = useState<string | null>(null);
   const [view, setView] = useState<MapView>(WORLD_VIEW);
   const [canvasWidth, setCanvasWidth] = useState(DIVE_MAP_WIDTH);
   const canvasRef = useRef<SVGSVGElement>(null);
@@ -255,6 +267,55 @@ export function DiveMapApp() {
     setUnmappedOpen(false);
   }
 
+  async function runSiteCoordinateAudit() {
+    setSiteAuditBusy(true);
+    setSiteAuditStatus(null);
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+    setSiteAudit(buildDiveSiteCoordinateAudit(dives, catalog));
+    setSiteAuditBusy(false);
+  }
+
+  async function applyAuditCandidate(
+    group: DiveSiteAuditGroup,
+    candidateIndex: number,
+  ) {
+    const candidate = group.candidates[candidateIndex];
+    if (!candidate) return;
+    setApplyingAuditKey(group.key);
+    setSiteAuditStatus(null);
+    try {
+      const updated = await applyCatalogSiteCoordinatesToLocalDives(
+        group.dives.map((dive) => dive.id),
+        candidate.site,
+      );
+      const byId = new Map(updated.map((dive) => [dive.id, dive]));
+      setDives((current) => current.map((dive) => byId.get(dive.id) ?? dive));
+      setSiteAudit((current) =>
+        current
+          ? {
+              ...current,
+              matched: current.matched.filter((item) => item.key !== group.key),
+              namedDiveCount: Math.max(
+                0,
+                current.namedDiveCount - group.dives.length,
+              ),
+            }
+          : current,
+      );
+      setSiteAuditStatus(
+        t("catalogCoordinatesApplied", { count: updated.length }),
+      );
+    } catch (applyError) {
+      setSiteAuditStatus(
+        applyError instanceof Error
+          ? applyError.message
+          : t("unableApplyCatalogCoordinates"),
+      );
+    } finally {
+      setApplyingAuditKey(null);
+    }
+  }
+
   return (
     <main className="app-shell dive-map-page">
       <AppTopbar
@@ -280,6 +341,15 @@ export function DiveMapApp() {
                   { count: mapData.mappedDiveCount },
                 )}
               </strong>
+              <span>·</span>
+              <span>
+                {t(
+                  mapData.placeCount === 1
+                    ? "mappedPlaceCountOne"
+                    : "mappedPlacesCount",
+                  { count: mapData.placeCount },
+                )}
+              </span>
               <span>·</span>
               <button
                 type="button"
@@ -456,6 +526,10 @@ export function DiveMapApp() {
                   <MapPinned size={25} />
                   <h2>{t("chooseMapMarker")}</h2>
                   <p>{t("chooseMapMarkerDescription")}</p>
+                  <MappedPlaceList
+                    markers={mapData.markers}
+                    onChoose={chooseMarker}
+                  />
                 </div>
               )}
             </aside>
@@ -471,8 +545,188 @@ export function DiveMapApp() {
             />
           </aside>
         ) : null}
+        {!loading && !error ? (
+          <DiveSiteCoordinateAuditPanel
+            audit={siteAudit}
+            busy={siteAuditBusy}
+            applyingKey={applyingAuditKey}
+            status={siteAuditStatus}
+            language={language}
+            onRun={() => void runSiteCoordinateAudit()}
+            onApply={(group, candidateIndex) =>
+              void applyAuditCandidate(group, candidateIndex)
+            }
+          />
+        ) : null}
       </div>
     </main>
+  );
+}
+
+function MappedPlaceList({
+  markers,
+  onChoose,
+}: {
+  markers: DiveMapMarker[];
+  onChoose: (marker: DiveMapMarker) => void;
+}) {
+  const { t } = useAppI18n();
+  return (
+    <div className="dive-map-place-list">
+      <h3>{t("mappedPlacesTitle")}</h3>
+      {markers.map((marker) => (
+        <button key={marker.id} type="button" onClick={() => onChoose(marker)}>
+          <span>
+            <strong>{marker.title ?? t("diveLocation")}</strong>
+            {marker.regionName && marker.regionName !== marker.title ? (
+              <small>{marker.regionName}</small>
+            ) : null}
+          </span>
+          <b>{marker.diveCount}</b>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function DiveSiteCoordinateAuditPanel({
+  audit,
+  busy,
+  applyingKey,
+  status,
+  language,
+  onRun,
+  onApply,
+}: {
+  audit: DiveSiteCoordinateAudit | null;
+  busy: boolean;
+  applyingKey: string | null;
+  status: string | null;
+  language: "en" | "zh-Hant" | "ja";
+  onRun: () => void;
+  onApply: (group: DiveSiteAuditGroup, candidateIndex: number) => void;
+}) {
+  const { t } = useAppI18n();
+  return (
+    <section className="dive-site-audit">
+      <div className="dive-site-audit-heading">
+        <div>
+          <p className="eyebrow">{t("needsLocation")}</p>
+          <h2>{t("siteCoordinateAuditTitle")}</h2>
+          <p>{t("siteCoordinateAuditDescription")}</p>
+          <small>{t("siteCoordinateAuditPerformance")}</small>
+        </div>
+        <button
+          className="button button-secondary"
+          type="button"
+          onClick={onRun}
+          disabled={busy || applyingKey !== null}
+        >
+          {busy ? <LoaderCircle className="spin" size={17} /> : <Database size={17} />}
+          {busy ? t("checkingSiteCoordinates") : t("checkSiteCoordinates")}
+        </button>
+      </div>
+      {status ? <p className="dive-site-audit-status" role="status">{status}</p> : null}
+      {audit ? (
+        <div className="dive-site-audit-results">
+          <p className="dive-site-audit-summary">
+            {t("siteCoordinateAuditSummary", { count: audit.namedDiveCount })}
+          </p>
+          {audit.namedDiveCount === 0 ? (
+            <p>{t("noNamedDivesNeedCoordinates")}</p>
+          ) : null}
+          {audit.matched.length > 0 ? (
+            <div className="dive-site-audit-section">
+              <h3>{t("siteCoordinateMatchesTitle")}</h3>
+              {audit.matched.map((group) => (
+                <div className="dive-site-audit-card" key={group.key}>
+                  <div className="dive-site-audit-compare">
+                    <div className="dive-site-audit-column">
+                      <h4>{t("diveLogVersion")}</h4>
+                      <dl>
+                        <dt>{t("storedSiteName")}</dt>
+                        <dd>{group.diveSiteName}</dd>
+                        <dt>{t("storedLocationName")}</dt>
+                        <dd>{group.diveLocationName ?? t("locationNotEntered")}</dd>
+                      </dl>
+                      <AuditDiveLinks group={group} language={language} />
+                    </div>
+                    <div className="dive-site-audit-column">
+                      <h4>{t("catalogVersion")}</h4>
+                      {group.candidates.map((candidate, candidateIndex) => (
+                        <div className="dive-site-audit-candidate" key={candidate.site.id}>
+                          <strong>{candidate.site.name}</strong>
+                          <span>{catalogSiteLocation(candidate.site) || t("locationNotEntered")}</span>
+                          <small>
+                            {t("latitude")}: {candidate.site.coordinates.latitude.toFixed(5)} · {t("longitude")}: {candidate.site.coordinates.longitude.toFixed(5)}
+                          </small>
+                          {candidate.matchedName !== candidate.site.name ? (
+                            <small>{t("siteMatchedByAlias", { name: candidate.matchedName })}</small>
+                          ) : null}
+                          <button
+                            className="button button-primary"
+                            type="button"
+                            disabled={applyingKey !== null}
+                            onClick={() => onApply(group, candidateIndex)}
+                          >
+                            {applyingKey === group.key
+                              ? t("applyingCatalogCoordinates")
+                              : t("useCatalogCoordinates")}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {audit.notFound.length > 0 ? (
+            <div className="dive-site-audit-section dive-site-audit-not-found">
+              <h3>{t("siteCoordinateNotFoundTitle")}</h3>
+              <p>{t("siteCoordinateNotFoundDescription")}</p>
+              {audit.notFound.map((group) => (
+                <div className="dive-site-audit-missing" key={group.key}>
+                  <span>
+                    <strong>{group.diveSiteName}</strong>
+                    <small>{group.diveLocationName ?? t("locationNotEntered")}</small>
+                  </span>
+                  <AuditDiveLinks group={group} language={language} />
+                </div>
+              ))}
+              <Link className="button button-secondary" href="/settings">
+                {t("openCatalogSettings")}
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function AuditDiveLinks({
+  group,
+  language,
+}: {
+  group: DiveSiteAuditGroup;
+  language: "en" | "zh-Hant" | "ja";
+}) {
+  const { t } = useAppI18n();
+  return (
+    <div className="dive-site-audit-dives">
+      <span>
+        {t(
+          group.dives.length === 1 ? "affectedDiveCountOne" : "affectedDivesCount",
+          { count: group.dives.length },
+        )}
+      </span>
+      {group.dives.map((dive) => (
+        <Link key={dive.id} href={`/?dive=${encodeURIComponent(dive.id)}`}>
+          {dive.date ? formatDate(dive.date, language) : t("dateUnknown")}
+        </Link>
+      ))}
+    </div>
   );
 }
 
@@ -569,23 +823,20 @@ function DiveMapDetails({
           </span>
         ) : null}
       </div>
-      {marker.sites.length > 1 ? (
-        <div className="dive-map-site-breakdown">
-          <h3>{t("sitesInThisMarker")}</h3>
-          <ul>
-            {marker.sites.map((site) => (
-              <li key={site.id}>
-                <span>{site.name}</span>
-                <strong>{site.diveCount}</strong>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
       <div className="dive-map-dive-list">
-        <h3>{t("divesAtThisPlace")}</h3>
-        {marker.dives.map((dive) => (
-          <DiveMapDiveLink key={dive.id} dive={dive} language={language} />
+        <h3>{marker.sites.length > 1 ? t("divesGroupedBySite") : t("divesAtThisPlace")}</h3>
+        {groupDivesBySite(marker.dives, t("unnamedDiveSite")).map((group) => (
+          <div className="dive-map-site-dive-group" key={group.key}>
+            {marker.dives.length > 1 ? (
+              <h4>
+                <span>{group.name}</span>
+                <strong>{group.dives.length}</strong>
+              </h4>
+            ) : null}
+            {group.dives.map((dive) => (
+              <DiveMapDiveLink key={dive.id} dive={dive} language={language} />
+            ))}
+          </div>
         ))}
       </div>
     </div>
@@ -646,6 +897,30 @@ function DiveMapDiveLink({
       </span>
       <ChevronRight size={17} />
     </Link>
+  );
+}
+
+function groupDivesBySite(
+  dives: DiveMapDiveSummary[],
+  unnamedSite: string,
+) {
+  const groups = new Map<
+    string,
+    { key: string; name: string; dives: DiveMapDiveSummary[] }
+  >();
+  dives.forEach((dive) => {
+    const name = dive.siteName?.trim() || unnamedSite;
+    const key = name.toLocaleLowerCase();
+    const group = groups.get(key) ?? { key, name, dives: [] };
+    group.dives.push(dive);
+    groups.set(key, group);
+  });
+  return [...groups.values()].sort((left, right) =>
+    left.name === unnamedSite
+      ? 1
+      : right.name === unnamedSite
+        ? -1
+        : left.name.localeCompare(right.name),
   );
 }
 

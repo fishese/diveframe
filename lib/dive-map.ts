@@ -11,11 +11,15 @@ export type DiveMapDive = Pick<
   | "diveDate"
   | "location"
   | "resolvedLocation"
+  | "resolvedCity"
+  | "resolvedCountry"
   | "site"
   | "userSite"
   | "userSiteCatalogId"
   | "gpsEntryLat"
   | "gpsEntryLng"
+  | "gpsExitLat"
+  | "gpsExitLng"
   | "userGpsLat"
   | "userGpsLng"
   | "sourceSiteNames"
@@ -67,6 +71,7 @@ export type DiveMapMarker = {
 
 export type DiveMapData = {
   markers: DiveMapMarker[];
+  placeCount: number;
   mappedDiveCount: number;
   unmappableDiveCount: number;
   distinctKnownSiteCount: number;
@@ -119,6 +124,14 @@ export function resolveDiveCoordinates(
   if (computer) {
     return {
       ...computer,
+      source: "computer",
+      catalogSite: catalogSiteForDive(dive, catalog),
+    };
+  }
+  const computerExit = validatedCoordinatePair(dive.gpsExitLat, dive.gpsExitLng);
+  if (computerExit) {
+    return {
+      ...computerExit,
       source: "computer",
       catalogSite: catalogSiteForDive(dive, catalog),
     };
@@ -176,30 +189,12 @@ export function buildDiveMapData(
     resolved.push({ dive, coordinates, summary });
   }
 
-  const knownGroups = new Map<string, ResolvedDive[]>();
-  const withoutKnownSite: ResolvedDive[] = [];
-  for (const item of resolved) {
-    const knownSiteId = item.dive.userSiteCatalogId?.trim() || null;
-    if (!knownSiteId) {
-      withoutKnownSite.push(item);
-      continue;
-    }
-    const group = knownGroups.get(knownSiteId) ?? [];
-    group.push(item);
-    knownGroups.set(knownSiteId, group);
-  }
-
-  const groups = [
-    ...Array.from(knownGroups.entries())
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([siteId, group]) => ({ id: `site:${siteId}`, dives: group })),
-    ...clusterUnknownDives(withoutKnownSite, unknownClusterRadiusKm).map(
-      (group) => ({
-        id: `geo:${stableId(group.map((item) => item.dive.id))}`,
-        dives: group,
-      }),
-    ),
-  ];
+  const groups = clusterResolvedDives(resolved, unknownClusterRadiusKm).map(
+    (group) => ({
+      id: markerGroupId(group),
+      dives: group,
+    }),
+  );
 
   const markers = groups
     .map(({ id, dives: group }) => markerForGroup(id, group))
@@ -215,6 +210,7 @@ export function buildDiveMapData(
 
   return {
     markers,
+    placeCount: markers.length,
     mappedDiveCount: resolved.length,
     unmappableDiveCount: unmappableDives.length,
     distinctKnownSiteCount: distinctKnownSiteIds.size,
@@ -247,7 +243,7 @@ function catalogSiteForDive(
   return id ? catalog.sites.find((site) => site.id === id) ?? null : null;
 }
 
-function clusterUnknownDives(
+function clusterResolvedDives(
   dives: ResolvedDive[],
   radiusKm: number,
 ): ResolvedDive[][] {
@@ -259,9 +255,23 @@ function clusterUnknownDives(
       left.dive.id.localeCompare(right.dive.id),
   );
   const parent = sorted.map((_, index) => index);
+  const firstIndexByKnownSite = new Map<string, number>();
+  sorted.forEach((item, index) => {
+    const knownSiteId = item.dive.userSiteCatalogId?.trim();
+    if (!knownSiteId) return;
+    const firstIndex = firstIndexByKnownSite.get(knownSiteId);
+    if (firstIndex === undefined) firstIndexByKnownSite.set(knownSiteId, index);
+    else union(parent, firstIndex, index);
+  });
 
   for (let left = 0; left < sorted.length; left += 1) {
     for (let right = left + 1; right < sorted.length; right += 1) {
+      const leftSiteId = sorted[left].dive.userSiteCatalogId?.trim();
+      const rightSiteId = sorted[right].dive.userSiteCatalogId?.trim();
+      if (leftSiteId && leftSiteId === rightSiteId) {
+        union(parent, left, right);
+        continue;
+      }
       const latitudeGapKm =
         (sorted[right].coordinates.latitude -
           sorted[left].coordinates.latitude) *
@@ -290,6 +300,19 @@ function clusterUnknownDives(
   return Array.from(groups.values()).sort((left, right) =>
     left[0].dive.id.localeCompare(right[0].dive.id),
   );
+}
+
+function markerGroupId(group: ResolvedDive[]) {
+  const knownSiteIds = [
+    ...new Set(
+      group
+        .map((item) => item.dive.userSiteCatalogId?.trim())
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  return knownSiteIds.length === 1
+    ? `site:${knownSiteIds[0]}`
+    : `geo:${stableId(group.map((item) => item.dive.id))}`;
 }
 
 function markerForGroup(id: string, group: ResolvedDive[]): DiveMapMarker {
@@ -383,6 +406,7 @@ function markerTitle(dives: DiveMapDiveSummary[]) {
 function preferredSourceSiteName(dive: DiveMapDive) {
   return (
     dive.sourceSiteNames.shearwater ??
+    dive.sourceSiteNames["shearwater-ble"] ??
     dive.sourceSiteNames.subsurface ??
     dive.sourceSiteNames.uddf ??
     dive.sourceSiteNames.fit ??

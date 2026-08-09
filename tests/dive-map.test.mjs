@@ -51,6 +51,8 @@ function dive(id, overrides = {}) {
     userSiteCatalogId: null,
     gpsEntryLat: null,
     gpsEntryLng: null,
+    gpsExitLat: null,
+    gpsExitLng: null,
     userGpsLat: null,
     userGpsLng: null,
     sourceSiteNames: {},
@@ -124,6 +126,21 @@ test("coordinate resolution trusts computer, user, then selected catalog coordin
   assert.equal(fromCatalog.latitude, 13.514);
 });
 
+test("computer exit coordinates map a dive when entry coordinates are missing", () => {
+  const resolved = map.resolveDiveCoordinates(
+    dive("1", {
+      gpsExitLat: 22.285,
+      gpsExitLng: 114.305,
+      userGpsLat: 7.134,
+      userGpsLng: 134.221,
+    }),
+    emptyCatalog,
+  );
+  assert.equal(resolved.source, "computer");
+  assert.equal(resolved.latitude, 22.285);
+  assert.equal(resolved.longitude, 114.305);
+});
+
 test("same known site ID aggregates despite slightly different GPS coordinates", () => {
   const data = map.buildDiveMapData([
     dive("1", { userSiteCatalogId: "site-a", userSite: "Canyons", gpsEntryLat: 13.514, gpsEntryLng: 120.977 }),
@@ -131,6 +148,7 @@ test("same known site ID aggregates despite slightly different GPS coordinates",
     dive("3", { userSiteCatalogId: "site-a", userSite: "Canyons" }),
   ], catalog);
   assert.equal(data.markers.length, 1);
+  assert.equal(data.placeCount, 1);
   assert.equal(data.markers[0].diveCount, 3);
   assert.equal(data.markers[0].knownSiteCount, 1);
   assert.equal(data.markers[0].title, "Canyons");
@@ -147,13 +165,26 @@ test("repeated and nearby unknown coordinates cluster within 250 metres", () => 
   assert.equal(data.markers[0].diveCount, 3);
 });
 
-test("distinct known nearby sites never merge solely by proximity", () => {
+test("distinct known nearby sites merge into one inspectable place marker", () => {
   const data = map.buildDiveMapData([
     dive("1", { userSiteCatalogId: "site-a" }),
     dive("2", { userSiteCatalogId: "site-b" }),
   ], catalog);
-  assert.equal(data.markers.length, 2);
-  assert.deepEqual(data.markers.map((marker) => marker.title).sort(), ["Canyons", "Hole in the Wall"]);
+  assert.equal(data.markers.length, 1);
+  assert.equal(data.markers[0].diveCount, 2);
+  assert.equal(data.markers[0].knownSiteCount, 2);
+  assert.deepEqual(data.markers[0].sites.map((site) => site.name).sort(), ["Canyons", "Hole in the Wall"]);
+});
+
+test("catalog and coordinate-only dives at the same place cannot hide behind overlapping markers", () => {
+  const data = map.buildDiveMapData([
+    dive("1", { userSiteCatalogId: "site-a", userSite: "Canyons" }),
+    dive("2", { site: "Puerto Galera", userGpsLat: 13.5142, userGpsLng: 120.9771 }),
+  ], catalog);
+  assert.equal(data.mappedDiveCount, 2);
+  assert.equal(data.placeCount, 1);
+  assert.equal(data.markers[0].diveCount, 2);
+  assert.deepEqual(data.markers[0].dives.map((item) => item.id), ["2", "1"]);
 });
 
 test("clearly separate unknown sites remain separate", () => {
@@ -182,6 +213,10 @@ test("mixed valid, missing, and invalid coordinates report mapped and unmappable
   ], catalog);
   assert.equal(data.mappedDiveCount, 2);
   assert.equal(data.unmappableDiveCount, 2);
+  assert.equal(
+    data.markers.reduce((count, marker) => count + marker.diveCount, 0),
+    data.mappedDiveCount,
+  );
   assert.deepEqual(data.unmappableDives.map((item) => item.id), ["3", "2"]);
 });
 

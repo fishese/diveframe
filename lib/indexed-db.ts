@@ -43,7 +43,7 @@ import {
   preferredImportedSite,
   type DiveLocationOverrideSource,
 } from "./dive-site-overrides";
-import type { DiveSiteCatalog } from "./dive-site-catalog";
+import type { CatalogSite, DiveSiteCatalog } from "./dive-site-catalog";
 import type { WhatsNewDocument } from "./whats-new";
 import {
   ALL_STORE_NAMES,
@@ -61,7 +61,7 @@ export type DiveSource =
   | "fit";
 
 export type ExportGpsPreference = "computer" | "user" | "user-if-missing";
-export type UserGpsSource = "manual" | "photo-exif" | "memo";
+export type UserGpsSource = "manual" | "photo-exif" | "memo" | "catalog";
 export type AttachmentRole = "dive-photo" | "geo-reference";
 
 export type LocalDive = {
@@ -1003,6 +1003,14 @@ export async function updateLocalDiveSite(
   const current = hydrateDive(dive);
 
   const now = new Date().toISOString();
+  const shouldStoreSelectedCoordinates =
+    selection.source !== "manual" &&
+    selection.latitude !== null &&
+    selection.longitude !== null &&
+    Number.isFinite(selection.latitude) &&
+    Number.isFinite(selection.longitude) &&
+    Math.abs(selection.latitude) <= 90 &&
+    Math.abs(selection.longitude) <= 180;
   const updated: LocalDive = {
     ...current,
     location:
@@ -1019,6 +1027,23 @@ export async function updateLocalDiveSite(
     userSiteSource: selection.source,
     userSiteCatalogId: selection.catalogId ?? null,
     userSiteUpdatedAt: now,
+    userGpsLat: shouldStoreSelectedCoordinates
+      ? selection.latitude
+      : current.userGpsLat,
+    userGpsLng: shouldStoreSelectedCoordinates
+      ? selection.longitude
+      : current.userGpsLng,
+    userGpsSource: shouldStoreSelectedCoordinates
+      ? selection.source === "catalog"
+        ? "catalog"
+        : "manual"
+      : current.userGpsSource,
+    userGpsUpdatedAt: shouldStoreSelectedCoordinates
+      ? now
+      : current.userGpsUpdatedAt,
+    resolvedLocationSuppressed: shouldStoreSelectedCoordinates
+      ? false
+      : current.resolvedLocationSuppressed,
     appEditedAt: now,
   };
   divesStore.put(updated);
@@ -1227,6 +1252,67 @@ export async function applyLocalDiveMemoPlan(
   }
   updated.appEditedAt = now;
   divesStore.put(updated);
+  await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
+  return updated;
+}
+
+/** Apply a verified catalog site's coordinates to a group of local dives. */
+export async function applyCatalogSiteCoordinatesToLocalDives(
+  diveIds: string[],
+  site: CatalogSite,
+) {
+  const ids = [...new Set(diveIds.filter(Boolean))];
+  if (!ids.length) return [];
+  if (
+    !Number.isFinite(site.coordinates.latitude) ||
+    !Number.isFinite(site.coordinates.longitude) ||
+    Math.abs(site.coordinates.latitude) > 90 ||
+    Math.abs(site.coordinates.longitude) > 180
+  ) {
+    throw new Error("The selected catalog site has invalid coordinates.");
+  }
+
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [DIVES_STORE, SITE_CONTRIBUTIONS_STORE],
+    "readwrite",
+  );
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
+  const now = new Date().toISOString();
+  const updated: LocalDive[] = [];
+
+  for (const id of ids) {
+    const stored = await request<LocalDive | undefined>(divesStore.get(id));
+    if (!stored) {
+      transaction.abort();
+      throw new Error("Dive not found in this browser.");
+    }
+    const current = hydrateDive(stored);
+    const name =
+      current.userSite?.trim() ||
+      current.site?.trim() ||
+      preferredImportedSite(current.sourceSiteNames) ||
+      site.name;
+    const next: LocalDive = {
+      ...current,
+      userSite: name,
+      userSiteSource: "catalog",
+      userSiteCatalogId: site.id,
+      userSiteUpdatedAt: now,
+      userGpsLat: site.coordinates.latitude,
+      userGpsLng: site.coordinates.longitude,
+      userGpsSource: "catalog",
+      userGpsUpdatedAt: now,
+      resolvedLocationSuppressed: false,
+      appEditedAt: now,
+    };
+    divesStore.put(next);
+    contributionsStore.delete(id);
+    updated.push(next);
+  }
+
   await transactionComplete(transaction);
   notifyLocalDataChanged("mutation");
   return updated;
