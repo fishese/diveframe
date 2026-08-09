@@ -47,3 +47,20 @@ source recorded in `android/app/src/main/cpp/libdivecomputer.pin`. It is
 licensed under LGPL-2.1-or-later. The Windows and portable Unix fetch helpers
 prepare the corresponding source and generated version headers for the native
 build.
+
+## Offline world map
+
+File: `public/maps/world-dive-map.svg`
+
+The country and coastline geometry is derived from Natural Earth 5.1.0,
+`ne_110m_admin_0_countries.geojson`. Natural Earth places all versions of its
+raster and vector map data in the public domain and requires no attribution.
+DiveFrame nevertheless records “Made with Natural Earth” in the SVG metadata
+and project documentation. See
+<https://www.naturalearthdata.com/about/terms-of-use/>.
+
+The repository script `scripts/generate-dive-map-svg.mjs` projects the source
+WGS84 longitude/latitude vertices into a 1200 × 600 equirectangular SVG,
+rounds projected coordinates to two decimals, and adds DiveFrame's English
+orientation labels and visual styling. No Natural Earth data or other map
+content is downloaded at application runtime.
