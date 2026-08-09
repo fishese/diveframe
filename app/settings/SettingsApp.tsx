@@ -1447,7 +1447,7 @@ export function SettingsApp() {
                     </div>
                     <small>
                       {site.latitude.toFixed(5)}, {site.longitude.toFixed(5)}
-                      {site.diveDate ? ` Â· ${site.diveDate}` : ""}
+                      {site.diveDate ? ` \u00b7 ${site.diveDate}` : ""}
                     </small>
                     <button
                       type="button"

@@ -37,7 +37,10 @@ test("retired templateId coerces to bottom-stats-dock", () => {
 
 test("missing panel fields fill from active recipe", () => {
   const base = settingsMod.defaultComposerSettings("dive-1");
-  const { panelEdge, panelFillMode, chartOffsetX, ...rest } = base;
+  const rest = { ...base };
+  delete rest.panelEdge;
+  delete rest.panelFillMode;
+  delete rest.chartOffsetX;
   const normalized = templatesMod.normalizeComposerSettings(rest);
   assert.equal(typeof normalized.panelEdge, "string");
   assert.equal(typeof normalized.panelFillMode, "string");

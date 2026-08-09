@@ -4,11 +4,13 @@ import Link from "next/link";
 import { ArrowLeft, BookmarkPlus, ChevronDown, Crop, Download, ImagePlus, LoaderCircle, RotateCcw, Trash2 } from "lucide-react";
 import { AppTopbar } from "../components/AppTopbar";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
+  type SetStateAction,
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import {
@@ -101,6 +103,12 @@ export function ComposerApp() {
   const [dive, setDive] = useState<LocalDive | null>(null);
   const [photos, setPhotos] = useState<PhotoChoice[]>([]);
   const [settings, setSettings] = useState<ComposerSettings | null>(null);
+  const settingsRef = useRef<ComposerSettings | null>(null);
+  const outputPreferencesRef = useRef<{
+    lastComposerOutputSize: ComposerSettings["outputSize"];
+    lastComposerFormat: ComposerSettings["format"];
+    lastComposerJpegQuality: number;
+  } | null>(null);
   const [presets, setPresets] = useState<LocalComposerPreset[]>([]);
   const [presetName, setPresetName] = useState("");
   const [selectedPresetId, setSelectedPresetId] = useState("");
@@ -115,6 +123,25 @@ export function ComposerApp() {
   const [status, setStatus] = useState(t("loadingComposer"));
   const [exporting, setExporting] = useState(false);
   const [cropMode, setCropMode] = useState(false);
+
+  const setComposerSettings = useCallback(
+    (action: SetStateAction<ComposerSettings | null>) => {
+      // Resolve against the ref synchronously. React may defer a functional
+      // state updater until after a navigation has already begun.
+      const next =
+        typeof action === "function" ? action(settingsRef.current) : action;
+      settingsRef.current = next;
+      outputPreferencesRef.current = next
+        ? {
+            lastComposerOutputSize: next.outputSize,
+            lastComposerFormat: next.format,
+            lastComposerJpegQuality: next.jpegQuality,
+          }
+        : null;
+      setSettings(next);
+    },
+    [],
+  );
 
   useEffect(() => {
     translateRef.current = t;
@@ -189,7 +216,7 @@ export function ComposerApp() {
       setDive(selectedDive);
       setPhotos(choices);
       setPresets(savedPresets);
-      setSettings(initial);
+      setComposerSettings(initial);
       if (loadedLogo) {
         closeCanvasSource(logoSourceRef.current);
         logoSourceRef.current = loadedLogo;
@@ -212,7 +239,7 @@ export function ComposerApp() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [setComposerSettings]);
 
   const selectedPhoto = useMemo(
     () => photos.find((photo) => photo.id === settings?.selectedPhotoId) ?? null,
@@ -296,12 +323,28 @@ export function ComposerApp() {
     return () => window.clearTimeout(timeout);
   }, [lastJpegQuality, lastOutputFormat, lastOutputSize]);
 
+  useEffect(
+    () => () => {
+      // Dependency cleanups cancel the debounce. Flush the latest values when
+      // navigation unmounts the composer so a quick edit-and-back is retained.
+      if (settingsRef.current) {
+        void saveLocalComposerSettings(settingsRef.current).catch(() => undefined);
+      }
+      if (outputPreferencesRef.current) {
+        void saveLocalAppPreferences(outputPreferencesRef.current).catch(
+          () => undefined,
+        );
+      }
+    },
+    [],
+  );
+
   function update<K extends keyof ComposerSettings>(key: K, value: ComposerSettings[K]) {
-    setSettings((current) => current ? { ...current, [key]: value, updatedAt: new Date().toISOString() } : current);
+    setComposerSettings((current) => current ? { ...current, [key]: value, updatedAt: new Date().toISOString() } : current);
   }
 
   function toggleField(field: DisplayField) {
-    setSettings((current) => current ? {
+    setComposerSettings((current) => current ? {
       ...current,
       visibleFields: { ...current.visibleFields, [field]: !current.visibleFields[field] },
     } : current);
@@ -329,7 +372,7 @@ export function ComposerApp() {
   function applySelectedPreset() {
     const preset = presets.find((item) => item.id === selectedPresetId);
     if (!preset) return;
-    setSettings((current) => {
+    setComposerSettings((current) => {
       if (!current) return current;
       return normalizeComposerSettings(
         applyComposerPreset(current, preset.settings),
@@ -381,7 +424,7 @@ export function ComposerApp() {
 
   function startCrop() {
     setCropMode(true);
-    setSettings((current) => {
+    setComposerSettings((current) => {
       if (!current) return current;
       const photoZoom = Math.max(1, current.photoZoom);
       const offset = constrainCropOffsets(
@@ -403,7 +446,7 @@ export function ComposerApp() {
   }
 
   function resetCrop() {
-    setSettings((current) =>
+    setComposerSettings((current) =>
       current
         ? {
             ...current,
@@ -442,7 +485,7 @@ export function ComposerApp() {
       event.currentTarget,
       settings.photoZoom,
     );
-    setSettings((current) =>
+    setComposerSettings((current) =>
       current
         ? {
             ...current,
@@ -466,7 +509,7 @@ export function ComposerApp() {
     if (!cropMode) return;
     event.preventDefault();
     const direction = event.deltaY < 0 ? 0.08 : -0.08;
-    setSettings((current) => {
+    setComposerSettings((current) => {
       if (!current) return current;
       const photoZoom = Math.min(
         3,
@@ -599,7 +642,7 @@ export function ComposerApp() {
             </select>
             <p className="control-hint">
               {selectedPhoto ? t("photoChoiceHint") : t("transparentPhotoSelected")}
-              {" Â· "}
+              {" \u00b7 "}
               <Link href="/settings">{t("manageBackgrounds")}</Link>
               {selectedPhoto?.source === "bundled" ? (
                 <>
@@ -646,7 +689,7 @@ export function ComposerApp() {
                   key={template.id}
                   className={settings.templateId === template.id ? "selected" : ""}
                   onClick={() =>
-                    setSettings((current) =>
+                    setComposerSettings((current) =>
                       current ? applyTemplateRecipe(current, template.id) : current,
                     )
                   }

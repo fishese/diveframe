@@ -55,7 +55,7 @@ function bandFraction(
   padScale: number,
   contentHint?: PanelContentHint,
 ): number {
-  let frac = Math.min(MAX_BAND_FRAC, 0.18 * padScale + chartHeight * 0.35);
+  const frac = Math.min(MAX_BAND_FRAC, 0.18 * padScale + chartHeight * 0.35);
   const count = contentHint?.statCount ?? 0;
   if (count <= 0) return frac;
 

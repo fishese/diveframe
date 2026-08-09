@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
@@ -13,5 +13,9 @@ if (!existsSync(source)) {
 }
 
 mkdirSync(resolve(root, "public"), { recursive: true });
-copyFileSync(source, target);
+const isCurrent =
+  existsSync(target) && readFileSync(source).equals(readFileSync(target));
+if (!isCurrent) {
+  copyFileSync(source, target);
+}
 console.log(`Prepared ${target}`);

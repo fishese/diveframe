@@ -137,3 +137,23 @@ test("takeSessionSupplementaryCatalogMigration copies then clears session keys",
   assert.equal(catalogTools.takeSessionSupplementaryCatalogMigration(), null);
   delete globalThis.sessionStorage;
 });
+
+test("blocked sessionStorage does not break catalog startup", () => {
+  globalThis.sessionStorage = {
+    getItem: () => {
+      throw new DOMException("blocked", "SecurityError");
+    },
+    setItem: () => {
+      throw new DOMException("blocked", "SecurityError");
+    },
+    removeItem: () => {
+      throw new DOMException("blocked", "SecurityError");
+    },
+  };
+  assert.equal(catalogTools.loadSessionDiveSiteCatalog(), null);
+  assert.doesNotThrow(() =>
+    catalogTools.saveSessionDiveSiteCatalog(catalog, "x"),
+  );
+  assert.doesNotThrow(() => catalogTools.clearSessionDiveSiteCatalog());
+  delete globalThis.sessionStorage;
+});

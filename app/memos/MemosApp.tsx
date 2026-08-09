@@ -31,7 +31,7 @@ import {
 import {
   deleteLocalDiveMemo,
   getLocalSupplementaryCatalog,
-  listLocalDiveMemos,
+  listOrCreateLocalDiveMemos,
   listLocalDives,
   saveLocalDiveMemo,
   type LocalDive,
@@ -81,29 +81,17 @@ export function MemosApp() {
   const photoPendingSaveRef = useRef<Promise<DiveMemo | null> | null>(null);
 
   const refresh = useCallback(async () => {
-    const listed = await listLocalDiveMemos();
-    if (listed.length === 0) {
-      const now = new Date().toISOString();
-      const defaults = defaultDiveMemoFields();
-      const first: DiveMemo = {
-        id: createDiveMemoId(),
-        heading: nextDiveMemoHeading([]),
-        ...defaults,
-        createdAt: now,
-        updatedAt: now,
-      };
-      await saveLocalDiveMemo(first);
-      setMemos([first]);
-    } else {
-      setMemos(listed);
-    }
+    setMemos(await listOrCreateLocalDiveMemos());
     setStatus("");
   }, []);
 
   useEffect(() => {
-    void refresh().catch((error) => {
-      setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
+    const frame = window.requestAnimationFrame(() => {
+      void refresh().catch((error) => {
+        setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
+      });
     });
+    return () => window.cancelAnimationFrame(frame);
   }, [refresh, t]);
 
   useEffect(() => {
@@ -151,7 +139,9 @@ export function MemosApp() {
     setMemos((current) => {
       const remaining = current.filter((memo) => memo.id !== id);
       if (remaining.length === 0) {
-        void refresh();
+        void refresh().catch((error) => {
+          setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
+        });
       }
       return remaining;
     });
@@ -159,10 +149,13 @@ export function MemosApp() {
 
   useEffect(() => {
     if (!scrollToMemoId) return;
-    const node = document.getElementById(`memo-${scrollToMemoId}`);
-    if (!node) return;
-    node.scrollIntoView({ behavior: "smooth", block: "start" });
-    setScrollToMemoId(null);
+    const frame = window.requestAnimationFrame(() => {
+      const node = document.getElementById(`memo-${scrollToMemoId}`);
+      if (!node) return;
+      node.scrollIntoView({ behavior: "smooth", block: "start" });
+      setScrollToMemoId(null);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [scrollToMemoId, memos]);
 
   async function persist(next: DiveMemo) {
@@ -195,6 +188,8 @@ export function MemosApp() {
       await persist(memo);
       setEditingHeadingId(memo.id);
       setScrollToMemoId(memo.id);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("localSaveFailed"));
     } finally {
       setBusy(false);
     }
@@ -210,6 +205,10 @@ export function MemosApp() {
       } else {
         setMemos(remaining);
       }
+      return true;
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : t("localSaveFailed"));
+      return false;
     } finally {
       setBusy(false);
     }
@@ -372,7 +371,10 @@ export function MemosApp() {
               onMemoChange={handleMemoChange}
               onDiveChange={handleDiveChange}
               onMemoDeleted={handleMemoDeleted}
-              onDelete={() => void removeMemo(memo.id)}
+              onDelete={() => removeMemo(memo.id)}
+              onSaveError={(error) =>
+                setStatus(error instanceof Error ? error.message : t("localSaveFailed"))
+              }
               onDeviceGps={(pendingSave) =>
                 void requestDeviceGps(memo.id, pendingSave)
               }
@@ -453,6 +455,7 @@ function MemoCard({
   onDiveChange,
   onMemoDeleted,
   onDelete,
+  onSaveError,
   onDeviceGps,
   onPhotoGps,
   t,
@@ -469,7 +472,8 @@ function MemoCard({
   onMemoChange: (memo: DiveMemo) => void;
   onDiveChange: (dive: LocalDive) => void;
   onMemoDeleted: (id: string) => void;
-  onDelete: () => void;
+  onDelete: () => Promise<boolean>;
+  onSaveError: (error: unknown) => void;
   onDeviceGps: (pendingSave: Promise<DiveMemo | null>) => void;
   onPhotoGps: (pendingSave: Promise<DiveMemo | null>) => void;
   t: AppTranslate;
@@ -480,9 +484,12 @@ function MemoCard({
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveChainRef = useRef<Promise<DiveMemo | null>>(Promise.resolve(null));
   const onChangeRef = useRef(onChange);
+  const onSaveErrorRef = useRef(onSaveError);
   const revisionRef = useRef(0);
   const dirtyRef = useRef(false);
   const mountedRef = useRef(true);
+  const discardOnUnmountRef = useRef(false);
+  const deleteStartedRef = useRef(false);
   const [coordsDraft, setCoordsDraft] = useState(
     formatCoordinatePair(memo.lat, memo.lng),
   );
@@ -495,7 +502,8 @@ function MemoCard({
 
   useEffect(() => {
     onChangeRef.current = onChange;
-  }, [onChange]);
+    onSaveErrorRef.current = onSaveError;
+  }, [onChange, onSaveError]);
 
   // Sync draft from parent when GPS or another external action changes the memo.
   // Defer the state update so a user edit that lands first can mark the draft dirty.
@@ -523,13 +531,16 @@ function MemoCard({
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      if (saveTimerRef.current) {
+      if (saveTimerRef.current && !discardOnUnmountRef.current) {
         clearTimeout(saveTimerRef.current);
         saveTimerRef.current = null;
         saveChainRef.current = saveChainRef.current
           .catch(() => null)
           .then(() => onChangeRef.current(draftRef.current))
-          .catch(() => null);
+          .catch((error) => {
+            onSaveErrorRef.current(error);
+            return null;
+          });
       }
     };
   }, []);
@@ -547,7 +558,10 @@ function MemoCard({
         }
         return stored;
       })
-      .catch(() => null);
+      .catch((error) => {
+        if (mountedRef.current) onSaveErrorRef.current(error);
+        return null;
+      });
     return saveChainRef.current;
   }
 
@@ -594,6 +608,23 @@ function MemoCard({
     flushSave();
   }
 
+  async function deleteMemoSafely() {
+    if (deleteStartedRef.current) return false;
+    deleteStartedRef.current = true;
+    discardOnUnmountRef.current = true;
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    await saveChainRef.current.catch(() => null);
+    const deleted = await onDelete();
+    if (!deleted) {
+      deleteStartedRef.current = false;
+      discardOnUnmountRef.current = false;
+    }
+    return deleted;
+  }
+
   return (
     <article className="memo-card" id={`memo-${memo.id}`}>
       <header className="memo-card-header">
@@ -628,7 +659,7 @@ function MemoCard({
           type="button"
           className="button button-quiet"
           disabled={busy}
-          onClick={onDelete}
+          onClick={() => void deleteMemoSafely()}
           aria-label={t("deleteMemo")}
           title={t("deleteMemo")}
         >
@@ -895,6 +926,7 @@ function MemoCard({
         dives={dives}
         onDiveChange={onDiveChange}
         onMemoDeleted={onMemoDeleted}
+        onDeleteMemo={() => deleteMemoSafely()}
       />
     </article>
   );

@@ -18,6 +18,7 @@ const {
   memoFieldsFromHour24,
   memoHour24,
   memoLocalDateTimeFields,
+  memoWallClockMs,
   nextDiveMemoHeading,
   normalizeMemoMinute,
   stepMemoHour,
@@ -26,11 +27,15 @@ const {
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`,
 );
 
-test("nextDiveMemoHeading starts at Dive 1 and increments by count", () => {
+test("nextDiveMemoHeading starts at Dive 1 and avoids reused headings", () => {
   assert.equal(nextDiveMemoHeading([]), "Dive 1");
   assert.equal(nextDiveMemoHeading([{ heading: "Dive 1" }]), "Dive 2");
   assert.equal(
     nextDiveMemoHeading([{ heading: "Dive 1" }, { heading: "Custom" }]),
+    "Dive 3",
+  );
+  assert.equal(
+    nextDiveMemoHeading([{ heading: "Dive 2" }]),
     "Dive 3",
   );
 });
@@ -69,6 +74,18 @@ test("current-time fields update the local date and time together", () => {
     minute: 47,
     meridiem: "PM",
   });
+});
+
+test("memo wall-clock parsing rejects impossible calendar dates", () => {
+  assert.equal(
+    memoWallClockMs({
+      date: "2026-02-30",
+      hour: 10,
+      minute: 0,
+      meridiem: "AM",
+    }),
+    null,
+  );
 });
 
 test("legacy memo records gain site identity and sort by actual memo time", () => {

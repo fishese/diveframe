@@ -39,7 +39,7 @@ import {
 import {
   addLocalPhotos,
   clearLocalDiveSiteOverride,
-  createLocalTrip,
+  createLocalTripWithAssignments,
   deleteLocalAttachment,
   deleteLocalDive,
   deleteLocalDiveBySource,
@@ -381,19 +381,22 @@ export function DiveFrameApp() {
     const openImport = params.get("import") === "1";
     const openBle = params.get("ble") === "1";
     if (!openImport && !openBle) return;
-    if (openImport) {
-      setImportGuideOpen(true);
-      setBleImportOpen(false);
-      setMobileDetail(false);
-    } else if (openBle) {
-      setBleImportOpen(true);
-      setImportGuideOpen(false);
-      setMobileDetail(false);
-    }
-    params.delete("import");
-    params.delete("ble");
-    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
-    window.history.replaceState({}, "", next || "/");
+    const frame = window.requestAnimationFrame(() => {
+      if (openImport) {
+        setImportGuideOpen(true);
+        setBleImportOpen(false);
+        setMobileDetail(false);
+      } else if (openBle) {
+        setBleImportOpen(true);
+        setImportGuideOpen(false);
+        setMobileDetail(false);
+      }
+      params.delete("import");
+      params.delete("ble");
+      const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+      window.history.replaceState({}, "", next || "/");
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   function goFrontOfApp() {
@@ -957,8 +960,7 @@ export function DiveFrameApp() {
     setBusy(true);
     setStatus(t("savingTripAssignment"));
     try {
-      const trip = await createLocalTrip(name);
-      await setLocalDiveTripIds(ids, trip.id);
+      await createLocalTripWithAssignments(name, ids);
       await refreshDives(selectedId ?? undefined);
       setSelectedDiveIds(new Set());
       setNewTripFormOpen(false);
@@ -1028,8 +1030,10 @@ export function DiveFrameApp() {
     setBusy(true);
     setStatus(t("savingTripAssignment"));
     try {
-      const trip = await createLocalTrip(name);
-      const updated = await setLocalDiveTripId(diveId, trip.id);
+      const { trip, dives: updatedDives } =
+        await createLocalTripWithAssignments(name, [diveId]);
+      const updated = updatedDives[0];
+      if (!updated) throw new Error("Dive not found in this browser.");
       setTrips((current) =>
         [...current, trip].sort((a, b) => a.name.localeCompare(b.name)),
       );
@@ -2699,6 +2703,7 @@ function DiveDetail({
                       type="button"
                       className="buddy-suggestion"
                       role="option"
+                      aria-selected={false}
                       disabled={busy}
                       onClick={() =>
                         setBuddyDraft(completeBuddyToken(buddyDraft, name))

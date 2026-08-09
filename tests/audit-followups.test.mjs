@@ -19,6 +19,7 @@ async function loadModule(path) {
 const backupSize = await loadModule("lib/backup-size-estimate.ts");
 const osm = await loadModule("lib/osm-upstream.ts");
 const crossTab = await loadModule("lib/cross-tab-sync.ts");
+const backupRecords = await loadModule("lib/backup-record-validation.ts");
 
 test("backup size estimate expands binary bytes without encoding them", () => {
   assert.equal(backupSize.base64EncodedLength(3), 4);
@@ -131,4 +132,167 @@ test("local data revision bumps and conflict detection work", () => {
     () => crossTab.assertLocalDataRevision(1),
     (error) => error?.name === "LocalDataConflictError",
   );
+});
+
+test("backup record validation rejects crash-prone dive and memo shapes", () => {
+  const dive = {
+    id: "dive-1",
+    importedAt: "2026-08-09T00:00:00.000Z",
+    photoCount: 0,
+    sources: [],
+  };
+  assert.equal(backupRecords.isValidBackupDive(dive), true);
+  assert.equal(backupRecords.isValidBackupDive({ id: "dive-1" }), false);
+  assert.equal(
+    backupRecords.isValidBackupDive({ ...dive, samples: {} }),
+    false,
+  );
+  assert.equal(
+    backupRecords.isValidBackupDive({ ...dive, diveDate: "2026-02-30" }),
+    false,
+  );
+  assert.equal(
+    backupRecords.isValidBackupDive({ ...dive, gasMixes: ["air"] }),
+    false,
+  );
+  assert.equal(
+    backupRecords.isValidBackupDive({
+      ...dive,
+      samples: [{ elapsedSeconds: 1, depthM: 2, pressuresBar: [null, 200] }],
+    }),
+    true,
+  );
+  const memo = {
+    id: "memo-1",
+    heading: "Dive 1",
+    date: "2026-08-09",
+    hour: 10,
+    minute: 0,
+    meridiem: "AM",
+    siteName: null,
+    siteSource: null,
+    siteCatalogId: null,
+    location: null,
+    lat: null,
+    lng: null,
+    buddies: null,
+    notes: null,
+    createdAt: "2026-08-09T00:00:00.000Z",
+    updatedAt: "2026-08-09T00:00:00.000Z",
+  };
+  assert.equal(backupRecords.isValidBackupDiveMemo(memo), true);
+  assert.equal(
+    backupRecords.isValidBackupDiveMemo({ ...memo, date: "2026-02-30" }),
+    false,
+  );
+  assert.equal(
+    backupRecords.isValidBackupDiveMemo({ ...memo, lat: 22, lng: null }),
+    false,
+  );
+  assert.equal(
+    backupRecords.isValidBackupAppPreferences({
+      id: "app",
+      uiLanguage: "en",
+      updatedAt: "2026-08-09T00:00:00.000Z",
+    }),
+    true,
+  );
+  assert.equal(
+    backupRecords.isValidBackupAppPreferences({
+      id: "app",
+      uiLanguage: "klingon",
+      updatedAt: "2026-08-09T00:00:00.000Z",
+    }),
+    false,
+  );
+  assert.equal(
+    backupRecords.isValidBackupTrip({
+      id: "trip-1",
+      name: "Red Sea",
+      updatedAt: "2026-08-09T00:00:00.000Z",
+    }),
+    true,
+  );
+  assert.equal(
+    backupRecords.isValidBackupTrip({ id: "trip-1", name: null }),
+    false,
+  );
+  assert.equal(
+    backupRecords.isValidBackupSupplementaryCatalog({
+      id: "default",
+      label: "Extra sites",
+      updatedAt: "2026-08-09T00:00:00.000Z",
+      catalog: { schemaVersion: 1, sites: [] },
+    }),
+    true,
+  );
+  assert.equal(
+    backupRecords.isValidBackupSourceRecord({
+      key: "uddf\u0000source-1",
+      source: "uddf",
+      sourceId: "source-1",
+      diveId: "dive-1",
+      importedAt: "2026-08-09T00:00:00.000Z",
+    }),
+    true,
+  );
+  assert.equal(
+    backupRecords.isValidBackupSourceRecord({
+      key: "wrong",
+      source: "uddf",
+      sourceId: "source-1",
+      diveId: "dive-1",
+      importedAt: "2026-08-09T00:00:00.000Z",
+    }),
+    false,
+  );
+});
+
+test("local data notifications survive blocked localStorage", () => {
+  crossTab.resetCrossTabSyncForTests();
+  globalThis.localStorage = {
+    getItem: () => {
+      throw new DOMException("blocked", "SecurityError");
+    },
+    setItem: () => {
+      throw new DOMException("blocked", "SecurityError");
+    },
+    removeItem: () => undefined,
+  };
+  assert.equal(crossTab.readLocalDataRevision(), 0);
+  assert.equal(crossTab.bumpLocalDataRevision(), 1);
+  assert.equal(crossTab.readLocalDataRevision(), 1);
+  assert.doesNotThrow(() => crossTab.publishLocalDataChange("mutation"));
+});
+
+test("storage events refresh other tabs when BroadcastChannel is unavailable", () => {
+  const originalBroadcastChannel = globalThis.BroadcastChannel;
+  const originalWindow = globalThis.window;
+  const listeners = new Map();
+  try {
+    globalThis.BroadcastChannel = undefined;
+    globalThis.window = {
+      addEventListener: (type, listener) => listeners.set(type, listener),
+      removeEventListener: (type, listener) => {
+        if (listeners.get(type) === listener) listeners.delete(type);
+      },
+    };
+    crossTab.resetCrossTabSyncForTests();
+    const messages = [];
+    const unsubscribe = crossTab.subscribeLocalDataChanges((message) =>
+      messages.push(message),
+    );
+    listeners.get("storage")?.({
+      key: "diveframe-data-revision",
+      newValue: "7",
+    });
+    assert.equal(messages.length, 1);
+    assert.equal(messages[0].revision, 7);
+    unsubscribe();
+    assert.equal(listeners.has("storage"), false);
+  } finally {
+    globalThis.BroadcastChannel = originalBroadcastChannel;
+    globalThis.window = originalWindow;
+    crossTab.resetCrossTabSyncForTests();
+  }
 });

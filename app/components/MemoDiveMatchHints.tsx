@@ -7,6 +7,7 @@ import { formatCoordinatePair } from "@/lib/coordinate-input";
 import type { DiveMemo } from "@/lib/dive-memos";
 import { memoSiteName, memoWallClockMs } from "@/lib/dive-memos";
 import {
+  applyLocalDiveMemoPlan,
   deleteLocalDiveMemo,
   type LocalDive,
   updateLocalDiveDetails,
@@ -31,6 +32,8 @@ type WindowLevel = "preferred" | "wider" | "widest";
 type MemoDiveMatchHintsBase = {
   /** Called after a memo is deleted from IndexedDB (× or post-apply Delete). */
   onMemoDeleted?: (id: string) => void;
+  /** Lets an owning editor drain/cancel pending autosaves before deletion. */
+  onDeleteMemo?: (memo: DiveMemo) => Promise<boolean>;
 };
 
 export type MemoDiveMatchHintsProps = MemoDiveMatchHintsBase &
@@ -120,46 +123,9 @@ function hasValidMemoGps(memo: DiveMemo): boolean {
 
 async function writeApplyPlan(
   plan: MemoDiveApplyPlan,
-  memo: DiveMemo,
   dive: LocalDive,
 ): Promise<LocalDive> {
-  let current = dive;
-
-  if (plan.setUserSite) {
-    current = await updateLocalDiveSite(current.id, {
-      name: plan.setUserSite,
-      source: "memo",
-      latitude: memo.lat,
-      longitude: memo.lng,
-      ...(plan.setLocation !== undefined
-        ? { location: plan.setLocation }
-        : {}),
-    });
-  } else if (plan.setLocation !== undefined) {
-    current = await updateLocalDiveDetails(current.id, {
-      location: plan.setLocation,
-      locationSource: "memo",
-      buddy: current.buddy,
-      notes: current.notes,
-    });
-  }
-
-  if (plan.setUserGps) {
-    current = await updateLocalDiveUserGps(current.id, {
-      lat: plan.setUserGps.lat,
-      lng: plan.setUserGps.lng,
-      source: "memo",
-    });
-  }
-
-  if (plan.setBuddy !== undefined || plan.setNotes !== undefined) {
-    current = await updateLocalDiveDetails(current.id, {
-      buddy: plan.setBuddy !== undefined ? plan.setBuddy : current.buddy,
-      notes: plan.setNotes !== undefined ? plan.setNotes : current.notes,
-    });
-  }
-
-  return current;
+  return applyLocalDiveMemoPlan(dive.id, plan);
 }
 
 export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
@@ -220,11 +186,15 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
   }
 
   async function deleteMemo(memo: DiveMemo) {
-    await deleteLocalDiveMemo(memo.id);
+    const deleted = props.onDeleteMemo
+      ? await props.onDeleteMemo(memo)
+      : await deleteLocalDiveMemo(memo.id).then(() => true);
+    if (!deleted) return false;
     notifyMemoDeleted(memo.id);
     setExpandedId(null);
     setPostApply(null);
     if (props.mode === "on-memo") setMemoDeleted(true);
+    return true;
   }
 
   async function confirmDeleteMemo(memo: DiveMemo) {
@@ -249,7 +219,7 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
     setBusy(true);
     setStatus(null);
     try {
-      const updated = await writeApplyPlan(plan, memo, dive);
+      const updated = await writeApplyPlan(plan, dive);
       // Defer onDiveChange until Keep/Delete/backdrop so parents that gate on
       // dive place name keep this component mounted for the post-apply dialog.
       setPostApply({ memo, dive: updated });
@@ -349,9 +319,10 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
     setBusy(true);
     setStatus(null);
     try {
-      await deleteMemo(memo);
-      props.onDiveChange(dive);
-      setPostApply(null);
+      if (await deleteMemo(memo)) {
+        props.onDiveChange(dive);
+        setPostApply(null);
+      }
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));
     } finally {

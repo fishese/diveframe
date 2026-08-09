@@ -44,11 +44,22 @@ export type DiveMemoDefaults = Pick<
   | "notes"
 >;
 
-/** Next heading from existing memo count: Dive 1, Dive 2, … */
+/** Next unused sequential heading: Dive 1, Dive 2, … */
 export function nextDiveMemoHeading(
   existing: ReadonlyArray<unknown>,
 ): string {
-  return `Dive ${existing.length + 1}`;
+  let nextNumber = existing.length + 1;
+
+  for (const entry of existing) {
+    if (!entry || typeof entry !== "object") continue;
+    const heading = (entry as { heading?: unknown }).heading;
+    if (typeof heading !== "string") continue;
+    const match = /^Dive\s+(\d+)$/i.exec(heading.trim());
+    if (!match) continue;
+    nextNumber = Math.max(nextNumber, Number.parseInt(match[1], 10) + 1);
+  }
+
+  return `Dive ${nextNumber}`;
 }
 
 export function defaultDiveMemoFields(
@@ -176,8 +187,19 @@ export function memoWallClockMs(
     hour24,
     normalizeMemoMinute(memo.minute),
     0,
-  ).getTime();
-  return Number.isNaN(timestamp) ? null : timestamp;
+  );
+  // Date normalizes impossible values (for example 31 February) and DST gaps.
+  // Reject those rather than matching a memo against a different wall time.
+  if (
+    timestamp.getFullYear() !== year ||
+    timestamp.getMonth() !== month - 1 ||
+    timestamp.getDate() !== day ||
+    timestamp.getHours() !== hour24 ||
+    timestamp.getMinutes() !== normalizeMemoMinute(memo.minute)
+  ) {
+    return null;
+  }
+  return timestamp.getTime();
 }
 
 export function memoSiteName(

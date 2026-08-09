@@ -1,5 +1,4 @@
 import type {
-  BlockPosition,
   CanvasRatio,
   ComposerSettings,
   PanelDensity,

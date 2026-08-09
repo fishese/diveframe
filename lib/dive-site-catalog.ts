@@ -56,15 +56,19 @@ export function saveSessionDiveSiteCatalog(
   label: string,
 ) {
   if (typeof sessionStorage === "undefined") return;
-  sessionStorage.setItem(SESSION_CATALOG_KEY, JSON.stringify(catalog));
-  sessionStorage.setItem(SESSION_CATALOG_LABEL_KEY, label);
+  try {
+    sessionStorage.setItem(SESSION_CATALOG_KEY, JSON.stringify(catalog));
+    sessionStorage.setItem(SESSION_CATALOG_LABEL_KEY, label);
+  } catch {
+    // Optional migration storage can be unavailable in strict privacy modes.
+  }
 }
 
 export function loadSessionDiveSiteCatalog() {
   if (typeof sessionStorage === "undefined") return null;
-  const serialized = sessionStorage.getItem(SESSION_CATALOG_KEY);
-  if (!serialized) return null;
   try {
+    const serialized = sessionStorage.getItem(SESSION_CATALOG_KEY);
+    if (!serialized) return null;
     return {
       catalog: validateDiveSiteCatalog(JSON.parse(serialized)),
       label:
@@ -79,8 +83,12 @@ export function loadSessionDiveSiteCatalog() {
 
 export function clearSessionDiveSiteCatalog() {
   if (typeof sessionStorage === "undefined") return;
-  sessionStorage.removeItem(SESSION_CATALOG_KEY);
-  sessionStorage.removeItem(SESSION_CATALOG_LABEL_KEY);
+  try {
+    sessionStorage.removeItem(SESSION_CATALOG_KEY);
+    sessionStorage.removeItem(SESSION_CATALOG_LABEL_KEY);
+  } catch {
+    // Nothing actionable when optional session storage is blocked.
+  }
 }
 
 export function takeSessionSupplementaryCatalogMigration() {

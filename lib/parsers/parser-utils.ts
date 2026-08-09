@@ -3,14 +3,16 @@ import type { DiveCategory } from "../dive-model";
 export function parseGpsPair(value: string | null | undefined) {
   if (!value) return null;
   const numbers = value
-    .replace(",", " ")
+    .replace(/[,\uFF0C]/g, " ")
     .trim()
     .split(/\s+/)
     .map(Number);
   if (
-    numbers.length < 2 ||
+    numbers.length !== 2 ||
     !Number.isFinite(numbers[0]) ||
-    !Number.isFinite(numbers[1])
+    !Number.isFinite(numbers[1]) ||
+    Math.abs(numbers[0]) > 90 ||
+    Math.abs(numbers[1]) > 180
   ) {
     return null;
   }

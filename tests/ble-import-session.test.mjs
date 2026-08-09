@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import ts from "typescript";
 
-async function loadSession() {
+async function loadSession(overrides = {}) {
   const source = await readFile("lib/ble-import-session.ts", "utf8");
   let javascript = ts.transpileModule(source, {
     compilerOptions: {
@@ -18,6 +18,7 @@ async function loadSession() {
       "data:text/javascript,export const diveComputerCapability={isAvailable:()=>false,downloadDives:async()=>({cancelled:true,diveCount:0}),addListener:async()=>({remove:async()=>{}})}",
     "./indexed-db":
       "data:text/javascript,export async function getLocalDeviceCheckpoint(){return null}export async function clearLocalDeviceCheckpoint(){}export async function persistBleImport(){return{diveCount:0,newCount:0,alreadyPresentCount:0,checkpointAdvanced:false}}",
+    ...overrides,
   };
   for (const [specifier, url] of Object.entries(stubs)) {
     javascript = javascript.replaceAll(
@@ -79,4 +80,25 @@ test("formatBleDiveStamp uses yyyy-mm-dd hh:mm without a T separator", () => {
     session.formatBleDiveStamp("2026-06-13 10:49:59"),
     "2026-06-13 10:49",
   );
+});
+
+test("streaming storage failures reject without advancing the checkpoint", async () => {
+  globalThis.__bleCheckpointWrites = 0;
+  const failingSession = await loadSession({
+    "./ble-persist":
+      "data:text/javascript,export function deviceCheckpointId(d,s){return d+'\\0'+s.toUpperCase()}export function buildDeviceCheckpoint(){return{id:'checkpoint'}}export async function prepareBlePersistFromDownload(){return{dives:[],rawRecords:[],checkpoint:null,failedParseCount:0}}export async function prepareBlePersistFromCapturedDive(){return{dives:[{id:'dive-1'}],rawRecords:[],checkpoint:null,failedParseCount:0,diveDate:'2026-08-09T10:00:00'}}",
+    "./dive-computer-capability":
+      "data:text/javascript,let capture;export const diveComputerCapability={isAvailable:()=>true,addListener:async(_event,listener)=>{capture=listener;return{remove:async()=>{}}},downloadDives:async()=>{capture({dataBase64:'AA==',fingerprintHex:'AA',product:'Perdix',serialHex:'01'});return{cancelled:false,diveCount:1,dives:[],product:'Perdix',serialHex:'01',newestFingerprintHex:'AA'}}}",
+    "./indexed-db":
+      "data:text/javascript,export async function getLocalDeviceCheckpoint(){return null}export async function clearLocalDeviceCheckpoint(){}export async function persistBleImport(payload){if(payload.checkpoint){globalThis.__bleCheckpointWrites+=1;return{diveCount:0,newCount:0,alreadyPresentCount:0,checkpointAdvanced:true}}throw new Error('quota exceeded')}",
+  });
+  await assert.rejects(
+    failingSession.runBleImportSession({
+      intent: "history",
+      quantity: { kind: "last-n", n: 1 },
+    }),
+    /quota exceeded/,
+  );
+  assert.equal(globalThis.__bleCheckpointWrites, 0);
+  delete globalThis.__bleCheckpointWrites;
 });

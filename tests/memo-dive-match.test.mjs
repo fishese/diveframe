@@ -222,3 +222,14 @@ test("date-only dive timestamps are interpreted as local midnight", () => {
   assert.equal(evaluation.qualifies, true);
   assert.equal(evaluation.deltaMs, 0);
 });
+
+test("invalid imported calendar dates cannot match memos", () => {
+  assert.equal(
+    evaluateMemoCandidate(
+      { diveDate: "2026-02-30 10:00:00" },
+      memoAt("valid", "2026-03-02", 10, "AM"),
+      24 * 3600_000,
+    ).exclusion,
+    "invalid-dive-time",
+  );
+});

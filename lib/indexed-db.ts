@@ -28,14 +28,19 @@ import {
 } from "./cross-tab-sync";
 import { withOptimizedJpeg } from "./media-optimization";
 import type { DiveMemo } from "./dive-memos";
+import type { MemoDiveApplyPlan } from "./memo-dive-apply";
 import {
   compareDiveMemos,
+  createDiveMemoId,
+  defaultDiveMemoFields,
   hydrateDiveMemo,
+  nextDiveMemoHeading,
   normalizeMemoMinute,
 } from "./dive-memos";
 import {
   clearedDiveFrameSiteData,
   inferLegacyLocationOverride,
+  preferredImportedSite,
   type DiveLocationOverrideSource,
 } from "./dive-site-overrides";
 import type { DiveSiteCatalog } from "./dive-site-catalog";
@@ -395,7 +400,6 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
       diveId: canonicalId,
       importedAt: now,
     } satisfies SourceRecord);
-    if (incoming.site) contributionsStore.delete(canonicalId);
   }
 
   await transactionComplete(transaction);
@@ -540,6 +544,7 @@ export async function clearLocalDeviceCheckpoint(id: string) {
   );
   transaction.objectStore(DEVICE_CHECKPOINTS_STORE).delete(id);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 async function rekeyDive(
@@ -653,6 +658,7 @@ export async function addLocalPhotos(diveId: string, files: File[]) {
   additions.forEach((attachment) => attachmentsStore.put(attachment));
   divesStore.put({ ...dive, photoCount: existing.length + additions.length });
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return additions;
 }
 
@@ -681,6 +687,7 @@ export async function deleteLocalAttachment(diveId: string, attachmentId: string
     photoCount: Math.max(0, attachmentCount - 1),
   });
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 /**
@@ -769,6 +776,7 @@ export async function addLocalBackgrounds(files: File[]) {
   } satisfies LocalBackground));
   additions.forEach((background) => store.put(background));
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return additions;
 }
 
@@ -777,6 +785,7 @@ export async function deleteLocalBackground(id: string) {
   const transaction = database.transaction(BACKGROUNDS_STORE, "readwrite");
   transaction.objectStore(BACKGROUNDS_STORE).delete(id);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 export async function updateLocalBackgroundName(id: string, displayName: string) {
@@ -794,6 +803,7 @@ export async function updateLocalBackgroundName(id: string, displayName: string)
   };
   store.put(updated);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return updated;
 }
 
@@ -833,6 +843,7 @@ export async function saveLocalOverlayLogo(file: File) {
   const transaction = database.transaction(BRANDING_ASSETS_STORE, "readwrite");
   transaction.objectStore(BRANDING_ASSETS_STORE).put(asset);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return asset;
 }
 
@@ -841,6 +852,7 @@ export async function deleteLocalOverlayLogo() {
   const transaction = database.transaction(BRANDING_ASSETS_STORE, "readwrite");
   transaction.objectStore(BRANDING_ASSETS_STORE).delete("overlay-logo");
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 export async function getLocalAppPreferences() {
@@ -871,7 +883,13 @@ export async function saveLocalAppPreferences(
     >
   >,
 ) {
-  const existing = await getLocalAppPreferences();
+  // Theme, language, What's New, and composer defaults can save concurrently.
+  // Read and merge inside the write transaction so unrelated fields are not
+  // overwritten by a stale snapshot from a separate read transaction.
+  const database = await openDatabase();
+  const transaction = database.transaction(APP_PREFERENCES_STORE, "readwrite");
+  const store = transaction.objectStore(APP_PREFERENCES_STORE);
+  const existing = await request<LocalAppPreferences | undefined>(store.get("app"));
   const saved: LocalAppPreferences = {
     ...existing,
     id: "app",
@@ -911,10 +929,9 @@ export async function saveLocalAppPreferences(
         : existing?.lastSeenWhatsNewVersion ?? null,
     updatedAt: new Date().toISOString(),
   };
-  const database = await openDatabase();
-  const transaction = database.transaction(APP_PREFERENCES_STORE, "readwrite");
-  transaction.objectStore(APP_PREFERENCES_STORE).put(saved);
+  store.put(saved);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("preferences");
   return saved;
 }
 
@@ -945,6 +962,7 @@ export async function saveLocalSupplementaryCatalog(
   );
   transaction.objectStore(SUPPLEMENTARY_CATALOG_STORE).put(saved);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return saved;
 }
 
@@ -956,6 +974,7 @@ export async function clearLocalSupplementaryCatalog() {
   );
   transaction.objectStore(SUPPLEMENTARY_CATALOG_STORE).delete("default");
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 export async function updateLocalDiveSite(
@@ -1161,6 +1180,81 @@ export async function listLocalDiveMemos() {
   return memos.map(hydrateDiveMemo).sort(compareDiveMemos);
 }
 
+/** Apply a memo's fill-empty plan as one IndexedDB mutation. */
+export async function applyLocalDiveMemoPlan(
+  id: string,
+  plan: MemoDiveApplyPlan,
+) {
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [DIVES_STORE, SITE_CONTRIBUTIONS_STORE],
+    "readwrite",
+  );
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
+  const stored = await request<LocalDive | undefined>(divesStore.get(id));
+  if (!stored) {
+    transaction.abort();
+    throw new Error("Dive not found in this browser.");
+  }
+  const now = new Date().toISOString();
+  const updated = hydrateDive(stored);
+  if (plan.setUserSite !== undefined) {
+    updated.userSite = plan.setUserSite;
+    updated.userSiteSource = "memo";
+    updated.userSiteCatalogId = null;
+    updated.userSiteUpdatedAt = now;
+    contributionsStore.delete(id);
+  }
+  if (plan.setLocation !== undefined) {
+    updated.location = plan.setLocation?.trim() || null;
+    updated.locationSource = "memo";
+  }
+  if (plan.setUserGps !== undefined) {
+    updated.userGpsLat = plan.setUserGps.lat;
+    updated.userGpsLng = plan.setUserGps.lng;
+    updated.userGpsSource = "memo";
+    updated.userGpsUpdatedAt = now;
+    updated.resolvedLocationSuppressed = false;
+  }
+  if (plan.setBuddy !== undefined) {
+    updated.buddy = plan.setBuddy?.trim() || null;
+  }
+  if (plan.setNotes !== undefined) {
+    updated.notes = plan.setNotes?.trim() || null;
+  }
+  updated.appEditedAt = now;
+  divesStore.put(updated);
+  await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
+  return updated;
+}
+
+/** Atomically create the starter memo only when the store is still empty. */
+export async function listOrCreateLocalDiveMemos() {
+  const database = await openDatabase();
+  const transaction = database.transaction(DIVE_MEMOS_STORE, "readwrite");
+  const store = transaction.objectStore(DIVE_MEMOS_STORE);
+  const existing = await request<DiveMemo[]>(store.getAll());
+  if (existing.length > 0) {
+    await transactionComplete(transaction);
+    return existing.map(hydrateDiveMemo).sort(compareDiveMemos);
+  }
+
+  const now = new Date().toISOString();
+  const created: DiveMemo = {
+    id: createDiveMemoId(),
+    heading: nextDiveMemoHeading([]),
+    ...defaultDiveMemoFields(),
+    createdAt: now,
+    updatedAt: now,
+  };
+  store.put(created);
+  await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
+  return [created];
+}
+
 export async function saveLocalDiveMemo(memo: DiveMemo) {
   const stored: DiveMemo = hydrateDiveMemo({
     ...memo,
@@ -1200,7 +1294,49 @@ export async function createLocalTrip(name: string) {
   const transaction = database.transaction(TRIPS_STORE, "readwrite");
   transaction.objectStore(TRIPS_STORE).put(trip);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return trip;
+}
+
+/** Create a trip and assign its dives in one transaction. */
+export async function createLocalTripWithAssignments(
+  name: string,
+  diveIds: string[],
+) {
+  const normalizedName = name.trim();
+  if (!normalizedName) throw new Error("Enter a trip name.");
+  const uniqueDiveIds = [...new Set(diveIds)];
+  if (uniqueDiveIds.length === 0) throw new Error("Choose at least one dive.");
+  const trip: LocalTrip = {
+    id: crypto.randomUUID(),
+    name: normalizedName,
+    updatedAt: new Date().toISOString(),
+  };
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [TRIPS_STORE, DIVES_STORE],
+    "readwrite",
+  );
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const updatedDives: LocalDive[] = [];
+  for (const diveId of uniqueDiveIds) {
+    const dive = await request<LocalDive | undefined>(divesStore.get(diveId));
+    if (!dive) {
+      transaction.abort();
+      throw new Error("Dive not found in this browser.");
+    }
+    const updated = {
+      ...hydrateDive(dive),
+      tripId: trip.id,
+      appEditedAt: new Date().toISOString(),
+    };
+    divesStore.put(updated);
+    updatedDives.push(updated);
+  }
+  transaction.objectStore(TRIPS_STORE).put(trip);
+  await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
+  return { trip, dives: updatedDives };
 }
 
 export async function renameLocalTrip(id: string, name: string) {
@@ -1221,6 +1357,7 @@ export async function renameLocalTrip(id: string, name: string) {
   };
   store.put(updated);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return updated;
 }
 
@@ -1254,6 +1391,7 @@ export async function deleteLocalTrip(
   }
   tripsStore.delete(id);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 export async function setLocalDiveTripId(
@@ -1305,6 +1443,7 @@ export async function setLocalDiveTripIds(
     });
   }
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 export async function updateLocalDiveUserGps(
@@ -1361,6 +1500,7 @@ export async function saveLocalComposerSettings(settings: ComposerSettings) {
     .objectStore(COMPOSER_SETTINGS_STORE)
     .put({ ...settings, updatedAt: new Date().toISOString() });
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 export async function listLocalComposerPresets() {
@@ -1397,6 +1537,7 @@ export async function saveLocalComposerPreset(
   };
   store.put(preset);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return preset;
 }
 
@@ -1405,6 +1546,7 @@ export async function deleteLocalComposerPreset(id: string) {
   const transaction = database.transaction(COMPOSER_PRESETS_STORE, "readwrite");
   transaction.objectStore(COMPOSER_PRESETS_STORE).delete(id);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 export async function requestPersistentLocalStorage() {
@@ -1968,8 +2110,6 @@ function mergeDive(
   ) {
     sourceDiveNumbers.shearwater = existing.diveNumber;
   }
-  const sourceSuppliesSite = Boolean(incoming.site);
-
   return {
     id,
     diveNumber: core(incoming.diveNumber, existing?.diveNumber),
@@ -1986,7 +2126,7 @@ function mergeDive(
         ? existing.location
         : core(incoming.location, existing?.location),
     locationSource: existing?.locationSource ?? null,
-    site: existing?.site ?? incoming.site,
+    site: preferredImportedSite(sourceSiteNames),
     buddy: existing?.buddy ?? incoming.buddy,
     notes: existing?.notes ?? incoming.notes,
     serialNumber: core(incoming.serialNumber, existing?.serialNumber),
@@ -2048,14 +2188,10 @@ function mergeDive(
       existing?.cylinderPresetId ?? incoming.cylinderPresetId ?? null,
     cylinderVolumeL:
       existing?.cylinderVolumeL ?? incoming.cylinderVolumeL ?? null,
-    userSite: sourceSuppliesSite ? null : (existing?.userSite ?? null),
-    userSiteSource: sourceSuppliesSite ? null : (existing?.userSiteSource ?? null),
-    userSiteCatalogId: sourceSuppliesSite
-      ? null
-      : (existing?.userSiteCatalogId ?? null),
-    userSiteUpdatedAt: sourceSuppliesSite
-      ? null
-      : (existing?.userSiteUpdatedAt ?? null),
+    userSite: existing?.userSite ?? null,
+    userSiteSource: existing?.userSiteSource ?? null,
+    userSiteCatalogId: existing?.userSiteCatalogId ?? null,
+    userSiteUpdatedAt: existing?.userSiteUpdatedAt ?? null,
     userGpsLat: existing?.userGpsLat ?? null,
     userGpsLng: existing?.userGpsLng ?? null,
     userGpsSource: existing?.userGpsSource ?? null,

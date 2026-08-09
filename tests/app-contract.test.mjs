@@ -218,12 +218,14 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(settings, /t\("backgroundName"\)/);
   assert.match(composer, /TEMPLATES/);
   assert.match(composer, /exportComposition/);
+  assert.match(composer, /settingsRef/);
+  assert.match(composer, /outputPreferencesRef/);
   const fileExport = await readFile("lib/file-export.ts", "utf8");
   assert.match(fileExport, /shareAfterExport/);
   const exporter = await readFile("lib/exporter.ts", "utf8");
   assert.match(exporter, /shareAfterExport/);
   const memosApp = await readFile("app/memos/MemosApp.tsx", "utf8");
-  assert.match(memosApp, /listLocalDiveMemos/);
+  assert.match(memosApp, /listOrCreateLocalDiveMemos/);
   assert.match(memosApp, /listLocalDives/);
   assert.match(memosApp, /MemoDiveMatchHints/);
   assert.match(memosApp, /mode="on-memo"/);
@@ -241,6 +243,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(memosApp, /memoHour24/);
   assert.match(memosApp, /saveChainRef/);
   assert.match(memosApp, /pendingSave/);
+  assert.match(memosApp, /discardOnUnmountRef/);
+  assert.match(memosApp, /deleteMemoSafely/);
+  assert.match(memosApp, /onDeleteMemo/);
   assert.match(app, /MemoDiveMatchHints/);
   assert.match(app, /diveNeedsPlaceNameHint/);
   assert.match(app, /listMemosNearDive/);
@@ -458,7 +463,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /className="trip-header"/);
   assert.match(app, /className="trip-block"/);
   assert.match(app, /className="select-action-bar"/);
-  assert.match(app, /setLocalDiveTripIds\(ids, trip\.id\)/);
+  assert.match(app, /createLocalTripWithAssignments\(name, ids\)/);
   assert.match(app, /setLocalDiveTripIds\(ids, null\)/);
   assert.match(app, /deleteLocalTrip\(tripId, \{ clearAssignments: assignedCount > 0 \}\)/);
   assert.match(diveSiteSuggestions, /expandedAliasSiteId/);
@@ -526,6 +531,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   );
   assert.match(
     await readFile(new URL("../lib/ble-import-session.ts", import.meta.url), "utf8"),
+    /Storage errors must reject the session/,
+  );
+  assert.match(
+    await readFile(new URL("../lib/ble-import-session.ts", import.meta.url), "utf8"),
     /summarizeNewDiveDates/,
   );
   const bleImportPanel = await readFile(
@@ -538,6 +547,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     bleImportPanel,
     /window\.confirm\(t\("bleImportCancelConfirm"\)\)/,
   );
+  assert.match(storage, /export async function applyLocalDiveMemoPlan/);
+  assert.match(storage, /\[DIVES_STORE, SITE_CONTRIBUTIONS_STORE\]/);
   assert.match(
     bleImportPanel,
     /phase === "downloading"[\s\S]*await cancelDownload\(\);\s*return;/,
@@ -630,12 +641,14 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v9/);
+  assert.match(serviceWorker, /diveframe-shell-v10/);
   assert.match(serviceWorker, /"\/memo"/);
   assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);
   assert.match(serviceWorker, /examples\/sample-dive\.uddf/);
   assert.match(serviceWorker, /examples\/dive-site-catalog-ai-prompt\.md/);
   assert.match(serviceWorker, /request\.mode === "navigate"/);
+  assert.match(serviceWorker, /async function cacheAppShell/);
+  assert.match(serviceWorker, /function discoverShellAssets/);
   assert.match(pwaInstall, /beforeinstallprompt/);
   assert.match(pwaInstall, /navigator\.serviceWorker\.register/);
   assert.match(settings, /PwaInstallCard/);

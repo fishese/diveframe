@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "dist/**",
     "dist-native/**",
     ".wrangler/**",
+    ".vinext/**",
+    ".worktrees/**",
     "android/.gradle/**",
     "android/build/**",
     "android/app/build/**",

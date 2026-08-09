@@ -26,6 +26,11 @@ export function preferredImportedLocation(values: SourceValues): string | null {
   return null;
 }
 
+/** Select the canonical imported site without displacing a user override. */
+export function preferredImportedSite(values: SourceValues): string | null {
+  return preferredImportedLocation(values);
+}
+
 export function inferLegacyLocationOverride(dive: {
   location: string | null;
   userSite: string | null;

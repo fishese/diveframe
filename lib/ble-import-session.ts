@@ -172,8 +172,9 @@ export async function runBleImportSession(
         if (!newestFingerprintHex && event.fingerprintHex) {
           newestFingerprintHex = event.fingerprintHex.trim().toUpperCase();
         }
+        let payload;
         try {
-          const payload = await prepareBlePersistFromCapturedDive({
+          payload = await prepareBlePersistFromCapturedDive({
             product: product || "shearwater",
             serialHex:
               serialHex ||
@@ -186,21 +187,24 @@ export async function runBleImportSession(
             libdivecomputerVersion: options.libdivecomputerVersion,
             libdivecomputerCommit: options.libdivecomputerCommit,
           });
-          failedParseCount += payload.failedParseCount;
-          if (payload.dives.length === 0) return;
-          const persisted = await persistBleImport({
-            dives: payload.dives,
-            rawRecords: payload.rawRecords,
-            checkpoint: null,
-          });
-          streamedPersistCount += 1;
-          newCount += persisted.newCount;
-          alreadyPresentCount += persisted.alreadyPresentCount;
-          if (persisted.newCount > 0 && payload.diveDate) {
-            newDiveDates.push(payload.diveDate);
-          }
         } catch {
           failedParseCount += 1;
+          return;
+        }
+        failedParseCount += payload.failedParseCount;
+        if (payload.dives.length === 0) return;
+        // Storage errors must reject the session. Swallowing one here could
+        // advance the checkpoint past a dive that was never saved.
+        const persisted = await persistBleImport({
+          dives: payload.dives,
+          rawRecords: payload.rawRecords,
+          checkpoint: null,
+        });
+        streamedPersistCount += 1;
+        newCount += persisted.newCount;
+        alreadyPresentCount += persisted.alreadyPresentCount;
+        if (persisted.newCount > 0 && payload.diveDate) {
+          newDiveDates.push(payload.diveDate);
         }
       });
     },

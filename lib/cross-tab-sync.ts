@@ -33,6 +33,7 @@ export class LocalDataConflictError extends Error {
 
 let tabId: string | null = null;
 let channel: BroadcastChannel | null | undefined;
+let memoryRevision = 0;
 
 export function getLocalTabId() {
   if (tabId) return tabId;
@@ -44,16 +45,28 @@ export function getLocalTabId() {
 }
 
 export function readLocalDataRevision(): number {
-  if (typeof localStorage === "undefined") return 0;
-  const raw = localStorage.getItem(REVISION_KEY);
-  const value = raw == null ? 0 : Number(raw);
-  return Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0;
+  if (typeof localStorage === "undefined") return memoryRevision;
+  try {
+    const raw = localStorage.getItem(REVISION_KEY);
+    const value = raw == null ? 0 : Number(raw);
+    const stored = Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0;
+    memoryRevision = Math.max(memoryRevision, stored);
+  } catch {
+    // Some privacy modes expose localStorage but throw for every operation.
+  }
+  return memoryRevision;
 }
 
 export function bumpLocalDataRevision(): number {
   const next = readLocalDataRevision() + 1;
+  memoryRevision = next;
   if (typeof localStorage !== "undefined") {
-    localStorage.setItem(REVISION_KEY, String(next));
+    try {
+      localStorage.setItem(REVISION_KEY, String(next));
+    } catch {
+      // IndexedDB mutations must not be reported as failed merely because the
+      // optional cross-tab revision marker cannot be written.
+    }
   }
   return next;
 }
@@ -88,7 +101,11 @@ export function publishLocalDataChange(reason: LocalDataChangeReason) {
     revision,
     sourceId: getLocalTabId(),
   };
-  getChannel()?.postMessage(message);
+  try {
+    getChannel()?.postMessage(message);
+  } catch {
+    // A closing page can invalidate the channel after it was created.
+  }
   return message;
 }
 
@@ -96,17 +113,39 @@ export function subscribeLocalDataChanges(
   onChange: (message: LocalDataChangeMessage) => void,
 ) {
   const active = getChannel();
-  if (!active) return () => undefined;
-
   const sourceId = getLocalTabId();
-  const listener = (event: MessageEvent<LocalDataChangeMessage>) => {
-    const message = event.data;
-    if (!message || message.type !== "data-changed") return;
-    if (message.sourceId === sourceId) return;
-    onChange(message);
-  };
-  active.addEventListener("message", listener);
-  return () => active.removeEventListener("message", listener);
+  if (active) {
+    const listener = (event: MessageEvent<LocalDataChangeMessage>) => {
+      const message = event.data;
+      if (!message || message.type !== "data-changed") return;
+      if (message.sourceId === sourceId) return;
+      onChange(message);
+    };
+    active.addEventListener("message", listener);
+    return () => active.removeEventListener("message", listener);
+  }
+
+  // BroadcastChannel is absent in some embedded/older browsers. The revision
+  // key still produces a storage event in other tabs, which is enough to make
+  // them reload current IndexedDB state.
+  if (typeof window !== "undefined" && "addEventListener" in window) {
+    const listener = (event: StorageEvent) => {
+      if (event.key !== REVISION_KEY || event.newValue === null) return;
+      const revision = Number(event.newValue);
+      if (!Number.isFinite(revision) || revision < 0) return;
+      memoryRevision = Math.max(memoryRevision, Math.floor(revision));
+      onChange({
+        type: "data-changed",
+        reason: "mutation",
+        revision: Math.floor(revision),
+        sourceId: "storage-event",
+      });
+    };
+    window.addEventListener("storage", listener);
+    return () => window.removeEventListener("storage", listener);
+  }
+
+  return () => undefined;
 }
 
 /** Test helper: reset module channel state between Node tests. */
@@ -114,4 +153,5 @@ export function resetCrossTabSyncForTests() {
   channel?.close();
   channel = undefined;
   tabId = null;
+  memoryRevision = 0;
 }

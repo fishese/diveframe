@@ -14,6 +14,7 @@ const {
   clearedDiveFrameSiteData,
   inferLegacyLocationOverride,
   preferredImportedLocation,
+  preferredImportedSite,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`
 );
@@ -78,5 +79,20 @@ test("imported locations use stable source priority", () => {
   assert.equal(
     preferredImportedLocation({ fit: "FIT", shearwater: "Shearwater" }),
     "Shearwater",
+  );
+});
+
+test("imported site fallback uses stable source priority", () => {
+  assert.equal(
+    preferredImportedSite({
+      fit: "Portable site",
+      subsurface: "Subsurface site",
+      shearwater: "Shearwater site",
+    }),
+    "Shearwater site",
+  );
+  assert.equal(
+    preferredImportedSite({ subsurface: "  Blue Corner  ", fit: "Later" }),
+    "Blue Corner",
   );
 });

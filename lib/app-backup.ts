@@ -16,6 +16,22 @@ import {
   encryptBackupText,
   isEncryptedBackupEnvelope,
 } from "./backup-crypto";
+import {
+  isValidBackupAppPreferences,
+  isValidBackupAttachment,
+  isValidBackupBackground,
+  isValidBackupBrandingAsset,
+  isValidBackupComposerPreset,
+  isValidBackupComposerSettings,
+  isValidBackupDeviceCheckpoint,
+  isValidBackupDive,
+  isValidBackupDiveMemo,
+  isValidBackupRawDiveRecord,
+  isValidBackupSiteContribution,
+  isValidBackupSourceRecord,
+  isValidBackupSupplementaryCatalog,
+  isValidBackupTrip,
+} from "./backup-record-validation";
 
 export {
   BackupPasswordIncorrectError,
@@ -404,37 +420,48 @@ function validateBackupDocument(value: unknown): BackupDocument {
       throw new Error(`The backup contains duplicate ${label}.`);
     }
   }
-  const blobRecords = [
-    ...stores.attachments,
-    ...stores.backgrounds,
-    ...stores.brandingAssets,
-  ];
+  if (!stores.dives.every(isValidBackupDive)) {
+    throw new Error("The backup contains invalid dives.");
+  }
+  if (!stores.sourceRecords.every(isValidBackupSourceRecord)) {
+    throw new Error("The backup contains invalid source records.");
+  }
+  if (!stores.siteContributions.every(isValidBackupSiteContribution)) {
+    throw new Error("The backup contains invalid site contributions.");
+  }
+  if (!(stores.diveMemos ?? []).every(isValidBackupDiveMemo)) {
+    throw new Error("The backup contains invalid dive memos.");
+  }
+  if (!stores.composerSettings.every(isValidBackupComposerSettings)) {
+    throw new Error("The backup contains invalid composer settings.");
+  }
+  if (!(stores.composerPresets ?? []).every(isValidBackupComposerPreset)) {
+    throw new Error("The backup contains invalid composer presets.");
+  }
+  if (!(stores.appPreferences ?? []).every(isValidBackupAppPreferences)) {
+    throw new Error("The backup contains invalid app preferences.");
+  }
+  if (!(stores.trips ?? []).every(isValidBackupTrip)) {
+    throw new Error("The backup contains invalid trips.");
+  }
   if (
-    !blobRecords.every(
-      (record) =>
-        typeof record.blobBase64 === "string" &&
-        typeof record.contentType === "string" &&
-        typeof record.size === "number" &&
-        record.size >= 0,
+    !(stores.supplementaryCatalog ?? []).every(
+      isValidBackupSupplementaryCatalog,
     )
+  ) {
+    throw new Error("The backup contains an invalid supplementary catalog.");
+  }
+  if (
+    !stores.attachments.every(isValidBackupAttachment) ||
+    !stores.backgrounds.every(isValidBackupBackground) ||
+    !stores.brandingAssets.every(isValidBackupBrandingAsset)
   ) {
     throw new Error("The backup contains invalid image data.");
   }
-  if (
-    !(stores.rawDiveRecords ?? []).every(
-      (record) =>
-        typeof record.rawBytesBase64 === "string" &&
-        typeof record.length === "number" &&
-        record.length >= 0,
-    )
-  ) {
+  if (!(stores.rawDiveRecords ?? []).every(isValidBackupRawDiveRecord)) {
     throw new Error("The backup contains invalid raw dive records.");
   }
-  if (
-    !(stores.deviceCheckpoints ?? []).every(
-      (record) => typeof record.fingerprintBase64 === "string",
-    )
-  ) {
+  if (!(stores.deviceCheckpoints ?? []).every(isValidBackupDeviceCheckpoint)) {
     throw new Error("The backup contains invalid device checkpoints.");
   }
   return document as BackupDocument;
