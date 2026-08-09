@@ -106,10 +106,15 @@ import {
 } from "@/lib/gas-calculations";
 import { toNormalizedDive } from "@/lib/normalize-dive";
 import {
-  nearbySessionCatalogSites,
   resolveActiveDiveSiteCatalog,
   type DiveSiteCatalog,
 } from "@/lib/dive-site-catalog";
+import {
+  buildSiteLocationSuggestions,
+  buildSiteNameSuggestions,
+  type SiteLocationSuggestion,
+  type SiteSelection,
+} from "@/lib/dive-site-suggestions";
 import bundledDiveSiteCatalog from "@/data/dive-sites.json";
 import { readShearwaterDatabase } from "@/lib/parsers/shearwater";
 import { readSubsurfaceLog } from "@/lib/parsers/subsurface";
@@ -123,6 +128,7 @@ import { useColorTheme } from "./ThemeProvider";
 import { BleImportPanel } from "./components/BleImportPanel";
 import { ImportGuide } from "./components/ImportGuide";
 import { MemoDiveMatchHints } from "./components/MemoDiveMatchHints";
+import { DiveSiteSuggestions } from "./components/DiveSiteSuggestions";
 import type { DiveMemo } from "@/lib/dive-memos";
 import {
   diveNeedsPlaceNameHint,
@@ -140,32 +146,6 @@ type MapLocation = {
 };
 
 type ImportedDive = LocalImportedDive;
-
-type NearbySite = {
-  id: string;
-  catalogId?: string;
-  name: string;
-  aliases?: string[];
-  latitude: number;
-  longitude: number;
-  location?: string | null;
-  distanceKm: number;
-  source: "catalog" | "openstreetmap";
-};
-
-type SiteSelection = {
-  name: string;
-  source: "catalog" | "suggestion" | "manual";
-  catalogId?: string;
-  latitude: number | null;
-  longitude: number | null;
-  location?: string | null;
-};
-
-type SiteLocationSuggestion = {
-  site: string;
-  location: string;
-};
 
 type SharedBackgroundChoice = {
   id: string;
@@ -480,6 +460,7 @@ export function DiveFrameApp() {
         dive.gpsEntryLng !== null &&
         !dive.location &&
         !dive.resolvedLocation &&
+        !dive.resolvedLocationSuppressed &&
         !gpsNameAttemptedRef.current.has(dive.id),
     );
     if (!pending.length) return;
@@ -826,7 +807,7 @@ export function DiveFrameApp() {
   }
 
   async function clearDiveSiteOverride() {
-    if (!selected) return false;
+    if (!selected) return null;
     setBusy(true);
     setStatus(t("savingDiveSite"));
     try {
@@ -835,10 +816,10 @@ export function DiveFrameApp() {
         current.map((dive) => (dive.id === updated.id ? updated : dive)),
       );
       setStatus(t("siteOverrideCleared"));
-      return true;
+      return updated;
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("siteSaveFailed"));
-      return false;
+      return null;
     } finally {
       setBusy(false);
     }
@@ -1751,7 +1732,7 @@ function DiveDetail({
   onAddPhotoFiles: (files: File[]) => Promise<boolean>;
   onDeletePhoto: (attachment: Attachment) => void;
   onSaveSite: (site: SiteSelection) => Promise<boolean>;
-  onClearSiteOverride: () => Promise<boolean>;
+  onClearSiteOverride: () => Promise<LocalDive | null>;
   onSaveDetails: (details: {
     location?: string | null;
     buddy: string | null;
@@ -1791,13 +1772,6 @@ function DiveDetail({
   const [manualSite, setManualSite] = useState(dive.userSite ?? dive.site ?? "");
   const [locationDraft, setLocationDraft] = useState(dive.location ?? "");
   const [sharedBackgrounds, setSharedBackgrounds] = useState<SharedBackgroundChoice[]>([]);
-  const [remoteNearbySites, setRemoteNearbySites] = useState<{
-    coordinateKey: string;
-    sites: NearbySite[];
-  } | null>(null);
-  const [expandedAliasSiteId, setExpandedAliasSiteId] = useState<string | null>(
-    null,
-  );
   const [sitePickerOpen, setSitePickerOpen] = useState(
     !dive.userSite && !dive.site,
   );
@@ -1820,27 +1794,38 @@ function DiveDetail({
     needsPlaceName &&
     listMemosNearDive(dive, matchMemos, MEMO_MATCH_WINDOWS_MS.widest).length >
       0;
+  const hasDiveFrameSiteData = Boolean(
+    dive.userSite ||
+      dive.locationSource ||
+      dive.userGpsSource ||
+      dive.resolvedLocation ||
+      dive.resolvedCity ||
+      dive.resolvedCountry,
+  );
   const currentTrip = dive.tripId
     ? trips.find((trip) => trip.id === dive.tripId) ?? null
     : null;
 
   useEffect(() => {
     if (!needsPlaceName) {
-      setMatchMemos([]);
       return;
     }
     let active = true;
-    void listLocalDiveMemos()
-      .then((listed) => {
-        if (active) setMatchMemos(listed);
-      })
-      .catch(() => {
-        if (active) setMatchMemos([]);
-      });
+    const reload = () =>
+      listLocalDiveMemos()
+        .then((listed) => {
+          if (active) setMatchMemos(listed);
+        })
+        .catch(() => {
+          if (active) setMatchMemos([]);
+        });
+    void reload();
+    const unsubscribe = subscribeLocalDataChanges(() => void reload());
     return () => {
       active = false;
+      unsubscribe();
     };
-  }, [dive.id, needsPlaceName]);
+  }, [dive.diveDate, dive.id, needsPlaceName]);
 
   useEffect(() => {
     let active = true;
@@ -1912,51 +1897,17 @@ function DiveDetail({
     )
     .join(", ");
   const siteNameSuggestions = useMemo(
-    () =>
-      uniqueSuggestions([
-        ...siteSuggestions,
-        ...localDiveSiteCatalog.sites.flatMap((site) => [site.name, ...site.aliases]),
-      ]),
+    () => buildSiteNameSuggestions(localDiveSiteCatalog, siteSuggestions),
     [localDiveSiteCatalog, siteSuggestions],
   );
   const siteLocationSuggestions = useMemo(
-    () => {
-      const query = normalizeLocation(manualSite);
-      const matchingStoredLocations = query
-        ? siteLocationPairs
-            .filter((pair) => normalizeLocation(pair.site) === query)
-            .map((pair) => pair.location)
-        : [];
-      const matchingCatalogLocations = query
-        ? localDiveSiteCatalog.sites
-            .filter(
-              (site) =>
-                normalizeLocation(site.name) === query ||
-                site.aliases.some((alias) => normalizeLocation(alias) === query),
-            )
-            .flatMap((site) => [
-              site.place.locality,
-              site.place.region,
-              site.place.country,
-            ])
-        : [];
-      const matchedLocations = [
-        ...matchingStoredLocations,
-        ...matchingCatalogLocations,
-      ];
-      return uniqueSuggestions(
-        matchedLocations.length
-          ? matchedLocations
-          : [
-              ...locationSuggestions,
-              ...localDiveSiteCatalog.sites.flatMap((site) => [
-                site.place.locality,
-                site.place.region,
-                site.place.country,
-              ]),
-            ],
-      );
-    },
+    () =>
+      buildSiteLocationSuggestions({
+        catalog: localDiveSiteCatalog,
+        selectedSite: manualSite,
+        storedLocations: locationSuggestions,
+        siteLocationPairs,
+      }),
     [
       localDiveSiteCatalog,
       locationSuggestions,
@@ -1964,16 +1915,7 @@ function DiveDetail({
       siteLocationPairs,
     ],
   );
-  const mapCoordinates = useMemo(
-    () => resolveDiveMapCoordinates(dive),
-    [
-      dive.gpsEntryLat,
-      dive.gpsEntryLng,
-      dive.userGpsLat,
-      dive.userGpsLng,
-    ],
-  );
-  const hasResolvedGps = mapCoordinates !== null;
+  const mapCoordinates = resolveDiveMapCoordinates(dive);
   const [geocodeResult, setGeocodeResult] = useState<{
     query: string;
     location: MapLocation | null;
@@ -2204,7 +2146,6 @@ function DiveDetail({
     if (await onSaveSite(selection)) {
       setManualSite(selection.name);
       if (selection.location) setLocationDraft(selection.location);
-      setExpandedAliasSiteId(null);
       setSitePickerOpen(false);
     }
   }
@@ -2242,102 +2183,11 @@ function DiveDetail({
     setSitePickerOpen(false);
   }
 
-  function nearbySiteCatalogId(site: NearbySite) {
-    return site.catalogId ?? site.id.replace(/^(?:session-)?catalog-/, "");
-  }
-
-  function nearbySiteSelection(
-    site: NearbySite,
-    name: string,
-  ): SiteSelection {
-    return {
-      name,
-      source: site.source === "catalog" ? "catalog" : "suggestion",
-      catalogId:
-        site.source === "catalog" ? nearbySiteCatalogId(site) : undefined,
-      latitude: site.latitude,
-      longitude: site.longitude,
-      location: site.location,
-    };
-  }
-
-  function toggleSiteAliasExpand(siteId: string) {
-    setExpandedAliasSiteId((current) => (current === siteId ? null : siteId));
-  }
-
-  const nearbyCoordinateKey = mapCoordinates
-    ? `${mapCoordinates.latitude},${mapCoordinates.longitude}`
-    : null;
-  const localNearbySites = useMemo(
-    () =>
-      mapCoordinates
-        ? nearbySessionCatalogSites(
-            localDiveSiteCatalog,
-            mapCoordinates.latitude,
-            mapCoordinates.longitude,
-          )
-        : [],
-    [localDiveSiteCatalog, mapCoordinates],
-  );
-  const nearbySites = localNearbySites.length
-    ? localNearbySites
-    : remoteNearbySites?.coordinateKey === nearbyCoordinateKey
-      ? remoteNearbySites.sites
-      : [];
-  const nearbySitesLoading = Boolean(
-    nearbyCoordinateKey &&
-      localNearbySites.length === 0 &&
-      remoteNearbySites?.coordinateKey !== nearbyCoordinateKey,
-  );
-
-  useEffect(() => {
-    if (!mapCoordinates || !nearbyCoordinateKey || localNearbySites.length) {
-      return;
-    }
-    const { latitude, longitude } = mapCoordinates;
-    const controller = new AbortController();
-    let active = true;
-    const timeout = window.setTimeout(() => controller.abort(), 10000);
-    fetch(
-      diveFrameApiUrl(
-        `/api/nearby-sites?lat=${encodeURIComponent(String(latitude))}&lng=${encodeURIComponent(String(longitude))}`,
-      ),
-      { signal: controller.signal },
-    )
-      .then(async (response) => {
-        const payload = (await response.json()) as {
-          sites?: NearbySite[];
-          error?: string;
-        };
-        if (!response.ok) throw new Error(payload.error ?? "Nearby sites unavailable.");
-        return payload.sites ?? [];
-      })
-      .then((sites) => {
-        if (active) setRemoteNearbySites({ coordinateKey: nearbyCoordinateKey, sites });
-      })
-      .catch(() => {
-        // Record an empty result for this exact coordinate, including timeout,
-        // so the loading state does not remain stuck indefinitely.
-        if (active) setRemoteNearbySites({ coordinateKey: nearbyCoordinateKey, sites: [] });
-      })
-      .finally(() => {
-        window.clearTimeout(timeout);
-      });
-    return () => {
-      active = false;
-      window.clearTimeout(timeout);
-      controller.abort();
-    };
-  }, [
-    localNearbySites.length,
-    mapCoordinates,
-    nearbyCoordinateKey,
-  ]);
-
   return (
     <div className="detail-content">
       {showMemoMatchHints ? (
         <MemoDiveMatchHints
+          key={dive.id}
           mode="on-dive"
           dive={dive}
           memos={matchMemos}
@@ -2496,112 +2346,41 @@ function DiveDetail({
               >
                 {t("saveSite")}
               </button>
-              {dive.userSite ? (
+              {hasDiveFrameSiteData ? (
                 <button
                   type="button"
                   className="button button-quiet"
                   onClick={() =>
                     void (async () => {
-                      if (await onClearSiteOverride()) {
-                        setManualSite(dive.site ?? "");
+                      const updated = await onClearSiteOverride();
+                      if (updated) {
+                        setManualSite(updated.userSite ?? updated.site ?? "");
+                        setLocationDraft(updated.location ?? "");
+                        setUserGpsDraft(
+                          formatCoordinatePair(
+                            updated.userGpsLat,
+                            updated.userGpsLng,
+                          ),
+                        );
                       }
                     })()
                   }
                   disabled={busy}
                 >
-                  {dive.site ? t("useImportedSite") : t("clearSiteName")}
+                  {t("clearSiteData")}
                 </button>
               ) : null}
             </div>
           </form>
 
-          {mapCoordinates ? (
-            nearbySitesLoading ? (
-              <div className="site-loading">
-                <LoaderCircle size={18} className="spin" /> {t("lookingForSites")}
-              </div>
-            ) : nearbySites?.length ? (
-              <div className="site-suggestions">
-                {nearbySites?.map((site) => {
-                  const catalogId = nearbySiteCatalogId(site);
-                  const aliasesExpanded = expandedAliasSiteId === site.id;
-                  return (
-                    <div className="site-suggestion-item" key={site.id}>
-                      <div className="site-suggestion-main">
-                        <button
-                          type="button"
-                          className="site-suggestion-name"
-                          onClick={() =>
-                            void saveSiteAndCollapse(
-                              nearbySiteSelection(site, site.name),
-                            )
-                          }
-                          disabled={busy}
-                          aria-pressed={dive.userSiteCatalogId === catalogId}
-                        >
-                          <span>{site.name}</span>
-                          {site.aliases?.length ? (
-                            <em>{site.aliases.join(" / ")}</em>
-                          ) : null}
-                          <small>
-                            {formatDistance(site.distanceKm)}
-                            {" · "}
-                            {site.source === "catalog"
-                              ? t("catalogSource")
-                              : t("mapFallback")}
-                          </small>
-                        </button>
-                        {site.aliases?.length ? (
-                          <button
-                            type="button"
-                            className="site-alias-expand"
-                            onClick={() => toggleSiteAliasExpand(site.id)}
-                            disabled={busy}
-                            aria-expanded={aliasesExpanded}
-                            aria-label={
-                              aliasesExpanded
-                                ? t("hideSiteAliases")
-                                : t("showSiteAliases")
-                            }
-                          >
-                            <ChevronDown size={16} />
-                          </button>
-                        ) : null}
-                      </div>
-                      {aliasesExpanded && site.aliases?.length ? (
-                        <div className="site-alias-chips">
-                          {site.aliases.map((alias) => (
-                            <button
-                              type="button"
-                              key={alias}
-                              className="site-alias-chip"
-                              onClick={() =>
-                                void saveSiteAndCollapse(
-                                  nearbySiteSelection(site, alias),
-                                )
-                              }
-                              disabled={busy}
-                              aria-pressed={
-                                dive.userSiteCatalogId === catalogId &&
-                                dive.userSite === alias
-                              }
-                              title={t("chooseSiteAlias", { name: alias })}
-                            >
-                              {alias}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="site-empty">{t("noNearbySites")}</p>
-            )
-          ) : (
-            <p className="site-empty">{t("noNearbySites")}</p>
-          )}
+          <DiveSiteSuggestions
+            coordinates={mapCoordinates}
+            catalog={localDiveSiteCatalog}
+            selectedName={dive.userSite}
+            selectedCatalogId={dive.userSiteCatalogId}
+            busy={busy}
+            onSelect={saveSiteAndCollapse}
+          />
 
           <div className="user-gps-editor">
             <div className="user-gps-editor-header">
@@ -2753,6 +2532,8 @@ function DiveDetail({
             <p className="map-source">
               {dive.userGpsSource === "photo-exif"
                 ? t("locationSourcePhotoExif")
+                : dive.userGpsSource === "memo"
+                  ? t("locationSourceMemo")
                 : t("locationSourceManual")}
             </p>
           )}
@@ -3039,149 +2820,6 @@ function DiveDetail({
           </dl>
         </section>
       </div>
-
-      {/* {hasResolvedGps && !dive.site && ( */}
-      {false && hasResolvedGps && !dive.site && (
-        <details
-          className="card site-picker-card"
-          open={sitePickerOpen}
-          onToggle={(event) => setSitePickerOpen(event.currentTarget.open)}
-        >
-          <summary className="card-heading site-picker-summary">
-            <div>
-              <p className="eyebrow">{t("nameThisDive")}</p>
-              <h3>{dive.userSite || t("nearbyDiveSites")}</h3>
-              {dive.userSite && <small>{t("selectedExpand")}</small>}
-            </div>
-            <span className="site-picker-toggle">
-              {t("within6Km")} <ChevronDown size={17} />
-            </span>
-          </summary>
-          <div className="site-picker-body">
-            {nearbySitesLoading ? (
-              <div className="site-loading">
-                <LoaderCircle size={18} className="spin" /> {t("lookingForSites")}
-              </div>
-            ) : nearbySites?.length ? (
-              <div className="site-suggestions">
-                {nearbySites?.map((site) => {
-                  const catalogId = nearbySiteCatalogId(site);
-                  const aliasesExpanded = expandedAliasSiteId === site.id;
-                  return (
-                    <div className="site-suggestion-item" key={site.id}>
-                      <div className="site-suggestion-main">
-                        <button
-                          type="button"
-                          className="site-suggestion-name"
-                          onClick={() =>
-                            void saveSiteAndCollapse(
-                              nearbySiteSelection(site, site.name),
-                            )
-                          }
-                          disabled={busy}
-                          aria-pressed={dive.userSiteCatalogId === catalogId}
-                        >
-                          <span>{site.name}</span>
-                          {site.aliases?.length ? (
-                            <em>{site.aliases.join(" / ")}</em>
-                          ) : null}
-                          <small>
-                            {formatDistance(site.distanceKm)}
-                            {" · "}
-                            {site.source === "catalog"
-                              ? t("catalogSource")
-                              : t("mapFallback")}
-                          </small>
-                        </button>
-                        {site.aliases?.length ? (
-                          <button
-                            type="button"
-                            className="site-alias-expand"
-                            onClick={() => toggleSiteAliasExpand(site.id)}
-                            disabled={busy}
-                            aria-expanded={aliasesExpanded}
-                            aria-label={
-                              aliasesExpanded
-                                ? t("hideSiteAliases")
-                                : t("showSiteAliases")
-                            }
-                          >
-                            <ChevronDown size={16} />
-                          </button>
-                        ) : null}
-                      </div>
-                      {aliasesExpanded && site.aliases?.length ? (
-                        <div className="site-alias-chips">
-                          {site.aliases.map((alias) => (
-                            <button
-                              type="button"
-                              key={alias}
-                              className="site-alias-chip"
-                              onClick={() =>
-                                void saveSiteAndCollapse(
-                                  nearbySiteSelection(site, alias),
-                                )
-                              }
-                              disabled={busy}
-                              aria-pressed={
-                                dive.userSiteCatalogId === catalogId &&
-                                dive.userSite === alias
-                              }
-                              title={t("chooseSiteAlias", { name: alias })}
-                            >
-                              {alias}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="site-empty">
-                {t("noNearbySites")}
-              </p>
-            )}
-            <form
-              className="manual-site"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (
-                  manualSite.trim() &&
-                  dive.gpsEntryLat !== null &&
-                  dive.gpsEntryLng !== null
-                ) {
-                  void saveSiteAndCollapse({
-                    name: manualSite.trim(),
-                    source: "manual",
-                    latitude: dive.gpsEntryLat,
-                    longitude: dive.gpsEntryLng,
-                  });
-                }
-              }}
-            >
-              <label htmlFor={`site-${dive.id}`}>{t("diveSiteName")}</label>
-              <div>
-                <input
-                  id={`site-${dive.id}`}
-                  value={manualSite}
-                  onChange={(event) => setManualSite(event.target.value)}
-                  placeholder={t("typeSiteName")}
-                  maxLength={120}
-                />
-                <button
-                  type="submit"
-                  className="button button-secondary"
-                  disabled={busy || !manualSite.trim()}
-                >
-                  {t("saveSite")}
-                </button>
-              </div>
-            </form>
-          </div>
-        </details>
-      )}
 
       <section id="dive-gallery" className="card photos-card">
         <div className="card-heading">
@@ -3608,12 +3246,6 @@ function sourceDiveNumber(dive: Dive, source: string) {
     return dive.diveNumber;
   }
   return null;
-}
-
-function formatDistance(distanceKm: number) {
-  return distanceKm < 1
-    ? `${Math.round(distanceKm * 1000)} m`
-    : `${distanceKm.toFixed(distanceKm < 10 ? 1 : 0)} km`;
 }
 
 function delay(milliseconds: number) {

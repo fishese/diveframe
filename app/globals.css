@@ -3205,6 +3205,15 @@ button {
   flex-shrink: 0;
 }
 
+.memo-now-button {
+  margin-left: 4px;
+}
+
+.memo-site-suggestions {
+  display: grid;
+  gap: 6px;
+}
+
 .memos-add {
   margin: 0 0 10px;
   max-width: 100%;

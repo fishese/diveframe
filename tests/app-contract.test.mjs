@@ -43,6 +43,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   ]);
   const appI18n = `${appI18nBarrel}\n${appI18nEn}\n${appI18nJa}`;
   const importGuide = await readFile("app/components/ImportGuide.tsx", "utf8");
+  const diveSiteSuggestions = await readFile(
+    "app/components/DiveSiteSuggestions.tsx",
+    "utf8",
+  );
   const androidPage = await readFile("app/android/AndroidAppPage.tsx", "utf8");
   const androidLink = await readFile("app/components/AndroidAppLink.tsx", "utf8");
 
@@ -182,7 +186,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /\/compose\?dive=/);
   assert.match(app, /openstreetmap\.org/);
   assert.match(app, /api\/geocode/);
-  assert.match(app, /api\/nearby-sites/);
+  assert.match(diveSiteSuggestions, /api\/nearby-sites/);
   assert.match(app, /t\("siteNamed"\)/);
   assert.match(app, /t\("gpsData"\)/);
   assert.match(app, /t\("setInApp"\)/);
@@ -229,7 +233,14 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.doesNotMatch(memosApp, /saveLocalDivePhoto|addLocalDivePhoto/);
   assert.doesNotMatch(memosApp, /diveNeedsPlaceNameHint/);
   const memosPage = await readFile("app/memos/page.tsx", "utf8");
+  const memoPage = await readFile("app/memo/page.tsx", "utf8");
   assert.match(memosPage, /MemosApp/);
+  assert.match(memoPage, /MemosApp/);
+  assert.match(memosApp, /DiveSiteSuggestions/);
+  assert.match(memosApp, /memoLocalDateTimeFields/);
+  assert.match(memosApp, /memoHour24/);
+  assert.match(memosApp, /saveChainRef/);
+  assert.match(memosApp, /pendingSave/);
   assert.match(app, /MemoDiveMatchHints/);
   assert.match(app, /diveNeedsPlaceNameHint/);
   assert.match(app, /listMemosNearDive/);
@@ -424,10 +435,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /addLocationPhotoToDive/);
   assert.match(app, /photoLocationPermissionDenied/);
   assert.match(app, /photoGpsBusy/);
-  assert.match(app, /nearbySitesLoading/);
-  assert.match(app, /nearbySessionCatalogSites/);
+  assert.match(diveSiteSuggestions, /const loading/);
+  assert.match(diveSiteSuggestions, /nearbySessionCatalogSites/);
   assert.match(catalogTools, /NEARBY_SITE_RADIUS_KM = 6/);
-  assert.match(app, /setTimeout\(\(\) => controller\.abort\(\), 10000\)/);
+  assert.match(diveSiteSuggestions, /setTimeout\(\(\) => controller\.abort\(\), 10000\)/);
   assert.match(app, /source: "manual"/);
   assert.match(app, /source: "photo-exif"/);
   assert.doesNotMatch(app, /exportGpsPreference/);
@@ -450,11 +461,11 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /setLocalDiveTripIds\(ids, trip\.id\)/);
   assert.match(app, /setLocalDiveTripIds\(ids, null\)/);
   assert.match(app, /deleteLocalTrip\(tripId, \{ clearAssignments: assignedCount > 0 \}\)/);
-  assert.match(app, /expandedAliasSiteId/);
-  assert.match(app, /toggleSiteAliasExpand/);
-  assert.match(app, /className="site-alias-expand"/);
-  assert.match(app, /className="site-alias-chip"/);
-  assert.match(app, /t\("showSiteAliases"\)/);
+  assert.match(diveSiteSuggestions, /expandedAliasSiteId/);
+  assert.match(diveSiteSuggestions, /setExpandedAliasSiteId/);
+  assert.match(diveSiteSuggestions, /className="site-alias-expand"/);
+  assert.match(diveSiteSuggestions, /className="site-alias-chip"/);
+  assert.match(diveSiteSuggestions, /t\("showSiteAliases"\)/);
   assert.match(appI18n, /showSiteAliases/);
   assert.match(appI18n, /chooseSiteAlias/);
   assert.match(app, /t\("trip"\)/);
@@ -474,8 +485,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const tripName = trips\.find\(\(trip\) => trip\.id === tripId\)\?\.name/);
   assert.match(appI18n, /deleteTripConfirm: "Delete trip \\"\{name\}\\"/);
   assert.match(appI18n, /deleteTripConfirmWithDives: "Delete trip \\"\{name\}\\"/);
-  assert.match(app, /const hasResolvedGps = mapCoordinates !== null;/);
-  assert.match(app, /\{hasResolvedGps && !dive\.site && \(/);
+  assert.match(app, /const mapCoordinates = resolveDiveMapCoordinates\(dive\);/);
+  assert.match(app, /<DiveSiteSuggestions/);
+  assert.match(app, /coordinates=\{mapCoordinates\}/);
   const diveListModel = await readFile("lib/dive-list-model.ts", "utf8");
   assert.match(diveListModel, /userGpsLat/);
   assert.match(diveListModel, /function diveHasGps/);
@@ -618,7 +630,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v8/);
+  assert.match(serviceWorker, /diveframe-shell-v9/);
+  assert.match(serviceWorker, /"\/memo"/);
   assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);
   assert.match(serviceWorker, /examples\/sample-dive\.uddf/);
   assert.match(serviceWorker, /examples\/dive-site-catalog-ai-prompt\.md/);
@@ -720,8 +733,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.equal(pwa.short_name, "DiveFrame (Web)");
   assert.equal(pwa.display, "standalone");
   assert.ok(
-    pwa.shortcuts.some((shortcut) => shortcut.url === "/memos"),
-    "PWA manifest should include a /memos shortcut",
+    pwa.shortcuts.some((shortcut) => shortcut.url === "/memo"),
+    "PWA manifest should include a /memo shortcut",
   );
 
   const layout = await readFile("app/layout.tsx", "utf8");

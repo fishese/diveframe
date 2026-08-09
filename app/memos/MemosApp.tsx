@@ -4,31 +4,48 @@ import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
+  Clock3,
   Image as ImageIcon,
   LoaderCircle,
   Navigation,
   Plus,
   Trash2,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppI18n } from "../AppI18nProvider";
 import { AppTopbar } from "../components/AppTopbar";
 import { MemoDiveMatchHints } from "../components/MemoDiveMatchHints";
 import {
   createDiveMemoId,
+  compareDiveMemos,
   defaultDiveMemoFields,
+  memoFieldsFromHour24,
+  memoHour24,
+  memoLocalDateTimeFields,
+  memoSiteName,
   nextDiveMemoHeading,
   normalizeMemoMinute,
-  stepMemoHour,
+  stepMemoHour24,
   type DiveMemo,
 } from "@/lib/dive-memos";
 import {
   deleteLocalDiveMemo,
+  getLocalSupplementaryCatalog,
   listLocalDiveMemos,
   listLocalDives,
   saveLocalDiveMemo,
   type LocalDive,
 } from "@/lib/indexed-db";
+import {
+  resolveActiveDiveSiteCatalog,
+  type DiveSiteCatalog,
+} from "@/lib/dive-site-catalog";
+import bundledDiveSiteCatalog from "@/data/dive-sites.json";
+import {
+  buildSiteNameSuggestions,
+  type SiteSelection,
+} from "@/lib/dive-site-suggestions";
+import { DiveSiteSuggestions } from "../components/DiveSiteSuggestions";
 import {
   formatCoordinatePair,
   parseCoordinatePair,
@@ -51,6 +68,9 @@ export function MemosApp() {
   const { t } = useAppI18n();
   const [memos, setMemos] = useState<DiveMemo[]>([]);
   const [dives, setDives] = useState<LocalDive[]>([]);
+  const [supplementaryCatalog, setSupplementaryCatalog] = useState<{
+    catalog: DiveSiteCatalog;
+  } | null>(null);
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(false);
   const [editingHeadingId, setEditingHeadingId] = useState<string | null>(null);
@@ -58,6 +78,7 @@ export function MemosApp() {
   const [scrollToMemoId, setScrollToMemoId] = useState<string | null>(null);
   const webPhotoInputRef = useRef<HTMLInputElement>(null);
   const photoTargetIdRef = useRef<string | null>(null);
+  const photoPendingSaveRef = useRef<Promise<DiveMemo | null> | null>(null);
 
   const refresh = useCallback(async () => {
     const listed = await listLocalDiveMemos();
@@ -86,19 +107,37 @@ export function MemosApp() {
   }, [refresh, t]);
 
   useEffect(() => {
-    void listLocalDives()
-      .then(setDives)
+    void Promise.all([listLocalDives(), getLocalSupplementaryCatalog()])
+      .then(([listedDives, supplementary]) => {
+        setDives(listedDives);
+        setSupplementaryCatalog(supplementary);
+      })
       .catch((error) => {
         setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
       });
   }, [t]);
 
+  const activeDiveSiteCatalog = useMemo(
+    () =>
+      resolveActiveDiveSiteCatalog(
+        bundledDiveSiteCatalog as DiveSiteCatalog,
+        supplementaryCatalog?.catalog ?? null,
+      ),
+    [supplementaryCatalog],
+  );
+  const siteNameSuggestions = useMemo(
+    () =>
+      buildSiteNameSuggestions(
+        activeDiveSiteCatalog,
+        dives.flatMap((dive) => [dive.userSite, dive.site]),
+      ),
+    [activeDiveSiteCatalog, dives],
+  );
+
   function handleMemoChange(updated: DiveMemo) {
     setMemos((current) => {
       const without = current.filter((memo) => memo.id !== updated.id);
-      return [...without, updated].sort((a, b) =>
-        a.createdAt.localeCompare(b.createdAt),
-      );
+      return [...without, updated].sort(compareDiveMemos);
     });
   }
 
@@ -136,9 +175,7 @@ export function MemosApp() {
     });
     setMemos((current) => {
       const without = current.filter((memo) => memo.id !== stored.id);
-      return [...without, stored].sort((a, b) =>
-        a.createdAt.localeCompare(b.createdAt),
-      );
+      return [...without, stored].sort(compareDiveMemos);
     });
     return stored;
   }
@@ -178,10 +215,13 @@ export function MemosApp() {
     }
   }
 
-  async function requestDeviceGps(id: string) {
+  async function requestDeviceGps(
+    id: string,
+    pendingSave: Promise<DiveMemo | null>,
+  ) {
     setBusy(true);
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+      const positionRequest = new Promise<GeolocationPosition>((resolve, reject) => {
         if (!navigator.geolocation) {
           reject(new Error(t("memoGpsUnsupported")));
           return;
@@ -191,7 +231,11 @@ export function MemosApp() {
           timeout: 20000,
         });
       });
-      const memo = memos.find((item) => item.id === id);
+      const [position, savedDraft] = await Promise.all([
+        positionRequest,
+        pendingSave,
+      ]);
+      const memo = savedDraft ?? memos.find((item) => item.id === id);
       if (!memo) return;
       await persist({
         ...memo,
@@ -206,13 +250,18 @@ export function MemosApp() {
     }
   }
 
-  async function applyPhotoGps(id: string, gps: { lat: number; lng: number } | null) {
+  async function applyPhotoGps(
+    id: string,
+    gps: { lat: number; lng: number } | null,
+    pendingSave: Promise<DiveMemo | null>,
+  ) {
     if (!gps) {
       setPhotoHelpOpen(true);
       setStatus(t("noPhotoLocationFound"));
       return;
     }
-    const memo = memos.find((item) => item.id === id);
+    const savedDraft = await pendingSave;
+    const memo = savedDraft ?? memos.find((item) => item.id === id);
     if (!memo) return;
     await persist({
       ...memo,
@@ -222,9 +271,13 @@ export function MemosApp() {
     setStatus(t("memoGpsCaptured"));
   }
 
-  async function pickPhotoGps(id: string) {
+  async function pickPhotoGps(
+    id: string,
+    pendingSave: Promise<DiveMemo | null>,
+  ) {
     setBusy(true);
     photoTargetIdRef.current = id;
+    photoPendingSaveRef.current = pendingSave;
     try {
       if (photoLocationCapability.isAvailable()) {
         const result = await photoLocationCapability.pickPhotoLocation(false);
@@ -237,7 +290,7 @@ export function MemosApp() {
           result.longitude != null
             ? { lat: result.latitude, lng: result.longitude }
             : null;
-        await applyPhotoGps(id, gps);
+        await applyPhotoGps(id, gps, pendingSave);
       } else {
         webPhotoInputRef.current?.click();
       }
@@ -252,6 +305,7 @@ export function MemosApp() {
     const file = event.target.files?.[0];
     event.target.value = "";
     const id = photoTargetIdRef.current;
+    const pendingSave = photoPendingSaveRef.current ?? Promise.resolve(null);
     if (!file || !id) return;
     setBusy(true);
     try {
@@ -259,6 +313,7 @@ export function MemosApp() {
       await applyPhotoGps(
         id,
         gps ? { lat: gps.latitude, lng: gps.longitude } : null,
+        pendingSave,
       );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("memoGpsFailed"));
@@ -307,17 +362,23 @@ export function MemosApp() {
               key={memo.id}
               memo={memo}
               dives={dives}
+              diveSiteCatalog={activeDiveSiteCatalog}
+              siteNameSuggestions={siteNameSuggestions}
               busy={busy}
               editingHeading={editingHeadingId === memo.id}
               onEditHeading={() => setEditingHeadingId(memo.id)}
               onHeadingBlur={() => setEditingHeadingId(null)}
-              onChange={(next) => void persist(next)}
+              onChange={persist}
               onMemoChange={handleMemoChange}
               onDiveChange={handleDiveChange}
               onMemoDeleted={handleMemoDeleted}
               onDelete={() => void removeMemo(memo.id)}
-              onDeviceGps={() => void requestDeviceGps(memo.id)}
-              onPhotoGps={() => void pickPhotoGps(memo.id)}
+              onDeviceGps={(pendingSave) =>
+                void requestDeviceGps(memo.id, pendingSave)
+              }
+              onPhotoGps={(pendingSave) =>
+                void pickPhotoGps(memo.id, pendingSave)
+              }
               t={t}
             />
           ))}
@@ -381,6 +442,8 @@ export function MemosApp() {
 function MemoCard({
   memo,
   dives,
+  diveSiteCatalog,
+  siteNameSuggestions,
   busy,
   editingHeading,
   onEditHeading,
@@ -396,46 +459,60 @@ function MemoCard({
 }: {
   memo: DiveMemo;
   dives: LocalDive[];
+  diveSiteCatalog: DiveSiteCatalog;
+  siteNameSuggestions: string[];
   busy: boolean;
   editingHeading: boolean;
   onEditHeading: () => void;
   onHeadingBlur: () => void;
-  onChange: (memo: DiveMemo) => void;
+  onChange: (memo: DiveMemo) => Promise<DiveMemo>;
   onMemoChange: (memo: DiveMemo) => void;
   onDiveChange: (dive: LocalDive) => void;
   onMemoDeleted: (id: string) => void;
   onDelete: () => void;
-  onDeviceGps: () => void;
-  onPhotoGps: () => void;
+  onDeviceGps: (pendingSave: Promise<DiveMemo | null>) => void;
+  onPhotoGps: (pendingSave: Promise<DiveMemo | null>) => void;
   t: AppTranslate;
 }) {
   const headingRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState(memo);
   const draftRef = useRef(draft);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveChainRef = useRef<Promise<DiveMemo | null>>(Promise.resolve(null));
+  const onChangeRef = useRef(onChange);
+  const revisionRef = useRef(0);
+  const dirtyRef = useRef(false);
+  const mountedRef = useRef(true);
   const [coordsDraft, setCoordsDraft] = useState(
     formatCoordinatePair(memo.lat, memo.lng),
   );
   const coordsInvalid =
     coordsDraft.trim() !== "" && parseCoordinatePair(coordsDraft) === null;
 
-  draftRef.current = draft;
-
-  // Sync draft from parent when memo changes externally (e.g. Keep linked note).
-  // Cancel any pending debounced persist so a stale draft cannot overwrite it.
   useEffect(() => {
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-    }
-    draftRef.current = memo;
-    setDraft(memo);
-    setCoordsDraft(
-      formatCoordinatePair(
-        memo.lat == null ? null : roundCoord(memo.lat),
-        memo.lng == null ? null : roundCoord(memo.lng),
-      ),
-    );
+    draftRef.current = draft;
+  }, [draft]);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  // Sync draft from parent when GPS or another external action changes the memo.
+  // Defer the state update so a user edit that lands first can mark the draft dirty.
+  useEffect(() => {
+    if (dirtyRef.current) return;
+    const frame = window.requestAnimationFrame(() => {
+      if (dirtyRef.current) return;
+      draftRef.current = memo;
+      setDraft(memo);
+      setCoordsDraft(
+        formatCoordinatePair(
+          memo.lat == null ? null : roundCoord(memo.lat),
+          memo.lng == null ? null : roundCoord(memo.lng),
+        ),
+      );
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [memo]);
 
   useEffect(() => {
@@ -443,23 +520,52 @@ function MemoCard({
   }, [editingHeading]);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      mountedRef.current = false;
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+        saveChainRef.current = saveChainRef.current
+          .catch(() => null)
+          .then(() => onChangeRef.current(draftRef.current))
+          .catch(() => null);
+      }
     };
   }, []);
+
+  function queueSave(next: DiveMemo, revision: number) {
+    saveChainRef.current = saveChainRef.current
+      .catch(() => null)
+      .then(() => onChangeRef.current(next))
+      .then((stored) => {
+        if (mountedRef.current && revisionRef.current === revision) {
+          dirtyRef.current = false;
+          const synced = { ...draftRef.current, updatedAt: stored.updatedAt };
+          draftRef.current = synced;
+          setDraft(synced);
+        }
+        return stored;
+      })
+      .catch(() => null);
+    return saveChainRef.current;
+  }
 
   function scheduleSave(next: DiveMemo) {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       saveTimerRef.current = null;
-      onChange(next);
+      void queueSave(next, revisionRef.current);
     }, SAVE_DEBOUNCE_MS);
   }
 
   function updateDraft(patch: Partial<DiveMemo>) {
     const next = { ...draftRef.current, ...patch };
+    revisionRef.current += 1;
+    dirtyRef.current = true;
     draftRef.current = next;
     setDraft(next);
+    onMemoChange(next);
     scheduleSave(next);
   }
 
@@ -468,24 +574,7 @@ function MemoCard({
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
     }
-    onChange(draftRef.current);
-  }
-
-  /** Apply Keep/Delete-driven updates immediately; cancel pending draft persist. */
-  function applyExternalMemo(updated: DiveMemo) {
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
-    }
-    draftRef.current = updated;
-    setDraft(updated);
-    setCoordsDraft(
-      formatCoordinatePair(
-        updated.lat == null ? null : roundCoord(updated.lat),
-        updated.lng == null ? null : roundCoord(updated.lng),
-      ),
-    );
-    onMemoChange(updated);
+    return queueSave(draftRef.current, revisionRef.current);
   }
 
   function commitCoordsDraft() {
@@ -567,7 +656,7 @@ function MemoCard({
                 type="button"
                 className="button button-quiet memo-step-button"
                 disabled={busy}
-                onClick={() => updateDraft({ hour: stepMemoHour(draft.hour, -1) })}
+                onClick={() => updateDraft(stepMemoHour24(draft, -1))}
                 aria-label={t("diveMemosHourDown")}
               >
                 <ChevronLeft size={14} />
@@ -575,23 +664,18 @@ function MemoCard({
               <input
                 className="memo-hour-input"
                 type="number"
-                min={1}
-                max={12}
+                min={0}
+                max={23}
                 inputMode="numeric"
-                value={draft.hour ?? ""}
+                value={memoHour24(draft)}
                 disabled={busy}
                 onFocus={(event) => event.currentTarget.select()}
                 onChange={(event) => {
                   const raw = event.target.value;
-                  if (raw === "") {
-                    updateDraft({ hour: null });
-                    return;
-                  }
+                  if (raw === "") return;
                   const value = Number(raw);
                   if (!Number.isFinite(value)) return;
-                  updateDraft({
-                    hour: Math.min(12, Math.max(1, Math.trunc(value))),
-                  });
+                  updateDraft(memoFieldsFromHour24(value));
                 }}
                 onBlur={flushSave}
                 aria-label={t("diveMemosHour")}
@@ -600,7 +684,7 @@ function MemoCard({
                 type="button"
                 className="button button-quiet memo-step-button"
                 disabled={busy}
-                onClick={() => updateDraft({ hour: stepMemoHour(draft.hour, 1) })}
+                onClick={() => updateDraft(stepMemoHour24(draft, 1))}
                 aria-label={t("diveMemosHourUp")}
               >
                 <ChevronRight size={14} />
@@ -643,21 +727,19 @@ function MemoCard({
                   />
                 ))}
               </datalist>
-              <select
-                className="memo-meridiem-select"
-                value={draft.meridiem}
+              <button
+                type="button"
+                className="button button-secondary memo-compact-button memo-now-button"
                 disabled={busy}
-                onChange={(event) =>
-                  updateDraft({
-                    meridiem: event.target.value === "PM" ? "PM" : "AM",
-                  })
-                }
-                onBlur={flushSave}
-                aria-label={t("diveMemosMeridiem")}
+                onClick={() => {
+                  updateDraft(memoLocalDateTimeFields());
+                  void flushSave();
+                }}
+                aria-label={t("diveMemosNow")}
+                title={t("diveMemosNow")}
               >
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
+                <Clock3 size={14} /> {t("diveMemosNow")}
+              </button>
             </div>
           </div>
         </div>
@@ -666,14 +748,58 @@ function MemoCard({
           <span>{t("diveMemosLocation")}</span>
           <input
             type="text"
-            value={draft.location ?? ""}
+            value={memoSiteName(draft) ?? ""}
             disabled={busy}
+            list={`memo-site-suggestions-${memo.id}`}
             onChange={(event) =>
-              updateDraft({ location: event.target.value || null })
+              updateDraft({
+                siteName: event.target.value || null,
+                siteSource: event.target.value ? "manual" : null,
+                siteCatalogId: null,
+                location: null,
+              })
             }
             onBlur={flushSave}
           />
+          <datalist id={`memo-site-suggestions-${memo.id}`}>
+            {siteNameSuggestions.map((site) => (
+              <option key={site} value={site} />
+            ))}
+          </datalist>
         </label>
+
+        <div className="memo-span-2 memo-site-suggestions">
+          <DiveSiteSuggestions
+            coordinates={
+              draft.lat !== null && draft.lng !== null
+                ? { latitude: draft.lat, longitude: draft.lng }
+                : null
+            }
+            catalog={diveSiteCatalog}
+            selectedName={memoSiteName(draft)}
+            selectedCatalogId={draft.siteCatalogId}
+            busy={busy}
+            onSelect={(selection: SiteSelection) => {
+              if (saveTimerRef.current) {
+                clearTimeout(saveTimerRef.current);
+                saveTimerRef.current = null;
+              }
+              const next = {
+                ...draftRef.current,
+                siteName: selection.name,
+                siteSource: selection.source,
+                siteCatalogId: selection.catalogId ?? null,
+                location: selection.location?.trim() || null,
+              } satisfies DiveMemo;
+              revisionRef.current += 1;
+              dirtyRef.current = true;
+              draftRef.current = next;
+              setDraft(next);
+              onMemoChange(next);
+              void queueSave(next, revisionRef.current);
+            }}
+          />
+        </div>
 
         <div className="memo-span-2 memo-coords-row">
           <span>{t("diveMemosCoordinates")}</span>
@@ -701,7 +827,9 @@ function MemoCard({
                 type="button"
                 className="button button-secondary memo-compact-button"
                 disabled={busy}
-                onClick={onDeviceGps}
+                onClick={() => {
+                  onDeviceGps(flushSave());
+                }}
               >
                 <Navigation size={14} /> {t("diveMemosUseGps")}
               </button>
@@ -709,7 +837,9 @@ function MemoCard({
                 type="button"
                 className="button button-secondary memo-compact-button"
                 disabled={busy}
-                onClick={onPhotoGps}
+                onClick={() => {
+                  onPhotoGps(flushSave());
+                }}
               >
                 <ImageIcon size={14} /> {t("diveMemosPhotoGps")}
               </button>
@@ -761,9 +891,8 @@ function MemoCard({
 
       <MemoDiveMatchHints
         mode="on-memo"
-        memo={memo}
+        memo={draft}
         dives={dives}
-        onMemoChange={applyExternalMemo}
         onDiveChange={onDiveChange}
         onMemoDeleted={onMemoDeleted}
       />

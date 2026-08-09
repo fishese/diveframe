@@ -67,7 +67,7 @@ public class MainActivity extends BridgeActivity {
             return;
         }
         StringBuilder url = new StringBuilder(LOCAL_ORIGIN);
-        url.append(path);
+        url.append(nativeStaticPath(path));
         if (data.getEncodedQuery() != null) {
             url.append('?').append(data.getEncodedQuery());
         }
@@ -84,6 +84,18 @@ public class MainActivity extends BridgeActivity {
         // Consume so configuration changes do not re-apply the shortcut route.
         intent.setData(null);
         setIntent(intent);
+    }
+
+    private static String nativeStaticPath(String path) {
+        String normalized = path.endsWith("/") && path.length() > 1
+            ? path.substring(0, path.length() - 1)
+            : path;
+        if ("/memo".equals(normalized) || "/memos".equals(normalized)) {
+            // The native export emits flat memo.html/memos.html files. Loading
+            // the extensionless web route makes Capacitor fall back to index.
+            return normalized + ".html";
+        }
+        return path;
     }
 
     private final class DiveFrameJsBridge {

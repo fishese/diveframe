@@ -10,6 +10,6 @@
             android:action="android.intent.action.VIEW"
             android:targetPackage="cc.fishese.divelog"
             android:targetClass="cc.fishese.divelog.MainActivity"
-            android:data="https://localhost/memos" />
+            android:data="https://localhost/memo" />
     </shortcut>
 </shortcuts>

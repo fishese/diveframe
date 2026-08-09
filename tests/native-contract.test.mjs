@@ -402,7 +402,7 @@ test("exports are written natively because the WebView drops blob downloads", as
   assert.match(pwa, /getLocalStoragePersistenceStatus\(!native\)/);
 });
 
-test("Android launcher exposes a localized Memos shortcut to /memos", async () => {
+test("Android launcher exposes a localized Memos shortcut to /memo", async () => {
   const [manifest, mainActivity, shortcuts, strings] = await Promise.all([
     readFile(files.manifest, "utf8"),
     readFile(files.mainActivity, "utf8"),
@@ -418,11 +418,14 @@ test("Android launcher exposes a localized Memos shortcut to /memos", async () =
 
   assert.match(manifest, /android\.app\.shortcuts/);
   assert.match(manifest, /@xml\/shortcuts/);
-  assert.match(manifest, /android:pathPrefix="\/memos"/);
+  assert.match(manifest, /android:pathPrefix="\/memo"/);
+  assert.match(manifest, /android\.intent\.category\.BROWSABLE/);
   assert.match(shortcuts, /android:shortcutId="memos"/);
-  assert.match(shortcuts, /https:\/\/localhost\/memos/);
+  assert.match(shortcuts, /https:\/\/localhost\/memo/);
   assert.match(strings, /shortcut_memos_short/);
   assert.match(mainActivity, /handleLaunchPath/);
+  assert.match(mainActivity, /nativeStaticPath/);
+  assert.match(mainActivity, /normalized \+ "\.html"/);
   assert.match(mainActivity, /DiveFrameNative/);
   assert.match(mainActivity, /setLightStatusBars/);
 });

@@ -1,5 +1,5 @@
 import { resolveDiveMapCoordinates } from "./dive-gps";
-import type { DiveMemo } from "./dive-memos";
+import { memoSiteName, type DiveMemo } from "./dive-memos";
 
 export type MemoDiveApplyPlan = {
   setUserSite?: string;
@@ -37,7 +37,10 @@ function isSiteEmpty(dive: {
 }
 
 export function planApplyEmptyMemoFields(
-  memo: Pick<DiveMemo, "location" | "lat" | "lng" | "buddies" | "notes">,
+  memo: Pick<
+    DiveMemo,
+    "siteName" | "location" | "lat" | "lng" | "buddies" | "notes"
+  >,
   dive: {
     userSite: string | null;
     site: string | null;
@@ -51,10 +54,13 @@ export function planApplyEmptyMemoFields(
   },
 ): MemoDiveApplyPlan {
   const plan: MemoDiveApplyPlan = {};
-  const memoLocation = isNonBlank(memo.location) ? memo.location!.trim() : null;
+  const memoSite = memoSiteName(memo);
+  const memoLocation = isNonBlank(memo.siteName)
+    ? memo.location?.trim() || null
+    : memoSite;
 
-  if (isSiteEmpty(dive) && memoLocation) {
-    plan.setUserSite = memoLocation;
+  if (isSiteEmpty(dive) && memoSite) {
+    plan.setUserSite = memoSite;
   }
 
   if (!isNonBlank(dive.location) && memoLocation) {
@@ -81,38 +87,4 @@ export function planApplyEmptyMemoFields(
 
 export function isMemoDiveApplyPlanEmpty(plan: MemoDiveApplyPlan): boolean {
   return Object.keys(plan).length === 0;
-}
-
-export function preferredDiveNumberLabel(dive: {
-  diveNumber: number | null;
-  sourceDiveNumbers: Partial<
-    Record<"shearwater" | "subsurface" | "uddf" | "fit", number | null>
-  >;
-}): string | null {
-  const shearwater = dive.sourceDiveNumbers.shearwater;
-  if (shearwater != null && Number.isFinite(shearwater)) {
-    return String(shearwater);
-  }
-  const subsurface = dive.sourceDiveNumbers.subsurface;
-  if (subsurface != null && Number.isFinite(subsurface)) {
-    return String(subsurface);
-  }
-  if (dive.diveNumber != null && Number.isFinite(dive.diveNumber)) {
-    return String(dive.diveNumber);
-  }
-  return null;
-}
-
-export function appendLinkedDiveNote(
-  existingNotes: string | null,
-  diveNumberLabel: string | null,
-): string | null {
-  if (diveNumberLabel === null) {
-    return existingNotes;
-  }
-  const line = `Linked to dive #${diveNumberLabel}`;
-  if (!isNonBlank(existingNotes)) {
-    return line;
-  }
-  return `${existingNotes!.trimEnd()}\n${line}`;
 }

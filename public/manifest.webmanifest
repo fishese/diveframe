@@ -37,7 +37,7 @@
     {
       "name": "Memos",
       "short_name": "Memos",
-      "url": "/memos",
+      "url": "/memo",
       "description": "Open dive memos"
     },
     {

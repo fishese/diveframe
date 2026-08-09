@@ -28,7 +28,16 @@ import {
 } from "./cross-tab-sync";
 import { withOptimizedJpeg } from "./media-optimization";
 import type { DiveMemo } from "./dive-memos";
-import { normalizeMemoMinute } from "./dive-memos";
+import {
+  compareDiveMemos,
+  hydrateDiveMemo,
+  normalizeMemoMinute,
+} from "./dive-memos";
+import {
+  clearedDiveFrameSiteData,
+  inferLegacyLocationOverride,
+  type DiveLocationOverrideSource,
+} from "./dive-site-overrides";
 import type { DiveSiteCatalog } from "./dive-site-catalog";
 import type { WhatsNewDocument } from "./whats-new";
 import {
@@ -47,7 +56,7 @@ export type DiveSource =
   | "fit";
 
 export type ExportGpsPreference = "computer" | "user" | "user-if-missing";
-export type UserGpsSource = "manual" | "photo-exif";
+export type UserGpsSource = "manual" | "photo-exif" | "memo";
 export type AttachmentRole = "dive-photo" | "geo-reference";
 
 export type LocalDive = {
@@ -62,6 +71,7 @@ export type LocalDive = {
   lengthText: string | null;
   durationSeconds: number | null;
   location: string | null;
+  locationSource: DiveLocationOverrideSource;
   site: string | null;
   buddy: string | null;
   notes: string | null;
@@ -89,7 +99,7 @@ export type LocalDive = {
   cylinderPresetId?: string | null;
   cylinderVolumeL?: number | null;
   userSite: string | null;
-  userSiteSource: "catalog" | "suggestion" | "manual" | null;
+  userSiteSource: "catalog" | "suggestion" | "manual" | "memo" | null;
   userSiteCatalogId: string | null;
   userSiteUpdatedAt: string | null;
   /** User-supplied pin; never overwrites computer gpsEntry/gpsExit fields. */
@@ -104,11 +114,13 @@ export type LocalDive = {
   resolvedLocation: string | null;
   resolvedCity: string | null;
   resolvedCountry: string | null;
+  resolvedLocationSuppressed: boolean;
   importedAt: string;
   photoCount: number;
   sources: string[];
   sourceDiveNumbers: Partial<Record<DiveSource, number | null>>;
   sourceSiteNames: Partial<Record<DiveSource, string | null>>;
+  sourceLocations: Partial<Record<DiveSource, string | null>>;
 };
 
 export type LocalImportedDive = Omit<
@@ -128,9 +140,12 @@ export type LocalImportedDive = Omit<
   | "resolvedLocation"
   | "resolvedCity"
   | "resolvedCountry"
+  | "resolvedLocationSuppressed"
   | "sources"
   | "sourceDiveNumbers"
   | "sourceSiteNames"
+  | "sourceLocations"
+  | "locationSource"
 > & {
   source: DiveSource;
   sourceId: string;
@@ -947,7 +962,7 @@ export async function updateLocalDiveSite(
   id: string,
   selection: {
     name: string;
-    source: "catalog" | "suggestion" | "manual";
+    source: "catalog" | "suggestion" | "manual" | "memo";
     catalogId?: string;
     latitude: number | null;
     longitude: number | null;
@@ -966,14 +981,21 @@ export async function updateLocalDiveSite(
     transaction.abort();
     throw new Error("Dive not found in this browser.");
   }
+  const current = hydrateDive(dive);
 
   const now = new Date().toISOString();
   const updated: LocalDive = {
-    ...dive,
+    ...current,
     location:
       selection.location === undefined
-        ? dive.location
+        ? current.location
         : selection.location?.trim() || null,
+    locationSource:
+      selection.location === undefined
+        ? current.locationSource
+        : selection.source === "memo"
+          ? "memo"
+          : "site-selection",
     userSite: selection.name,
     userSiteSource: selection.source,
     userSiteCatalogId: selection.catalogId ?? null,
@@ -996,9 +1018,9 @@ export async function updateLocalDiveSite(
       name: selection.name,
       latitude: selection.latitude,
       longitude: selection.longitude,
-      diveDate: dive.diveDate,
-      shearwaterDiveNumber: dive.sourceDiveNumbers?.shearwater ?? null,
-      subsurfaceDiveNumber: dive.sourceDiveNumbers?.subsurface ?? null,
+      diveDate: current.diveDate,
+      shearwaterDiveNumber: current.sourceDiveNumbers?.shearwater ?? null,
+      subsurfaceDiveNumber: current.sourceDiveNumbers?.subsurface ?? null,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     } satisfies LocalSiteContribution);
@@ -1007,6 +1029,7 @@ export async function updateLocalDiveSite(
   }
 
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return updated;
 }
 
@@ -1023,18 +1046,17 @@ export async function clearLocalDiveSiteOverride(id: string) {
     transaction.abort();
     throw new Error("Dive not found in this browser.");
   }
+  const current = hydrateDive(dive);
 
   const updated: LocalDive = {
-    ...dive,
-    userSite: null,
-    userSiteSource: null,
-    userSiteCatalogId: null,
-    userSiteUpdatedAt: null,
+    ...current,
+    ...clearedDiveFrameSiteData(current),
     appEditedAt: new Date().toISOString(),
   };
   divesStore.put(updated);
   contributionsStore.delete(id);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return updated;
 }
 
@@ -1042,6 +1064,7 @@ export async function updateLocalDiveDetails(
   id: string,
   details: {
     location?: string | null;
+    locationSource?: DiveLocationOverrideSource;
     buddy: string | null;
     notes: string | null;
     cylinderPresetId?: string | null;
@@ -1056,6 +1079,10 @@ export async function updateLocalDiveDetails(
       details.location === undefined
         ? dive.location
         : details.location?.trim() || null,
+    locationSource:
+      details.location === undefined
+        ? dive.locationSource
+        : details.locationSource ?? "manual",
     buddy: details.buddy?.trim() || null,
     notes: details.notes?.trim() || null,
     cylinderPresetId: details.cylinderPresetId ?? dive.cylinderPresetId ?? null,
@@ -1101,6 +1128,7 @@ export async function updateLocalDiveLocation(
     resolvedLocation: location.label,
     resolvedCity: location.city,
     resolvedCountry: location.country,
+    resolvedLocationSuppressed: false,
     appEditedAt: new Date().toISOString(),
   }));
 }
@@ -1130,21 +1158,19 @@ export async function listLocalDiveMemos() {
   const memos = await request<DiveMemo[]>(
     database.transaction(DIVE_MEMOS_STORE).objectStore(DIVE_MEMOS_STORE).getAll(),
   );
-  return memos.sort((a, b) => {
-    const dateOrder = a.date.localeCompare(b.date);
-    return dateOrder || a.createdAt.localeCompare(b.createdAt);
-  });
+  return memos.map(hydrateDiveMemo).sort(compareDiveMemos);
 }
 
 export async function saveLocalDiveMemo(memo: DiveMemo) {
-  const stored: DiveMemo = {
+  const stored: DiveMemo = hydrateDiveMemo({
     ...memo,
     minute: normalizeMemoMinute(memo.minute),
-  };
+  });
   const database = await openDatabase();
   const transaction = database.transaction(DIVE_MEMOS_STORE, "readwrite");
   transaction.objectStore(DIVE_MEMOS_STORE).put(stored);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return stored;
 }
 
@@ -1159,6 +1185,7 @@ export async function deleteLocalDiveMemo(id: string) {
   }
   store.delete(id);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 export async function createLocalTrip(name: string) {
@@ -1311,6 +1338,7 @@ export async function updateLocalDiveUserGps(
       userGpsLng: gps.lng,
       userGpsSource: gps.source,
       userGpsUpdatedAt: now,
+      resolvedLocationSuppressed: false,
       appEditedAt: now,
     };
   });
@@ -1903,6 +1931,7 @@ async function updateDive(id: string, change: (dive: LocalDive) => LocalDive) {
   const updated = change(hydrateDive(dive));
   store.put(updated);
   await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
   return updated;
 }
 
@@ -1928,6 +1957,11 @@ function mergeDive(
     [incoming.source]:
       incoming.site ?? existing?.sourceSiteNames?.[incoming.source] ?? null,
   };
+  const sourceLocations = {
+    ...(existing?.sourceLocations ?? {}),
+    [incoming.source]:
+      incoming.location ?? existing?.sourceLocations?.[incoming.source] ?? null,
+  };
   if (
     sourceDiveNumbers.shearwater === undefined &&
     existing?.sources.includes("shearwater")
@@ -1947,7 +1981,11 @@ function mergeDive(
     maxTemp: core(incoming.maxTemp, existing?.maxTemp),
     lengthText: core(incoming.lengthText, existing?.lengthText),
     durationSeconds: core(incoming.durationSeconds, existing?.durationSeconds),
-    location: existing?.location ?? incoming.location,
+    location:
+      existing?.locationSource
+        ? existing.location
+        : core(incoming.location, existing?.location),
+    locationSource: existing?.locationSource ?? null,
     site: existing?.site ?? incoming.site,
     buddy: existing?.buddy ?? incoming.buddy,
     notes: existing?.notes ?? incoming.notes,
@@ -2027,11 +2065,13 @@ function mergeDive(
     resolvedLocation: existing?.resolvedLocation ?? null,
     resolvedCity: existing?.resolvedCity ?? null,
     resolvedCountry: existing?.resolvedCountry ?? null,
+    resolvedLocationSuppressed: existing?.resolvedLocationSuppressed ?? false,
     importedAt,
     photoCount: existing?.photoCount ?? 0,
     sources: [...sources],
     sourceDiveNumbers,
     sourceSiteNames,
+    sourceLocations,
   };
 }
 
@@ -2056,6 +2096,7 @@ function mergeStoredDives(
     lengthText: value(keep.lengthText, remove.lengthText),
     durationSeconds: value(keep.durationSeconds, remove.durationSeconds),
     location: value(keep.location, remove.location),
+    locationSource: value(keep.locationSource, remove.locationSource),
     site: value(keep.site, remove.site),
     buddy: value(keep.buddy, remove.buddy),
     notes: value(keep.notes, remove.notes),
@@ -2118,6 +2159,8 @@ function mergeStoredDives(
     resolvedLocation: value(keep.resolvedLocation, remove.resolvedLocation),
     resolvedCity: value(keep.resolvedCity, remove.resolvedCity),
     resolvedCountry: value(keep.resolvedCountry, remove.resolvedCountry),
+    resolvedLocationSuppressed:
+      keep.resolvedLocationSuppressed || remove.resolvedLocationSuppressed,
     importedAt:
       keep.importedAt > remove.importedAt ? keep.importedAt : remove.importedAt,
     photoCount: keep.photoCount + movedPhotoCount,
@@ -2129,6 +2172,10 @@ function mergeStoredDives(
     sourceSiteNames: {
       ...remove.sourceSiteNames,
       ...keep.sourceSiteNames,
+    },
+    sourceLocations: {
+      ...remove.sourceLocations,
+      ...keep.sourceLocations,
     },
   };
 }
@@ -2363,6 +2410,15 @@ function hydrateDive(dive: LocalDive): LocalDive {
       ? Number(dive.lengthText)
       : null);
   const maxDepthM = dive.maxDepthM ?? nullableNumber(dive.depth);
+  const sourceLocations = dive.sourceLocations ?? {};
+  const locationSource =
+    dive.locationSource === undefined
+      ? inferLegacyLocationOverride({
+          ...dive,
+          sourceLocations,
+          sourceSiteNames: dive.sourceSiteNames ?? {},
+        })
+      : dive.locationSource;
   const pressures = normalizeStoredPressurePairs(
     dive.tankPressuresStartBar ?? [],
     dive.tankPressuresEndBar ?? [],
@@ -2373,6 +2429,7 @@ function hydrateDive(dive: LocalDive): LocalDive {
     category: dive.category ?? "scuba",
     categorySource: dive.categorySource ?? "default",
     maxDepthM,
+    locationSource,
     waterTemperatureC:
       dive.waterTemperatureC ?? dive.minTemp ?? dive.maxTemp ?? null,
     surfaceTemperatureC: dive.surfaceTemperatureC ?? null,
@@ -2397,8 +2454,10 @@ function hydrateDive(dive: LocalDive): LocalDive {
     userGpsUpdatedAt: dive.userGpsUpdatedAt ?? null,
     exportGpsPreference: dive.exportGpsPreference ?? "computer",
     tripId: dive.tripId ?? null,
+    resolvedLocationSuppressed: dive.resolvedLocationSuppressed ?? false,
     sourceDiveNumbers: dive.sourceDiveNumbers ?? {},
     sourceSiteNames: dive.sourceSiteNames ?? {},
+    sourceLocations,
   };
 }
 

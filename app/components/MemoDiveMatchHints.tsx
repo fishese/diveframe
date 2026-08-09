@@ -5,20 +5,17 @@ import { useAppI18n } from "@/app/AppI18nProvider";
 import type { AppLanguage } from "@/lib/app-i18n";
 import { formatCoordinatePair } from "@/lib/coordinate-input";
 import type { DiveMemo } from "@/lib/dive-memos";
-import { memoWallClockMs } from "@/lib/dive-memos";
+import { memoSiteName, memoWallClockMs } from "@/lib/dive-memos";
 import {
   deleteLocalDiveMemo,
   type LocalDive,
-  saveLocalDiveMemo,
   updateLocalDiveDetails,
   updateLocalDiveSite,
   updateLocalDiveUserGps,
 } from "@/lib/indexed-db";
 import {
-  appendLinkedDiveNote,
   isMemoDiveApplyPlanEmpty,
   planApplyEmptyMemoFields,
-  preferredDiveNumberLabel,
   type MemoDiveApplyPlan,
 } from "@/lib/memo-dive-apply";
 import {
@@ -49,7 +46,6 @@ export type MemoDiveMatchHintsProps = MemoDiveMatchHintsBase &
         mode: "on-memo";
         memo: DiveMemo;
         dives: LocalDive[];
-        onMemoChange: (memo: DiveMemo) => void;
         onDiveChange: (dive: LocalDive) => void;
       }
   );
@@ -73,9 +69,9 @@ export function formatMatchSummaryDateTime(
   return new Intl.DateTimeFormat(localeForLanguage(language), {
     day: "numeric",
     month: "short",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
-    hour12: true,
+    hourCycle: "h23",
   }).format(new Date(ms));
 }
 
@@ -132,7 +128,7 @@ async function writeApplyPlan(
   if (plan.setUserSite) {
     current = await updateLocalDiveSite(current.id, {
       name: plan.setUserSite,
-      source: "manual",
+      source: "memo",
       latitude: memo.lat,
       longitude: memo.lng,
       ...(plan.setLocation !== undefined
@@ -142,6 +138,7 @@ async function writeApplyPlan(
   } else if (plan.setLocation !== undefined) {
     current = await updateLocalDiveDetails(current.id, {
       location: plan.setLocation,
+      locationSource: "memo",
       buddy: current.buddy,
       notes: current.notes,
     });
@@ -151,7 +148,7 @@ async function writeApplyPlan(
     current = await updateLocalDiveUserGps(current.id, {
       lat: plan.setUserGps.lat,
       lng: plan.setUserGps.lng,
-      source: "manual",
+      source: "memo",
     });
   }
 
@@ -264,17 +261,17 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
   }
 
   async function copyLocation(memo: DiveMemo, dive: LocalDive) {
-    if (!nonBlank(memo.location)) return;
-    const name = memo.location.trim();
+    const name = memoSiteName(memo);
+    if (!name) return;
     setBusy(true);
     setStatus(null);
     try {
       const updated = await updateLocalDiveSite(dive.id, {
         name,
-        source: "manual",
+        source: "memo",
         latitude: memo.lat,
         longitude: memo.lng,
-        location: name,
+        location: memo.siteName ? memo.location : name,
       });
       props.onDiveChange(updated);
       setStatus(t("manualSiteSaved", { name }));
@@ -293,7 +290,7 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
       const updated = await updateLocalDiveUserGps(dive.id, {
         lat: memo.lat!,
         lng: memo.lng!,
-        source: "manual",
+        source: "memo",
       });
       props.onDiveChange(updated);
       setStatus(t("diveDetailsSaved"));
@@ -342,33 +339,8 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
 
   async function keepMemoAfterApply() {
     if (!postApply) return;
-    const { memo, dive } = postApply;
-    setBusy(true);
-    setStatus(null);
-    try {
-      const label = preferredDiveNumberLabel(dive);
-      const nextNotes = appendLinkedDiveNote(memo.notes, label);
-      if (nextNotes !== memo.notes) {
-        const saved = await saveLocalDiveMemo({
-          ...memo,
-          notes: nextNotes,
-          updatedAt: new Date().toISOString(),
-        });
-        if (props.mode === "on-dive") {
-          props.onMemosChange(
-            props.memos.map((item) => (item.id === saved.id ? saved : item)),
-          );
-        } else {
-          props.onMemoChange(saved);
-        }
-      }
-      props.onDiveChange(dive);
-      setPostApply(null);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : String(error));
-    } finally {
-      setBusy(false);
-    }
+    props.onDiveChange(postApply.dive);
+    setPostApply(null);
   }
 
   async function deleteMemoAfterApply() {
@@ -414,10 +386,10 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
               {t("diveMemosLocation")}
             </span>
             <span className="memo-match-field-value">
-              {nonBlank(memo.location) ? memo.location : "—"}
+              {memoSiteName(memo) ?? "—"}
             </span>
           </div>
-          {nonBlank(memo.location) ? (
+          {memoSiteName(memo) ? (
             <button
               type="button"
               className="button button-secondary memo-compact-button"
@@ -526,7 +498,7 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
         ? memoMatches.map(({ memo }) => {
             const summary = formatSummaryLine(
               memoWallClockMs(memo),
-              nonBlank(memo.location) ? memo.location.trim() : null,
+              memoSiteName(memo),
               language,
             );
             const expanded = expandedId === memo.id;
