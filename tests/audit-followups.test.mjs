@@ -134,6 +134,18 @@ test("local data revision bumps and conflict detection work", () => {
   );
 });
 
+test("osm cache evicts its oldest entries when it reaches its limit", () => {
+  osm.clearOsmUpstreamForTests();
+  for (let index = 0; index <= osm.MAX_OSM_CACHE_ENTRIES; index += 1) {
+    osm.writeOsmCache(`key-${index}`, index, 1_000, 0);
+  }
+  assert.equal(osm.readOsmCacheEntry("key-0", 1).hit, false);
+  assert.deepEqual(
+    osm.readOsmCacheEntry(`key-${osm.MAX_OSM_CACHE_ENTRIES}`, 1),
+    { hit: true, value: osm.MAX_OSM_CACHE_ENTRIES },
+  );
+});
+
 test("backup record validation rejects crash-prone dive and memo shapes", () => {
   const dive = {
     id: "dive-1",

@@ -8,6 +8,7 @@
 
 export const NOMINATIM_MIN_INTERVAL_MS = 1_100;
 export const DEFAULT_OSM_CACHE_TTL_MS = 60 * 60 * 1000;
+export const MAX_OSM_CACHE_ENTRIES = 512;
 
 export type OsmProvider = "nominatim" | "overpass";
 export type OsmOperation =
@@ -78,6 +79,15 @@ export function writeOsmCache(
   ttlMs = DEFAULT_OSM_CACHE_TTL_MS,
   now = Date.now(),
 ) {
+  responseCache.delete(key);
+  for (const [cachedKey, entry] of responseCache) {
+    if (entry.expiresAt <= now) responseCache.delete(cachedKey);
+  }
+  while (responseCache.size >= MAX_OSM_CACHE_ENTRIES) {
+    const oldestKey = responseCache.keys().next().value;
+    if (oldestKey === undefined) break;
+    responseCache.delete(oldestKey);
+  }
   responseCache.set(key, {
     value: value === null ? EMPTY : value,
     expiresAt: now + ttlMs,
