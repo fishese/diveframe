@@ -60,6 +60,8 @@ test("install caches hashed assets referenced by shell HTML", async () => {
   });
   await installPromise;
 
+  assert.ok(cached.has("/android"));
+  assert.ok(cached.has("/compose"));
   assert.ok(cached.has("/assets/app-123.css"));
   assert.ok(cached.has("/assets/chunk-456.js"));
   assert.ok(cached.has("/assets/app-789.js"));
