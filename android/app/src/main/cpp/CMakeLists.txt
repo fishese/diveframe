@@ -60,6 +60,23 @@ target_compile_options(
     diveframe_dc PRIVATE ${DIVEFRAME_REPRODUCIBLE_SOURCE_PATH}
 )
 
+# lld's generated GNU build ID includes build-path-sensitive input metadata.
+# Derive stable, target-specific IDs from the pinned source instead.
+file(SHA1
+    "${CMAKE_CURRENT_SOURCE_DIR}/libdivecomputer.pin"
+    LIBDIVECOMPUTER_BUILD_ID
+)
+file(SHA1
+    "${CMAKE_CURRENT_SOURCE_DIR}/diveframe_dc.c"
+    DIVEFRAME_DC_BUILD_ID
+)
+target_link_options(
+    libdivecomputer PRIVATE "-Wl,--build-id=0x${LIBDIVECOMPUTER_BUILD_ID}"
+)
+target_link_options(
+    diveframe_dc PRIVATE "-Wl,--build-id=0x${DIVEFRAME_DC_BUILD_ID}"
+)
+
 # Android 15 devices may use 16 KB memory pages, and the loader rejects shared
 # libraries whose segments are aligned to the older 4 KB boundary.
 set(DIVEFRAME_PAGE_ALIGNMENT

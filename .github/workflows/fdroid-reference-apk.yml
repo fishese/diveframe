@@ -81,10 +81,10 @@ jobs:
       - name: Publish reference release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.21
-          name: DiveFrame v1.0.21
+          tag_name: fdroid-v1.0.21
+          name: DiveFrame v1.0.21 F-Droid reference
           target_commitish: ${{ github.sha }}
-          make_latest: true
+          make_latest: false
           files: diveframe-1.0.21.apk
           body: |
             Developer-signed reference APK for DiveFrame 1.0.21.
