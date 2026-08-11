@@ -1,0 +1,16 @@
+DiveFrame is a private, offline-first scuba dive logbook.
+
+* Import logs from Shearwater Cloud Desktop, Subsurface, UDDF, Garmin Dive,
+  Suunto, and FIT files.
+* On Android, download classic Shearwater dives over Bluetooth without Google
+  services.
+* Merge matching dives while keeping profiles, GPS, notes, photos, and source
+  details.
+* Write pre-import memos and match them to dives with similar start times.
+* Browse an offline Places Dived map and group dives by site.
+* Search the bundled dive-site catalog, including place names and aliases.
+* Create shareable dive images with profiles, gas statistics, and four layouts.
+* Export a complete Subsurface logbook or a password-protected local backup.
+
+Dive data is stored on the device. DiveFrame has no account or cloud logbook;
+network lookups for nearby sites and place names happen only when requested.

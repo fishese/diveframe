@@ -2606,9 +2606,11 @@ button {
   align-items: center;
   display: flex;
   justify-content: center;
-  min-height: calc(100vh - 82px);
+  /* Account for the beta notice and top bar so the empty view fills the
+     viewport without creating a small, unexplained page overflow. */
+  min-height: calc(100vh - 88px);
   overflow: hidden;
-  padding: 70px 24px 150px;
+  padding: 56px 24px 120px;
   position: relative;
 }
 
@@ -2887,7 +2889,7 @@ button {
 }
 
 .empty-proof {
-  bottom: 38px;
+  bottom: 30px;
   display: flex;
   gap: 34px;
   position: absolute;
@@ -5342,8 +5344,8 @@ button {
   }
 
   .empty-state {
-    min-height: calc(100vh - 70px);
-    padding: 55px 20px 150px;
+    min-height: calc(100vh - 81px);
+    padding: 44px 20px 120px;
   }
 
   .empty-content h1 {
@@ -5356,7 +5358,7 @@ button {
 
   .empty-proof {
     align-items: center;
-    bottom: 25px;
+    bottom: 20px;
     flex-direction: column;
     gap: 9px;
   }
