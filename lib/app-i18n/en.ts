@@ -254,6 +254,7 @@ export const en = {
   locationSourcePhotoExif: "Location from a photo",
   locationSourceMemo: "Location from a dive memo",
   locationSourceCatalog: "Location from the DiveFrame site catalog",
+  locationSourceSiteSelection: "Location from a selected dive site",
   editLocation: "Edit location",
   siteAndLocation: "Site & location",
   editSite: "Edit site",
@@ -792,4 +793,5 @@ export const en = {
   noNamedDivesNeedCoordinates:
     "Every named dive already has coordinates, or no named unmapped dives were found.",
   unableApplyCatalogCoordinates: "Unable to apply the catalog coordinates.",
+  unableCheckSiteCoordinates: "Unable to check site coordinates.",
 } as const;

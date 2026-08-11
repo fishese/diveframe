@@ -22,6 +22,7 @@ import {
 } from "./backup-size-estimate";
 import {
   assertLocalDataRevision,
+  LocalDataConflictError,
   publishLocalDataChange,
   readLocalDataRevision,
   type LocalDataChangeReason,
@@ -44,6 +45,10 @@ import {
   type DiveLocationOverrideSource,
 } from "./dive-site-overrides";
 import type { CatalogSite, DiveSiteCatalog } from "./dive-site-catalog";
+import {
+  diveSiteAuditFingerprint,
+  type DiveSiteAuditDiveSummary,
+} from "./dive-map-site-audit";
 import type { WhatsNewDocument } from "./whats-new";
 import {
   ALL_STORE_NAMES,
@@ -61,7 +66,12 @@ export type DiveSource =
   | "fit";
 
 export type ExportGpsPreference = "computer" | "user" | "user-if-missing";
-export type UserGpsSource = "manual" | "photo-exif" | "memo" | "catalog";
+export type UserGpsSource =
+  | "manual"
+  | "photo-exif"
+  | "memo"
+  | "catalog"
+  | "site-selection";
 export type AttachmentRole = "dive-photo" | "geo-reference";
 
 export type LocalDive = {
@@ -1036,7 +1046,7 @@ export async function updateLocalDiveSite(
     userGpsSource: shouldStoreSelectedCoordinates
       ? selection.source === "catalog"
         ? "catalog"
-        : "manual"
+        : "site-selection"
       : current.userGpsSource,
     userGpsUpdatedAt: shouldStoreSelectedCoordinates
       ? now
@@ -1259,10 +1269,17 @@ export async function applyLocalDiveMemoPlan(
 
 /** Apply a verified catalog site's coordinates to a group of local dives. */
 export async function applyCatalogSiteCoordinatesToLocalDives(
-  diveIds: string[],
+  diveSnapshots: Array<
+    Pick<DiveSiteAuditDiveSummary, "id" | "auditFingerprint">
+  >,
   site: CatalogSite,
 ) {
-  const ids = [...new Set(diveIds.filter(Boolean))];
+  const expectedById = new Map(
+    diveSnapshots
+      .filter((dive) => Boolean(dive.id))
+      .map((dive) => [dive.id, dive.auditFingerprint]),
+  );
+  const ids = [...expectedById.keys()];
   if (!ids.length) return [];
   if (
     !Number.isFinite(site.coordinates.latitude) ||
@@ -1290,6 +1307,12 @@ export async function applyCatalogSiteCoordinatesToLocalDives(
       throw new Error("Dive not found in this browser.");
     }
     const current = hydrateDive(stored);
+    if (diveSiteAuditFingerprint(current) !== expectedById.get(id)) {
+      transaction.abort();
+      throw new LocalDataConflictError(
+        "A dive changed after this catalog check. Run the check again before applying coordinates.",
+      );
+    }
     const name =
       current.userSite?.trim() ||
       current.site?.trim() ||

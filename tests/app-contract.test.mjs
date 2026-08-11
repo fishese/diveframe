@@ -262,6 +262,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapApp, /buildDiveSiteCoordinateAudit/);
   assert.match(diveMapApp, /applyCatalogSiteCoordinatesToLocalDives/);
   assert.match(diveMapApp, /groupDivesBySite/);
+  assert.match(diveMapApp, /refreshGenerationRef/);
+  assert.match(diveMapApp, /siteAuditGenerationRef/);
+  assert.match(diveMapApp, /applyInFlightRef/);
   assert.match(diveMapApp, /subscribeLocalDataChanges/);
   assert.match(diveMapApp, /href={`\/\?dive=\$\{encodeURIComponent\(dive\.id\)\}`}/);
   assert.match(diveMapApp, /Fit|fitToDives/);
@@ -273,6 +276,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapLogic, /gpsExitLat/);
   assert.doesNotMatch(diveMapLogic, /geocod|fetch\s*\(/i);
   assert.match(diveMapAudit, /exact user action|explicit user action/i);
+  assert.match(diveMapAudit, /diveSiteAuditFingerprint/);
   assert.doesNotMatch(diveMapAudit, /fetch\s*\(/);
   assert.match(diveMapAsset, /viewBox="0 0 1200 600"/);
   assert.match(diveMapAsset, /Natural Earth 5\.1\.0/);
@@ -453,7 +457,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /export async function setLocalDiveTripIds/);
   assert.match(storage, /export async function updateLocalDiveUserGps/);
   assert.match(storage, /export async function applyCatalogSiteCoordinatesToLocalDives/);
+  assert.match(storage, /diveSiteAuditFingerprint\(current\)/);
   assert.match(storage, /shouldStoreSelectedCoordinates/);
+  assert.match(storage, /"site-selection"/);
   assert.match(app, /from "@\/lib\/dive-gps"/);
   assert.match(app, /resolveDiveMapCoordinates/);
   assert.match(app, /from "@\/lib\/photo-exif-gps"/);

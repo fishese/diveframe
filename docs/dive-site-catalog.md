@@ -2,29 +2,28 @@
 
 DiveFrame uses a catalog-first lookup:
 
-1. Search active bundled catalog entries within 30 km of the dive's GPS entry
-   point.
+1. Search active bundled catalog entries within 6 km of the dive's preferred
+   structured GPS point (computer entry, computer exit, then user GPS).
 2. If one or more bundled sites are found, return those entries; otherwise
    query the existing OpenStreetMap suggestion providers.
-3. On the client, add active entries from any user-loaded session catalog,
+3. On the client, add active entries from any user-loaded supplementary catalog,
    remove exact duplicates, and sort the combined list by proximity.
 4. Manual site entry is always available. A manual site needs coordinates
    before it can be exported as a catalog contribution.
 
 The application bundles the catalog as `data/dive-sites.json`. It is loaded by
-the stateless nearby-site route and can be replaced through the review workflow
-in Settings.
+the stateless nearby-site route. Settings can add or remove a supplementary
+catalog without replacing the bundled file.
 
-## Regional session catalogs
+## Regional supplementary catalogs
 
 Settings accepts another compatible `dive-sites.json`. The file is validated
-structurally and checked for geographic anomalies before it is stored in
-`sessionStorage`, so it remains available while the user moves
-between Settings and dive pages in the same tab. Its active sites are added to
+structurally and checked for geographic anomalies before it is stored in local
+IndexedDB. It remains available across reloads and app restarts on that device
+and is included in DiveFrame app-data backups. Its active sites are added to
 the bundled catalog rather than replacing it. Duplicate IDs and identical
-name/coordinate records retain the bundled entry. It is not written to
-IndexedDB, included in app backups, or uploaded to the server. Closing the tab
-session or choosing **Remove additional catalog** removes only those additional
+name/coordinate records retain the bundled entry. It is never uploaded to the
+server. Choosing **Remove additional catalog** removes only those additional
 entries; the bundled catalog and OpenStreetMap behavior remain.
 
 The combined bundled-plus-additional catalog becomes the base for the existing

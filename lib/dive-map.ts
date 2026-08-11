@@ -13,6 +13,7 @@ export type DiveMapDive = Pick<
   | "resolvedLocation"
   | "resolvedCity"
   | "resolvedCountry"
+  | "appEditedAt"
   | "site"
   | "userSite"
   | "userSiteCatalogId"

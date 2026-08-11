@@ -2463,6 +2463,30 @@
       "updatedAt": "2026-08-07T00:00:00.000Z"
     },
     {
+      "id": "hk-green-egg-island",
+      "name": "Green Egg Island",
+      "aliases": [
+        "綠蛋島",
+        "爛排"
+      ],
+      "coordinates": {
+        "latitude": 22.3038889,
+        "longitude": 114.3111111
+      },
+      "place": {
+        "countryCode": "HK",
+        "country": "Hong Kong",
+        "region": "New Territories",
+        "locality": "Clear Water Bay"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:hong-kong-local-geography-green-egg:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
       "id": "hk-hoi-ha-mlc",
       "name": "Hoi Ha Wan Marine Life Centre",
       "aliases": [
@@ -2822,7 +2846,9 @@
       "name": "Sharp Island",
       "aliases": [
         "Kiu Tsui Chau",
-        "橋咀洲"
+        "橋咀洲",
+        "橋嘴",
+        "橋咀島"
       ],
       "coordinates": {
         "latitude": 22.3636,
@@ -2839,7 +2865,7 @@
         "reference": "user-seed:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T00:00:00.000Z"
+      "updatedAt": "2026-08-10T14:05:00.000Z"
     },
     {
       "id": "hk-sharp-island-east",
@@ -4544,54 +4570,54 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
-      "id": "id-raja-arborek-jetty",
-      "name": "Arborek Jetty",
+      "id": "id-raja-algae-patch-1",
+      "name": "Algae Patch 1",
       "aliases": [],
       "coordinates": {
-        "latitude": -0.565,
-        "longitude": 130.51
+        "latitude": -0.9101667,
+        "longitude": 130.5734
       },
       "place": {
         "countryCode": "ID",
         "country": "Indonesia",
         "region": "Southwest Papua",
-        "locality": "Raja Ampat"
+        "locality": "Batanta"
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:indonesia:2026-07-28"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
-      "id": "id-raja-blue-magic",
-      "name": "Blue Magic",
+      "id": "id-raja-algae-patch-2",
+      "name": "Algae Patch 2",
       "aliases": [],
       "coordinates": {
-        "latitude": -0.556,
-        "longitude": 130.675
+        "latitude": -0.9109,
+        "longitude": 130.60825
       },
       "place": {
         "countryCode": "ID",
         "country": "Indonesia",
         "region": "Southwest Papua",
-        "locality": "Raja Ampat"
+        "locality": "Batanta"
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:indonesia:2026-07-28"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
-      "id": "id-raja-boo-windows",
-      "name": "Boo Windows",
+      "id": "id-raja-andiamo",
+      "name": "Andiamo",
       "aliases": [],
       "coordinates": {
-        "latitude": -1.239,
-        "longitude": 130.243
+        "latitude": -2.09825,
+        "longitude": 130.8560167
       },
       "place": {
         "countryCode": "ID",
@@ -4601,10 +4627,184 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:indonesia:2026-07-28"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-arborek-jetty",
+      "name": "Arborek Jetty",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -0.5623833,
+        "longitude": 130.5200167
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Arborek"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-barracuda-rock",
+      "name": "Barracuda Rock",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -2.19535,
+        "longitude": 130.42745
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-batu-lima",
+      "name": "Batu Lima",
+      "aliases": [
+        "Five Rocks"
+      ],
+      "coordinates": {
+        "latitude": -0.4494167,
+        "longitude": 130.6983833
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Gam"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-black-rock",
+      "name": "Black Rock",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 0.0216667,
+        "longitude": 130.1408333
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Kawe"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-blue-magic",
+      "name": "Blue Magic",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -0.5069,
+        "longitude": 130.7381667
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Dampier Strait"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-boo-west",
+      "name": "Boo West",
+      "aliases": [
+        "Boo West Corner"
+      ],
+      "coordinates": {
+        "latitude": -2.2220167,
+        "longitude": 130.60945
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-boo-windows",
+      "name": "Boo Windows",
+      "aliases": [
+        "Boo Rocks"
+      ],
+      "coordinates": {
+        "latitude": -2.2215833,
+        "longitude": 130.6116667
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-candy-store",
+      "name": "Candy Store",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -2.1045,
+        "longitude": 130.8726833
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
       "id": "id-raja-cape-kri",
@@ -4613,71 +4813,118 @@
         "Kri Cape"
       ],
       "coordinates": {
-        "latitude": -0.55651,
-        "longitude": 130.69028
+        "latitude": -0.5565167,
+        "longitude": 130.6902833
       },
       "place": {
         "countryCode": "ID",
         "country": "Indonesia",
-        "region": "West Papua",
-        "locality": "Raja Ampat"
+        "region": "Southwest Papua",
+        "locality": "Kri Island"
       },
       "source": {
         "kind": "manual",
-        "reference": "user-seed:2026-07-28"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T00:00:00.000Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-changgo",
+      "name": "Changgo",
+      "aliases": [
+        "Chango",
+        "Do It Again"
+      ],
+      "coordinates": {
+        "latitude": -0.0757833,
+        "longitude": 130.1743833
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Kawe"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
       "id": "id-raja-chicken-reef",
       "name": "Chicken Reef",
       "aliases": [],
       "coordinates": {
-        "latitude": -0.559,
-        "longitude": 130.7
+        "latitude": -0.5452667,
+        "longitude": 130.70035
       },
       "place": {
         "countryCode": "ID",
         "country": "Indonesia",
         "region": "Southwest Papua",
-        "locality": "Raja Ampat"
+        "locality": "Dampier Strait"
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:indonesia:2026-07-28"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
-      "id": "id-raja-fam-wall",
-      "name": "Fam Wall",
+      "id": "id-raja-citrus-ridge",
+      "name": "Citrus Ridge",
       "aliases": [],
       "coordinates": {
-        "latitude": -0.59,
-        "longitude": 130.15
+        "latitude": -0.5107667,
+        "longitude": 130.4558
       },
       "place": {
         "countryCode": "ID",
         "country": "Indonesia",
         "region": "Southwest Papua",
-        "locality": "Raja Ampat"
+        "locality": "Yangeffo"
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:expansion:2026-07-29"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
-      "id": "id-raja-four-kings",
-      "name": "Four Kings",
+      "id": "id-raja-diversity",
+      "name": "Diversity",
       "aliases": [],
       "coordinates": {
-        "latitude": -1.255,
-        "longitude": 130.178
+        "latitude": -0.9123333,
+        "longitude": 130.4306167
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Batanta"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-dunia-kecil",
+      "name": "Dunia Kecil",
+      "aliases": [
+        "Small World"
+      ],
+      "coordinates": {
+        "latitude": -2.2064167,
+        "longitude": 130.4211667
       },
       "place": {
         "countryCode": "ID",
@@ -4687,20 +4934,180 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:indonesia:2026-07-28"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-eagle-rocks",
+      "name": "Eagle Rocks",
+      "aliases": [
+        "Eagle Rock",
+        "Batu Elang"
+      ],
+      "coordinates": {
+        "latitude": -0.1369833,
+        "longitude": 130.1236
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Kawe"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-fam-wall",
+      "name": "Keruo Channel",
+      "aliases": [
+        "Fam Wall"
+      ],
+      "coordinates": {
+        "latitude": -0.58885,
+        "longitude": 130.2959833
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Fam / Penemu"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-farondi-cave-wall",
+      "name": "Farondi Cave & Wall",
+      "aliases": [
+        "Goa Farondi"
+      ],
+      "coordinates": {
+        "latitude": -2.0048167,
+        "longitude": 130.6393333
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Farondi, Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-four-kings",
+      "name": "Four Kings",
+      "aliases": [
+        "4 Kings"
+      ],
+      "coordinates": {
+        "latitude": -2.2083333,
+        "longitude": 130.3779667
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-friwen-wall",
+      "name": "Friwen Wall",
+      "aliases": [
+        "Friwen",
+        "Friwen Bonda"
+      ],
+      "coordinates": {
+        "latitude": -0.4748333,
+        "longitude": 130.6988667
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Gam / Friwen"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-happy-ending",
+      "name": "Happy Ending",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -0.9056167,
+        "longitude": 130.5464333
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Batanta"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-kaleidoscope",
+      "name": "Kaleidoscope",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -2.1824167,
+        "longitude": 130.2159167
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
       "id": "id-raja-magic-mountain",
       "name": "Magic Mountain",
       "aliases": [
-        "Shadow Reef"
+        "Shadow Reef",
+        "Karang Bayangan"
       ],
       "coordinates": {
-        "latitude": -1.176,
-        "longitude": 130.214
+        "latitude": -2.2592833,
+        "longitude": 130.6479667
       },
       "place": {
         "countryCode": "ID",
@@ -4710,73 +5117,285 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:indonesia:2026-07-28"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-mangrove-ridge",
+      "name": "Mangrove Ridge",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -0.513,
+        "longitude": 130.4599667
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Yangeffo"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-manta-ridge",
+      "name": "Manta Ridge",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -0.5615333,
+        "longitude": 130.5373833
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Dampier Strait"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
       "id": "id-raja-manta-sandy",
       "name": "Manta Sandy",
       "aliases": [],
       "coordinates": {
-        "latitude": -0.579,
-        "longitude": 130.535
+        "latitude": -0.5799667,
+        "longitude": 130.5422333
       },
       "place": {
         "countryCode": "ID",
         "country": "Indonesia",
         "region": "Southwest Papua",
-        "locality": "Raja Ampat"
+        "locality": "Dampier Strait"
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:indonesia:2026-07-28"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-mayhem",
+      "name": "Mayhem",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -0.51295,
+        "longitude": 130.4452667
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Yangeffo"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
       "id": "id-raja-melissas-garden",
       "name": "Melissa’s Garden",
       "aliases": [],
       "coordinates": {
-        "latitude": -0.591,
-        "longitude": 130.269
+        "latitude": -0.5898333,
+        "longitude": 130.31515
       },
       "place": {
         "countryCode": "ID",
         "country": "Indonesia",
         "region": "Southwest Papua",
-        "locality": "Raja Ampat"
+        "locality": "Fam / Penemu"
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:indonesia:2026-07-28"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
       "id": "id-raja-mikes-point",
       "name": "Mike’s Point",
       "aliases": [],
       "coordinates": {
-        "latitude": -0.503,
-        "longitude": 130.677
+        "latitude": -0.5146833,
+        "longitude": 130.6742167
       },
       "place": {
         "countryCode": "ID",
         "country": "Indonesia",
         "region": "Southwest Papua",
-        "locality": "Raja Ampat"
+        "locality": "Dampier Strait"
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:indonesia:2026-07-28"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-mioskon",
+      "name": "Mioskon",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -0.4973333,
+        "longitude": 130.7271167
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Dampier Strait"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-my-reef",
+      "name": "My Reef",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -0.6062333,
+        "longitude": 130.2892833
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Fam / Penemu"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-neptunes-fan-sea",
+      "name": "Neptune’s Fan Sea",
+      "aliases": [
+        "Neptunes Fantasea"
+      ],
+      "coordinates": {
+        "latitude": -2.2172833,
+        "longitude": 130.4501167
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-no-contest",
+      "name": "No Contest",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -2.0264,
+        "longitude": 130.6905167
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Farondi, Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-nudi-rock",
+      "name": "Nudi Rock",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -2.2183833,
+        "longitude": 130.5656
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-otdima-reef",
+      "name": "Otdima Reef",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -0.5403833,
+        "longitude": 130.6310833
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Dampier Strait"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-pet-rock",
+      "name": "Pet Rock",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -2.0111667,
+        "longitude": 130.6889667
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Farondi, Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
       "id": "id-raja-piaynemo",
@@ -4802,46 +5421,111 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
-      "id": "id-raja-sardine-reef",
-      "name": "Sardine Reef",
+      "id": "id-raja-pulau-roibe",
+      "name": "Pulau Roibe",
       "aliases": [],
       "coordinates": {
-        "latitude": -0.567,
-        "longitude": 130.671
+        "latitude": -0.1090167,
+        "longitude": 130.2008833
       },
       "place": {
         "countryCode": "ID",
         "country": "Indonesia",
         "region": "Southwest Papua",
-        "locality": "Raja Ampat"
+        "locality": "Kawe"
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:indonesia:2026-07-28"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-razorback-ridge",
+      "name": "Razorback Ridge",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -2.001,
+        "longitude": 130.6419167
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Farondi, Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-sardine-reef",
+      "name": "Sardine Reef",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -0.5344333,
+        "longitude": 130.7162833
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Dampier Strait"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
       "id": "id-raja-sawandarek-jetty",
       "name": "Sawandarek Jetty",
       "aliases": [],
       "coordinates": {
-        "latitude": -0.55,
-        "longitude": 130.68
+        "latitude": -0.58865,
+        "longitude": 130.60525
       },
       "place": {
         "countryCode": "ID",
         "country": "Indonesia",
         "region": "Southwest Papua",
-        "locality": "Raja Ampat"
+        "locality": "Sawandarek, Mansuar"
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:expansion:2026-07-29"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
+      "id": "id-raja-tank-rock",
+      "name": "Tank Rock",
+      "aliases": [
+        "Batu Kecil"
+      ],
+      "coordinates": {
+        "latitude": -2.2189333,
+        "longitude": 130.5677167
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
       "id": "id-raja-the-passage",
@@ -4850,21 +5534,21 @@
         "Kabui Bay Passage"
       ],
       "coordinates": {
-        "latitude": -0.57,
-        "longitude": 130.65
+        "latitude": -0.42705,
+        "longitude": 130.5626
       },
       "place": {
         "countryCode": "ID",
         "country": "Indonesia",
         "region": "Southwest Papua",
-        "locality": "Raja Ampat"
+        "locality": "Kabui Bay / Gam"
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:expansion:2026-07-29"
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-10T15:42:00.000Z"
     },
     {
       "id": "id-raja-wayag",
@@ -4888,6 +5572,27 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
+      "id": "id-raja-whale-rock",
+      "name": "Whale Rock",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -2.2193833,
+        "longitude": 130.5592
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
       "id": "id-raja-yenbuba-jetty",
       "name": "Yenbuba Jetty",
       "aliases": [],
@@ -4909,6 +5614,30 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
+      "id": "id-raja-yillet-kecil",
+      "name": "Yillet Kecil",
+      "aliases": [
+        "Yelliet Kecil",
+        "Yilliet Kecil"
+      ],
+      "coordinates": {
+        "latitude": -2.19595,
+        "longitude": 130.6103333
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Southwest Papua",
+        "locality": "Misool"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "regional-curation:raja-ampat-liveaboard:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T15:42:00.000Z"
+    },
+    {
       "id": "id-seraya-secrets",
       "name": "Seraya Secrets",
       "aliases": [],
@@ -4928,6 +5657,27 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "id-tulamben-batu-niti",
+      "name": "Batu Niti",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -8.2985,
+        "longitude": 115.616
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Bali",
+        "locality": "Tulamben"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:michael-mcfadyen-wgs84+local-operator:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:36:00.000Z"
     },
     {
       "id": "id-tulamben-coral-garden",
@@ -4974,12 +5724,12 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
-      "id": "id-usat-liberty",
-      "name": "USAT Liberty Wreck",
+      "id": "id-tulamben-emerald",
+      "name": "Emerald",
       "aliases": [],
       "coordinates": {
-        "latitude": -8.2741,
-        "longitude": 115.593
+        "latitude": -8.283767,
+        "longitude": 115.603055
       },
       "place": {
         "countryCode": "ID",
@@ -4989,10 +5739,54 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "user-seed:2026-07-28"
+        "reference": "web-curation:michael-mcfadyen-wgs84+local-operator:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T00:00:00.000Z"
+      "updatedAt": "2026-08-10T14:36:00.000Z"
+    },
+    {
+      "id": "id-tulamben-palung-palung",
+      "name": "Palung-Palung",
+      "aliases": [
+        "Palung Palung"
+      ],
+      "coordinates": {
+        "latitude": -8.279717,
+        "longitude": 115.599167
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Bali",
+        "locality": "Tulamben"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:diver-gps+local-operator:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:36:00.000Z"
+    },
+    {
+      "id": "id-usat-liberty",
+      "name": "USAT Liberty Wreck",
+      "aliases": [],
+      "coordinates": {
+        "latitude": -8.27396,
+        "longitude": 115.59307
+      },
+      "place": {
+        "countryCode": "ID",
+        "country": "Indonesia",
+        "region": "Bali",
+        "locality": "Tulamben"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:padi:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:36:00.000Z"
     },
     {
       "id": "id-wakatobi-blade",
@@ -6169,6 +6963,52 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "mv-dharavandhoo-thila",
+      "name": "Dharavandhoo Thila",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 5.15850019,
+        "longitude": 73.11710358
+      },
+      "place": {
+        "countryCode": "MV",
+        "country": "Maldives",
+        "region": "Baa Atoll",
+        "locality": "Dharavandhoo"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:maldives-protected-area+scubaspotadvisor:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
+      "id": "mv-fesdhoo-wreck",
+      "name": "Fesdhoo Wreck",
+      "aliases": [
+        "Fesdhu Wreck",
+        "Fesdu Wreck",
+        "Fesdhoo Wreck & Thila"
+      ],
+      "coordinates": {
+        "latitude": 3.99950004,
+        "longitude": 72.78520203
+      },
+      "place": {
+        "countryCode": "MV",
+        "country": "Maldives",
+        "region": "North Ari Atoll",
+        "locality": "Fesdhoo"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:scubaspotadvisor+scubago-fesdhoo:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
       "id": "mv-fish-head",
       "name": "Fish Head",
       "aliases": [
@@ -6211,6 +7051,30 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T10:44:51.989Z"
+    },
+    {
+      "id": "mv-hafsa-thila",
+      "name": "Hafsa Thila",
+      "aliases": [
+        "Hafza Thila",
+        "Angotti"
+      ],
+      "coordinates": {
+        "latitude": 4.12879992,
+        "longitude": 72.83809662
+      },
+      "place": {
+        "countryCode": "MV",
+        "country": "Maldives",
+        "region": "North Ari Atoll",
+        "locality": "Velidhoo"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:scubaspotadvisor+diveshops-hafsa:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
     },
     {
       "id": "mv-hp-reef",
@@ -6257,6 +7121,32 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "mv-kudhimaa-wreck",
+      "name": "Kudhimaa Wreck",
+      "aliases": [
+        "Kudhima Wreck",
+        "Kudhi Maa Wreck",
+        "Machchafushi Wreck",
+        "Machafushi Wreck"
+      ],
+      "coordinates": {
+        "latitude": 3.59637,
+        "longitude": 72.88349
+      },
+      "place": {
+        "countryCode": "MV",
+        "country": "Maldives",
+        "region": "South Ari Atoll",
+        "locality": "Machchafushi"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:padi-kudhima-wreck:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
       "id": "mv-lankan-manta-point",
       "name": "Lankan Manta Point",
       "aliases": [
@@ -6301,6 +7191,29 @@
       "updatedAt": "2026-07-28T00:00:00.000Z"
     },
     {
+      "id": "mv-maamigili-beyru",
+      "name": "Maamigili Beyru",
+      "aliases": [
+        "Maamigili Beru"
+      ],
+      "coordinates": {
+        "latitude": 3.46485,
+        "longitude": 72.8173
+      },
+      "place": {
+        "countryCode": "MV",
+        "country": "Maldives",
+        "region": "South Ari Atoll",
+        "locality": "Maamigili"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:padi-fari-dive-center-maamigili:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
       "id": "mv-maaya-thila",
       "name": "Maaya Thila",
       "aliases": [
@@ -6322,6 +7235,30 @@
       },
       "status": "active",
       "updatedAt": "2026-07-28T00:00:00.000Z"
+    },
+    {
+      "id": "mv-mahibadhoo-rock",
+      "name": "Mahibadhoo Rock",
+      "aliases": [
+        "Mahibadhoo Manta Point",
+        "Mahibadhoo Thila"
+      ],
+      "coordinates": {
+        "latitude": 3.71670008,
+        "longitude": 72.97049713
+      },
+      "place": {
+        "countryCode": "MV",
+        "country": "Maldives",
+        "region": "South Ari Atoll",
+        "locality": "Mahibadhoo"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:scubaspotadvisor+zublu-mahibadhoo:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
     },
     {
       "id": "mx-cozumel-palancar-caves",
@@ -6889,8 +7826,8 @@
         "Pulau Sipadan"
       ],
       "coordinates": {
-        "latitude": 4.118,
-        "longitude": 118.628
+        "latitude": 4.12,
+        "longitude": 118.629139
       },
       "place": {
         "countryCode": "MY",
@@ -6900,10 +7837,10 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:expansion:2026-07-29"
+        "reference": "web-curation:semporna-marine-ecological-expedition-2010:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-10T14:36:00.000Z"
     },
     {
       "id": "my-sipadan-drop-off",
@@ -6931,8 +7868,8 @@
       "name": "Hanging Gardens",
       "aliases": [],
       "coordinates": {
-        "latitude": 4.112,
-        "longitude": 118.631
+        "latitude": 4.112583,
+        "longitude": 118.624806
       },
       "place": {
         "countryCode": "MY",
@@ -6942,10 +7879,33 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:expansion:2026-07-29"
+        "reference": "web-curation:semporna-marine-ecological-expedition-2010:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-10T14:36:00.000Z"
+    },
+    {
+      "id": "my-sipadan-mid-reef",
+      "name": "Mid Reef",
+      "aliases": [
+        "Mid-Reef"
+      ],
+      "coordinates": {
+        "latitude": 4.113278,
+        "longitude": 118.636139
+      },
+      "place": {
+        "countryCode": "MY",
+        "country": "Malaysia",
+        "region": "Sabah",
+        "locality": "Sipadan Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:semporna-marine-ecological-expedition-2010:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:36:00.000Z"
     },
     {
       "id": "my-sipadan-south-point",
@@ -7505,12 +8465,33 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "ph-anilao-beatrice-rock",
+      "name": "Beatrice Rock",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.70142,
+        "longitude": 120.82852
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Batangas",
+        "locality": "Anilao"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:thescubadirectory+local-operator:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:36:00.000Z"
+    },
+    {
       "id": "ph-anilao-bethlehem",
       "name": "Bethlehem",
       "aliases": [],
       "coordinates": {
-        "latitude": 13.695,
-        "longitude": 120.902
+        "latitude": 13.672934,
+        "longitude": 120.841389
       },
       "place": {
         "countryCode": "PH",
@@ -7520,18 +8501,41 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:philippines:2026-07-28"
+        "reference": "web-curation:michael-mcfadyen-wgs84:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T14:36:00.000Z"
+    },
+    {
+      "id": "ph-anilao-caban-cove",
+      "name": "Caban Cove",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.686893,
+        "longitude": 120.843525
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Batangas",
+        "locality": "Anilao"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:michael-mcfadyen-wgs84:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:36:00.000Z"
     },
     {
       "id": "ph-anilao-cathedral-rock",
       "name": "Cathedral Rock",
-      "aliases": [],
+      "aliases": [
+        "The Cathedral"
+      ],
       "coordinates": {
-        "latitude": 13.704,
-        "longitude": 120.96
+        "latitude": 13.72429,
+        "longitude": 120.87598
       },
       "place": {
         "countryCode": "PH",
@@ -7541,18 +8545,21 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:philippines:2026-07-28"
+        "reference": "web-curation:thescubadirectory+local-operator:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T14:36:00.000Z"
     },
     {
       "id": "ph-anilao-kirbys-rock",
       "name": "Kirby’s Rock",
-      "aliases": [],
+      "aliases": [
+        "Kirby's Rock",
+        "Kirbys Rock"
+      ],
       "coordinates": {
-        "latitude": 13.714,
-        "longitude": 120.905
+        "latitude": 13.690085,
+        "longitude": 120.84944
       },
       "place": {
         "countryCode": "PH",
@@ -7562,23 +8569,44 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:philippines:2026-07-28"
+        "reference": "web-curation:michael-mcfadyen-wgs84:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T14:36:00.000Z"
+    },
+    {
+      "id": "ph-anilao-layag-layag",
+      "name": "Layag-Layag",
+      "aliases": [
+        "Layag Layag"
+      ],
+      "coordinates": {
+        "latitude": 13.691742,
+        "longitude": 120.841429
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Batangas",
+        "locality": "Anilao"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:michael-mcfadyen-wgs84+local-operator:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:36:00.000Z"
     },
     {
       "id": "ph-anilao-mainit-secret-bay",
-      "name": "Mainit Secret Bay",
+      "name": "Secret Bay",
       "aliases": [
-        "Mainit",
-        "Mainit Muck",
-        "Mainit Point",
-        "Secret Bay"
+        "Mainit Secret Bay",
+        "Mainit Muck"
       ],
       "coordinates": {
-        "latitude": 13.689,
-        "longitude": 120.89325
+        "latitude": 13.68655,
+        "longitude": 120.89574
       },
       "place": {
         "countryCode": "PH",
@@ -7588,10 +8616,33 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:dedup:2026-07-31"
+        "reference": "web-curation:thescubadirectory+j-obis:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-31T00:00:00.000Z"
+      "updatedAt": "2026-08-10T14:36:00.000Z"
+    },
+    {
+      "id": "ph-anilao-sepoc-wall",
+      "name": "Sepoc Wall",
+      "aliases": [
+        "Sepok Wall"
+      ],
+      "coordinates": {
+        "latitude": 13.687643,
+        "longitude": 120.826994
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Batangas",
+        "locality": "Anilao"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:michael-mcfadyen-wgs84+local-operator:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:36:00.000Z"
     },
     {
       "id": "ph-anilao-sombrero-island",
@@ -7615,15 +8666,14 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
-      "id": "ph-anilao-twin-rocks",
-      "name": "Twin Rocks",
+      "id": "ph-anilao-sun-view",
+      "name": "Sun View",
       "aliases": [
-        "Mabini",
-        "Macro"
+        "Sunview"
       ],
       "coordinates": {
-        "latitude": 13.7075,
-        "longitude": 120.964
+        "latitude": 13.699308,
+        "longitude": 120.882338
       },
       "place": {
         "countryCode": "PH",
@@ -7633,10 +8683,31 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "user-seed:2026-07-28"
+        "reference": "web-curation:michael-mcfadyen-wgs84+local-operator:2026-08-10"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T00:00:00.000Z"
+      "updatedAt": "2026-08-10T14:36:00.000Z"
+    },
+    {
+      "id": "ph-anilao-twin-rocks",
+      "name": "Twin Rocks",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.69046,
+        "longitude": 120.88924
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Batangas",
+        "locality": "Anilao"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:thescubadirectory+local-operator:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:36:00.000Z"
     },
     {
       "id": "ph-apo-island-chapel",
@@ -8720,6 +9791,29 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "ph-malapascua-lapus-lapus",
+      "name": "Lapus Lapus",
+      "aliases": [
+        "Lapus-Lapus"
+      ],
+      "coordinates": {
+        "latitude": 11.34527,
+        "longitude": 124.10716
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Central Visayas",
+        "locality": "Malapascua"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:padi-lapus-lapus:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
       "id": "ph-malapascua-monad",
       "name": "Monad Shoal",
       "aliases": [],
@@ -8852,7 +9946,10 @@
     {
       "id": "ph-puerto-galera-canyons",
       "name": "The Canyons",
-      "aliases": [],
+      "aliases": [
+        "Canyons",
+        "Canyon"
+      ],
       "coordinates": {
         "latitude": 13.521,
         "longitude": 120.989
@@ -8868,7 +9965,7 @@
         "reference": "regional-curation:philippines:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T14:05:00.000Z"
     },
     {
       "id": "ph-puerto-galera-coral-garden",
@@ -8936,6 +10033,27 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
+      "id": "ph-puerto-galera-ernies-cave",
+      "name": "Ernie's Cave",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.52297,
+        "longitude": 120.98013
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:padi-ernies-cave:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
       "id": "ph-puerto-galera-ernies-point",
       "name": "Ernie's Point",
       "aliases": [],
@@ -9001,7 +10119,9 @@
     {
       "id": "ph-puerto-galera-hole-in-wall",
       "name": "Hole in the Wall",
-      "aliases": [],
+      "aliases": [
+        "Hole-in-the-Wall"
+      ],
       "coordinates": {
         "latitude": 13.526,
         "longitude": 121.002
@@ -9017,7 +10137,7 @@
         "reference": "regional-curation:philippines:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T14:05:00.000Z"
     },
     {
       "id": "ph-puerto-galera-japanese-wreck",
@@ -9146,6 +10266,29 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
+      "id": "ph-puerto-galera-montani-bay",
+      "name": "Montani Bay",
+      "aliases": [
+        "Montani"
+      ],
+      "coordinates": {
+        "latitude": 13.51877,
+        "longitude": 120.96039
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:padi-scandi-divers-montani-bay:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
       "id": "ph-puerto-galera-odies-wall",
       "name": "Odie's Wall",
       "aliases": [],
@@ -9167,11 +10310,33 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
+      "id": "ph-puerto-galera-sabang-bay",
+      "name": "Sabang Bay",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 13.52123,
+        "longitude": 120.9749
+      },
+      "place": {
+        "countryCode": "PH",
+        "country": "Philippines",
+        "region": "Oriental Mindoro",
+        "locality": "Puerto Galera"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:padi-sabang-bay:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
       "id": "ph-puerto-galera-sabang-wrecks",
       "name": "Sabang Wrecks",
       "aliases": [
         "Sabang Junk",
-        "Vietnamese Wreck"
+        "Vietnamese Wreck",
+        "Sabang Wreck"
       ],
       "coordinates": {
         "latitude": 13.52125,
@@ -9188,7 +10353,7 @@
         "reference": "regional-curation:philippines:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-31T00:00:00.000Z"
+      "updatedAt": "2026-08-10T14:05:00.000Z"
     },
     {
       "id": "ph-puerto-galera-shark-cave",
@@ -10356,7 +11521,8 @@
       "id": "th-koh-tachai-pinnacle",
       "name": "Koh Tachai Pinnacle",
       "aliases": [
-        "Twin Peaks"
+        "Twin Peaks",
+        "Tachai Pinnacle"
       ],
       "coordinates": {
         "latitude": 9.071,
@@ -10373,7 +11539,7 @@
         "reference": "regional-curation:thailand:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T14:05:00.000Z"
     },
     {
       "id": "th-koh-tao-chumphon-pinnacle",
@@ -10571,7 +11737,9 @@
     {
       "id": "th-phi-phi-bida-nok",
       "name": "Bida Nok",
-      "aliases": [],
+      "aliases": [
+        "Koh Bida Nok"
+      ],
       "coordinates": {
         "latitude": 7.679,
         "longitude": 98.767
@@ -10587,7 +11755,7 @@
         "reference": "regional-curation:thailand:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T14:05:00.000Z"
     },
     {
       "id": "th-phuket-anemone-reef",
@@ -10657,6 +11825,29 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "th-racha-noi-camera-bay",
+      "name": "Camera Bay",
+      "aliases": [
+        "Racha Noi Camera Bay"
+      ],
+      "coordinates": {
+        "latitude": 7.50958,
+        "longitude": 98.32511
+      },
+      "place": {
+        "countryCode": "TH",
+        "country": "Thailand",
+        "region": "Phuket Province",
+        "locality": "Racha Noi"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:padi-camera-bay:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
       "id": "th-racha-noi-marina",
       "name": "Marina Bay",
       "aliases": [],
@@ -10702,7 +11893,8 @@
       "id": "th-racha-yai-bay-one",
       "name": "Racha Yai Bay 1",
       "aliases": [
-        "Bungalow Bay"
+        "Bungalow Bay",
+        "Bay 1"
       ],
       "coordinates": {
         "latitude": 7.607,
@@ -10719,7 +11911,7 @@
         "reference": "regional-curation:thailand:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T14:05:00.000Z"
     },
     {
       "id": "th-richelieu-rock",
@@ -10878,9 +12070,33 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "th-similan-north-point",
+      "name": "North Point",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 8.6833917,
+        "longitude": 97.6458667
+      },
+      "place": {
+        "countryCode": "TH",
+        "country": "Thailand",
+        "region": "Andaman Sea",
+        "locality": "Similan Islands"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:pro-taucher-north-point:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
       "id": "th-similan-shark-fin-reef",
       "name": "Shark Fin Reef",
-      "aliases": [],
+      "aliases": [
+        "Sharkfin Reef",
+        "Sharkfin #3 Reef"
+      ],
       "coordinates": {
         "latitude": 8.487,
         "longitude": 97.662
@@ -10896,7 +12112,52 @@
         "reference": "regional-curation:thailand:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
+      "id": "th-similan-stonehenge",
+      "name": "Stonehenge",
+      "aliases": [
+        "Stonehenge Pinnacle",
+        "Stonehenge Pinnacle #4"
+      ],
+      "coordinates": {
+        "latitude": 8.5788333,
+        "longitude": 97.6276667
+      },
+      "place": {
+        "countryCode": "TH",
+        "country": "Thailand",
+        "region": "Andaman Sea",
+        "locality": "Similan Islands"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:similan-stonehenge-gps:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
+    },
+    {
+      "id": "th-similan-three-trees",
+      "name": "Three Trees",
+      "aliases": [],
+      "coordinates": {
+        "latitude": 8.68071,
+        "longitude": 97.65184
+      },
+      "place": {
+        "countryCode": "TH",
+        "country": "Thailand",
+        "region": "Andaman Sea",
+        "locality": "Similan Islands"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:padi-three-trees:2026-08-10"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-10T14:05:00.000Z"
     },
     {
       "id": "tw-checheng-chung-cheng-wreck-east",

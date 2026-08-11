@@ -9,6 +9,7 @@ export type DiveSiteAuditDive = DiveMapDive;
 export type DiveSiteAuditDiveSummary = {
   id: string;
   date: string | null;
+  auditFingerprint: string;
 };
 
 export type DiveSiteAuditCandidate = {
@@ -48,9 +49,14 @@ export function buildDiveSiteCoordinateAudit(
     if (!diveSiteName) continue;
     const diveLocationName = preferredDiveLocationName(dive)?.trim() || null;
     const key = `${normalizeName(diveSiteName)}\u0000${normalizeName(diveLocationName ?? "")}`;
+    const summary = {
+      id: dive.id,
+      date: dive.diveDate,
+      auditFingerprint: diveSiteAuditFingerprint(dive),
+    };
     const existing = groups.get(key);
     if (existing) {
-      existing.dives.push({ id: dive.id, date: dive.diveDate });
+      existing.dives.push(summary);
       continue;
     }
 
@@ -58,7 +64,7 @@ export function buildDiveSiteCoordinateAudit(
       key,
       diveSiteName,
       diveLocationName,
-      dives: [{ id: dive.id, date: dive.diveDate }],
+      dives: [summary],
       candidates: names.get(normalizeName(diveSiteName)) ?? [],
     });
   }
@@ -69,6 +75,31 @@ export function buildDiveSiteCoordinateAudit(
     notFound: all.filter((group) => group.candidates.length === 0),
     namedDiveCount: all.reduce((count, group) => count + group.dives.length, 0),
   };
+}
+
+/** Snapshot the fields that decide whether an audit match is still safe. */
+export function diveSiteAuditFingerprint(dive: DiveSiteAuditDive) {
+  return JSON.stringify([
+    dive.appEditedAt ?? null,
+    dive.userSite?.trim() || null,
+    dive.site?.trim() || null,
+    dive.sourceSiteNames.shearwater?.trim() || null,
+    dive.sourceSiteNames["shearwater-ble"]?.trim() || null,
+    dive.sourceSiteNames.subsurface?.trim() || null,
+    dive.sourceSiteNames.uddf?.trim() || null,
+    dive.sourceSiteNames.fit?.trim() || null,
+    dive.location?.trim() || null,
+    dive.resolvedLocation?.trim() || null,
+    dive.resolvedCity?.trim() || null,
+    dive.resolvedCountry?.trim() || null,
+    dive.userSiteCatalogId?.trim() || null,
+    dive.gpsEntryLat,
+    dive.gpsEntryLng,
+    dive.gpsExitLat,
+    dive.gpsExitLng,
+    dive.userGpsLat,
+    dive.userGpsLng,
+  ]);
 }
 
 export function catalogSiteLocation(site: CatalogSite) {

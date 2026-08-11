@@ -2548,6 +2548,8 @@ function DiveDetail({
                   ? t("locationSourceMemo")
                   : dive.userGpsSource === "catalog"
                     ? t("locationSourceCatalog")
+                    : dive.userGpsSource === "site-selection"
+                      ? t("locationSourceSiteSelection")
                     : t("locationSourceManual")}
             </p>
           )}

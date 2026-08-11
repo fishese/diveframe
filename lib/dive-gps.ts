@@ -9,6 +9,8 @@ export type DiveMapCoordinates = {
 export type DiveGpsInput = {
   gpsEntryLat: number | null;
   gpsEntryLng: number | null;
+  gpsExitLat?: number | null;
+  gpsExitLng?: number | null;
   userGpsLat: number | null;
   userGpsLng: number | null;
 };
@@ -25,6 +27,10 @@ export function resolveDiveMapCoordinates(
   if (computer) {
     return { ...computer, source: "computer" };
   }
+  const computerExit = validatedPair(dive.gpsExitLat, dive.gpsExitLng);
+  if (computerExit) {
+    return { ...computerExit, source: "computer" };
+  }
   const user = validatedPair(dive.userGpsLat, dive.userGpsLng);
   if (user) {
     return { ...user, source: "user" };
@@ -33,12 +39,12 @@ export function resolveDiveMapCoordinates(
 }
 
 function validatedPair(
-  latitude: number | null,
-  longitude: number | null,
+  latitude: number | null | undefined,
+  longitude: number | null | undefined,
 ): { latitude: number; longitude: number } | null {
   return (
-    latitude !== null &&
-    longitude !== null &&
+    typeof latitude === "number" &&
+    typeof longitude === "number" &&
     Number.isFinite(latitude) &&
     Number.isFinite(longitude) &&
     Math.abs(latitude) <= 90 &&

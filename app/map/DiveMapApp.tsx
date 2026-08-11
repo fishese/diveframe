@@ -77,6 +77,10 @@ export function DiveMapApp() {
   const [view, setView] = useState<MapView>(WORLD_VIEW);
   const [canvasWidth, setCanvasWidth] = useState(DIVE_MAP_WIDTH);
   const canvasRef = useRef<SVGSVGElement>(null);
+  const refreshGenerationRef = useRef(0);
+  const siteAuditGenerationRef = useRef(0);
+  const siteAuditInFlightRef = useRef<number | null>(null);
+  const applyInFlightRef = useRef(false);
   const dragRef = useRef<{
     pointerId: number;
     startClientX: number;
@@ -86,22 +90,37 @@ export function DiveMapApp() {
   const dragMovedRef = useRef(false);
 
   const refresh = useCallback(async () => {
+    const generation = ++refreshGenerationRef.current;
+    siteAuditGenerationRef.current += 1;
+    siteAuditInFlightRef.current = null;
+    setSiteAudit(null);
+    setSiteAuditBusy(false);
     try {
       const [nextDives, nextSupplementaryCatalog] = await Promise.all([
         listLocalDives(),
         getLocalSupplementaryCatalog(),
       ]);
+      if (generation !== refreshGenerationRef.current) return;
+      siteAuditGenerationRef.current += 1;
+      siteAuditInFlightRef.current = null;
+      setSiteAudit(null);
+      setSiteAuditBusy(false);
       setDives(nextDives);
       setSupplementaryCatalog(nextSupplementaryCatalog);
       setError(null);
     } catch (refreshError) {
+      if (generation !== refreshGenerationRef.current) return;
+      siteAuditGenerationRef.current += 1;
+      siteAuditInFlightRef.current = null;
+      setSiteAudit(null);
+      setSiteAuditBusy(false);
       setError(
         refreshError instanceof Error
           ? refreshError.message
           : t("unableLoadDiveMap"),
       );
     } finally {
-      setLoading(false);
+      if (generation === refreshGenerationRef.current) setLoading(false);
     }
   }, [t]);
 
@@ -113,6 +132,9 @@ export function DiveMapApp() {
       void refresh();
     });
     return () => {
+      refreshGenerationRef.current += 1;
+      siteAuditGenerationRef.current += 1;
+      siteAuditInFlightRef.current = null;
       window.cancelAnimationFrame(frame);
       unsubscribe();
     };
@@ -268,50 +290,65 @@ export function DiveMapApp() {
   }
 
   async function runSiteCoordinateAudit() {
+    if (siteAuditInFlightRef.current !== null || applyInFlightRef.current) return;
+    const generation = ++siteAuditGenerationRef.current;
+    siteAuditInFlightRef.current = generation;
     setSiteAuditBusy(true);
     setSiteAuditStatus(null);
-    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
-    setSiteAudit(buildDiveSiteCoordinateAudit(dives, catalog));
-    setSiteAuditBusy(false);
+    try {
+      await new Promise<void>((resolve) =>
+        window.requestAnimationFrame(() => resolve()),
+      );
+      if (generation !== siteAuditGenerationRef.current) return;
+      const result = buildDiveSiteCoordinateAudit(dives, catalog);
+      if (generation !== siteAuditGenerationRef.current) return;
+      setSiteAudit(result);
+    } catch (auditError) {
+      if (generation === siteAuditGenerationRef.current) {
+        setSiteAuditStatus(
+          auditError instanceof Error
+            ? auditError.message
+            : t("unableCheckSiteCoordinates"),
+        );
+      }
+    } finally {
+      if (siteAuditInFlightRef.current === generation) {
+        siteAuditInFlightRef.current = null;
+        setSiteAuditBusy(false);
+      }
+    }
   }
 
   async function applyAuditCandidate(
     group: DiveSiteAuditGroup,
     candidateIndex: number,
   ) {
+    if (applyInFlightRef.current) return;
     const candidate = group.candidates[candidateIndex];
     if (!candidate) return;
+    applyInFlightRef.current = true;
     setApplyingAuditKey(group.key);
     setSiteAuditStatus(null);
     try {
       const updated = await applyCatalogSiteCoordinatesToLocalDives(
-        group.dives.map((dive) => dive.id),
+        group.dives,
         candidate.site,
       );
-      const byId = new Map(updated.map((dive) => [dive.id, dive]));
-      setDives((current) => current.map((dive) => byId.get(dive.id) ?? dive));
-      setSiteAudit((current) =>
-        current
-          ? {
-              ...current,
-              matched: current.matched.filter((item) => item.key !== group.key),
-              namedDiveCount: Math.max(
-                0,
-                current.namedDiveCount - group.dives.length,
-              ),
-            }
-          : current,
-      );
+      await refresh();
       setSiteAuditStatus(
         t("catalogCoordinatesApplied", { count: updated.length }),
       );
     } catch (applyError) {
+      siteAuditGenerationRef.current += 1;
+      setSiteAudit(null);
+      void refresh();
       setSiteAuditStatus(
         applyError instanceof Error
           ? applyError.message
           : t("unableApplyCatalogCoordinates"),
       );
     } finally {
+      applyInFlightRef.current = false;
       setApplyingAuditKey(null);
     }
   }

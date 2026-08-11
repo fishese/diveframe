@@ -267,6 +267,7 @@ export const zhHant: Record<keyof typeof en, string> = {
   locationSourcePhotoExif: "從相片取得的位置",
   locationSourceMemo: "位置來自潛水備忘",
   locationSourceCatalog: "位置來自 DiveFrame 潛點目錄",
+  locationSourceSiteSelection: "位置來自所選潛點",
   editLocation: "編輯位置",
   latitude: "緯度",
   longitude: "經度",
@@ -787,4 +788,5 @@ export const zhHant: Record<keyof typeof en, string> = {
   openCatalogSettings: "開啟目錄設定",
   noNamedDivesNeedCoordinates: "所有有名稱的潛水已有座標，或沒有找到需要定位的潛水。",
   unableApplyCatalogCoordinates: "無法套用目錄座標。",
+  unableCheckSiteCoordinates: "無法檢查潛點座標。",
 };

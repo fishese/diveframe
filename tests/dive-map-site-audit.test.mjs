@@ -69,6 +69,7 @@ function dive(id, overrides = {}) {
   return {
     id,
     diveDate: null,
+    appEditedAt: null,
     location: null,
     site: null,
     resolvedLocation: null,
@@ -119,4 +120,20 @@ test("groups repeated site and location pairs but keeps differing locations sepa
   assert.equal(result.matched.length, 2);
   assert.deepEqual(result.matched.map((group) => group.dives.length).sort(), [1, 2]);
   assert.equal(audit.catalogSiteLocation(catalog.sites[0]), "Sharp Island · Sai Kung · Hong Kong");
+});
+
+test("audit fingerprints invalidate stale results after relevant dive changes", () => {
+  const original = dive("1", { site: "Blue Corner", location: "Palau" });
+  const result = audit.buildDiveSiteCoordinateAudit([original], catalog);
+  const fingerprint = result.matched[0].dives[0].auditFingerprint;
+
+  assert.equal(fingerprint, audit.diveSiteAuditFingerprint(original));
+  assert.notEqual(
+    fingerprint,
+    audit.diveSiteAuditFingerprint({ ...original, userGpsLat: 7.1, userGpsLng: 134.2 }),
+  );
+  assert.notEqual(
+    fingerprint,
+    audit.diveSiteAuditFingerprint({ ...original, appEditedAt: "2026-08-11T00:00:00Z" }),
+  );
 });

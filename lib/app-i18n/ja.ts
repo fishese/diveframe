@@ -267,6 +267,7 @@ export const ja: Record<keyof typeof en, string> = {
   locationSourcePhotoExif: "写真から取得した位置",
   locationSourceMemo: "ダイブメモから取得した位置",
   locationSourceCatalog: "DiveFrame サイトカタログから取得した位置",
+  locationSourceSiteSelection: "選択したダイブサイトから取得した位置",
   editLocation: "位置を編集",
   latitude: "緯度",
   longitude: "経度",
@@ -784,4 +785,5 @@ export const ja: Record<keyof typeof en, string> = {
   openCatalogSettings: "カタログ設定を開く",
   noNamedDivesNeedCoordinates: "名前付きダイブにはすべて座標があるか、該当する未配置ダイブはありません。",
   unableApplyCatalogCoordinates: "カタログ座標を適用できませんでした。",
+  unableCheckSiteCoordinates: "サイト座標を確認できませんでした。",
 };

@@ -30,6 +30,8 @@ function diveGps(overrides = {}) {
   return {
     gpsEntryLat: null,
     gpsEntryLng: null,
+    gpsExitLat: null,
+    gpsExitLng: null,
     userGpsLat: null,
     userGpsLng: null,
     ...overrides,
@@ -58,6 +60,18 @@ test("falls back to user GPS", () => {
     }),
   );
   assert.deepEqual(coords, { latitude: 3, longitude: 4, source: "user" });
+});
+
+test("falls back to computer exit GPS before user GPS", () => {
+  const coords = resolveDiveMapCoordinates(
+    diveGps({
+      gpsExitLat: 22.2,
+      gpsExitLng: 114.2,
+      userGpsLat: 3,
+      userGpsLng: 4,
+    }),
+  );
+  assert.deepEqual(coords, { latitude: 22.2, longitude: 114.2, source: "computer" });
 });
 
 test("returns null when neither computer nor user GPS is present", () => {

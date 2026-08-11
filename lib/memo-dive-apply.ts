@@ -47,6 +47,8 @@ export function planApplyEmptyMemoFields(
     location: string | null;
     gpsEntryLat: number | null;
     gpsEntryLng: number | null;
+    gpsExitLat?: number | null;
+    gpsExitLng?: number | null;
     userGpsLat: number | null;
     userGpsLng: number | null;
     buddy: string | null;

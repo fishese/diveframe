@@ -97,6 +97,26 @@ test("planApplyEmptyMemoFields skips GPS when dive already has coordinates", () 
   assert.equal(plan.setUserGps, undefined);
 });
 
+test("planApplyEmptyMemoFields treats computer exit GPS as existing coordinates", () => {
+  const plan = planApplyEmptyMemoFields(
+    { location: null, lat: 7.1, lng: 134.2, buddies: null, notes: null },
+    {
+      userSite: null,
+      site: null,
+      location: null,
+      gpsEntryLat: null,
+      gpsEntryLng: null,
+      gpsExitLat: 1,
+      gpsExitLng: 2,
+      userGpsLat: null,
+      userGpsLng: null,
+      buddy: null,
+      notes: null,
+    },
+  );
+  assert.equal(plan.setUserGps, undefined);
+});
+
 test("catalog memo applies site identity separately from its place", () => {
   const plan = planApplyEmptyMemoFields(
     {

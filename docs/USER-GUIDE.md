@@ -334,16 +334,38 @@ has no GPS.
 
 ### User GPS and maps
 
-Computer GPS from an import (`gpsEntry*` fields) is never replaced by a user
-pin. When both exist, the map prefers computer coordinates; when only user GPS
-is set, the map uses that pin; when neither is present, the approximate
-name-based lookup still applies.
+Computer GPS from an import (`gpsEntry*` or `gpsExit*` fields) is never replaced
+by a user pin. The map prefers a valid computer entry coordinate, then a valid
+computer exit coordinate, then user GPS. When none is present, the dive-detail
+map can still use its approximate name-based lookup.
 
 On the dive's map card, tap **Edit location** to enter latitude and longitude,
 then **Save location**, or choose **Clear location** to remove the pin. **Use
 location from photo** scans attached JPEG photos for EXIF coordinates and,
 when found, saves them with a photo-exif source. Photos without GPS or
 unsupported formats are skipped with a status message.
+
+### Places Dived map
+
+Open **Dive Map** from the top navigation to see every dive with structured
+coordinates. This map is bundled with DiveFrame and remains offline: it does
+not send dive names or coordinates to a tile or geocoding service. It uses
+computer entry GPS, computer exit GPS, a saved user pin, or the coordinates of
+a selected DiveFrame catalog site.
+
+The header reports both the number of mapped dives and the number of visible
+map places. Dives within 250 metres share a marker, as do dives linked to the
+same catalog site. Open a marker to see its dives grouped by site and sorted by
+date. The **Mapped places** list beside or below the map provides another way
+to open every marker, including markers that would otherwise be close together.
+
+At the bottom of the page, **Check named dives without coordinates** runs an
+on-demand comparison against exact active catalog names and aliases. Nothing is
+scanned until the button is pressed. Review the dive-log site and location next
+to the catalog version before choosing **Use these coordinates**. The catalog
+coordinate is stored as user data without replacing the displayed site or
+location text. Names not found are listed separately so they can be entered
+manually or added to a supplementary `dive-sites.json`.
 
 ### Catalog alias names
 

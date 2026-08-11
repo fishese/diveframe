@@ -30,8 +30,9 @@ artifact.
 ## In the app
 
 The Settings catalog importer runs this validator locally before saving a
-catalog to the tab session. Error-level issues reject the file. Warnings are
-reported to the user, but the additional catalog remains usable.
+catalog to device-local IndexedDB. Error-level issues reject the file. Warnings
+are reported to the user, but the additional catalog remains usable and is
+included in app-data backups.
 
 Nothing is uploaded by the validator.
 
