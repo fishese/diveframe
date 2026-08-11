@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import {
   Archive,
   Camera,
   ChevronDown,
+  ChevronRight,
   Database,
   Download,
   FileJson,
@@ -853,6 +855,32 @@ export function SettingsApp() {
     return notice ? `${message} ${notice}` : message;
   }
 
+  async function downloadCatalogPrompt() {
+    setBusy(true);
+    setStatus(t("catalogPromptSaving"));
+    try {
+      const response = await fetch("/examples/dive-site-catalog-ai-prompt.md");
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = new Blob([await response.arrayBuffer()], {
+        type: "text/markdown;charset=utf-8",
+      });
+      const saved = await saveExportFile(
+        blob,
+        "dive-site-catalog-ai-prompt.md",
+        "text/markdown",
+      );
+      setStatus(withSavedFileNotice(t("catalogPromptSaved"), saved));
+    } catch (error) {
+      setStatus(
+        error instanceof Error && error.message
+          ? `${t("catalogPromptDownloadFailed")} ${error.message}`
+          : t("catalogPromptDownloadFailed"),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function chooseCatalog(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -1386,10 +1414,19 @@ export function SettingsApp() {
           </div>
 
           <div className="catalog-summary">
-            <div>
-              <strong>{catalog.sites.length}</strong>
-              <span>{t("catalogSites")}</span>
-            </div>
+            <Link
+              href="/catalog"
+              className="catalog-summary-link"
+              aria-label={t("openCatalogBrowser", {
+                count: catalog.sites.length,
+              })}
+            >
+              <span>
+                <strong>{catalog.sites.length}</strong>
+                <small>{t("catalogSites")}</small>
+              </span>
+              <ChevronRight size={18} aria-hidden="true" />
+            </Link>
             <div>
               <strong>{contributions.length}</strong>
               <span>{t("deviceAdditions")}</span>
@@ -1507,13 +1544,14 @@ export function SettingsApp() {
 
           <p className="settings-note">
             {t("catalogPromptDescription")}{" "}
-            <a
-              href="/examples/dive-site-catalog-ai-prompt.md"
-              download
-              className="settings-inline-link"
+            <button
+              type="button"
+              className="settings-inline-link settings-inline-button"
+              disabled={busy}
+              onClick={() => void downloadCatalogPrompt()}
             >
               {t("downloadCatalogPrompt")}
-            </a>
+            </button>
           </p>
           <p className="settings-note">
             {t("catalogSharingInvitation")}

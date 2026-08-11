@@ -13,6 +13,16 @@ const javascript = ts.transpileModule(source, {
 const catalogTools = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`
 );
+const browserSource = await readFile("lib/dive-site-catalog-browser.ts", "utf8");
+const browserJavascript = ts.transpileModule(browserSource, {
+  compilerOptions: {
+    module: ts.ModuleKind.ESNext,
+    target: ts.ScriptTarget.ES2022,
+  },
+}).outputText;
+const catalogBrowserTools = await import(
+  `data:text/javascript;base64,${Buffer.from(browserJavascript).toString("base64")}`
+);
 
 const catalog = {
   schemaVersion: 1,
@@ -136,6 +146,47 @@ test("takeSessionSupplementaryCatalogMigration copies then clears session keys",
   assert.equal(catalogTools.loadSessionDiveSiteCatalog(), null);
   assert.equal(catalogTools.takeSessionSupplementaryCatalogMigration(), null);
   delete globalThis.sessionStorage;
+});
+
+test("catalog browser groups sites and searches places, names, and aliases", () => {
+  const browsable = {
+    ...catalog,
+    sites: [
+      ...catalog.sites,
+      {
+        ...catalog.sites[0],
+        id: "bq-bonaire-thousand-steps",
+        name: "1000 Steps",
+        aliases: ["Thousand Steps"],
+        place: {
+          countryCode: "BQ",
+          country: "Caribbean Netherlands",
+          region: "Bonaire",
+          locality: "Kralendijk",
+        },
+      },
+    ],
+  };
+  const allGroups = catalogBrowserTools.groupDiveSiteCatalog(
+    browsable,
+    "",
+    "Unknown",
+  );
+  assert.deepEqual(
+    allGroups.map(({ country }) => country),
+    ["Caribbean Netherlands", "Hong Kong"],
+  );
+  const aliasMatches = catalogBrowserTools.groupDiveSiteCatalog(
+    browsable,
+    "thousand steps",
+    "Unknown",
+  );
+  assert.equal(aliasMatches.length, 1);
+  assert.equal(aliasMatches[0].sites[0].name, "1000 Steps");
+  assert.equal(
+    catalogBrowserTools.catalogSitePlace(aliasMatches[0].sites[0]),
+    "Kralendijk, Bonaire, Caribbean Netherlands",
+  );
 });
 
 test("blocked sessionStorage does not break catalog startup", () => {

@@ -4,6 +4,7 @@ import type { LocalDive } from "./indexed-db";
 export const DIVE_MAP_WIDTH = 1200;
 export const DIVE_MAP_HEIGHT = 600;
 export const UNKNOWN_DIVE_CLUSTER_RADIUS_KM = 0.25;
+export const DIVE_MAP_MARKER_HIT_RADIUS_PX = 22;
 
 export type DiveMapDive = Pick<
   LocalDive,
@@ -219,6 +220,75 @@ export function buildDiveMapData(
   };
 }
 
+/**
+ * Merge marker hit targets that overlap at the current rendered zoom. This is
+ * display-only clustering: geographic place grouping remains unchanged, and
+ * zooming in separates the markers again once their hit targets no longer
+ * overlap.
+ */
+export function clusterOverlappingDiveMapMarkers(
+  markers: DiveMapMarker[],
+  pixelsPerMapUnit: number,
+  minimumSeparationPx = DIVE_MAP_MARKER_HIT_RADIUS_PX,
+): DiveMapMarker[] {
+  if (
+    markers.length < 2 ||
+    !Number.isFinite(pixelsPerMapUnit) ||
+    pixelsPerMapUnit <= 0 ||
+    !Number.isFinite(minimumSeparationPx) ||
+    minimumSeparationPx <= 0
+  ) {
+    return markers;
+  }
+
+  const parent = markers.map((_, index) => index);
+  const cellSize = minimumSeparationPx / pixelsPerMapUnit;
+  const buckets = new Map<string, number[]>();
+  markers.forEach((marker, index) => {
+    const bucketX = Math.floor(marker.position.x / cellSize);
+    const bucketY = Math.floor(marker.position.y / cellSize);
+    for (let xOffset = -1; xOffset <= 1; xOffset += 1) {
+      for (let yOffset = -1; yOffset <= 1; yOffset += 1) {
+        const nearby = buckets.get(`${bucketX + xOffset}:${bucketY + yOffset}`);
+        if (!nearby) continue;
+        for (const otherIndex of nearby) {
+          const other = markers[otherIndex];
+          const distancePx =
+            Math.hypot(
+              marker.position.x - other.position.x,
+              marker.position.y - other.position.y,
+            ) * pixelsPerMapUnit;
+          if (distancePx < minimumSeparationPx) {
+            union(parent, index, otherIndex);
+          }
+        }
+      }
+    }
+    const bucketKey = `${bucketX}:${bucketY}`;
+    const bucket = buckets.get(bucketKey) ?? [];
+    bucket.push(index);
+    buckets.set(bucketKey, bucket);
+  });
+
+  const groups = new Map<number, DiveMapMarker[]>();
+  markers.forEach((marker, index) => {
+    const root = find(parent, index);
+    const group = groups.get(root) ?? [];
+    group.push(marker);
+    groups.set(root, group);
+  });
+
+  return Array.from(groups.values())
+    .map((group) =>
+      group.length === 1 ? group[0] : mergeDisplayMarkerGroup(group),
+    )
+    .sort(
+      (left, right) =>
+        (left.title ?? "").localeCompare(right.title ?? "") ||
+        left.id.localeCompare(right.id),
+    );
+}
+
 export function haversineDistanceKm(
   latitudeA: number,
   longitudeA: number,
@@ -369,6 +439,72 @@ function markerForGroup(id: string, group: ResolvedDive[]): DiveMapMarker {
   };
 }
 
+function mergeDisplayMarkerGroup(markers: DiveMapMarker[]): DiveMapMarker {
+  const diveCount = markers.reduce((count, marker) => count + marker.diveCount, 0);
+  const coordinates = averageCoordinates(
+    markers.map((marker) => ({
+      latitude: marker.latitude,
+      longitude: marker.longitude,
+      weight: marker.diveCount,
+    })),
+  );
+  const sites = new Map<string, DiveMapSiteBreakdown>();
+  markers.forEach((marker) => {
+    marker.sites.forEach((site) => {
+      const existing = sites.get(site.id);
+      sites.set(site.id, {
+        ...site,
+        diveCount: site.diveCount + (existing?.diveCount ?? 0),
+      });
+    });
+  });
+  const dives = markers
+    .flatMap((marker) => marker.dives)
+    .sort(compareDiveSummariesNewestFirst);
+  const dateValues = dives
+    .map((dive) => dive.date)
+    .filter((date): date is string => validDateTimestamp(date) !== null)
+    .sort(
+      (left, right) => validDateTimestamp(left)! - validDateTimestamp(right)!,
+    );
+  const regionName = sharedMarkerValue(
+    markers,
+    (marker) => marker.regionName,
+  );
+
+  return {
+    id: `display:${stableId(markers.map((marker) => marker.id))}`,
+    latitude: coordinates.latitude,
+    longitude: coordinates.longitude,
+    position: {
+      x:
+        markers.reduce(
+          (sum, marker) => sum + marker.position.x * marker.diveCount,
+          0,
+        ) / diveCount,
+      y:
+        markers.reduce(
+          (sum, marker) => sum + marker.position.y * marker.diveCount,
+          0,
+        ) / diveCount,
+    },
+    title: regionName ?? sharedMarkerValue(markers, (marker) => marker.title),
+    regionName,
+    diveCount,
+    knownSiteCount: sites.size,
+    coordinateSources: Array.from(
+      new Set(markers.flatMap((marker) => marker.coordinateSources)),
+    ),
+    dateFrom: dateValues[0] ?? null,
+    dateTo: dateValues.at(-1) ?? null,
+    dives,
+    sites: Array.from(sites.values()).sort(
+      (left, right) =>
+        right.diveCount - left.diveCount || left.name.localeCompare(right.name),
+    ),
+  };
+}
+
 function diveSummary(
   dive: DiveMapDive,
   catalogSite: CatalogSite | null,
@@ -452,25 +588,43 @@ function clean(value: string | null | undefined) {
 }
 
 function averageCoordinates(
-  coordinates: Array<{ latitude: number; longitude: number }>,
+  coordinates: Array<{
+    latitude: number;
+    longitude: number;
+    weight?: number;
+  }>,
 ) {
   let x = 0;
   let y = 0;
   let z = 0;
-  coordinates.forEach(({ latitude, longitude }) => {
+  let totalWeight = 0;
+  coordinates.forEach(({ latitude, longitude, weight = 1 }) => {
     const latitudeRadians = (latitude * Math.PI) / 180;
     const longitudeRadians = (longitude * Math.PI) / 180;
-    x += Math.cos(latitudeRadians) * Math.cos(longitudeRadians);
-    y += Math.cos(latitudeRadians) * Math.sin(longitudeRadians);
-    z += Math.sin(latitudeRadians);
+    x += Math.cos(latitudeRadians) * Math.cos(longitudeRadians) * weight;
+    y += Math.cos(latitudeRadians) * Math.sin(longitudeRadians) * weight;
+    z += Math.sin(latitudeRadians) * weight;
+    totalWeight += weight;
   });
-  x /= coordinates.length;
-  y /= coordinates.length;
-  z /= coordinates.length;
+  x /= totalWeight;
+  y /= totalWeight;
+  z /= totalWeight;
   const longitude = (Math.atan2(y, x) * 180) / Math.PI;
   const hypotenuse = Math.sqrt(x * x + y * y);
   const latitude = (Math.atan2(z, hypotenuse) * 180) / Math.PI;
   return { latitude, longitude };
+}
+
+function sharedMarkerValue(
+  markers: DiveMapMarker[],
+  value: (marker: DiveMapMarker) => string | null,
+) {
+  const values = markers.map(value).map(clean);
+  const first = values[0];
+  if (!first || values.some((candidate) => candidate?.toLocaleLowerCase("en") !== first.toLocaleLowerCase("en"))) {
+    return null;
+  }
+  return first;
 }
 
 function find(parent: number[], index: number): number {

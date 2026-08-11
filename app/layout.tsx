@@ -6,7 +6,7 @@ import { BetaNotice } from "./BetaNotice";
 import { PwaManager } from "./PwaInstall";
 import { ThemeProvider } from "./ThemeProvider";
 
-const THEME_BOOTSTRAP = `(function(){try{var t=localStorage.getItem("diveframe-color-theme");if(t!=="light"&&t!=="dark")t="dark";var r=document.documentElement;r.setAttribute("data-theme",t);r.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="light"?"#eef6f4":"#071820");}catch(e){}})();`;
+const THEME_BOOTSTRAP = `(function(){try{var r=document.documentElement,t=localStorage.getItem("diveframe-color-theme");if(t!=="light"&&t!=="dark")t="dark";r.setAttribute("data-theme",t);r.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="light"?"#eef6f4":"#071820");["top","right","bottom","left"].forEach(function(k){var v=localStorage.getItem("diveframe-native-safe-area-"+k);if(v)r.style.setProperty("--safe-area-inset-"+k,v);});}catch(e){}})();`;
 
 const CANONICAL_ORIGIN = "https://divelog.fishese.cc";
 

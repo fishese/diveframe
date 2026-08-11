@@ -1790,6 +1790,30 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
+      "id": "gb-farne-chris-christensen",
+      "name": "Chris Christensen Wreck",
+      "aliases": [
+        "SS Chris Christensen",
+        "Chris Christensen"
+      ],
+      "coordinates": {
+        "latitude": 55.6396667,
+        "longitude": -1.6045
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "England",
+        "locality": "Farne Islands"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:divernet+sovereign-diving:2026-08-11"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-11T12:56:00.000Z"
+    },
+    {
       "id": "gb-farne-islands",
       "name": "Farne Islands",
       "aliases": [],
@@ -1830,6 +1854,29 @@
       },
       "status": "active",
       "updatedAt": "2026-07-29T00:00:00.000Z"
+    },
+    {
+      "id": "gb-lundy-earl-of-jersey",
+      "name": "PS Earl of Jersey Wreck",
+      "aliases": [
+        "Earl of Jersey"
+      ],
+      "coordinates": {
+        "latitude": 51.1576667,
+        "longitude": -4.6568333
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "England",
+        "locality": "Lundy Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:lundy-mpa:2026-08-11"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-11T12:56:00.000Z"
     },
     {
       "id": "gb-lundy-island",
@@ -1985,6 +2032,29 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
+      "id": "gb-rathlin-lochgarry",
+      "name": "SS Lochgarry Wreck",
+      "aliases": [
+        "Lochgarry"
+      ],
+      "coordinates": {
+        "latitude": 55.2661833,
+        "longitude": -6.1734333
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Northern Ireland",
+        "locality": "Rathlin Island"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:irish-wrecks-online+divernet:2026-08-11"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-11T12:56:00.000Z"
+    },
+    {
       "id": "gb-scapa-flow-general",
       "name": "Scapa Flow",
       "aliases": [
@@ -2072,15 +2142,38 @@
       "updatedAt": "2026-07-29T00:00:00.000Z"
     },
     {
-      "id": "gb-soundofmull-general",
-      "name": "Sound of Mull",
+      "id": "gb-scilly-mv-cita",
+      "name": "MV Cita Wreck",
       "aliases": [
-        "SS Hispania",
-        "SS Thesis"
+        "Cita"
       ],
       "coordinates": {
-        "latitude": 56.55,
-        "longitude": -5.9
+        "latitude": 49.911773,
+        "longitude": -6.277908
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "England",
+        "locality": "Isles of Scilly"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:divernet+wikipedia:2026-08-11"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-11T12:56:00.000Z"
+    },
+    {
+      "id": "gb-soundofmull-hispania",
+      "name": "Hispania Wreck",
+      "aliases": [
+        "SS Hispania",
+        "Hispania"
+      ],
+      "coordinates": {
+        "latitude": 56.5821333,
+        "longitude": -5.9869333
       },
       "place": {
         "countryCode": "GB",
@@ -2090,10 +2183,33 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:round2:2026-07-29"
+        "reference": "web-curation:scottish-shipwrecks:2026-08-11"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-11T12:56:00.000Z"
+    },
+    {
+      "id": "gb-soundofmull-rondo",
+      "name": "Rondo Wreck",
+      "aliases": [
+        "Rondo"
+      ],
+      "coordinates": {
+        "latitude": 56.5384333,
+        "longitude": -5.9124833
+      },
+      "place": {
+        "countryCode": "GB",
+        "country": "United Kingdom",
+        "region": "Scotland",
+        "locality": "Sound of Mull"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:scottish-shipwrecks:2026-08-11"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-11T12:56:00.000Z"
     },
     {
       "id": "gb-stabbs-broad-craig",
@@ -5831,15 +5947,14 @@
       "updatedAt": "2026-07-28T10:44:51.989Z"
     },
     {
-      "id": "ie-malin-head",
-      "name": "Malin Head",
+      "id": "ie-malin-head-hms-audacious",
+      "name": "HMS Audacious",
       "aliases": [
-        "HMS Audacious",
-        "RMS Justicia"
+        "Audacious Wreck"
       ],
       "coordinates": {
-        "latitude": 55.37,
-        "longitude": -7.34
+        "latitude": 55.4715167,
+        "longitude": -7.7516833
       },
       "place": {
         "countryCode": "IE",
@@ -5849,10 +5964,34 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:round2:2026-07-29"
+        "reference": "web-curation:irish-wrecks-online:2026-08-11"
       },
       "status": "active",
-      "updatedAt": "2026-07-29T00:00:00.000Z"
+      "updatedAt": "2026-08-11T12:56:00.000Z"
+    },
+    {
+      "id": "ie-malin-head-rms-justicia",
+      "name": "RMS Justicia",
+      "aliases": [
+        "SS Justicia",
+        "Justicia Wreck"
+      ],
+      "coordinates": {
+        "latitude": 55.6576667,
+        "longitude": -7.7186667
+      },
+      "place": {
+        "countryCode": "IE",
+        "country": "Ireland",
+        "region": "County Donegal",
+        "locality": "Malin Head"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "web-curation:irish-wrecks-online:2026-08-11"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-11T12:56:00.000Z"
     },
     {
       "id": "il-eilat-satil",

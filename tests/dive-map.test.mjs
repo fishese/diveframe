@@ -195,6 +195,25 @@ test("clearly separate unknown sites remain separate", () => {
   assert.equal(data.markers.length, 2);
 });
 
+test("screen-overlapping markers combine until zoom separates their hit targets", () => {
+  const data = map.buildDiveMapData([
+    dive("1", { location: "Hong Kong", userSite: "Green Egg Island", gpsEntryLat: 22.270, gpsEntryLng: 114.300 }),
+    dive("2", { location: "Hong Kong", userSite: "Ninepin Group", gpsEntryLat: 22.260, gpsEntryLng: 114.350 }),
+    dive("3", { location: "Palau", userSite: "Blue Corner", gpsEntryLat: 7.134, gpsEntryLng: 134.221 }),
+  ], emptyCatalog);
+  assert.equal(data.markers.length, 3);
+
+  const broadZoom = map.clusterOverlappingDiveMapMarkers(data.markers, 0.35);
+  assert.equal(broadZoom.length, 2);
+  const hongKong = broadZoom.find((marker) => marker.regionName === "Hong Kong");
+  assert.ok(hongKong);
+  assert.equal(hongKong.diveCount, 2);
+  assert.deepEqual(hongKong.dives.map((item) => item.siteName).sort(), ["Green Egg Island", "Ninepin Group"]);
+
+  const closeZoom = map.clusterOverlappingDiveMapMarkers(data.markers, 300);
+  assert.equal(closeZoom.length, 3);
+});
+
 test("memo-applied site identity aggregates across dives", () => {
   const data = map.buildDiveMapData([
     dive("1", { userSiteCatalogId: "site-c", userSite: "Blue Corner" }),

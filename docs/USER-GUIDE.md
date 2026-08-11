@@ -184,8 +184,9 @@ dives only.
 
 When a dive is open and still lacks a place name, DiveFrame may show
 **Possible Memo Match** hints for memos near that dive’s start time. On the
-memos page, nearby dives are always offered. You can apply empty fields, copy
-individual fields, then Keep or Delete the memo.
+memos page, nearby dives are offered under the collapsed **DIVES WITH SIMILAR
+START TIMES** heading. Expand it to apply empty fields, copy individual fields,
+then Keep or Delete the memo.
 
 ## Dive profiles and gas use
 
@@ -356,16 +357,20 @@ a selected DiveFrame catalog site.
 The header reports both the number of mapped dives and the number of visible
 map places. Dives within 250 metres share a marker, as do dives linked to the
 same catalog site. Open a marker to see its dives grouped by site and sorted by
-date. The **Mapped places** list beside or below the map provides another way
-to open every marker, including markers that would otherwise be close together.
+date. Markers whose selectable areas overlap at the current zoom are combined,
+so none can hide behind another; zoom in to separate them again. Drag to pan,
+and pinch, scroll, or use the **− / +** controls to zoom. The **Mapped places**
+list beside or below the map provides another way to open each visible marker.
 
 At the bottom of the page, **Check named dives without coordinates** runs an
 on-demand comparison against exact active catalog names and aliases. Nothing is
 scanned until the button is pressed. Review the dive-log site and location next
 to the catalog version before choosing **Use these coordinates**. The catalog
 coordinate is stored as user data without replacing the displayed site or
-location text. Names not found are listed separately so they can be entered
-manually or added to a supplementary `dive-sites.json`.
+location text. After coordinates are applied, the results stay expanded and
+refresh for the current map visit so the next match can be reviewed. Names not
+found are listed separately so they can be entered manually or added to a
+supplementary `dive-sites.json`.
 
 ### Catalog alias names
 
@@ -396,9 +401,17 @@ backups. The combined list is used for nearby-site suggestions. Duplicate IDs
 and identical name/coordinate entries retain the bundled entry. Remove the
 additional catalog from the same card at any time.
 
+Select the catalog site count to open the searchable catalog browser. It reads
+the active bundled-plus-supplementary catalog dynamically, groups entries by
+country or region, and shows each site’s place, preferred name, and aliases.
+Search matches country, region, locality, site name, ID, and aliases.
+
 If you need a catalog for another region, download the AI catalog prompt from
 that card, replace the region placeholder, and give it to an AI assistant that
-can research public sources. Review the generated JSON before loading it.
+can research public sources. Review the generated JSON before loading it. The
+Android app saves the included prompt through its native file export into the
+device’s Downloads area; it does not need to fetch a separate catalog prompt
+from the hosted web app.
 
 ### What's new
 

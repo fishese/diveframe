@@ -25,7 +25,9 @@ import {
 import bundledDiveSiteCatalog from "@/data/dive-sites.json";
 import {
   buildDiveMapData,
+  clusterOverlappingDiveMapMarkers,
   DIVE_MAP_HEIGHT,
+  DIVE_MAP_MARKER_HIT_RADIUS_PX,
   DIVE_MAP_WIDTH,
   type DiveMapDiveSummary,
   type DiveMapMarker,
@@ -51,6 +53,8 @@ import { useAppI18n } from "../AppI18nProvider";
 import { AppTopbar } from "../components/AppTopbar";
 
 type MapView = { x: number; y: number; width: number; height: number };
+type PointerPosition = { clientX: number; clientY: number };
+type RefreshedMapState = { dives: LocalDive[]; catalog: DiveSiteCatalog };
 
 const WORLD_VIEW: MapView = {
   x: 0,
@@ -74,6 +78,7 @@ export function DiveMapApp() {
   const [siteAuditBusy, setSiteAuditBusy] = useState(false);
   const [applyingAuditKey, setApplyingAuditKey] = useState<string | null>(null);
   const [siteAuditStatus, setSiteAuditStatus] = useState<string | null>(null);
+  const [siteAuditExpanded, setSiteAuditExpanded] = useState(false);
   const [view, setView] = useState<MapView>(WORLD_VIEW);
   const [canvasWidth, setCanvasWidth] = useState(DIVE_MAP_WIDTH);
   const canvasRef = useRef<SVGSVGElement>(null);
@@ -81,13 +86,25 @@ export function DiveMapApp() {
   const siteAuditGenerationRef = useRef(0);
   const siteAuditInFlightRef = useRef<number | null>(null);
   const applyInFlightRef = useRef(false);
+  const viewRef = useRef(view);
+  const activePointersRef = useRef(new Map<number, PointerPosition>());
   const dragRef = useRef<{
     pointerId: number;
     startClientX: number;
     startClientY: number;
     startView: MapView;
   } | null>(null);
+  const pinchRef = useRef<{
+    pointerIds: [number, number];
+    startDistance: number;
+    startAnchor: { x: number; y: number };
+    startView: MapView;
+  } | null>(null);
   const dragMovedRef = useRef(false);
+
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
 
   const refresh = useCallback(async () => {
     const generation = ++refreshGenerationRef.current;
@@ -100,7 +117,7 @@ export function DiveMapApp() {
         listLocalDives(),
         getLocalSupplementaryCatalog(),
       ]);
-      if (generation !== refreshGenerationRef.current) return;
+      if (generation !== refreshGenerationRef.current) return null;
       siteAuditGenerationRef.current += 1;
       siteAuditInFlightRef.current = null;
       setSiteAudit(null);
@@ -108,8 +125,15 @@ export function DiveMapApp() {
       setDives(nextDives);
       setSupplementaryCatalog(nextSupplementaryCatalog);
       setError(null);
+      return {
+        dives: nextDives,
+        catalog: resolveActiveDiveSiteCatalog(
+          bundledDiveSiteCatalog as DiveSiteCatalog,
+          nextSupplementaryCatalog?.catalog ?? null,
+        ),
+      } satisfies RefreshedMapState;
     } catch (refreshError) {
-      if (generation !== refreshGenerationRef.current) return;
+      if (generation !== refreshGenerationRef.current) return null;
       siteAuditGenerationRef.current += 1;
       siteAuditInFlightRef.current = null;
       setSiteAudit(null);
@@ -119,6 +143,7 @@ export function DiveMapApp() {
           ? refreshError.message
           : t("unableLoadDiveMap"),
       );
+      return null;
     } finally {
       if (generation === refreshGenerationRef.current) setLoading(false);
     }
@@ -152,14 +177,17 @@ export function DiveMapApp() {
     () => buildDiveMapData(dives, catalog),
     [catalog, dives],
   );
-  const selectedMarker = useMemo(
-    () =>
-      mapData.markers.find((marker) => marker.id === selectedMarkerId) ?? null,
-    [mapData.markers, selectedMarkerId],
-  );
-
   const zoom = DIVE_MAP_WIDTH / view.width;
   const pixelsPerMapUnit = canvasWidth / view.width;
+  const displayMarkers = useMemo(
+    () => clusterOverlappingDiveMapMarkers(mapData.markers, pixelsPerMapUnit),
+    [mapData.markers, pixelsPerMapUnit],
+  );
+  const selectedMarker = useMemo(
+    () =>
+      displayMarkers.find((marker) => marker.id === selectedMarkerId) ?? null,
+    [displayMarkers, selectedMarkerId],
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -193,18 +221,20 @@ export function DiveMapApp() {
         Math.max(MIN_VIEW_WIDTH, current.width / factor),
       );
       const scale = nextWidth / current.width;
-      return clampView({
+      const next = clampView({
         x: center.x - (center.x - current.x) * scale,
         y: center.y - (center.y - current.y) * scale,
         width: nextWidth,
         height: nextWidth / 2,
       });
+      viewRef.current = next;
+      return next;
     });
   }
 
   function fitToDives() {
     if (!mapData.markers.length) {
-      setView(WORLD_VIEW);
+      resetMapView();
       return;
     }
     const xs = mapData.markers.map((marker) => marker.position.x);
@@ -223,14 +253,19 @@ export function DiveMapApp() {
       DIVE_MAP_WIDTH,
       Math.max(220, contentWidth * 1.35 + 60),
     );
-    setView(
-      clampView({
+    const next = clampView({
         x: centerX - width / 2,
         y: centerY - width / 4,
         width,
         height: width / 2,
-      }),
-    );
+      });
+    viewRef.current = next;
+    setView(next);
+  }
+
+  function resetMapView() {
+    viewRef.current = WORLD_VIEW;
+    setView(WORLD_VIEW);
   }
 
   function handleWheel(event: ReactWheelEvent<SVGSVGElement>) {
@@ -245,39 +280,121 @@ export function DiveMapApp() {
   }
 
   function handlePointerDown(event: ReactPointerEvent<SVGSVGElement>) {
-    if (event.button !== 0 || !event.isPrimary) return;
+    if (event.button !== 0) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    dragMovedRef.current = false;
-    dragRef.current = {
-      pointerId: event.pointerId,
-      startClientX: event.clientX,
-      startClientY: event.clientY,
-      startView: view,
-    };
+    activePointersRef.current.set(event.pointerId, {
+      clientX: event.clientX,
+      clientY: event.clientY,
+    });
+    if (activePointersRef.current.size === 1) {
+      dragMovedRef.current = false;
+      dragRef.current = {
+        pointerId: event.pointerId,
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        startView: viewRef.current,
+      };
+      pinchRef.current = null;
+    } else if (activePointersRef.current.size === 2) {
+      beginPinch(event.currentTarget);
+    }
   }
 
   function handlePointerMove(event: ReactPointerEvent<SVGSVGElement>) {
+    if (!activePointersRef.current.has(event.pointerId)) return;
+    activePointersRef.current.set(event.pointerId, {
+      clientX: event.clientX,
+      clientY: event.clientY,
+    });
+    const pinch = pinchRef.current;
+    if (pinch) {
+      const first = activePointersRef.current.get(pinch.pointerIds[0]);
+      const second = activePointersRef.current.get(pinch.pointerIds[1]);
+      if (!first || !second) return;
+      const distance = pointerDistance(first, second);
+      if (distance < 1) return;
+      const midpoint = pointerMidpoint(first, second);
+      const rect = event.currentTarget.getBoundingClientRect();
+      const nextWidth = Math.min(
+        DIVE_MAP_WIDTH,
+        Math.max(MIN_VIEW_WIDTH, pinch.startView.width * (pinch.startDistance / distance)),
+      );
+      const next = clampView({
+        x:
+          pinch.startAnchor.x -
+          ((midpoint.clientX - rect.left) / rect.width) * nextWidth,
+        y:
+          pinch.startAnchor.y -
+          ((midpoint.clientY - rect.top) / rect.height) * (nextWidth / 2),
+        width: nextWidth,
+        height: nextWidth / 2,
+      });
+      dragMovedRef.current = true;
+      viewRef.current = next;
+      setView(next);
+      return;
+    }
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const deltaX = event.clientX - drag.startClientX;
     const deltaY = event.clientY - drag.startClientY;
     if (Math.abs(deltaX) + Math.abs(deltaY) > 5) dragMovedRef.current = true;
-    setView(
-      clampView({
+    const next = clampView({
         ...drag.startView,
         x: drag.startView.x - (deltaX / rect.width) * drag.startView.width,
         y: drag.startView.y - (deltaY / rect.height) * drag.startView.height,
-      }),
-    );
+      });
+    viewRef.current = next;
+    setView(next);
   }
 
   function finishPointer(event: ReactPointerEvent<SVGSVGElement>) {
-    if (dragRef.current?.pointerId !== event.pointerId) return;
-    dragRef.current = null;
+    if (!activePointersRef.current.delete(event.pointerId)) return;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+    if (pinchRef.current?.pointerIds.includes(event.pointerId)) {
+      pinchRef.current = null;
+      if (activePointersRef.current.size >= 2) {
+        beginPinch(event.currentTarget);
+      } else {
+        const remaining = activePointersRef.current.entries().next().value as
+          | [number, PointerPosition]
+          | undefined;
+        dragRef.current = remaining
+          ? {
+              pointerId: remaining[0],
+              startClientX: remaining[1].clientX,
+              startClientY: remaining[1].clientY,
+              startView: viewRef.current,
+            }
+          : null;
+      }
+      return;
+    }
+    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+  }
+
+  function beginPinch(canvas: SVGSVGElement) {
+    const pointers = Array.from(activePointersRef.current.entries()).slice(0, 2);
+    if (pointers.length !== 2) return;
+    const [first, second] = pointers;
+    const midpoint = pointerMidpoint(first[1], second[1]);
+    const startView = viewRef.current;
+    pinchRef.current = {
+      pointerIds: [first[0], second[0]],
+      startDistance: Math.max(1, pointerDistance(first[1], second[1])),
+      startAnchor: clientToMapPoint(
+        canvas,
+        midpoint.clientX,
+        midpoint.clientY,
+        startView,
+      ),
+      startView,
+    };
+    dragRef.current = null;
+    dragMovedRef.current = true;
   }
 
   function chooseMarker(marker: DiveMapMarker) {
@@ -289,18 +406,23 @@ export function DiveMapApp() {
     setUnmappedOpen(false);
   }
 
-  async function runSiteCoordinateAudit() {
+  async function runSiteCoordinateAudit(
+    auditDives = dives,
+    auditCatalog = catalog,
+    preserveStatus = false,
+  ) {
     if (siteAuditInFlightRef.current !== null || applyInFlightRef.current) return;
     const generation = ++siteAuditGenerationRef.current;
     siteAuditInFlightRef.current = generation;
+    setSiteAuditExpanded(true);
     setSiteAuditBusy(true);
-    setSiteAuditStatus(null);
+    if (!preserveStatus) setSiteAuditStatus(null);
     try {
       await new Promise<void>((resolve) =>
         window.requestAnimationFrame(() => resolve()),
       );
       if (generation !== siteAuditGenerationRef.current) return;
-      const result = buildDiveSiteCoordinateAudit(dives, catalog);
+      const result = buildDiveSiteCoordinateAudit(auditDives, auditCatalog);
       if (generation !== siteAuditGenerationRef.current) return;
       setSiteAudit(result);
     } catch (auditError) {
@@ -329,12 +451,13 @@ export function DiveMapApp() {
     applyInFlightRef.current = true;
     setApplyingAuditKey(group.key);
     setSiteAuditStatus(null);
+    let refreshed: RefreshedMapState | null = null;
     try {
       const updated = await applyCatalogSiteCoordinatesToLocalDives(
         group.dives,
         candidate.site,
       );
-      await refresh();
+      refreshed = await refresh();
       setSiteAuditStatus(
         t("catalogCoordinatesApplied", { count: updated.length }),
       );
@@ -350,6 +473,9 @@ export function DiveMapApp() {
     } finally {
       applyInFlightRef.current = false;
       setApplyingAuditKey(null);
+    }
+    if (refreshed) {
+      await runSiteCoordinateAudit(refreshed.dives, refreshed.catalog, true);
     }
   }
 
@@ -381,10 +507,10 @@ export function DiveMapApp() {
               <span>·</span>
               <span>
                 {t(
-                  mapData.placeCount === 1
+                  displayMarkers.length === 1
                     ? "mappedPlaceCountOne"
                     : "mappedPlacesCount",
-                  { count: mapData.placeCount },
+                  { count: displayMarkers.length },
                 )}
               </span>
               <span>·</span>
@@ -468,15 +594,6 @@ export function DiveMapApp() {
                   >
                     <button
                       type="button"
-                      onClick={() => zoomAt(1.6)}
-                      disabled={view.width <= MIN_VIEW_WIDTH + 0.01}
-                      aria-label={t("zoomIn")}
-                      title={t("zoomIn")}
-                    >
-                      <Plus size={17} />
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => zoomAt(1 / 1.6)}
                       disabled={view.width >= DIVE_MAP_WIDTH - 0.01}
                       aria-label={t("zoomOut")}
@@ -486,7 +603,16 @@ export function DiveMapApp() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setView(WORLD_VIEW)}
+                      onClick={() => zoomAt(1.6)}
+                      disabled={view.width <= MIN_VIEW_WIDTH + 0.01}
+                      aria-label={t("zoomIn")}
+                      title={t("zoomIn")}
+                    >
+                      <Plus size={17} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetMapView}
                       disabled={view.width >= DIVE_MAP_WIDTH - 0.01}
                       aria-label={t("resetMap")}
                       title={t("resetMap")}
@@ -502,10 +628,10 @@ export function DiveMapApp() {
                 viewBox={`${view.x} ${view.y} ${view.width} ${view.height}`}
                 role="application"
                 aria-label={t(
-                  mapData.markers.length === 1
+                  displayMarkers.length === 1
                     ? "diveMapCanvasLabelOne"
                     : "diveMapCanvasLabel",
-                  { count: mapData.markers.length },
+                  { count: displayMarkers.length },
                 )}
                 onWheel={handleWheel}
                 onPointerDown={handlePointerDown}
@@ -519,7 +645,7 @@ export function DiveMapApp() {
                   height={DIVE_MAP_HEIGHT}
                   aria-hidden="true"
                 />
-                {mapData.markers.map((marker) => (
+                {displayMarkers.map((marker) => (
                   <DiveMapMarkerView
                     key={marker.id}
                     marker={marker}
@@ -564,7 +690,7 @@ export function DiveMapApp() {
                   <h2>{t("chooseMapMarker")}</h2>
                   <p>{t("chooseMapMarkerDescription")}</p>
                   <MappedPlaceList
-                    markers={mapData.markers}
+                    markers={displayMarkers}
                     onChoose={chooseMarker}
                   />
                 </div>
@@ -585,6 +711,7 @@ export function DiveMapApp() {
         {!loading && !error ? (
           <DiveSiteCoordinateAuditPanel
             audit={siteAudit}
+            expanded={siteAuditExpanded}
             busy={siteAuditBusy}
             applyingKey={applyingAuditKey}
             status={siteAuditStatus}
@@ -628,6 +755,7 @@ function MappedPlaceList({
 
 function DiveSiteCoordinateAuditPanel({
   audit,
+  expanded,
   busy,
   applyingKey,
   status,
@@ -636,6 +764,7 @@ function DiveSiteCoordinateAuditPanel({
   onApply,
 }: {
   audit: DiveSiteCoordinateAudit | null;
+  expanded: boolean;
   busy: boolean;
   applyingKey: string | null;
   status: string | null;
@@ -645,7 +774,10 @@ function DiveSiteCoordinateAuditPanel({
 }) {
   const { t } = useAppI18n();
   return (
-    <section className="dive-site-audit">
+    <section
+      className={`dive-site-audit${expanded ? " expanded" : ""}`}
+      data-expanded={expanded}
+    >
       <div className="dive-site-audit-heading">
         <div>
           <p className="eyebrow">{t("needsLocation")}</p>
@@ -664,7 +796,7 @@ function DiveSiteCoordinateAuditPanel({
         </button>
       </div>
       {status ? <p className="dive-site-audit-status" role="status">{status}</p> : null}
-      {audit ? (
+      {expanded && audit ? (
         <div className="dive-site-audit-results">
           <p className="dive-site-audit-summary">
             {t("siteCoordinateAuditSummary", { count: audit.namedDiveCount })}
@@ -783,7 +915,7 @@ function DiveMapMarkerView({
   onChoose: () => void;
 }) {
   const radius = (marker.diveCount > 1 ? 12 : 8.5) / pixelsPerMapUnit;
-  const hitRadius = 22 / pixelsPerMapUnit;
+  const hitRadius = DIVE_MAP_MARKER_HIT_RADIUS_PX / pixelsPerMapUnit;
   const fontSize = 9 / pixelsPerMapUnit;
   return (
     <g
@@ -982,6 +1114,20 @@ function clientToMapPoint(
   return {
     x: view.x + ((clientX - rect.left) / rect.width) * view.width,
     y: view.y + ((clientY - rect.top) / rect.height) * view.height,
+  };
+}
+
+function pointerDistance(first: PointerPosition, second: PointerPosition) {
+  return Math.hypot(
+    second.clientX - first.clientX,
+    second.clientY - first.clientY,
+  );
+}
+
+function pointerMidpoint(first: PointerPosition, second: PointerPosition) {
+  return {
+    clientX: (first.clientX + second.clientX) / 2,
+    clientY: (first.clientY + second.clientY) / 2,
   };
 }
 

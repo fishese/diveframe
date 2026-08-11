@@ -57,6 +57,12 @@ marker; its detail panel groups the dive list by site and sorts dives newest
 first within each group. The threshold is intentionally small and lives in
 `lib/dive-map.ts` so it can be tuned after real-world testing.
 
+At the current zoom level, marker hit targets that would visually overlap are
+also merged into a display-only cluster. Opening that cluster shows every dive
+from every included place, still grouped by site. Pinching or otherwise zooming
+in separates the markers again. This interaction uses standard browser pointer
+events and adds no map, gesture, or network dependency.
+
 ## On-demand site-name audit
 
 The map can explicitly check named dives that still have no usable coordinate.
@@ -69,4 +75,6 @@ silently.
 After verification, the chosen catalog coordinate and catalog ID are stored as
 user data on all dives in that matching site/location group. Names not found in
 the active catalog are listed separately so they can be entered manually or
-used to prepare a supplementary dive-site JSON catalog.
+used to prepare a supplementary dive-site JSON catalog. After coordinates are
+applied, the user-triggered audit is rerun and remains expanded for the current
+visit so the next match can be reviewed without reopening it.

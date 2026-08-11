@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useAppI18n } from "@/app/AppI18nProvider";
 import type { AppLanguage } from "@/lib/app-i18n";
@@ -136,6 +137,7 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
   const [status, setStatus] = useState<string | null>(null);
   const [postApply, setPostApply] = useState<PostApplyState | null>(null);
   const [memoDeleted, setMemoDeleted] = useState(false);
+  const [matchesOpen, setMatchesOpen] = useState(props.mode === "on-dive");
 
   if (memoDeleted) return null;
 
@@ -453,13 +455,27 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
           : "memo-match-hints"
       }
     >
-      <h3 className="memo-match-title">
-        {props.mode === "on-dive"
-          ? t("memoMatchTitle")
-          : t("memoMatchTitleFromMemo")}
-      </h3>
+      {props.mode === "on-dive" ? (
+        <h3 className="memo-match-title">{t("memoMatchTitle")}</h3>
+      ) : (
+        <button
+          type="button"
+          className="memo-match-heading"
+          aria-expanded={matchesOpen}
+          disabled={busy || Boolean(postApply)}
+          onClick={() => setMatchesOpen((open) => !open)}
+        >
+          <span>{t("memoMatchTitleFromMemo")}</span>
+          <ChevronDown size={16} aria-hidden="true" />
+        </button>
+      )}
 
-      {status ? (
+      <div
+        className="memo-match-content"
+        hidden={props.mode === "on-memo" && !matchesOpen}
+      >
+
+        {status ? (
         <p
           className="composer-status memo-match-status"
           role="status"
@@ -467,13 +483,13 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
         >
           {status}
         </p>
-      ) : null}
+        ) : null}
 
-      {props.mode === "on-memo" && candidateCount === 0 ? (
+        {props.mode === "on-memo" && candidateCount === 0 ? (
         <p className="memo-match-empty">{t("memoMatchNoCandidates")}</p>
-      ) : null}
+        ) : null}
 
-      {props.mode === "on-dive"
+        {props.mode === "on-dive"
         ? memoMatches.map(({ memo }) => {
             const summary = formatSummaryLine(
               memoWallClockMs(memo),
@@ -555,7 +571,7 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
             );
           })}
 
-      {canShow12h ? (
+        {canShow12h ? (
         <button
           type="button"
           className="button button-quiet memo-match-widen"
@@ -564,9 +580,9 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
         >
           {t("memoMatchShow12h")}
         </button>
-      ) : null}
+        ) : null}
 
-      {canShow24h ? (
+        {canShow24h ? (
         <button
           type="button"
           className="button button-quiet memo-match-widen"
@@ -575,9 +591,9 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
         >
           {t("memoMatchShow24h")}
         </button>
-      ) : null}
+        ) : null}
 
-      {postApply ? (
+        {postApply ? (
         <div
           className="memo-match-dialog-backdrop"
           role="presentation"
@@ -611,7 +627,8 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
             </div>
           </section>
         </div>
-      ) : null}
+        ) : null}
+      </div>
     </section>
   );
 }

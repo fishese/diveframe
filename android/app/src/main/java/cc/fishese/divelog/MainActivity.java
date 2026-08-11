@@ -106,10 +106,25 @@ public class MainActivity extends BridgeActivity {
                     .setAppearanceLightStatusBars(light)
             );
         }
+
+        @JavascriptInterface
+        public void refreshSafeAreaInsets() {
+            runOnUiThread(() -> {
+                if (getBridge() == null || getBridge().getWebView() == null) {
+                    return;
+                }
+                WebView webView = getBridge().getWebView();
+                WindowInsetsCompat windowInsets = ViewCompat.getRootWindowInsets(webView);
+                if (windowInsets != null) {
+                    applySafeAreaCssVariables(webView, windowInsets);
+                }
+                ViewCompat.requestApplyInsets(webView);
+            });
+        }
     }
 
     private static void applySafeAreaCssVariables(WebView webView, WindowInsetsCompat windowInsets) {
-        Insets bars = windowInsets.getInsets(
+        Insets bars = windowInsets.getInsetsIgnoringVisibility(
             WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
         );
         float density = webView.getResources().getDisplayMetrics().density;
@@ -123,7 +138,15 @@ public class MainActivity extends BridgeActivity {
                 + "r.style.setProperty('--safe-area-inset-right','%.2fpx');"
                 + "r.style.setProperty('--safe-area-inset-bottom','%.2fpx');"
                 + "r.style.setProperty('--safe-area-inset-left','%.2fpx');"
+                + "try{localStorage.setItem('diveframe-native-safe-area-top','%.2fpx');"
+                + "localStorage.setItem('diveframe-native-safe-area-right','%.2fpx');"
+                + "localStorage.setItem('diveframe-native-safe-area-bottom','%.2fpx');"
+                + "localStorage.setItem('diveframe-native-safe-area-left','%.2fpx');}catch(e){}"
                 + "})();",
+            bars.top / density,
+            bars.right / density,
+            bars.bottom / density,
+            bars.left / density,
             bars.top / density,
             bars.right / density,
             bars.bottom / density,

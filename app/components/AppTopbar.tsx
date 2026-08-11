@@ -11,7 +11,7 @@ import {
   Settings,
   Upload,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { diveComputerCapability } from "../../lib/dive-computer-capability";
 import { useAppI18n } from "../AppI18nProvider";
 import { AndroidAppLink } from "./AndroidAppLink";
@@ -77,6 +77,29 @@ export function AppTopbar({
 }: AppTopbarProps) {
   const { t } = useAppI18n();
   const bleAvailable = diveComputerCapability.isAvailable();
+
+  useEffect(() => {
+    const native = (
+      window as Window & {
+        DiveFrameNative?: { refreshSafeAreaInsets?: () => void };
+      }
+    ).DiveFrameNative;
+    if (!native?.refreshSafeAreaInsets) return;
+
+    const refresh = () => native.refreshSafeAreaInsets?.();
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    refresh();
+    const frame = window.requestAnimationFrame(refresh);
+    window.addEventListener("pageshow", refresh);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("pageshow", refresh);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, []);
 
   const brandNode =
     brand.mode === "link" ? (

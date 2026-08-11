@@ -15,6 +15,11 @@ The application bundles the catalog as `data/dive-sites.json`. It is loaded by
 the stateless nearby-site route. Settings can add or remove a supplementary
 catalog without replacing the bundled file.
 
+The catalog count in Settings links to `/catalog`, which reads this same active
+bundled-plus-supplementary catalog at runtime. The browser groups sites by
+country or region and supports searches across IDs, names, aliases, country,
+region, and locality; it does not maintain a separate display-only site list.
+
 ## Regional supplementary catalogs
 
 Settings accepts another compatible `dive-sites.json`. The file is validated
@@ -35,6 +40,9 @@ Settings links to
 an AI assistant to research a compatible regional file. AI-generated entries
 must be reviewed by a person before use or publication; DiveFrame validates the
 shape of the JSON but cannot verify that names or coordinates are true.
+The prompt is part of both the web static assets and the packaged Android app.
+Settings saves it through the shared file-export path so Android uses native
+Downloads rather than relying on unsupported WebView `download` links.
 
 Users may share a reviewed regional catalog for possible inclusion in a future
 bundled catalog. Sharing is optional; the app has no upload endpoint or contact

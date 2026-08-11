@@ -49,6 +49,13 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   );
   const androidPage = await readFile("app/android/AndroidAppPage.tsx", "utf8");
   const androidLink = await readFile("app/components/AndroidAppLink.tsx", "utf8");
+  const [catalogPage, catalogBrowser, memoMatchHints, rootLayout] =
+    await Promise.all([
+      readFile("app/catalog/page.tsx", "utf8"),
+      readFile("app/catalog/CatalogApp.tsx", "utf8"),
+      readFile("app/components/MemoDiveMatchHints.tsx", "utf8"),
+      readFile("app/layout.tsx", "utf8"),
+    ]);
 
   assert.match(shearwater, /GnssEntryLocation/);
   assert.match(shearwater, /StoredDiveComputer/);
@@ -86,6 +93,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     assert.match(topbar, /href="\/map"/);
     assert.match(topbar, /MapPinned/);
     assert.match(topbar, /showImportCluster/);
+    assert.match(topbar, /refreshSafeAreaInsets/);
+    assert.match(topbar, /visibilitychange/);
   }
   assert.match(app, /status !== t\("importDiveLog"\)/);
   assert.match(about, /AppTopbar/);
@@ -265,6 +274,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapApp, /refreshGenerationRef/);
   assert.match(diveMapApp, /siteAuditGenerationRef/);
   assert.match(diveMapApp, /applyInFlightRef/);
+  assert.match(diveMapApp, /activePointersRef/);
+  assert.match(diveMapApp, /pinchRef/);
+  assert.match(diveMapApp, /siteAuditExpanded/);
+  assert.match(diveMapApp, /clusterOverlappingDiveMapMarkers/);
   assert.match(diveMapApp, /subscribeLocalDataChanges/);
   assert.match(diveMapApp, /href={`\/\?dive=\$\{encodeURIComponent\(dive\.id\)\}`}/);
   assert.match(diveMapApp, /Fit|fitToDives/);
@@ -624,6 +637,20 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /"en" \| "zh-Hant" \| "ja"/);
   assert.match(settings, /removeSessionCatalog/);
   assert.match(settings, /dive-site-catalog-ai-prompt\.md/);
+  assert.match(settings, /href="\/catalog"/);
+  assert.match(settings, /downloadCatalogPrompt/);
+  assert.match(settings, /saveExportFile/);
+  assert.match(catalogPage, /CatalogApp/);
+  assert.match(catalogBrowser, /bundledDiveSiteCatalog/);
+  assert.match(catalogBrowser, /getLocalSupplementaryCatalog/);
+  assert.match(catalogBrowser, /groupDiveSiteCatalog/);
+  assert.match(catalogBrowser, /type="search"/);
+  assert.match(memoMatchHints, /matchesOpen/);
+  assert.match(memoMatchHints, /aria-expanded=\{matchesOpen\}/);
+  assert.match(memoMatchHints, /memo-match-content/);
+  assert.match(appI18n, /DIVES WITH SIMILAR START TIMES/);
+  assert.match(rootLayout, /diveframe-native-safe-area-/);
+  assert.match(rootLayout, /--safe-area-inset-/);
   assert.match(settings, /catalogSharingInvitation/);
   assert.match(settings, /saveLocalSupplementaryCatalog|getLocalSupplementaryCatalog/);
   assert.doesNotMatch(settings, /saveSessionDiveSiteCatalog/);
@@ -682,8 +709,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v12/);
+  assert.match(serviceWorker, /diveframe-shell-v13/);
   assert.match(serviceWorker, /"\/memo"/);
+  assert.match(serviceWorker, /"\/catalog"/);
   assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);
   assert.match(serviceWorker, /examples\/sample-dive\.uddf/);
   assert.match(serviceWorker, /examples\/dive-site-catalog-ai-prompt\.md/);
