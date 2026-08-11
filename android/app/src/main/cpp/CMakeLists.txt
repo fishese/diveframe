@@ -48,6 +48,18 @@ find_library(ANDROID_LOG_LIB log)
 add_library(diveframe_dc SHARED diveframe_dc.c)
 target_link_libraries(diveframe_dc PRIVATE libdivecomputer ${ANDROID_LOG_LIB})
 
+# libdivecomputer uses __FILE__ in its logging macros. Strip the machine-specific
+# checkout path so GitHub and F-Droid produce identical native libraries.
+set(DIVEFRAME_REPRODUCIBLE_SOURCE_PATH
+    "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=."
+)
+target_compile_options(
+    libdivecomputer PRIVATE ${DIVEFRAME_REPRODUCIBLE_SOURCE_PATH}
+)
+target_compile_options(
+    diveframe_dc PRIVATE ${DIVEFRAME_REPRODUCIBLE_SOURCE_PATH}
+)
+
 # Android 15 devices may use 16 KB memory pages, and the loader rejects shared
 # libraries whose segments are aligned to the older 4 KB boundary.
 set(DIVEFRAME_PAGE_ALIGNMENT

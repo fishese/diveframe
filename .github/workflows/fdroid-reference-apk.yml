@@ -1,0 +1,93 @@
+name: Signed F-Droid reference APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fdroid-reference-apk
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build dependencies
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager \
+            'platform-tools' \
+            'platforms;android-36' \
+            'build-tools;35.0.0' \
+            'build-tools;29.0.3' \
+            'ndk;27.0.12077973' \
+            'cmake;3.22.1'
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Prepare native web assets
+        shell: bash
+        run: |
+          sh scripts/fetch-libdivecomputer.sh
+          npm run prepare:sql-wasm
+          npm run native:sync
+
+      - name: Build release APK
+        working-directory: android
+        shell: bash
+        run: bash gradlew --no-daemon assembleRelease
+
+      - name: Sign APK
+        id: sign_apk
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Prepare reference asset
+        shell: bash
+        run: |
+          cp "${{ steps.sign_apk.outputs.signedReleaseFile }}" diveframe-1.0.21.apk
+          sha256sum diveframe-1.0.21.apk
+
+      - name: Publish reference release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.21
+          name: DiveFrame v1.0.21
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          files: diveframe-1.0.21.apk
+          body: |
+            Developer-signed reference APK for DiveFrame 1.0.21.
+
+            This APK is used by F-Droid to verify reproducible builds. The
+            F-Droid-distributed APK is signed with F-Droid's separate key.
