@@ -725,7 +725,6 @@ export const en = {
   memoMatchApplyEmpty: "Apply empty fields",
   memoMatchNothingToApply: "Nothing to apply.",
   memoMatchCopyLocation: "Use location",
-  memoMatchCopyGps: "Use coordinates",
   memoMatchCopyBuddies: "Use buddies",
   memoMatchCopyNotes: "Use notes",
   memoMatchDeleteConfirm: "Delete this memo?",

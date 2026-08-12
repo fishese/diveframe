@@ -28,7 +28,7 @@ memoDiveApplyJs = memoDiveApplyJs.replace(
   `from "${diveMemosUrl}"`,
 );
 
-const { planApplyEmptyMemoFields } = await import(
+const { planApplyEmptyMemoFields, planUseMemoLocation } = await import(
   `data:text/javascript;base64,${Buffer.from(memoDiveApplyJs).toString("base64")}`
 );
 
@@ -121,6 +121,7 @@ test("catalog memo applies site identity separately from its place", () => {
   const plan = planApplyEmptyMemoFields(
     {
       siteName: "Blue Corner",
+      siteCatalogId: "pw-blue-corner",
       location: "Palau",
       lat: 7.1,
       lng: 134.2,
@@ -140,6 +141,7 @@ test("catalog memo applies site identity separately from its place", () => {
     },
   );
   assert.equal(plan.setUserSite, "Blue Corner");
+  assert.equal(plan.setUserSiteCatalogId, "pw-blue-corner");
   assert.equal(plan.setLocation, "Palau");
 });
 
@@ -168,4 +170,55 @@ test("applying one memo to two dives produces independent plans", () => {
   assert.deepEqual(second, first);
   assert.equal(first.setUserSite, "Shared briefing site");
   assert.equal(first.setBuddy, "Sam");
+});
+
+test("Use location copies a catalog site and its coordinates together", () => {
+  assert.deepEqual(
+    planUseMemoLocation({
+      siteName: "Blue Corner",
+      siteCatalogId: "pw-blue-corner",
+      location: "Palau",
+      lat: 7.1,
+      lng: 134.2,
+    }),
+    {
+      type: "site",
+      name: "Blue Corner",
+      catalogId: "pw-blue-corner",
+      location: "Palau",
+      gps: { lat: 7.1, lng: 134.2 },
+    },
+  );
+});
+
+test("Use location copies coordinates alone when the memo has no site", () => {
+  assert.deepEqual(
+    planUseMemoLocation({
+      siteName: null,
+      siteCatalogId: null,
+      location: null,
+      lat: 7.1,
+      lng: 134.2,
+    }),
+    { type: "gps", gps: { lat: 7.1, lng: 134.2 } },
+  );
+});
+
+test("Use location can copy a site without coordinates", () => {
+  assert.deepEqual(
+    planUseMemoLocation({
+      siteName: "Blue Corner",
+      siteCatalogId: null,
+      location: "Palau",
+      lat: null,
+      lng: null,
+    }),
+    {
+      type: "site",
+      name: "Blue Corner",
+      catalogId: null,
+      location: "Palau",
+      gps: null,
+    },
+  );
 });

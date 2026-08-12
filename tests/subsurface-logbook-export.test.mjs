@@ -121,7 +121,7 @@ test("rejects surface-only and duplicate-time profiles", () => {
   });
 });
 
-test("honours complete GPS pairs and never creates a hybrid coordinate", () => {
+test("preserves computer GPS and falls back to a complete user pair", () => {
   const userGpsDive = {
     ...completeDive,
     gpsEntryLat: 22.3,
@@ -134,7 +134,7 @@ test("honours complete GPS pairs and never creates a hybrid coordinate", () => {
   const document = new DOMParser().parseFromString(xml, "application/xml");
   assert.equal(
     document.querySelector("divesites > site")?.getAttribute("gps"),
-    "1.200000 2.300000",
+    "22.300000 114.200000",
   );
 
   const partialComputer = {
@@ -146,7 +146,23 @@ test("honours complete GPS pairs and never creates a hybrid coordinate", () => {
   const partialDocument = new DOMParser().parseFromString(partialXml, "application/xml");
   assert.equal(
     partialDocument.querySelector("divesites > site")?.getAttribute("gps"),
-    null,
+    "1.200000 2.300000",
+  );
+
+  const exitGpsDive = {
+    ...partialComputer,
+    userGpsLat: 1.2,
+    userGpsLng: 2.3,
+    gpsExitLat: 7.4,
+    gpsExitLng: 134.5,
+  };
+  const exitDocument = new DOMParser().parseFromString(
+    createSubsurfaceLogbook([exitGpsDive]),
+    "application/xml",
+  );
+  assert.equal(
+    exitDocument.querySelector("divesites > site")?.getAttribute("gps"),
+    "7.400000 134.500000",
   );
 });
 

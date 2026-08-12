@@ -726,7 +726,6 @@ export const zhHant: Record<keyof typeof en, string> = {
   memoMatchApplyEmpty: "套用空白欄位",
   memoMatchNothingToApply: "沒有可套用的內容。",
   memoMatchCopyLocation: "使用地點",
-  memoMatchCopyGps: "使用座標",
   memoMatchCopyBuddies: "使用潛伴",
   memoMatchCopyNotes: "使用備註",
   memoMatchDeleteConfirm: "刪除此備忘？",

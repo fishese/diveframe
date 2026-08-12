@@ -243,6 +243,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(memosApp, /onMemoDeleted/);
   assert.match(memosApp, /NOTES_PLACEHOLDER/);
   assert.match(memosApp, /readPhotoExifGps/);
+  assert.match(memosApp, /subscribeLocalDataChanges/);
   assert.doesNotMatch(memosApp, /saveLocalDivePhoto|addLocalDivePhoto/);
   assert.doesNotMatch(memosApp, /diveNeedsPlaceNameHint/);
   const memosPage = await readFile("app/memos/page.tsx", "utf8");
@@ -280,6 +281,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapApp, /pinchRef/);
   assert.match(diveMapApp, /siteAuditExpanded/);
   assert.match(diveMapApp, /clusterOverlappingDiveMapMarkers/);
+  assert.match(diveMapApp, /mapData\.placeCount/);
   assert.match(diveMapApp, /subscribeLocalDataChanges/);
   assert.match(diveMapApp, /href={`\/\?dive=\$\{encodeURIComponent\(dive\.id\)\}`}/);
   assert.match(diveMapApp, /Fit|fitToDives/);

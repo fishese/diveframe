@@ -18,6 +18,7 @@ import {
 import {
   isMemoDiveApplyPlanEmpty,
   planApplyEmptyMemoFields,
+  planUseMemoLocation,
   type MemoDiveApplyPlan,
 } from "@/lib/memo-dive-apply";
 import {
@@ -233,39 +234,32 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
   }
 
   async function copyLocation(memo: DiveMemo, dive: LocalDive) {
-    const name = memoSiteName(memo);
-    if (!name) return;
+    const plan = planUseMemoLocation(memo);
+    if (!plan) return;
     setBusy(true);
     setStatus(null);
     try {
-      const updated = await updateLocalDiveSite(dive.id, {
-        name,
-        source: "memo",
-        latitude: memo.lat,
-        longitude: memo.lng,
-        location: memo.siteName ? memo.location : name,
-      });
+      const updated =
+        plan.type === "site"
+          ? await updateLocalDiveSite(dive.id, {
+              name: plan.name,
+              source: plan.catalogId ? "catalog" : "memo",
+              catalogId: plan.catalogId ?? undefined,
+              latitude: plan.gps?.lat ?? null,
+              longitude: plan.gps?.lng ?? null,
+              location: plan.location,
+            })
+          : await updateLocalDiveUserGps(dive.id, {
+              lat: plan.gps.lat,
+              lng: plan.gps.lng,
+              source: "memo",
+            });
       props.onDiveChange(updated);
-      setStatus(t("manualSiteSaved", { name }));
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : String(error));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function copyGps(memo: DiveMemo, dive: LocalDive) {
-    if (!hasValidMemoGps(memo)) return;
-    setBusy(true);
-    setStatus(null);
-    try {
-      const updated = await updateLocalDiveUserGps(dive.id, {
-        lat: memo.lat!,
-        lng: memo.lng!,
-        source: "memo",
-      });
-      props.onDiveChange(updated);
-      setStatus(t("diveDetailsSaved"));
+      setStatus(
+        plan.type === "site"
+          ? t("manualSiteSaved", { name: plan.name })
+          : t("diveDetailsSaved"),
+      );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));
     } finally {
@@ -362,7 +356,7 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
               {memoSiteName(memo) ?? "—"}
             </span>
           </div>
-          {memoSiteName(memo) ? (
+          {memoSiteName(memo) || hasValidMemoGps(memo) ? (
             <button
               type="button"
               className="button button-secondary memo-compact-button"
@@ -383,16 +377,6 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
               {coords || t("diveMemosNoCoordinates")}
             </span>
           </div>
-          {hasValidMemoGps(memo) ? (
-            <button
-              type="button"
-              className="button button-secondary memo-compact-button"
-              disabled={busy}
-              onClick={() => void copyGps(memo, dive)}
-            >
-              {t("memoMatchCopyGps")}
-            </button>
-          ) : null}
         </div>
 
         <div className="memo-match-field memo-match-field-row">

@@ -507,10 +507,10 @@ export function DiveMapApp() {
               <span>·</span>
               <span>
                 {t(
-                  displayMarkers.length === 1
+                  mapData.placeCount === 1
                     ? "mappedPlaceCountOne"
                     : "mappedPlacesCount",
-                  { count: displayMarkers.length },
+                  { count: mapData.placeCount },
                 )}
               </span>
               <span>·</span>

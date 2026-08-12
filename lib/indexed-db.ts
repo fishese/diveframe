@@ -1238,8 +1238,8 @@ export async function applyLocalDiveMemoPlan(
   const updated = hydrateDive(stored);
   if (plan.setUserSite !== undefined) {
     updated.userSite = plan.setUserSite;
-    updated.userSiteSource = "memo";
-    updated.userSiteCatalogId = null;
+    updated.userSiteSource = plan.setUserSiteCatalogId ? "catalog" : "memo";
+    updated.userSiteCatalogId = plan.setUserSiteCatalogId ?? null;
     updated.userSiteUpdatedAt = now;
     contributionsStore.delete(id);
   }

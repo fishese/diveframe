@@ -81,9 +81,99 @@ test("updates editable fields without rebuilding the Subsurface dive", async () 
   assert.equal(result.updatedBuddies, 1);
   assert.equal(result.updatedNotes, 1);
   assert.equal(linkedSite.getAttribute("name"), "Sharp Island");
-  assert.equal(linkedSite.getAttribute("gps"), "22.363260 114.293190");
+  assert.equal(linkedSite.getAttribute("gps"), "22.300000 114.200000");
   assert.equal(dive.querySelector("buddy").textContent, "Updated Buddy");
   assert.equal(dive.querySelector("notes").textContent, "Updated notes");
   assert.equal(dive.querySelector("divecomputer").getAttribute("model"), "Perdix 2");
   assert.equal(dive.querySelector("sample").getAttribute("pressure0"), "180 bar");
+});
+
+test("preserves source GPS when a DiveFrame site name replaces the source name", async () => {
+  const xml = `<divelog program="subsurface" version="3">
+  <divesites><site uuid="source-site" name="Old name" gps="1.000000 2.000000"/></divesites>
+  <dives><dive divesiteid="source-site"><divecomputer deviceid="device" diveid="1"/></dive></dives>
+</divelog>`;
+  const result = await addDiveFrameSitesToSubsurface(
+    new File([xml], "source.ssrf", { type: "application/xml" }),
+    [{
+      id: "canonical",
+      userSite: "DiveFrame name",
+      sourceSiteNames: {},
+      gpsEntryLat: 3,
+      gpsEntryLng: 4,
+      userGpsLat: 5,
+      userGpsLng: 6,
+      buddy: null,
+      notes: null,
+    }],
+    [{ source: "subsurface", sourceId: "device:1", diveId: "canonical" }],
+  );
+  const updated = new DOMParser().parseFromString(result.xml, "application/xml");
+  const dive = updated.querySelector("dives > dive");
+  const linkedSite = updated.querySelector(
+    `divesites > site[uuid="${dive.getAttribute("divesiteid")}"]`,
+  );
+
+  assert.equal(linkedSite.getAttribute("name"), "DiveFrame name");
+  assert.equal(linkedSite.getAttribute("gps"), "1.000000 2.000000");
+});
+
+test("fills missing source GPS from DiveFrame user coordinates", async () => {
+  const xml = `<divelog program="subsurface" version="3">
+  <divesites><site uuid="source-site" name="DiveFrame name"/></divesites>
+  <dives><dive divesiteid="source-site"><divecomputer deviceid="device" diveid="1"/></dive></dives>
+</divelog>`;
+  const result = await addDiveFrameSitesToSubsurface(
+    new File([xml], "source.ssrf", { type: "application/xml" }),
+    [{
+      id: "canonical",
+      userSite: "DiveFrame name",
+      sourceSiteNames: {},
+      gpsEntryLat: null,
+      gpsEntryLng: null,
+      userGpsLat: 5,
+      userGpsLng: 6,
+      buddy: null,
+      notes: null,
+    }],
+    [{ source: "subsurface", sourceId: "device:1", diveId: "canonical" }],
+  );
+  const updated = new DOMParser().parseFromString(result.xml, "application/xml");
+  const dive = updated.querySelector("dives > dive");
+  const linkedSite = updated.querySelector(
+    `divesites > site[uuid="${dive.getAttribute("divesiteid")}"]`,
+  );
+
+  assert.equal(linkedSite.getAttribute("name"), "DiveFrame name");
+  assert.equal(linkedSite.getAttribute("gps"), "5.000000 6.000000");
+});
+
+test("preserves a Subsurface start-location coordinate when no site is linked", async () => {
+  const xml = `<divelog program="subsurface" version="3">
+  <dives><dive><divecomputer deviceid="device" diveid="1">
+    <extradata key="Start location" value="7.100000 8.200000"/>
+  </divecomputer></dive></dives>
+</divelog>`;
+  const result = await addDiveFrameSitesToSubsurface(
+    new File([xml], "source.ssrf", { type: "application/xml" }),
+    [{
+      id: "canonical",
+      userSite: "DiveFrame name",
+      sourceSiteNames: {},
+      gpsEntryLat: 9,
+      gpsEntryLng: 10,
+      userGpsLat: 11,
+      userGpsLng: 12,
+      buddy: null,
+      notes: null,
+    }],
+    [{ source: "subsurface", sourceId: "device:1", diveId: "canonical" }],
+  );
+  const updated = new DOMParser().parseFromString(result.xml, "application/xml");
+  const dive = updated.querySelector("dives > dive");
+  const linkedSite = updated.querySelector(
+    `divesites > site[uuid="${dive.getAttribute("divesiteid")}"]`,
+  );
+
+  assert.equal(linkedSite.getAttribute("gps"), "7.100000 8.200000");
 });

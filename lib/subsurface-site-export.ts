@@ -65,25 +65,32 @@ export async function addDiveFrameSitesToSubsurface(
       dive.userSite?.trim() ||
       dive.sourceSiteNames.shearwater?.trim() ||
       null;
-    if (targetName) {
-      const currentSite = sitesById.get(
-        sourceDive.getAttribute("divesiteid") ?? "",
-      );
-      if (currentSite?.getAttribute("name")?.trim() !== targetName) {
-        const latitude = dive.gpsEntryLat;
-        const longitude = dive.gpsEntryLng;
-        const gps =
-          latitude !== null && longitude !== null
-            ? `${latitude.toFixed(6)} ${longitude.toFixed(6)}`
-            : currentSite?.getAttribute("gps") ?? null;
-        const key = siteKey(targetName, gps);
+    const currentSite = sitesById.get(
+      sourceDive.getAttribute("divesiteid") ?? "",
+    );
+    const sourceGps =
+      currentSite?.getAttribute("gps")?.trim() ||
+      sourceDiveGps(sourceDive);
+    const userGps = formattedGps(dive.userGpsLat, dive.userGpsLng);
+    const targetGps = sourceGps || userGps;
+    const currentName = currentSite?.getAttribute("name")?.trim() || null;
+    const resolvedName = targetName || currentName || targetGps;
+    if (resolvedName) {
+      const key = siteKey(resolvedName, targetGps);
+      const currentKey = currentSite
+        ? siteKey(
+            currentSite.getAttribute("name") ?? "",
+            currentSite.getAttribute("gps"),
+          )
+        : null;
+      if (currentKey !== key) {
         let targetSite = sitesByKey.get(key);
         if (!targetSite) {
           targetSite = document.createElement("site");
           const uuid = createSiteId(existingIds);
           targetSite.setAttribute("uuid", uuid);
-          targetSite.setAttribute("name", targetName);
-          if (gps) targetSite.setAttribute("gps", gps);
+          targetSite.setAttribute("name", resolvedName);
+          if (targetGps) targetSite.setAttribute("gps", targetGps);
           sitesRoot.appendChild(document.createTextNode("\n"));
           sitesRoot.appendChild(targetSite);
           sitesRoot.appendChild(document.createTextNode("\n"));
@@ -132,6 +139,29 @@ function siteKey(name: string, gps: string | null) {
   return `${name.trim().toLocaleLowerCase("en").replace(/\s+/g, " ")}\u0000${
     gps?.trim().replace(/\s+/g, " ") ?? ""
   }`;
+}
+
+function sourceDiveGps(dive: Element) {
+  const computer = dive.querySelector("divecomputer");
+  const startLocation = Array.from(
+    computer?.querySelectorAll("extradata") ?? [],
+  ).find(
+    (extra) =>
+      extra.getAttribute("key")?.trim().toLocaleLowerCase("en") ===
+      "start location",
+  );
+  return startLocation?.getAttribute("value")?.trim() || null;
+}
+
+function formattedGps(latitude: number | null, longitude: number | null) {
+  return latitude !== null &&
+    longitude !== null &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180
+    ? `${latitude.toFixed(6)} ${longitude.toFixed(6)}`
+    : null;
 }
 
 function createSiteId(existingIds: Set<string>) {

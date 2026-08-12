@@ -3,11 +3,25 @@ import { memoSiteName, type DiveMemo } from "./dive-memos";
 
 export type MemoDiveApplyPlan = {
   setUserSite?: string;
+  setUserSiteCatalogId?: string;
   setLocation?: string | null;
   setUserGps?: { lat: number; lng: number };
   setBuddy?: string | null;
   setNotes?: string | null;
 };
+
+export type MemoLocationApplyPlan =
+  | {
+      type: "site";
+      name: string;
+      catalogId: string | null;
+      location: string | null;
+      gps: { lat: number; lng: number } | null;
+    }
+  | {
+      type: "gps";
+      gps: { lat: number; lng: number };
+    };
 
 function isNonBlank(value: string | null | undefined): boolean {
   return typeof value === "string" && value.trim().length > 0;
@@ -39,7 +53,13 @@ function isSiteEmpty(dive: {
 export function planApplyEmptyMemoFields(
   memo: Pick<
     DiveMemo,
-    "siteName" | "location" | "lat" | "lng" | "buddies" | "notes"
+    | "siteName"
+    | "siteCatalogId"
+    | "location"
+    | "lat"
+    | "lng"
+    | "buddies"
+    | "notes"
   >,
   dive: {
     userSite: string | null;
@@ -63,6 +83,8 @@ export function planApplyEmptyMemoFields(
 
   if (isSiteEmpty(dive) && memoSite) {
     plan.setUserSite = memoSite;
+    const catalogId = memo.siteCatalogId?.trim();
+    if (catalogId) plan.setUserSiteCatalogId = catalogId;
   }
 
   if (!isNonBlank(dive.location) && memoLocation) {
@@ -89,4 +111,27 @@ export function planApplyEmptyMemoFields(
 
 export function isMemoDiveApplyPlanEmpty(plan: MemoDiveApplyPlan): boolean {
   return Object.keys(plan).length === 0;
+}
+
+/** Build the explicit "Use location" action: site + GPS, or GPS by itself. */
+export function planUseMemoLocation(
+  memo: Pick<
+    DiveMemo,
+    "siteName" | "siteCatalogId" | "location" | "lat" | "lng"
+  >,
+): MemoLocationApplyPlan | null {
+  const name = memoSiteName(memo);
+  const gps = validatedMemoGps(memo.lat, memo.lng);
+  if (name) {
+    return {
+      type: "site",
+      name,
+      catalogId: memo.siteCatalogId?.trim() || null,
+      location: isNonBlank(memo.siteName)
+        ? memo.location?.trim() || null
+        : name,
+      gps,
+    };
+  }
+  return gps ? { type: "gps", gps } : null;
 }

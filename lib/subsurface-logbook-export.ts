@@ -236,11 +236,11 @@ function timeWeightedAverageDepth(
 }
 
 function exportCoordinates(dive: LocalDive) {
-  const computer = validCoordinatePair(dive.gpsEntryLat, dive.gpsEntryLng);
+  const computer =
+    validCoordinatePair(dive.gpsEntryLat, dive.gpsEntryLng) ??
+    validCoordinatePair(dive.gpsExitLat, dive.gpsExitLng);
   const user = validCoordinatePair(dive.userGpsLat, dive.userGpsLng);
-  if (dive.exportGpsPreference === "user") return user;
-  if (dive.exportGpsPreference === "user-if-missing") return computer ?? user;
-  return computer;
+  return computer ?? user;
 }
 
 function validCoordinatePair(latitude: number | null, longitude: number | null) {

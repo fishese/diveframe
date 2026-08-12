@@ -723,7 +723,6 @@ export const ja: Record<keyof typeof en, string> = {
   memoMatchApplyEmpty: "空欄を適用",
   memoMatchNothingToApply: "適用する項目がありません。",
   memoMatchCopyLocation: "場所を使用",
-  memoMatchCopyGps: "座標を使用",
   memoMatchCopyBuddies: "バディを使用",
   memoMatchCopyNotes: "メモを使用",
   memoMatchDeleteConfirm: "このメモを削除しますか？",

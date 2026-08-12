@@ -53,6 +53,7 @@ import {
 import { photoLocationCapability } from "@/lib/photo-location-capability";
 import { readPhotoExifGps } from "@/lib/photo-exif-gps";
 import type { AppTranslate } from "@/lib/app-i18n";
+import { subscribeLocalDataChanges } from "@/lib/cross-tab-sync";
 
 const NOTES_PLACEHOLDER =
   "Note other info such as gas mixes, weight, exposures here";
@@ -85,6 +86,15 @@ export function MemosApp() {
     setStatus("");
   }, []);
 
+  const refreshDiveContext = useCallback(async () => {
+    const [listedDives, supplementary] = await Promise.all([
+      listLocalDives(),
+      getLocalSupplementaryCatalog(),
+    ]);
+    setDives(listedDives);
+    setSupplementaryCatalog(supplementary);
+  }, []);
+
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       void refresh().catch((error) => {
@@ -95,15 +105,21 @@ export function MemosApp() {
   }, [refresh, t]);
 
   useEffect(() => {
-    void Promise.all([listLocalDives(), getLocalSupplementaryCatalog()])
-      .then(([listedDives, supplementary]) => {
-        setDives(listedDives);
-        setSupplementaryCatalog(supplementary);
-      })
-      .catch((error) => {
+    const frame = window.requestAnimationFrame(() => {
+      void refreshDiveContext().catch((error) => {
         setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
       });
-  }, [t]);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [refreshDiveContext, t]);
+
+  useEffect(() => {
+    return subscribeLocalDataChanges(() => {
+      void Promise.all([refresh(), refreshDiveContext()]).catch((error) => {
+        setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
+      });
+    });
+  }, [refresh, refreshDiveContext, t]);
 
   const activeDiveSiteCatalog = useMemo(
     () =>
