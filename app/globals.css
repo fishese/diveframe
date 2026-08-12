@@ -3518,17 +3518,17 @@ button {
 }
 
 .about-hero h1 {
-  font-size: clamp(40px, 6vw, 70px);
-  letter-spacing: -0.06em;
-  line-height: 0.98;
+  font-size: 30px;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
   margin: 0;
 }
 
 .about-hero > p:last-child {
   color: var(--muted);
-  font-size: 17px;
-  line-height: 1.7;
-  margin: 20px 0 0;
+  font-size: 14px;
+  line-height: 1.65;
+  margin: 12px 0 0;
   max-width: 760px;
 }
 
@@ -3550,12 +3550,35 @@ button {
   padding: 24px;
 }
 
-.about-card h2,
 .about-reconcile h2,
 .about-license h2 {
-  font-size: 24px;
-  letter-spacing: -0.035em;
+  font-size: 30px;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
   margin: 1px 0 12px;
+}
+
+.about-reconcile h2 {
+  font-size: 24px;
+}
+
+.about-card h2 {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  margin: 1px 0 10px;
+}
+
+.about-card .settings-icon {
+  border-radius: 10px;
+  height: 36px;
+  width: 36px;
+}
+
+.about-card .settings-icon svg {
+  height: 19px;
+  width: 19px;
 }
 
 .about-card p,
@@ -5142,10 +5165,6 @@ button {
     padding: 36px 16px 70px;
   }
 
-  .about-hero h1 {
-    font-size: 41px;
-  }
-
   .about-grid {
     grid-template-columns: 1fr;
     margin-top: 30px;
@@ -5159,6 +5178,14 @@ button {
   .about-card {
     min-height: 0;
     padding: 20px;
+  }
+
+  .about-license h2 {
+    font-size: 27px;
+  }
+
+  .about-reconcile h2 {
+    font-size: 24px;
   }
 
   .android-card {
