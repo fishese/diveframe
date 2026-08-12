@@ -52,15 +52,12 @@ build.
 
 File: `public/maps/world-dive-map.svg`
 
-The country and coastline geometry is derived from Natural Earth 5.1.0,
-`ne_110m_admin_0_countries.geojson`. Natural Earth places all versions of its
-raster and vector map data in the public domain and requires no attribution.
-DiveFrame nevertheless records “Made with Natural Earth” in the SVG metadata
-and project documentation. See
-<https://www.naturalearthdata.com/about/terms-of-use/>.
-
-The repository script `scripts/generate-dive-map-svg.mjs` projects the source
-WGS84 longitude/latitude vertices into a 1200 × 600 equirectangular SVG,
-rounds projected coordinates to two decimals, and adds DiveFrame's English
-orientation labels and visual styling. No Natural Earth data or other map
-content is downloaded at application runtime.
+The country and coastline geometry is from the pinned `world-atlas` 2.0.2
+`countries-110m.json` redistribution of Natural Earth 1:110m Admin 0
+boundaries. Natural Earth places its map data in the public domain and its
+terms are recorded at <https://www.naturalearthdata.com/about/terms-of-use/>.
+The world-atlas redistribution license is included at
+`scripts/map-data/world-atlas-LICENSE`; the source and repository are recorded
+in `scripts/map-data/README.md` and the generated SVG metadata.
+The generator uses the locally pinned TopoJSON source with d3-geo and does not
+download map data at application runtime.

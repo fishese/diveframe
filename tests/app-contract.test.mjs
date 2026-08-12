@@ -257,7 +257,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(memosApp, /discardOnUnmountRef/);
   assert.match(memosApp, /deleteMemoSafely/);
   assert.match(memosApp, /onDeleteMemo/);
-  const [diveMapPage, diveMapApp, diveMapLogic, diveMapAudit, diveMapAsset, diveMapDocs] =
+  const [diveMapPage, diveMapApp, diveMapLogic, diveMapAudit, diveMapAsset, diveMapDocs, diveMapGenerator, diveMapSource] =
     await Promise.all([
       readFile("app/map/page.tsx", "utf8"),
       readFile("app/map/DiveMapApp.tsx", "utf8"),
@@ -265,6 +265,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
       readFile("lib/dive-map-site-audit.ts", "utf8"),
       readFile("public/maps/world-dive-map.svg", "utf8"),
       readFile("docs/dive-map.md", "utf8"),
+      readFile("scripts/generate-dive-map-svg.mjs", "utf8"),
+      readFile("scripts/map-data/countries-110m.json", "utf8"),
     ]);
   assert.match(diveMapPage, /DiveMapApp/);
   assert.match(diveMapApp, /buildDiveMapData/);
@@ -292,10 +294,17 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapAudit, /diveSiteAuditFingerprint/);
   assert.doesNotMatch(diveMapAudit, /fetch\s*\(/);
   assert.match(diveMapAsset, /viewBox="0 0 1200 600"/);
-  assert.match(diveMapAsset, /Natural Earth 5\.1\.0/);
+  assert.match(diveMapAsset, /world-atlas 2\.0\.2/);
+  assert.match(diveMapAsset, /Natural Earth 4\.1\.0/);
   assert.match(diveMapAsset, /Hong Kong/);
   assert.match(diveMapAsset, /Puerto Galera/);
   assert.match(diveMapDocs, /public domain/i);
+  assert.match(diveMapDocs, /world-atlas/);
+  assert.match(diveMapGenerator, /d3-geo/);
+  assert.match(diveMapGenerator, /topojson-client/);
+  assert.match(diveMapGenerator, /countries-110m\.json/);
+  assert.doesNotMatch(diveMapGenerator, /fetch\s*\(/);
+  assert.match(diveMapSource, /"type":"Topology"/);
   assert.match(app, /MemoDiveMatchHints/);
   assert.match(app, /diveNeedsPlaceNameHint/);
   assert.match(app, /listMemosNearDive/);
@@ -709,7 +718,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v13/);
+  assert.match(serviceWorker, /diveframe-shell-v14/);
   assert.match(serviceWorker, /"\/memo"/);
   assert.match(serviceWorker, /"\/catalog"/);
   assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);

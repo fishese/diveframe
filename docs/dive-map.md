@@ -7,18 +7,17 @@ account, or a network connection.
 
 ## Geography source and license
 
-- Source: Natural Earth 5.1.0
-- Layer: `ne_110m_admin_0_countries.geojson`
-- Tagged source URL:
-  <https://github.com/nvkelso/natural-earth-vector/blob/v5.1.0/geojson/ne_110m_admin_0_countries.geojson>
-- License: public domain
-- Attribution: not required; DiveFrame nevertheless records “Made with
-  Natural Earth” in the generated SVG metadata and this documentation.
-- Terms: <https://www.naturalearthdata.com/about/terms-of-use/>
-
-Run `node scripts/generate-dive-map-svg.mjs` to reproduce the asset. The script
-downloads only the tagged source file during development. It converts WGS84
-longitude/latitude vertices to a 1200 × 600 equirectangular viewBox, rounds the
+- Source: `world-atlas` 2.0.2 `countries-110m.json`
+- Upstream repository: <https://github.com/topojson/world-atlas/tree/v2.0.2>
+- Pinned source: `scripts/map-data/countries-110m.json`
+- Source URL: <https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json>
+- Underlying data: Natural Earth 1:110m Admin 0 country boundaries
+- Data terms: public domain; see <https://www.naturalearthdata.com/about/terms-of-use/>
+- Redistribution license: `scripts/map-data/world-atlas-LICENSE`
+Run `npm run generate:map` (or `node scripts/generate-dive-map-svg.mjs`) to
+reproduce the committed asset. The generator uses the pinned local TopoJSON
+file, so it does not need network access. It converts WGS84 geometry with
+d3-geo's equirectangular projection into a 1200 by 600 viewBox, rounds
 projected coordinates to two decimals, and adds restrained styling, a
 latitude/longitude grid, and broad English orientation labels. It does not add
 or infer dive sites.

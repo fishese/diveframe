@@ -1,10 +1,14 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { geoEquirectangular, geoPath } from "d3-geo";
+import { feature } from "topojson-client";
 
-const SOURCE_VERSION = "Natural Earth 5.1.0";
+const SOURCE_VERSION = "world-atlas 2.0.2 (Natural Earth 4.1.0)";
 const SOURCE_URL =
-  "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.0/geojson/ne_110m_admin_0_countries.geojson";
+  "https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json";
+const SOURCE_REPOSITORY_URL =
+  "https://github.com/topojson/world-atlas/tree/v2.0.2";
 const LICENSE_URL = "https://www.naturalearthdata.com/about/terms-of-use/";
 const WIDTH = 1200;
 const HEIGHT = 600;
@@ -30,20 +34,24 @@ const labels = [
 ];
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const sourcePath = resolve(root, "scripts", "map-data", "countries-110m.json");
 const outputPath = resolve(root, "public", "maps", "world-dive-map.svg");
+const topology = JSON.parse(await readFile(sourcePath, "utf8"));
 
-const response = await fetch(SOURCE_URL);
-if (!response.ok) {
-  throw new Error(`Natural Earth download failed (${response.status}).`);
-}
-const collection = await response.json();
-if (collection?.type !== "FeatureCollection" || !Array.isArray(collection.features)) {
-  throw new Error("Natural Earth response was not a GeoJSON FeatureCollection.");
+if (
+  topology?.type !== "Topology" ||
+  topology.objects?.countries?.type !== "GeometryCollection"
+) {
+  throw new Error("The pinned world-atlas source is not a countries TopoJSON topology.");
 }
 
-const paths = collection.features
-  .flatMap((feature) => geometryPaths(feature.geometry))
-  .map((path) => `    <path d="${path}" />`)
+const projection = geoEquirectangular()
+  .scale(WIDTH / (2 * Math.PI))
+  .translate([WIDTH / 2, HEIGHT / 2]);
+const path = geoPath(projection);
+const countries = feature(topology, topology.objects.countries);
+const paths = countries.features
+  .map((country) => `    <path d="${roundPath(path(country))}" />`)
   .join("\n");
 
 const grid = [
@@ -63,9 +71,10 @@ const svg = `<?xml version="1.0" encoding="UTF-8"?>
   <title id="title">DiveFrame offline world map</title>
   <description id="description">An equirectangular world map with broad geographic labels for orienting dive markers.</description>
   <metadata>
-    Source: ${SOURCE_VERSION}, ne_110m_admin_0_countries.geojson (${SOURCE_URL}).
-    Natural Earth data is public domain (${LICENSE_URL}).
-    Transformation: GeoJSON country polygons projected from WGS84 longitude and latitude to a ${WIDTH} by ${HEIGHT} equirectangular viewBox; coordinates rounded to two decimals. English orientation labels added by DiveFrame.
+    Source: ${SOURCE_VERSION} (${SOURCE_URL}; repository ${SOURCE_REPOSITORY_URL}).
+    The country data is derived from Natural Earth's 1:110m Admin 0 boundaries.
+    Natural Earth data is public domain (${LICENSE_URL}); the world-atlas redistribution license is tracked in scripts/map-data/world-atlas-LICENSE.
+    Transformation: pinned TopoJSON countries converted with d3-geo to a ${WIDTH} by ${HEIGHT} equirectangular viewBox; projected coordinates rounded to two decimals. English orientation labels added by DiveFrame.
   </metadata>
   <style>
     .ocean { fill: #082832; }
@@ -96,26 +105,8 @@ await mkdir(dirname(outputPath), { recursive: true });
 await writeFile(outputPath, svg, "utf8");
 console.log(`Wrote ${outputPath} (${Buffer.byteLength(svg)} bytes)`);
 
-function geometryPaths(geometry) {
-  if (!geometry) return [];
-  if (geometry.type === "Polygon") return [polygonPath(geometry.coordinates)];
-  if (geometry.type === "MultiPolygon") {
-    return geometry.coordinates.map(polygonPath);
-  }
-  return [];
-}
-
-function polygonPath(rings) {
-  return rings
-    .map((ring) =>
-      ring
-        .map(([longitude, latitude], index) => {
-          const { x, y } = project(latitude, longitude);
-          return `${index === 0 ? "M" : "L"}${format(x)} ${format(y)}`;
-        })
-        .join(" ") + " Z",
-    )
-    .join(" ");
+function roundPath(value) {
+  return value.replace(/-?\d+(?:\.\d+)?/g, (number) => format(Number(number)));
 }
 
 function renderLabel(label) {
@@ -130,10 +121,8 @@ function renderLabel(label) {
 }
 
 function project(latitude, longitude) {
-  return {
-    x: ((longitude + 180) / 360) * WIDTH,
-    y: ((90 - latitude) / 180) * HEIGHT,
-  };
+  const [x, y] = projection([longitude, latitude]);
+  return { x, y };
 }
 
 function format(value) {
