@@ -35,7 +35,7 @@ so PWA, production, and Preview data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-12)
+## Current status (2026-08-13)
 
 - Preview channel implementation is complete. The explicit Gradle
   `preview` build type uses `cc.fishese.divelog.preview`; default
@@ -43,9 +43,17 @@ store distribution are not started yet.
 - The signed workflow is `.github/workflows/preview-apk.yml`. It checks out
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
+- The latest shared runtime commit on `main` is `39260493a`; the current
+  Preview release also targets `39260493a` (workflow run
+  `31620713490`). This is the intended no-drift state for the web/PWA and
+  Preview APK, subject to normal hosted-deployment propagation.
 - The current F-Droid MR remains pinned to production commit
-  `994a9571e8013672e8e6a91e10b361733a59251b`; Preview changes do not require
-  changing its recipe.
+  `994a9571e8013672e8e6a91e10b361733a59251b`; this deliberate lag keeps the
+  initial submission stable while Preview and the web continue to advance.
+  Preview changes do not require changing its recipe.
+- F-Droid build layout, the `subdir: android/app` requirement, the removed
+  `output` field, the `Binaries:` trailing-space requirement, and the MR
+  failure analysis are documented in `docs/FDROID-BUILD.md`.
 
 ## Historical Android debug releases (do not use for new releases)
 
@@ -175,6 +183,7 @@ Deep review findings and follow-up recommendations:
 
 Web/APK parity and release checklist: `docs/WEB-APK-SYNC.md`.
 Canonical channel/version procedure: `docs/RELEASE-CHANNELS.md`.
+F-Droid build/update guide: `docs/FDROID-BUILD.md`.
 
 > **Push reminder:** every push to `main` must be classified as web-only or
 > APK-affecting. Shared client/native changes require a new APK built from the

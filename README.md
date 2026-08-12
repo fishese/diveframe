@@ -46,6 +46,8 @@ Full how-to: [User guide](docs/USER-GUIDE.md)
 
 Maintainer release channels, source-commit matching, and web/APK parity rules:
 [Release channels](docs/RELEASE-CHANNELS.md).
+F-Droid recipe and stable-update details:
+[F-Droid build guide](docs/FDROID-BUILD.md).
 
 ## Quick start
 

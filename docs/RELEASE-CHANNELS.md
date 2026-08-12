@@ -1,11 +1,13 @@
 # DiveFrame release channels and web/APK parity
 
-Last verified: 2026-08-12 (Asia/Singapore)
+Last verified: 2026-08-13 (Asia/Singapore)
 
 This is the canonical release note for future sessions. Read it before
 changing a version, release tag, APK workflow, or F-Droid metadata. The
-ignored local `docs/WEB-APK-SYNC.md`, when present, is a companion checklist;
-it is not required to understand or follow the rules in this document.
+F-Droid-specific build contract is in [`FDROID-BUILD.md`](FDROID-BUILD.md).
+The ignored local `docs/WEB-APK-SYNC.md`, when present, is a companion
+checklist; it is not required to understand or follow the rules in this
+document.
 
 ## Source-commit rule
 
@@ -115,6 +117,42 @@ The current MR is pinned to production commit
 changing that MR or recipe. Only reviewer feedback or a concrete F-Droid
 failure justifies touching the submission metadata.
 
+The exact F-Droid working-directory rule, `Binaries` whitespace requirement,
+MR failure analysis, reference-APK contract, and future update checklist are
+maintained in [`FDROID-BUILD.md`](FDROID-BUILD.md). Do not duplicate those
+recipe details in a release note and risk letting the two procedures diverge.
+
+## Shared source and deliberate channel differences
+
+The web/PWA, Preview APK, and production/F-Droid APK are delivery surfaces for
+the same client. Shared paths such as `app/`, `lib/`, `data/`, client-facing
+`public/` assets, translations, IndexedDB/backup code, and shared dependencies
+must not drift between them. A shared runtime change normally requires a new
+web deployment and a new Preview APK from the same pushed commit.
+
+The differences below are intentional and should not be treated as drift:
+
+| Surface | Intentional difference | Release identity |
+| --- | --- | --- |
+| Web/PWA | Browser origin/capabilities, service worker, browser file handling, and Cloudflare delivery | Current `main` deployment; no Android version code |
+| Preview APK | Explicit `assemblePreview`, `cc.fishese.divelog.preview`, Preview label, Preview version-code range, mutable `preview` tag, GitHub signing key | Regular test builds; separately installable |
+| Production/F-Droid APK | Default `assembleRelease`, `cc.fishese.divelog`, stable version/code, immutable production and `fdroid-v...` tags, separate signing keys | Intentional accumulated release; F-Droid source build after approval |
+
+Preview is the replacement for the old nightly test channel. Production is
+not a second Preview stream: it is the stable build that F-Droid will build
+and sign in the future. F-Droid may intentionally remain on an older stable
+commit while `main`, the web deployment, and Preview continue to move forward.
+That is release-channel policy, not accidental drift.
+
+For each shared change, record three facts before publishing:
+
+1. the pushed `main` commit used by the web deployment;
+2. the commit SHA embedded in the Preview release; and
+3. the production commit/tag intended for the next F-Droid release.
+
+If the three SHAs differ, state why. A documentation-only change may leave an
+APK at the prior runtime commit; a shared client change should not.
+
 ## Final drift checks
 
 Before calling a release complete, verify all of the following:
@@ -128,5 +166,9 @@ Before calling a release complete, verify all of the following:
 - The APK version name/code match the release notes and workflow properties.
 - The workflow URL, release tag, asset name, and documentation all refer to
   Preview consistently.
+- The latest Preview release target SHA is the intended shared runtime commit,
+  or any lag is explicitly recorded as intentional.
+- The F-Droid recipe still uses `subdir: android/app`, no `output`, the
+  production default build, and the required `Binaries:` formatting.
 - F-Droid recipe, pinned commit, and stable release conventions remain
   untouched unless the task explicitly concerns a stable F-Droid update.
