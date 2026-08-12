@@ -13,7 +13,7 @@ import { useAppI18n } from "../AppI18nProvider";
 import { AppTopbar } from "../components/AppTopbar";
 
 const ANDROID_RELEASE_URL =
-  "https://github.com/fishese/diveframe/releases/download/nightly/diveframe-nightly.apk";
+  "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk";
 const SOURCE_URL = "https://github.com/fishese/diveframe";
 
 export function AndroidAppPage() {

@@ -1,4 +1,4 @@
-name: Nightly signed APK
+name: Preview signed APK
 
 on:
   schedule:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: nightly-signed-apk
+  group: preview-signed-apk
   cancel-in-progress: false
 
 jobs:
@@ -59,58 +59,61 @@ jobs:
           npm run prepare:sql-wasm
           npm run native:sync
 
-      - name: Build release APK
+      - name: Build Preview APK
         working-directory: android
         shell: bash
         env:
           RUN_NUMBER: ${{ github.run_number }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
-          nightly_version_code=$((100000 + RUN_NUMBER))
+          preview_version_code=$((100000 + RUN_NUMBER))
           short_sha="${COMMIT_SHA:0:7}"
-          nightly_version_name="nightly.${RUN_NUMBER}.${short_sha}"
+          preview_version_name="preview.${RUN_NUMBER}.${short_sha}"
           bash gradlew --no-daemon \
-            -PnightlyVersionCode="$nightly_version_code" \
-            -PnightlyVersionName="$nightly_version_name" \
-            assembleRelease
+            -PpreviewVersionCode="$preview_version_code" \
+            -PpreviewVersionName="$preview_version_name" \
+            assemblePreview
 
       - name: Sign APK
         id: sign_apk
         uses: r0adkll/sign-android-release@v1
         with:
-          releaseDirectory: android/app/build/outputs/apk/release
+          releaseDirectory: android/app/build/outputs/apk/preview
           signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
           alias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Prepare nightly asset
+      - name: Prepare Preview asset
         shell: bash
         run: |
-          cp "${{ steps.sign_apk.outputs.signedReleaseFile }}" diveframe-nightly.apk
-          sha256sum diveframe-nightly.apk
+          cp "${{ steps.sign_apk.outputs.signedReleaseFile }}" diveframe-preview.apk
+          sha256sum diveframe-preview.apk
 
       - name: Upload signed APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: diveframe-nightly-${{ github.run_number }}
-          path: diveframe-nightly.apk
+          name: diveframe-preview-${{ github.run_number }}
+          path: diveframe-preview.apk
           if-no-files-found: error
 
-      - name: Publish nightly release
+      - name: Publish Preview release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: nightly
-          name: DiveFrame nightly
+          tag_name: preview
+          name: DiveFrame Preview
           target_commitish: ${{ github.sha }}
           prerelease: true
           make_latest: false
-          files: diveframe-nightly.apk
+          files: diveframe-preview.apk
           body: |
-            Signed GitHub nightly APK.
+            Signed GitHub Preview APK.
 
             Commit: ${{ github.sha }}
+            Package: cc.fishese.divelog.preview
+            Version name: `preview.${{ github.run_number }}.<short-sha>`
             Version code: 100000 + workflow run ${{ github.run_number }}
 
-            This channel is signed separately from F-Droid. Export app data
-            before switching between the GitHub nightly and F-Droid builds.
+            Preview is separately installable from production and uses
+            separate app-private storage. This channel is signed separately
+            from F-Droid.

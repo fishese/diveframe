@@ -9,8 +9,8 @@
       "date": "2026-08-08",
       "links": [
         {
-          "label": "Download nightly Android APK",
-          "href": "https://github.com/fishese/diveframe/releases/download/nightly/diveframe-nightly.apk"
+          "label": "Download DiveFrame Preview APK",
+          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
         }
       ]
     },

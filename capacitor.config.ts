@@ -7,6 +7,9 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const devServerUrl = process.env.DIVEFRAME_NATIVE_SERVER_URL?.trim();
 
 const config: CapacitorConfig = {
+  // Keep Capacitor's canonical app identity on production. The Android-only
+  // Preview build uses an applicationId suffix and resource overlays, so
+  // `cap sync` must continue to update the production shell by default.
   appId: "cc.fishese.divelog",
   appName: "DiveFrame",
   webDir: "dist-native",

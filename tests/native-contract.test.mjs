@@ -28,6 +28,15 @@ const files = {
     "../android/app/src/main/AndroidManifest.xml",
     import.meta.url,
   ),
+  buildGradle: new URL("../android/app/build.gradle", import.meta.url),
+  previewStrings: new URL(
+    "../android/app/src/preview/res/values/strings.xml",
+    import.meta.url,
+  ),
+  previewShortcuts: new URL(
+    "../android/app/src/preview/res/xml/shortcuts.xml",
+    import.meta.url,
+  ),
   capability: new URL(
     "../lib/dive-computer-capability.ts",
     import.meta.url,
@@ -122,6 +131,31 @@ test("BLE permissions, scan, cancel, and classic GATT transport are wired", asyn
   assert.match(capability, /downloadProgress/);
   assert.match(capability, /diveCaptured/);
   assert.match(capability, /deviceFound/);
+});
+
+test("Preview Android identity is isolated from production", async () => {
+  const [buildGradle, previewStrings, previewShortcuts] = await Promise.all([
+    readFile(files.buildGradle, "utf8"),
+    readFile(files.previewStrings, "utf8"),
+    readFile(files.previewShortcuts, "utf8"),
+  ]);
+
+  assert.match(buildGradle, /applicationId "cc\.fishese\.divelog"/);
+  assert.match(buildGradle, /previewVersionCode/);
+  assert.match(buildGradle, /previewVersionName/);
+  assert.match(buildGradle, /preview\s*\{[\s\S]*applicationIdSuffix "\.preview"/);
+  assert.doesNotMatch(buildGradle, /nightlyVersion/);
+  assert.match(previewStrings, /app_name">DiveFrame Preview</);
+  assert.match(previewStrings, /package_name">cc\.fishese\.divelog\.preview</);
+  assert.match(previewStrings, /custom_url_scheme">cc\.fishese\.divelog\.preview</);
+  assert.match(
+    previewShortcuts,
+    /android:targetPackage="cc\.fishese\.divelog\.preview"/,
+  );
+  assert.match(
+    previewShortcuts,
+    /android:targetClass="cc\.fishese\.divelog\.MainActivity"/,
+  );
 });
 
 test("Android native build pins the NDK version", async () => {

@@ -31,14 +31,21 @@ on the device; map-name and nearby-site lookups use network services.
   your logbook data stays on the device.
 - **Android APK.** Same app, plus classic Shearwater Bluetooth download and
   native save/share —
-  [download the signed GitHub nightly APK](https://github.com/fishese/diveframe/releases/download/nightly/diveframe-nightly.apk). Nightly version names and codes are generated per GitHub Actions run; F-Droid releases will use separate, accumulated release versions.
+  [download the signed GitHub Preview APK](https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk). The Preview workflow builds the exact pushed source commit with version names `preview.<run>.<short-sha>`; F-Droid releases use separate, accumulated production versions.
 
-  GitHub nightlies and F-Droid builds use different signing keys. Before
-  switching between them, use **Settings → Export app data**, uninstall the
-  current APK, install the other channel, then use **Settings → Import app
-  data**. Android cannot update an installed APK across signing keys.
+  DiveFrame Preview and production use separate Android application IDs and
+  private storage. Use **Settings → Export app data** and **Import app data**
+  when moving a logbook between them.
+
+  The legacy GitHub nightly and F-Droid production APKs used different
+  signing keys. If that old nightly is installed, export app data, uninstall
+  it, install F-Droid, then use **Settings → Import app data**. Preview and
+  production can remain installed together but keep separate data.
 
 Full how-to: [User guide](docs/USER-GUIDE.md)
+
+Maintainer release channels, source-commit matching, and web/APK parity rules:
+[Release channels](docs/RELEASE-CHANNELS.md).
 
 ## Quick start
 
@@ -55,8 +62,8 @@ data — transfer with an app-data backup.
 
 ## For contributors
 
-Node.js 22+. Before pushing shared web/APK changes, see
-[web/APK sync](docs/WEB-APK-SYNC.md).
+Node.js 22+. Before pushing shared web/APK changes, see the
+[release channels and parity procedure](docs/RELEASE-CHANNELS.md).
 
 ```sh
 npm install

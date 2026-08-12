@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
-def configuredVersionCode = project.findProperty('nightlyVersionCode')
-def configuredVersionName = project.findProperty('nightlyVersionName')
+def configuredVersionCode = project.findProperty('previewVersionCode')
+def configuredVersionName = project.findProperty('previewVersionName')
 
 android {
     namespace = "cc.fishese.divelog"
@@ -33,6 +33,11 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        preview {
+            initWith release
+            applicationIdSuffix ".preview"
+            matchingFallbacks = ['release']
         }
     }
     externalNativeBuild {

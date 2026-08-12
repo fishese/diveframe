@@ -23,15 +23,31 @@ path if a future beta change does require a reset.
 The current install surfaces are:
 
 - the installable PWA at `https://divelog.fishese.cc`; and
-- a Capacitor **Android debug APK** that ships the same web UI plus classic
-  Shearwater BLE import, native file export, and private app storage.
+- the production Capacitor Android app, application ID
+  `cc.fishese.divelog`, distributed through the stable/F-Droid release path;
+- the separately installable signed GitHub Preview APK, application ID
+  `cc.fishese.divelog.preview`, label **DiveFrame Preview**, and mutable tag
+  `preview`.
 
-Both surfaces share the same normalized dive model and IndexedDB stores. The
-APK uses its own WebView origin (`https://localhost`), so PWA and APK data are
+The web/PWA and both APK channels share the same normalized dive model and
+IndexedDB stores. Each APK uses its own WebView origin (`https://localhost`),
+so PWA, production, and Preview data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-07)
+## Current status (2026-08-12)
+
+- Preview channel implementation is complete. The explicit Gradle
+  `preview` build type uses `cc.fishese.divelog.preview`; default
+  `assembleRelease` remains production-only for F-Droid.
+- The signed workflow is `.github/workflows/preview-apk.yml`. It checks out
+  `${{ github.sha }}`, runs `npm run native:sync`, and publishes
+  `diveframe-preview.apk` under the mutable `preview` tag.
+- The current F-Droid MR remains pinned to production commit
+  `994a9571e8013672e8e6a91e10b361733a59251b`; Preview changes do not require
+  changing its recipe.
+
+## Historical Android debug releases (do not use for new releases)
 
 - Light/dark theme (explicit toggle, device-local persistence), PWA + Android
   Memos shortcuts, light-theme contrast polish, and desktop logbook scroll
@@ -158,10 +174,12 @@ Deep review findings and follow-up recommendations:
 `docs/2026-08-03-deep-code-audit.md`.
 
 Web/APK parity and release checklist: `docs/WEB-APK-SYNC.md`.
+Canonical channel/version procedure: `docs/RELEASE-CHANNELS.md`.
 
 > **Push reminder:** every push to `main` must be classified as web-only or
 > APK-affecting. Shared client/native changes require a new APK built from the
-> same commit and published as the latest `diveframe-debug.apk` release asset.
+> same commit. Use Preview for regular test builds; use the stable/F-Droid
+> production process only for an intentional production release.
 > A web push never updates an installed or downloadable APK by itself.
 
 Deployment is managed by the repository's Cloudflare Worker integration.
@@ -649,12 +667,13 @@ requests into the browser and configure a static Next/Vite export. Verify the
 public OpenStreetMap services' browser CORS and usage-policy requirements
 before doing so.
 
-## Recommended next milestone: hardening after the debug APK
+## Recommended next milestone: hardening after Preview/F-Droid preparation
 
 `docs/PRODUCT-SPEC.md` is the canonical review document. A Capacitor Android
-debug APK already ships the shared UI and classic Shearwater BLE import.
-Remaining Priority A/C items and deployed-APK CORS smoke testing are the
-recommended gate before store packaging or treating BLE as fully hardened.
+Preview already ships the shared UI and classic Shearwater BLE import.
+Remaining Priority A/C items, deployed-APK CORS smoke testing, and the stable
+production/F-Droid release gate are the recommended steps before store
+packaging or treating BLE as fully hardened.
 
 Backup hardening remains the highest-priority part of that gate.
 
