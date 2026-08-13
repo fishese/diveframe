@@ -258,16 +258,33 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(memosApp, /discardOnUnmountRef/);
   assert.match(memosApp, /deleteMemoSafely/);
   assert.match(memosApp, /onDeleteMemo/);
-  const [diveMapPage, diveMapApp, diveMapLogic, diveMapAudit, diveMapAsset, diveMapDocs, diveMapGenerator, diveMapSource] =
+  const [
+    diveMapPage,
+    diveMapApp,
+    diveMapLogic,
+    diveMapAudit,
+    diveMapAsset,
+    diveMapLightAsset,
+    diveMapDetailAsset,
+    diveMapDetailLightAsset,
+    diveMapDocs,
+    diveMapGenerator,
+    diveMapSource,
+    diveMapDetailSource,
+  ] =
     await Promise.all([
       readFile("app/map/page.tsx", "utf8"),
       readFile("app/map/DiveMapApp.tsx", "utf8"),
       readFile("lib/dive-map.ts", "utf8"),
       readFile("lib/dive-map-site-audit.ts", "utf8"),
       readFile("public/maps/world-dive-map.svg", "utf8"),
+      readFile("public/maps/world-dive-map-light.svg", "utf8"),
+      readFile("public/maps/world-dive-map-detail.svg", "utf8"),
+      readFile("public/maps/world-dive-map-detail-light.svg", "utf8"),
       readFile("docs/dive-map.md", "utf8"),
       readFile("scripts/generate-dive-map-svg.mjs", "utf8"),
       readFile("scripts/map-data/countries-110m.json", "utf8"),
+      readFile("scripts/map-data/countries-50m.json", "utf8"),
     ]);
   assert.match(diveMapPage, /DiveMapApp/);
   assert.match(diveMapApp, /buildDiveMapData/);
@@ -286,6 +303,13 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapApp, /href={`\/\?dive=\$\{encodeURIComponent\(dive\.id\)\}`}/);
   assert.match(diveMapApp, /Fit|fitToDives/);
   assert.match(diveMapApp, /\/maps\/world-dive-map\.svg/);
+  assert.match(diveMapApp, /useColorTheme/);
+  assert.match(diveMapApp, /DETAIL_MAP_ZOOM = 8/);
+  assert.match(diveMapApp, /BUTTON_ZOOM_LEVELS/);
+  assert.match(diveMapApp, /new Image\(\)/);
+  assert.match(diveMapApp, /if \(active\) setLoadedDetailMapAsset\(detailMapAsset\)/);
+  assert.match(diveMapApp, /loadedDetailMapAsset === detailMapAsset/);
+  assert.match(diveMapApp, /dive-map-detail-layer/);
   assert.doesNotMatch(diveMapApp, /fetch\s*\(/);
   assert.match(diveMapLogic, /UNKNOWN_DIVE_CLUSTER_RADIUS_KM = 0\.25/);
   assert.match(diveMapLogic, /userSiteCatalogId/);
@@ -300,13 +324,23 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapAsset, /Natural Earth 4\.1\.0/);
   assert.match(diveMapAsset, /Hong Kong/);
   assert.match(diveMapAsset, /Puerto Galera/);
+  assert.match(diveMapLightAsset, /#cfe8ec/);
+  assert.match(diveMapLightAsset, /#163a3f/);
+  assert.match(diveMapDetailAsset, /Natural Earth's 1:50m/);
+  assert.match(diveMapDetailAsset, /detailed country and coastline geometry/);
+  assert.doesNotMatch(diveMapDetailAsset, /Hong Kong/);
+  assert.match(diveMapDetailLightAsset, /#cfe8ec/);
+  assert.match(diveMapDetailLightAsset, /Natural Earth's 1:50m/);
   assert.match(diveMapDocs, /public domain/i);
   assert.match(diveMapDocs, /world-atlas/);
   assert.match(diveMapGenerator, /d3-geo/);
   assert.match(diveMapGenerator, /topojson-client/);
   assert.match(diveMapGenerator, /countries-110m\.json/);
+  assert.match(diveMapGenerator, /countries-50m\.json/);
+  assert.match(diveMapGenerator, /world-dive-map-detail-light\.svg/);
   assert.doesNotMatch(diveMapGenerator, /fetch\s*\(/);
   assert.match(diveMapSource, /"type":"Topology"/);
+  assert.match(diveMapDetailSource, /"type":"Topology"/);
   assert.match(app, /MemoDiveMatchHints/);
   assert.match(app, /diveNeedsPlaceNameHint/);
   assert.match(app, /listMemosNearDive/);
@@ -720,7 +754,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v14/);
+  assert.match(serviceWorker, /diveframe-shell-v15/);
   assert.match(serviceWorker, /"\/memo"/);
   assert.match(serviceWorker, /"\/catalog"/);
   assert.match(serviceWorker, /backgrounds\/bubbles-bg\.jpg/);

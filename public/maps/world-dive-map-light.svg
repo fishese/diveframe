@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" role="img" aria-labelledby="title description">
-  <title id="title">DiveFrame offline 110m world map (dark theme)</title>
+  <title id="title">DiveFrame offline 110m world map (light theme)</title>
   <description id="description">An equirectangular world map with broad geographic labels for orienting dive markers.</description>
   <metadata>
     Source: world-atlas 2.0.2 (Natural Earth 4.1.0) (https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json; repository https://github.com/topojson/world-atlas/tree/v2.0.2).
@@ -9,15 +9,15 @@
     Transformation: pinned TopoJSON countries converted with d3-geo to a 1200 by 600 equirectangular viewBox; projected coordinates rounded to two decimals. English orientation labels added by DiveFrame.
   </metadata>
   <style>
-    .ocean { fill: #082832; }
-    .grid { fill: none; stroke: #31515a; stroke-width: .65; opacity: .34; }
-    .land { fill: #315b5f; fill-rule: evenodd; stroke: #789294; stroke-linejoin: round; stroke-width: .55; }
-    .equator { stroke: #6a888a; stroke-width: .8; opacity: .52; }
-    .label { paint-order: stroke; stroke: #082832; stroke-linejoin: round; stroke-width: 2.8px; text-anchor: middle; }
-    .country { fill: #e4efec; font: 600 10px Arial, Helvetica, sans-serif; letter-spacing: .05em; }
-    .region { fill: #b5ddd4; font: 500 8px Arial, Helvetica, sans-serif; }
-    .leader { fill: none; stroke: #9fc9c2; stroke-width: .7; opacity: .78; }
-    .anchor { fill: #9fc9c2; opacity: .86; }
+    .ocean { fill: #cfe8ec; }
+    .grid { fill: none; stroke: #527d82; stroke-width: .65; opacity: .42; }
+    .land { fill: #f5f1dc; fill-rule: evenodd; stroke: #526d70; stroke-linejoin: round; stroke-width: .55; }
+    .equator { stroke: #315f65; stroke-width: .8; opacity: .52; }
+    .label { paint-order: stroke; stroke: #f5f1dc; stroke-linejoin: round; stroke-width: 2.8px; text-anchor: middle; }
+    .country { fill: #163a3f; font: 600 10px Arial, Helvetica, sans-serif; letter-spacing: .05em; }
+    .region { fill: #0a6f64; font: 500 8px Arial, Helvetica, sans-serif; }
+    .leader { fill: none; stroke: #39756d; stroke-width: .7; opacity: .78; }
+    .anchor { fill: #39756d; opacity: .86; }
   </style>
   <rect class="ocean" width="1200" height="600" />
   <g class="grid" aria-hidden="true">

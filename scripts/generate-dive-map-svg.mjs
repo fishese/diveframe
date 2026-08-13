@@ -4,14 +4,55 @@ import { fileURLToPath } from "node:url";
 import { geoEquirectangular, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
 
-const SOURCE_VERSION = "world-atlas 2.0.2 (Natural Earth 4.1.0)";
-const SOURCE_URL =
-  "https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json";
 const SOURCE_REPOSITORY_URL =
   "https://github.com/topojson/world-atlas/tree/v2.0.2";
 const LICENSE_URL = "https://www.naturalearthdata.com/about/terms-of-use/";
 const WIDTH = 1200;
 const HEIGHT = 600;
+const MAPS = [
+  {
+    scale: "110m",
+    labels: true,
+    sourceFile: "countries-110m.json",
+    outputs: {
+      dark: "world-dive-map.svg",
+      light: "world-dive-map-light.svg",
+    },
+  },
+  {
+    scale: "50m",
+    labels: false,
+    sourceFile: "countries-50m.json",
+    outputs: {
+      dark: "world-dive-map-detail.svg",
+      light: "world-dive-map-detail-light.svg",
+    },
+  },
+];
+const THEMES = {
+  dark: {
+    ocean: "#082832",
+    grid: "#31515a",
+    equator: "#6a888a",
+    land: "#315b5f",
+    coast: "#789294",
+    labelHalo: "#082832",
+    country: "#e4efec",
+    region: "#b5ddd4",
+    leader: "#9fc9c2",
+  },
+  light: {
+    ocean: "#cfe8ec",
+    grid: "#527d82",
+    equator: "#315f65",
+    land: "#f5f1dc",
+    coast: "#526d70",
+    labelHalo: "#f5f1dc",
+    country: "#163a3f",
+    region: "#0a6f64",
+    leader: "#39756d",
+  },
+};
 
 const labels = [
   { text: "Galápagos", latitude: -0.6, longitude: -90.6, kind: "region", dx: -8, dy: -9 },
@@ -34,25 +75,10 @@ const labels = [
 ];
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const sourcePath = resolve(root, "scripts", "map-data", "countries-110m.json");
-const outputPath = resolve(root, "public", "maps", "world-dive-map.svg");
-const topology = JSON.parse(await readFile(sourcePath, "utf8"));
-
-if (
-  topology?.type !== "Topology" ||
-  topology.objects?.countries?.type !== "GeometryCollection"
-) {
-  throw new Error("The pinned world-atlas source is not a countries TopoJSON topology.");
-}
-
 const projection = geoEquirectangular()
   .scale(WIDTH / (2 * Math.PI))
   .translate([WIDTH / 2, HEIGHT / 2]);
 const path = geoPath(projection);
-const countries = feature(topology, topology.objects.countries);
-const paths = countries.features
-  .map((country) => `    <path d="${roundPath(path(country))}" />`)
-  .join("\n");
 
 const grid = [
   ...[-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150].map((longitude) => {
@@ -65,27 +91,54 @@ const grid = [
   }),
 ].join("\n");
 
-const labelMarkup = labels.map(renderLabel).join("\n");
-const svg = `<?xml version="1.0" encoding="UTF-8"?>
+for (const map of MAPS) {
+  const sourcePath = resolve(root, "scripts", "map-data", map.sourceFile);
+  const topology = JSON.parse(await readFile(sourcePath, "utf8"));
+  if (
+    topology?.type !== "Topology" ||
+    topology.objects?.countries?.type !== "GeometryCollection"
+  ) {
+    throw new Error(`${map.sourceFile} is not a countries TopoJSON topology.`);
+  }
+  const countries = feature(topology, topology.objects.countries);
+  const paths = countries.features
+    .map((country) => `    <path d="${roundPath(path(country))}" />`)
+    .join("\n");
+
+  for (const [themeName, palette] of Object.entries(THEMES)) {
+    const outputPath = resolve(root, "public", "maps", map.outputs[themeName]);
+    const svg = renderSvg({ map, palette, paths, themeName });
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, svg, "utf8");
+    console.log(`Wrote ${outputPath} (${Buffer.byteLength(svg)} bytes)`);
+  }
+}
+
+function renderSvg({ map, palette, paths, themeName }) {
+  const labelMarkup = map.labels
+    ? `\n  <g aria-label="Geographic orientation labels">\n${labels.map(renderLabel).join("\n")}\n  </g>`
+    : "";
+  const detail = map.scale === "50m";
+  return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-labelledby="title description">
-  <title id="title">DiveFrame offline world map</title>
-  <description id="description">An equirectangular world map with broad geographic labels for orienting dive markers.</description>
+  <title id="title">DiveFrame offline ${map.scale} world map (${themeName} theme)</title>
+  <description id="description">An equirectangular world map${map.labels ? " with broad geographic labels for orienting dive markers" : " with detailed country and coastline geometry"}.</description>
   <metadata>
-    Source: ${SOURCE_VERSION} (${SOURCE_URL}; repository ${SOURCE_REPOSITORY_URL}).
-    The country data is derived from Natural Earth's 1:110m Admin 0 boundaries.
+    Source: world-atlas 2.0.2 (Natural Earth 4.1.0) (https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/${map.sourceFile}; repository ${SOURCE_REPOSITORY_URL}).
+    The country data is derived from Natural Earth's 1:${map.scale} Admin 0 boundaries.
     Natural Earth data is public domain (${LICENSE_URL}); the world-atlas redistribution license is tracked in scripts/map-data/world-atlas-LICENSE.
-    Transformation: pinned TopoJSON countries converted with d3-geo to a ${WIDTH} by ${HEIGHT} equirectangular viewBox; projected coordinates rounded to two decimals. English orientation labels added by DiveFrame.
+    Transformation: pinned TopoJSON countries converted with d3-geo to a ${WIDTH} by ${HEIGHT} equirectangular viewBox; projected coordinates rounded to two decimals. ${map.labels ? "English orientation labels added by DiveFrame." : "High-zoom geometry omits orientation labels."}
   </metadata>
   <style>
-    .ocean { fill: #082832; }
-    .grid { fill: none; stroke: #31515a; stroke-width: .65; opacity: .34; }
-    .land { fill: #315b5f; fill-rule: evenodd; stroke: #789294; stroke-linejoin: round; stroke-width: .55; }
-    .equator { stroke: #6a888a; stroke-width: .8; opacity: .52; }
-    .label { paint-order: stroke; stroke: #082832; stroke-linejoin: round; stroke-width: 2.8px; text-anchor: middle; }
-    .country { fill: #e4efec; font: 600 10px Arial, Helvetica, sans-serif; letter-spacing: .05em; }
-    .region { fill: #b5ddd4; font: 500 8px Arial, Helvetica, sans-serif; }
-    .leader { fill: none; stroke: #9fc9c2; stroke-width: .7; opacity: .78; }
-    .anchor { fill: #9fc9c2; opacity: .86; }
+    .ocean { fill: ${palette.ocean}; }
+    .grid { fill: none; stroke: ${palette.grid}; stroke-width: ${detail ? ".35" : ".65"}; opacity: ${themeName === "light" ? ".42" : ".34"}; }
+    .land { fill: ${palette.land}; fill-rule: evenodd; stroke: ${palette.coast}; stroke-linejoin: round; stroke-width: ${detail ? ".25" : ".55"}; }
+    .equator { stroke: ${palette.equator}; stroke-width: ${detail ? ".45" : ".8"}; opacity: .52; }
+    .label { paint-order: stroke; stroke: ${palette.labelHalo}; stroke-linejoin: round; stroke-width: 2.8px; text-anchor: middle; }
+    .country { fill: ${palette.country}; font: 600 10px Arial, Helvetica, sans-serif; letter-spacing: .05em; }
+    .region { fill: ${palette.region}; font: 500 8px Arial, Helvetica, sans-serif; }
+    .leader { fill: none; stroke: ${palette.leader}; stroke-width: .7; opacity: .78; }
+    .anchor { fill: ${palette.leader}; opacity: .86; }
   </style>
   <rect class="ocean" width="${WIDTH}" height="${HEIGHT}" />
   <g class="grid" aria-hidden="true">
@@ -94,16 +147,10 @@ ${grid}
   <path class="grid equator" d="M 0 ${HEIGHT / 2} H ${WIDTH}" aria-hidden="true" />
   <g class="land" aria-label="Country and coastline geometry">
 ${paths}
-  </g>
-  <g aria-label="Geographic orientation labels">
-${labelMarkup}
-  </g>
+  </g>${labelMarkup}
 </svg>
 `;
-
-await mkdir(dirname(outputPath), { recursive: true });
-await writeFile(outputPath, svg, "utf8");
-console.log(`Wrote ${outputPath} (${Buffer.byteLength(svg)} bytes)`);
+}
 
 function roundPath(value) {
   return value.replace(/-?\d+(?:\.\d+)?/g, (number) => format(Number(number)));

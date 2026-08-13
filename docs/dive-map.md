@@ -1,26 +1,45 @@
 # Offline dive map
 
-DiveFrame's Dive Map uses one bundled base-map asset:
-`public/maps/world-dive-map.svg`. The web/PWA and Capacitor Android builds ship
-the same file, so viewing the map does not require map tiles, geocoding, an
-account, or a network connection.
+DiveFrame's Dive Map uses bundled, generated SVG base maps under
+`public/maps/`. Dark and light variants use the same geometry. The 110m maps
+cover world through 8x zoom; the 50m maps are used only for the new 12.8x and
+20.5x button levels (and equivalent gesture zoom above 8x). The web/PWA and
+Capacitor Android builds ship the same files, so viewing the map does not
+require map tiles, geocoding, an account, or a network connection.
 
 ## Geography source and license
 
-- Source: `world-atlas` 2.0.2 `countries-110m.json`
+- Source: `world-atlas` 2.0.2 `countries-110m.json` and `countries-50m.json`
 - Upstream repository: <https://github.com/topojson/world-atlas/tree/v2.0.2>
-- Pinned source: `scripts/map-data/countries-110m.json`
-- Source URL: <https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json>
-- Underlying data: Natural Earth 1:110m Admin 0 country boundaries
+- Pinned sources: `scripts/map-data/countries-110m.json` and
+  `scripts/map-data/countries-50m.json`
+- Source URLs:
+  <https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json> and
+  <https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json>
+- Underlying data: Natural Earth 1:110m and 1:50m Admin 0 country boundaries
 - Data terms: public domain; see <https://www.naturalearthdata.com/about/terms-of-use/>
 - Redistribution license: `scripts/map-data/world-atlas-LICENSE`
 Run `npm run generate:map` (or `node scripts/generate-dive-map-svg.mjs`) to
 reproduce the committed asset. The generator uses the pinned local TopoJSON
 file, so it does not need network access. It converts WGS84 geometry with
 d3-geo's equirectangular projection into a 1200 by 600 viewBox, rounds
-projected coordinates to two decimals, and adds restrained styling, a
-latitude/longitude grid, and broad English orientation labels. It does not add
-or infer dive sites.
+projected coordinates to two decimals, and adds restrained theme-specific
+styling and a latitude/longitude grid. The 110m maps include broad English
+orientation labels; the high-zoom 50m maps omit them so enlarged labels do not
+obscure detailed coastlines. It does not add or infer dive sites.
+
+## Zoom and performance
+
+The normal 110m SVG is about 150 KB uncompressed; each 50m SVG is about
+1.345 MB uncompressed (approximately 477 KB with gzip or 296 KB with Brotli).
+Keeping 110m below 8x avoids parsing and rendering roughly nine times as much
+geometry where the extra vertices would collapse into the same screen pixels.
+
+The current theme's 50m asset begins preloading at 6x. The 110m image remains
+rendered underneath until the exact requested detail asset has loaded, then the
+detail layer fades in above 8x. A cancelled or stale load from a previous theme
+cannot activate the wrong asset. The service worker pre-caches all four maps
+for complete PWA offline use; caching does not parse or render the detailed SVG.
 
 ## Projection
 

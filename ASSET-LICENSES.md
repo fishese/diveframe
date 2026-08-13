@@ -50,14 +50,15 @@ build.
 
 ## Offline world map
 
-File: `public/maps/world-dive-map.svg`
+Files: `public/maps/world-dive-map*.svg`
 
 The country and coastline geometry is from the pinned `world-atlas` 2.0.2
-`countries-110m.json` redistribution of Natural Earth 1:110m Admin 0
-boundaries. Natural Earth places its map data in the public domain and its
-terms are recorded at <https://www.naturalearthdata.com/about/terms-of-use/>.
-The world-atlas redistribution license is included at
-`scripts/map-data/world-atlas-LICENSE`; the source and repository are recorded
-in `scripts/map-data/README.md` and the generated SVG metadata.
+`countries-110m.json` and `countries-50m.json` redistributions of Natural Earth
+1:110m and 1:50m Admin 0 boundaries. Natural Earth places its map data in the
+public domain and its terms are recorded at
+<https://www.naturalearthdata.com/about/terms-of-use/>. The world-atlas
+redistribution license is included at `scripts/map-data/world-atlas-LICENSE`;
+the sources and repository are recorded in `scripts/map-data/README.md` and
+the generated SVG metadata.
 The generator uses the locally pinned TopoJSON source with d3-geo and does not
 download map data at application runtime.

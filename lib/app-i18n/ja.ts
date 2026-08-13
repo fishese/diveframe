@@ -164,9 +164,10 @@ export const ja: Record<keyof typeof en, string> = {
   manualSiteSaved: "「{name}」を保存し、ポイント記録に追加しました",
   siteSavedAs: "ポイントを「{name}」として保存しました",
   siteSaveFailed: "ダイビングポイントを保存できませんでした。",
-  privateDiveArchive: "ダイブログツール",
-  heroTitle: "ログを、もっと充実させる。",
-  heroDescription: "DiveFrameは、複数のソースにあるダイブ記録をまとめ、より充実したログブックを作成します。",
+  privateDiveArchive: "ログ管理",
+  heroTitle: "ダイブログ",
+  heroDescription:
+    "ダイブコンピューターのデータ、場所、メモをひとつにまとめて管理します。",
   dives: "ダイブ",
 
   divesAtNamedSites: "ダイビングポイント",
@@ -738,9 +739,10 @@ export const ja: Record<keyof typeof en, string> = {
   importGuideMemosPrompt: "ダイブログをインポートする前に、ダイビングについて短いメモを残せます。",
   openDiveMemos: "ダイブメモを開く",
   diveMap: "ダイブマップ",
-  diveMapEyebrow: "潜った場所",
-  diveMapTitle: "地図に表示できるダイブを、端末内だけで確認。",
-  diveMapDescription: "座標やDiveFrameのポイントからダイビングを表示します。",
+  diveMapEyebrow: "マップ",
+  diveMapTitle: "ダイブマップ",
+  diveMapDescription:
+    "保存された座標または選択した DiveFrame のポイントがあるダイブを表示します。データは端末内にのみ保存されます。",
   loadingDiveMap: "ダイブマップを読み込み中…",
   unableLoadDiveMap: "ダイブマップを読み込めませんでした。",
   tryAgain: "もう一度試す",

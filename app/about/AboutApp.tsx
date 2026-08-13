@@ -91,7 +91,7 @@ export function AboutApp() {
 
         <section className="about-reconcile">
           <div className="about-reconcile-icon">
-            <Filter size={25} />
+            <Filter size={22} />
           </div>
           <div>
             <p className="eyebrow">{t("aboutSourceEyebrow")}</p>

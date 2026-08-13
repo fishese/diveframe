@@ -51,6 +51,7 @@ import {
 import { subscribeLocalDataChanges } from "@/lib/cross-tab-sync";
 import { useAppI18n } from "../AppI18nProvider";
 import { AppTopbar } from "../components/AppTopbar";
+import { useColorTheme } from "../ThemeProvider";
 
 type MapView = { x: number; y: number; width: number; height: number };
 type PointerPosition = { clientX: number; clientY: number };
@@ -62,10 +63,25 @@ const WORLD_VIEW: MapView = {
   width: DIVE_MAP_WIDTH,
   height: DIVE_MAP_HEIGHT,
 };
-const MIN_VIEW_WIDTH = 150;
+const ZOOM_STEP = 1.6;
+const DETAIL_MAP_ZOOM = 8;
+const DETAIL_MAP_PRELOAD_ZOOM = 6;
+const MAX_ZOOM = DETAIL_MAP_ZOOM * ZOOM_STEP * ZOOM_STEP;
+const MIN_VIEW_WIDTH = DIVE_MAP_WIDTH / MAX_ZOOM;
+const BUTTON_ZOOM_LEVELS = [
+  1,
+  ZOOM_STEP,
+  ZOOM_STEP ** 2,
+  ZOOM_STEP ** 3,
+  ZOOM_STEP ** 4,
+  DETAIL_MAP_ZOOM,
+  DETAIL_MAP_ZOOM * ZOOM_STEP,
+  MAX_ZOOM,
+];
 
 export function DiveMapApp() {
   const { language, t } = useAppI18n();
+  const { colorTheme } = useColorTheme();
   const [dives, setDives] = useState<LocalDive[]>([]);
   const [supplementaryCatalog, setSupplementaryCatalog] = useState<{
     catalog: DiveSiteCatalog;
@@ -81,6 +97,9 @@ export function DiveMapApp() {
   const [siteAuditExpanded, setSiteAuditExpanded] = useState(false);
   const [view, setView] = useState<MapView>(WORLD_VIEW);
   const [canvasWidth, setCanvasWidth] = useState(DIVE_MAP_WIDTH);
+  const [loadedDetailMapAsset, setLoadedDetailMapAsset] = useState<string | null>(
+    null,
+  );
   const canvasRef = useRef<SVGSVGElement>(null);
   const refreshGenerationRef = useRef(0);
   const siteAuditGenerationRef = useRef(0);
@@ -178,6 +197,17 @@ export function DiveMapApp() {
     [catalog, dives],
   );
   const zoom = DIVE_MAP_WIDTH / view.width;
+  const baseMapAsset =
+    colorTheme === "light"
+      ? "/maps/world-dive-map-light.svg"
+      : "/maps/world-dive-map.svg";
+  const detailMapAsset =
+    colorTheme === "light"
+      ? "/maps/world-dive-map-detail-light.svg"
+      : "/maps/world-dive-map-detail.svg";
+  const shouldPreloadDetailMap = zoom >= DETAIL_MAP_PRELOAD_ZOOM;
+  const showDetailMap =
+    zoom > DETAIL_MAP_ZOOM && loadedDetailMapAsset === detailMapAsset;
   const pixelsPerMapUnit = canvasWidth / view.width;
   const displayMarkers = useMemo(
     () => clusterOverlappingDiveMapMarkers(mapData.markers, pixelsPerMapUnit),
@@ -188,6 +218,24 @@ export function DiveMapApp() {
       displayMarkers.find((marker) => marker.id === selectedMarkerId) ?? null,
     [displayMarkers, selectedMarkerId],
   );
+
+  useEffect(() => {
+    if (!shouldPreloadDetailMap || loadedDetailMapAsset === detailMapAsset) {
+      return;
+    }
+    let active = true;
+    const detailImage = new Image();
+    const markLoaded = () => {
+      if (active) setLoadedDetailMapAsset(detailMapAsset);
+    };
+    detailImage.addEventListener("load", markLoaded);
+    detailImage.src = detailMapAsset;
+    if (detailImage.complete && detailImage.naturalWidth > 0) markLoaded();
+    return () => {
+      active = false;
+      detailImage.removeEventListener("load", markLoaded);
+    };
+  }, [detailMapAsset, loadedDetailMapAsset, shouldPreloadDetailMap]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -212,21 +260,23 @@ export function DiveMapApp() {
 
   function zoomAt(factor: number, anchor?: { x: number; y: number }) {
     setView((current) => {
-      const center = anchor ?? {
-        x: current.x + current.width / 2,
-        y: current.y + current.height / 2,
-      };
-      const nextWidth = Math.min(
-        DIVE_MAP_WIDTH,
-        Math.max(MIN_VIEW_WIDTH, current.width / factor),
-      );
-      const scale = nextWidth / current.width;
-      const next = clampView({
-        x: center.x - (center.x - current.x) * scale,
-        y: center.y - (center.y - current.y) * scale,
-        width: nextWidth,
-        height: nextWidth / 2,
-      });
+      const next = zoomedView(current, current.width / factor, anchor);
+      viewRef.current = next;
+      return next;
+    });
+  }
+
+  function zoomByButton(direction: "in" | "out") {
+    setView((current) => {
+      const currentZoom = DIVE_MAP_WIDTH / current.width;
+      const targetZoom =
+        direction === "in"
+          ? BUTTON_ZOOM_LEVELS.find((level) => level > currentZoom + 0.001) ??
+            MAX_ZOOM
+          : [...BUTTON_ZOOM_LEVELS]
+              .reverse()
+              .find((level) => level < currentZoom - 0.001) ?? 1;
+      const next = zoomedView(current, DIVE_MAP_WIDTH / targetZoom);
       viewRef.current = next;
       return next;
     });
@@ -594,7 +644,7 @@ export function DiveMapApp() {
                   >
                     <button
                       type="button"
-                      onClick={() => zoomAt(1 / 1.6)}
+                      onClick={() => zoomByButton("out")}
                       disabled={view.width >= DIVE_MAP_WIDTH - 0.01}
                       aria-label={t("zoomOut")}
                       title={t("zoomOut")}
@@ -603,7 +653,7 @@ export function DiveMapApp() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => zoomAt(1.6)}
+                      onClick={() => zoomByButton("in")}
                       disabled={view.width <= MIN_VIEW_WIDTH + 0.01}
                       aria-label={t("zoomIn")}
                       title={t("zoomIn")}
@@ -640,11 +690,20 @@ export function DiveMapApp() {
                 onPointerCancel={finishPointer}
               >
                 <image
-                  href="/maps/world-dive-map.svg"
+                  href={baseMapAsset}
                   width={DIVE_MAP_WIDTH}
                   height={DIVE_MAP_HEIGHT}
                   aria-hidden="true"
                 />
+                {showDetailMap ? (
+                  <image
+                    className="dive-map-detail-layer"
+                    href={detailMapAsset}
+                    width={DIVE_MAP_WIDTH}
+                    height={DIVE_MAP_HEIGHT}
+                    aria-hidden="true"
+                  />
+                ) : null}
                 {displayMarkers.map((marker) => (
                   <DiveMapMarkerView
                     key={marker.id}
@@ -1115,6 +1174,28 @@ function clientToMapPoint(
     x: view.x + ((clientX - rect.left) / rect.width) * view.width,
     y: view.y + ((clientY - rect.top) / rect.height) * view.height,
   };
+}
+
+function zoomedView(
+  current: MapView,
+  targetWidth: number,
+  anchor?: { x: number; y: number },
+): MapView {
+  const center = anchor ?? {
+    x: current.x + current.width / 2,
+    y: current.y + current.height / 2,
+  };
+  const nextWidth = Math.min(
+    DIVE_MAP_WIDTH,
+    Math.max(MIN_VIEW_WIDTH, targetWidth),
+  );
+  const scale = nextWidth / current.width;
+  return clampView({
+    x: center.x - (center.x - current.x) * scale,
+    y: center.y - (center.y - current.y) * scale,
+    width: nextWidth,
+    height: nextWidth / 2,
+  });
 }
 
 function pointerDistance(first: PointerPosition, second: PointerPosition) {

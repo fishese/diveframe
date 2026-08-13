@@ -1,6 +1,6 @@
 // Bump this when a deployed shell needs to evict stale cached module URLs.
 // IndexedDB is separate and is intentionally never touched by this cache reset.
-const CACHE_NAME = "diveframe-shell-v14";
+const CACHE_NAME = "diveframe-shell-v15";
 const APP_SHELL = [
   "/",
   "/settings",
@@ -19,6 +19,9 @@ const APP_SHELL = [
   "/icons/diveframe-apple-touch.png",
   "/backgrounds/bubbles-bg.jpg",
   "/maps/world-dive-map.svg",
+  "/maps/world-dive-map-light.svg",
+  "/maps/world-dive-map-detail.svg",
+  "/maps/world-dive-map-detail-light.svg",
   "/examples/sample-dive.uddf",
   "/examples/dive-site-catalog-ai-prompt.md",
 ];

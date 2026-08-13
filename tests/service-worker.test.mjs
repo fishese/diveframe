@@ -65,6 +65,9 @@ test("install caches hashed assets referenced by shell HTML", async () => {
   assert.ok(cached.has("/map"));
   assert.ok(cached.has("/catalog"));
   assert.ok(cached.has("/maps/world-dive-map.svg"));
+  assert.ok(cached.has("/maps/world-dive-map-light.svg"));
+  assert.ok(cached.has("/maps/world-dive-map-detail.svg"));
+  assert.ok(cached.has("/maps/world-dive-map-detail-light.svg"));
   assert.ok(cached.has("/assets/app-123.css"));
   assert.ok(cached.has("/assets/chunk-456.js"));
   assert.ok(cached.has("/assets/app-789.js"));

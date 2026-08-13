@@ -150,9 +150,10 @@ export const en = {
   manualSiteSaved: "{name} saved and added to your local site log",
   siteSavedAs: "Dive site saved as {name}",
   siteSaveFailed: "Failed to save dive site.",
-  privateDiveArchive: "Dive log companion",
-  heroTitle: "Your logs, enhanced.",
-  heroDescription: "DiveFrame brings your dive records from different sources together and creates an enhanced logbook.",
+  privateDiveArchive: "Dive log manager",
+  heroTitle: "Your dive log",
+  heroDescription:
+    "Consolidate your dive computer data, locations, and notes in one place.",
   dives: "dives",
 
   divesAtNamedSites: "dive sites",
@@ -740,10 +741,10 @@ export const en = {
   importGuideMemosPrompt: "Jot down a quick note about a dive before importing the log.",
   openDiveMemos: "Open dive memos",
   diveMap: "Dive Map",
-  diveMapEyebrow: "Your dive map",
-  diveMapTitle: "Every mapped dive, kept on your device.",
+  diveMapEyebrow: "Dive map",
+  diveMapTitle: "Your dive map",
   diveMapDescription:
-    "Explore dives with stored coordinates or a selected DiveFrame site. The map and your location data stay offline.",
+    "View your dives with stored coordinates or a selected DiveFrame site. Data stays on your device.",
   loadingDiveMap: "Loading your dive map…",
   unableLoadDiveMap: "Unable to load the dive map.",
   tryAgain: "Try again",
