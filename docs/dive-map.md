@@ -26,7 +26,10 @@ d3-geo's equirectangular projection into a 1200 by 600 viewBox, rounds
 projected coordinates to two decimals, and adds restrained theme-specific
 styling and a latitude/longitude grid. The 110m maps include broad English
 orientation labels; the high-zoom 50m maps omit them so enlarged labels do not
-obscure detailed coastlines. It does not add or infer dive sites.
+obscure detailed coastlines. Country labels with sufficient mainland space are
+placed inline without an anchor, while island nations, archipelagos, and compact
+dive regions use manually positioned dot-and-leader callouts. It does not add
+or infer dive sites.
 
 ## Zoom and performance
 
@@ -80,6 +83,25 @@ also merged into a display-only cluster. Opening that cluster shows every dive
 from every included place, still grouped by site. Pinching or otherwise zooming
 in separates the markers again. This interaction uses standard browser pointer
 events and adds no map, gesture, or network dependency.
+
+For display labels only, an exact catalog site-name or alias match may supply
+locality, region, or country context when its catalog coordinate is within 25
+km of the stored dive coordinate. Cluster labels use the deepest place shared
+by every included marker. This lookup is local and read-only: it never changes
+the dive's coordinates, site identity, or saved fields. Nearby markers remain
+grouped in the Mapped places list until the current zoom provides enough room
+for their accessible hit targets to separate. On desktop, the list remains
+visible with the selected marker first; otherwise it is ordered by distance to
+the current map center. Panning and zooming therefore bring the most relevant
+marker groups to the top without changing the underlying place aggregation.
+A marker click selects its details, brings the marker into the central 20% of
+the map, and zooms in by a gentle 1.35x step or the smallest amount needed to
+keep an edge marker in that band. Automatic focus is capped at the 8x
+detailed-map level. Drag suppression is
+scoped to the pointer gesture that performed the drag, so a later marker or
+list click is never consumed by stale pan state. A single pointer is captured
+only after it crosses the drag threshold; this keeps an ordinary SVG marker
+click targeted at the marker while still capturing active pans and pinches.
 
 ## On-demand site-name audit
 

@@ -787,6 +787,8 @@ export const ja: Record<keyof typeof en, string> = {
   unmappedDiveListTitle: "位置情報のないダイビング",
   unmappedDiveListDescription: "ダイブを開いて座標を追加するか、DiveFrame カタログのサイトを選んでください。",
   mappedPlacesTitle: "地図上の場所",
+  mappedPlacesGroupingHint:
+    "近くのマーカーはまとめて表示されます。拡大すると分かれます。",
   divesGroupedBySite: "サイト別のダイブ",
   siteCoordinateAuditTitle: "未配置のサイト名を照合",
   siteCoordinateAuditDescription: "座標のない名前付きダイブを、使用中の DiveFrame カタログの完全一致するサイト名と別名に照合します。",

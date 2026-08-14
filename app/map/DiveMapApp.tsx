@@ -29,6 +29,7 @@ import {
   DIVE_MAP_HEIGHT,
   DIVE_MAP_MARKER_HIT_RADIUS_PX,
   DIVE_MAP_WIDTH,
+  orderDiveMapMarkersForList,
   type DiveMapDiveSummary,
   type DiveMapMarker,
 } from "@/lib/dive-map";
@@ -66,6 +67,10 @@ const WORLD_VIEW: MapView = {
 const ZOOM_STEP = 1.6;
 const DETAIL_MAP_ZOOM = 8;
 const DETAIL_MAP_PRELOAD_ZOOM = 6;
+const DIVE_MAP_DRAG_START_PX = 8;
+const MARKER_FOCUS_MAX_ZOOM = DETAIL_MAP_ZOOM;
+const MARKER_FOCUS_ZOOM_STEP = 1.35;
+const MARKER_FOCUS_CENTER_TOLERANCE = 0.1;
 const MAX_ZOOM = DETAIL_MAP_ZOOM * ZOOM_STEP * ZOOM_STEP;
 const MIN_VIEW_WIDTH = DIVE_MAP_WIDTH / MAX_ZOOM;
 const BUTTON_ZOOM_LEVELS = [
@@ -101,6 +106,7 @@ export function DiveMapApp() {
     null,
   );
   const canvasRef = useRef<SVGSVGElement>(null);
+  const detailsPanelRef = useRef<HTMLElement>(null);
   const refreshGenerationRef = useRef(0);
   const siteAuditGenerationRef = useRef(0);
   const siteAuditInFlightRef = useRef<number | null>(null);
@@ -218,6 +224,26 @@ export function DiveMapApp() {
       displayMarkers.find((marker) => marker.id === selectedMarkerId) ?? null,
     [displayMarkers, selectedMarkerId],
   );
+  const listedMarkers = useMemo(
+    () =>
+      orderDiveMapMarkersForList(
+        displayMarkers,
+        {
+          x: view.x + view.width / 2,
+          y: view.y + view.height / 2,
+        },
+        selectedMarkerId,
+      ),
+    [displayMarkers, selectedMarkerId, view],
+  );
+
+  useEffect(() => {
+    if (!selectedMarkerId && !unmappedOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      detailsPanelRef.current?.scrollTo({ top: 0 });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [selectedMarkerId, unmappedOpen]);
 
   useEffect(() => {
     if (!shouldPreloadDetailMap || loadedDetailMapAsset === detailMapAsset) {
@@ -331,7 +357,6 @@ export function DiveMapApp() {
 
   function handlePointerDown(event: ReactPointerEvent<SVGSVGElement>) {
     if (event.button !== 0) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
     activePointersRef.current.set(event.pointerId, {
       clientX: event.clientX,
       clientY: event.clientY,
@@ -389,7 +414,16 @@ export function DiveMapApp() {
     const rect = event.currentTarget.getBoundingClientRect();
     const deltaX = event.clientX - drag.startClientX;
     const deltaY = event.clientY - drag.startClientY;
-    if (Math.abs(deltaX) + Math.abs(deltaY) > 5) dragMovedRef.current = true;
+    if (
+      !dragMovedRef.current &&
+      Math.hypot(deltaX, deltaY) <= DIVE_MAP_DRAG_START_PX
+    ) {
+      return;
+    }
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+    dragMovedRef.current = true;
     const next = clampView({
         ...drag.startView,
         x: drag.startView.x - (deltaX / rect.width) * drag.startView.width,
@@ -424,11 +458,21 @@ export function DiveMapApp() {
       return;
     }
     if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+    if (activePointersRef.current.size === 0 && dragMovedRef.current) {
+      window.setTimeout(() => {
+        dragMovedRef.current = false;
+      }, 0);
+    }
   }
 
   function beginPinch(canvas: SVGSVGElement) {
     const pointers = Array.from(activePointersRef.current.entries()).slice(0, 2);
     if (pointers.length !== 2) return;
+    pointers.forEach(([pointerId]) => {
+      if (!canvas.hasPointerCapture(pointerId)) {
+        canvas.setPointerCapture(pointerId);
+      }
+    });
     const [first, second] = pointers;
     const midpoint = pointerMidpoint(first[1], second[1]);
     const startView = viewRef.current;
@@ -448,12 +492,48 @@ export function DiveMapApp() {
   }
 
   function chooseMarker(marker: DiveMapMarker) {
+    setSelectedMarkerId(marker.id);
+    setUnmappedOpen(false);
+  }
+
+  function chooseMapMarker(marker: DiveMapMarker) {
     if (dragMovedRef.current) {
       dragMovedRef.current = false;
       return;
     }
-    setSelectedMarkerId(marker.id);
-    setUnmappedOpen(false);
+    const current = viewRef.current;
+    const currentZoom = DIVE_MAP_WIDTH / current.width;
+    const horizontalCenteringFactor =
+      1 / (0.5 - MARKER_FOCUS_CENTER_TOLERANCE);
+    const verticalCenteringFactor =
+      1 / (0.25 - MARKER_FOCUS_CENTER_TOLERANCE / 2);
+    const maximumCenteredWidth = Math.min(
+      marker.position.x * horizontalCenteringFactor,
+      (DIVE_MAP_WIDTH - marker.position.x) * horizontalCenteringFactor,
+      marker.position.y * verticalCenteringFactor,
+      (DIVE_MAP_HEIGHT - marker.position.y) * verticalCenteringFactor,
+    );
+    const centerableZoom =
+      maximumCenteredWidth > 0
+        ? DIVE_MAP_WIDTH / maximumCenteredWidth
+        : MARKER_FOCUS_MAX_ZOOM;
+    const targetZoom = Math.max(
+      currentZoom,
+      Math.min(
+        MARKER_FOCUS_MAX_ZOOM,
+        Math.max(currentZoom * MARKER_FOCUS_ZOOM_STEP, centerableZoom),
+      ),
+    );
+    const width = DIVE_MAP_WIDTH / targetZoom;
+    const next = clampView({
+      x: marker.position.x - width / 2,
+      y: marker.position.y - width / 4,
+      width,
+      height: width / 2,
+    });
+    viewRef.current = next;
+    setView(next);
+    chooseMarker(marker);
   }
 
   async function runSiteCoordinateAudit(
@@ -720,7 +800,7 @@ export function DiveMapApp() {
                         count: marker.diveCount,
                       },
                     )}
-                    onChoose={() => chooseMarker(marker)}
+                    onChoose={() => chooseMapMarker(marker)}
                   />
                 ))}
               </svg>
@@ -730,13 +810,24 @@ export function DiveMapApp() {
               </footer>
             </section>
 
-            <aside className="dive-map-details" aria-live="polite">
+            <aside
+              ref={detailsPanelRef}
+              className="dive-map-details"
+              aria-live="polite"
+            >
               {selectedMarker ? (
-                <DiveMapDetails
-                  marker={selectedMarker}
-                  language={language}
-                  onClose={() => setSelectedMarkerId(null)}
-                />
+                <div className="dive-map-selected-layout">
+                  <MappedPlaceList
+                    markers={listedMarkers}
+                    selectedMarkerId={selectedMarker.id}
+                    onChoose={chooseMarker}
+                  />
+                  <DiveMapDetails
+                    marker={selectedMarker}
+                    language={language}
+                    onClose={() => setSelectedMarkerId(null)}
+                  />
+                </div>
               ) : unmappedOpen ? (
                 <UnmappedDiveList
                   dives={mapData.unmappableDives}
@@ -749,7 +840,8 @@ export function DiveMapApp() {
                   <h2>{t("chooseMapMarker")}</h2>
                   <p>{t("chooseMapMarkerDescription")}</p>
                   <MappedPlaceList
-                    markers={displayMarkers}
+                    markers={listedMarkers}
+                    selectedMarkerId={null}
                     onChoose={chooseMarker}
                   />
                 </div>
@@ -788,17 +880,31 @@ export function DiveMapApp() {
 
 function MappedPlaceList({
   markers,
+  selectedMarkerId,
   onChoose,
 }: {
   markers: DiveMapMarker[];
+  selectedMarkerId: string | null;
   onChoose: (marker: DiveMapMarker) => void;
 }) {
   const { t } = useAppI18n();
+  const listRef = useRef<HTMLDivElement>(null);
+  const firstMarkerId = markers[0]?.id ?? null;
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: 0 });
+  }, [firstMarkerId]);
   return (
-    <div className="dive-map-place-list">
+    <div ref={listRef} className="dive-map-place-list">
       <h3>{t("mappedPlacesTitle")}</h3>
+      <p>{t("mappedPlacesGroupingHint")}</p>
       {markers.map((marker) => (
-        <button key={marker.id} type="button" onClick={() => onChoose(marker)}>
+        <button
+          key={marker.id}
+          type="button"
+          className={marker.id === selectedMarkerId ? "selected" : undefined}
+          aria-pressed={marker.id === selectedMarkerId}
+          onClick={() => onChoose(marker)}
+        >
           <span>
             <strong>{marker.title ?? t("diveLocation")}</strong>
             {marker.regionName && marker.regionName !== marker.title ? (

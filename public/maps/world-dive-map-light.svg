@@ -219,18 +219,28 @@
     <path d="M702.77,288.3L699.85,286.08L699.05,284.66L697.2,285.37L695.66,285.15L694.76,285.71L693.27,285.31L691.24,282.55L690.72,281.5L688.22,280.18L687.38,278.18L685.99,276.74L683.74,275L683.72,273.92L681.89,272.57L679.63,271.27L680.65,270.9L681.79,270.28L682.65,267.3L683.56,265.75L685.96,265.3L686.54,266.21L688.25,268.15L689.18,268.44L690.38,267.87L692.78,267.99L693.24,268.67L696.56,268.67L696.67,267.99L698.38,267.35L698.73,266.38L699.99,265.7L702.79,267.64L704.51,267.3L706.17,264.89L708,263.07L707.72,261.06L706.91,260.09L708.92,259.92L709.15,259.17L710.7,259.4L710.29,261.87L710.7,264.27L712.41,265.58L712.81,266.73L712.75,268.39L713.22,268.45L713.25,271.05L712.75,272.07L710.98,272.15L709.84,274.05L711.89,274.29L713.59,275.91L714.16,277.24L715.69,278.02L717.65,281.64L715.4,283.85L713.35,285.83L711.29,287.37L708.96,287.36L706.27,288.14L704.15,287.39Z" />
   </g>
   <g aria-label="Geographic orientation labels">
+    <path class="leader" d="M 79 230.67 L 91 220.67" />
+    <circle class="anchor" cx="79" cy="230.67" r="1.25" />
+    <text class="label region" x="91" y="222.67">Hawaiʻi</text>
+    <text class="label country inline" x="260" y="221.67">Mexico</text>
+    <path class="leader" d="M 310.33 232 L 324.33 242" />
+    <circle class="anchor" cx="310.33" cy="232" r="1.25" />
+    <text class="label region" x="324.33" y="244">Cozumel</text>
     <path class="leader" d="M 298 302 L 290 291" />
     <circle class="anchor" cx="298" cy="302" r="1.25" />
     <text class="label region" x="290" y="293">Galápagos</text>
-    <path class="leader" d="M 702.67 210.67 L 690.67 198.67" />
-    <circle class="anchor" cx="702.67" cy="210.67" r="1.25" />
-    <text class="label country" x="690.67" y="200.67">Egypt</text>
+    <text class="label country inline" x="702.67" y="210.67">Egypt</text>
     <path class="leader" d="M 727.33 226 L 734.33 233" />
     <circle class="anchor" cx="727.33" cy="226" r="1.25" />
     <text class="label region" x="734.33" y="235">Red Sea</text>
+    <text class="label country inline" x="680" y="396.67">South Africa</text>
+    <path class="leader" d="M 730.67 320.33 L 748.67 328.33" />
+    <circle class="anchor" cx="730.67" cy="320.33" r="1.25" />
+    <text class="label region" x="748.67" y="330.33">Zanzibar</text>
     <path class="leader" d="M 844 289.33 L 830 299.33" />
     <circle class="anchor" cx="844" cy="289.33" r="1.25" />
     <text class="label region" x="830" y="301.33">Maldives</text>
+    <text class="label country inline" x="937.33" y="245">Thailand</text>
     <path class="leader" d="M 925.33 271.33 L 881.33 257.33" />
     <circle class="anchor" cx="925.33" cy="271.33" r="1.25" />
     <text class="label region" x="881.33" y="259.33">Similan Islands</text>
@@ -264,11 +274,12 @@
     <path class="leader" d="M 1026 212.33 L 1038 206.33" />
     <circle class="anchor" cx="1026" cy="212.33" r="1.25" />
     <text class="label region" x="1038" y="208.33">Okinawa</text>
-    <path class="leader" d="M 1048.33 385 L 1017.33 386" />
-    <circle class="anchor" cx="1048.33" cy="385" r="1.25" />
-    <text class="label country" x="1017.33" y="388">Australia</text>
+    <text class="label country inline" x="1048.33" y="385">Australia</text>
     <path class="leader" d="M 1091.67 360.67 L 1099.67 356.67" />
     <circle class="anchor" cx="1091.67" cy="360.67" r="1.25" />
     <text class="label region" x="1099.67" y="358.67">Great Barrier Reef</text>
+    <path class="leader" d="M 1177.33 437.33 L 1145.33 443.33" />
+    <circle class="anchor" cx="1177.33" cy="437.33" r="1.25" />
+    <text class="label country" x="1145.33" y="445.33">New Zealand</text>
   </g>
 </svg>

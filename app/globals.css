@@ -6234,6 +6234,23 @@ button {
   border-color: var(--button-secondary-border);
 }
 
+.dive-map-place-list button.selected {
+  background: color-mix(in srgb, var(--teal) 11%, var(--fill-02));
+  border-color: color-mix(in srgb, var(--teal) 48%, var(--line));
+}
+
+.dive-map-selected-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.dive-map-selected-layout > .dive-map-place-list {
+  border-bottom: 1px solid var(--line);
+  margin-top: 0;
+  max-height: 190px;
+  padding-bottom: 14px;
+}
+
 .dive-map-place-list button span,
 .dive-map-place-list button strong,
 .dive-map-place-list button small {
@@ -6602,9 +6619,20 @@ button {
   }
 }
 
+.dive-map-place-list > p {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+  margin: -1px 0 4px;
+}
+
 @media (max-width: 420px) {
   .topbar-actions {
     gap: 4px;
+  }
+
+  .dive-map-selected-layout > .dive-map-place-list {
+    display: none;
   }
 }
 

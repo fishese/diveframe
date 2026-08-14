@@ -27,13 +27,20 @@ const catalog = {
   ],
 };
 
-function catalogSite(id, name, latitude, longitude, locality) {
+function catalogSite(
+  id,
+  name,
+  latitude,
+  longitude,
+  locality,
+  { aliases = [], country = null, region = null } = {},
+) {
   return {
     id,
     name,
-    aliases: [],
+    aliases,
     coordinates: { latitude, longitude },
-    place: { countryCode: null, country: null, region: null, locality },
+    place: { countryCode: null, country, region, locality },
     source: { kind: "test", reference: null },
     status: "active",
     updatedAt: "2026-01-01T00:00:00.000Z",
@@ -46,6 +53,8 @@ function dive(id, overrides = {}) {
     diveDate: `2026-04-${String(Number(id.replace(/\D/g, "")) || 1).padStart(2, "0")}T10:00:00.000Z`,
     location: null,
     resolvedLocation: null,
+    resolvedCity: null,
+    resolvedCountry: null,
     site: null,
     userSite: null,
     userSiteCatalogId: null,
@@ -212,6 +221,98 @@ test("screen-overlapping markers combine until zoom separates their hit targets"
 
   const closeZoom = map.clusterOverlappingDiveMapMarkers(data.markers, 300);
   assert.equal(closeZoom.length, 3);
+});
+
+test("mapped-place ordering follows selection then the current map center", () => {
+  const data = map.buildDiveMapData(
+    [
+      dive("1", { location: "Maldives", gpsEntryLat: 3.2, gpsEntryLng: 73.2 }),
+      dive("2", { location: "Palau", gpsEntryLat: 7.5, gpsEntryLng: 134.6 }),
+      dive("3", { location: "Hong Kong", gpsEntryLat: 22.3, gpsEntryLng: 114.2 }),
+    ],
+    emptyCatalog,
+  );
+  const maldives = data.markers.find((marker) => marker.title === "Maldives");
+  const palau = data.markers.find((marker) => marker.title === "Palau");
+  assert.ok(maldives);
+  assert.ok(palau);
+  const centered = map.orderDiveMapMarkersForList(
+    data.markers,
+    maldives.position,
+    null,
+  );
+  assert.equal(centered[0].title, "Maldives");
+  const selected = map.orderDiveMapMarkersForList(
+    data.markers,
+    maldives.position,
+    palau.id,
+  );
+  assert.equal(selected[0].title, "Palau");
+  assert.equal(data.markers.length, 3);
+});
+
+test("display clusters use nearby exact catalog matches for shared geography", () => {
+  const placeCatalog = {
+    sites: [
+      catalogSite("pg-a", "The Canyons", 13.514, 120.977, "Puerto Galera", {
+        aliases: ["Canyons"],
+        country: "Philippines",
+        region: "Oriental Mindoro",
+      }),
+      catalogSite("pg-b", "Ernie's Cave", 13.523, 120.980, "Puerto Galera", {
+        country: "Philippines",
+        region: "Oriental Mindoro",
+      }),
+    ],
+  };
+  const data = map.buildDiveMapData(
+    [
+      dive("1", { site: "Canyons", gpsEntryLat: 13.514, gpsEntryLng: 120.977 }),
+      dive("2", { site: "Ernie's Cave", gpsEntryLat: 13.523, gpsEntryLng: 120.980 }),
+    ],
+    placeCatalog,
+  );
+  assert.equal(data.markers.length, 2);
+  const display = map.clusterOverlappingDiveMapMarkers(data.markers, 0.35);
+  assert.equal(display.length, 1);
+  assert.equal(display[0].title, "Puerto Galera");
+  assert.equal(display[0].regionName, "Philippines");
+});
+
+test("display clusters fall back to a shared country across distinct regions", () => {
+  const placeCatalog = {
+    sites: [
+      catalogSite("th-a", "Richelieu Rock", 9.363, 98.022, "Phang Nga", {
+        country: "Thailand",
+        region: "Andaman Sea",
+      }),
+      catalogSite("th-b", "Bida Nok", 7.650, 98.767, "Phi Phi Islands", {
+        aliases: ["Koh Bida Nok"],
+        country: "Thailand",
+        region: "Krabi Province",
+      }),
+    ],
+  };
+  const data = map.buildDiveMapData(
+    [
+      dive("1", { site: "Richelieu Rock", gpsEntryLat: 9.363, gpsEntryLng: 98.022 }),
+      dive("2", { site: "Koh Bida Nok", gpsEntryLat: 7.650, gpsEntryLng: 98.767 }),
+    ],
+    placeCatalog,
+  );
+  const display = map.clusterOverlappingDiveMapMarkers(data.markers, 0.35);
+  assert.equal(display.length, 1);
+  assert.equal(display[0].title, "Thailand");
+  assert.equal(display[0].regionName, null);
+});
+
+test("catalog geography is not inferred from a distant same-name site", () => {
+  const data = map.buildDiveMapData(
+    [dive("1", { site: "Canyons", gpsEntryLat: 22.3, gpsEntryLng: 114.3 })],
+    catalog,
+  );
+  assert.equal(data.markers[0].placeLocality, null);
+  assert.equal(data.markers[0].placeCountry, null);
 });
 
 test("memo-applied site identity aggregates across dives", () => {

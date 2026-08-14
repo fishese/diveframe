@@ -789,6 +789,7 @@ export const zhHant: Record<keyof typeof en, string> = {
   unmappedDiveListTitle: "未設定位置的潛水",
   unmappedDiveListDescription: "開啟潛水紀錄以加入座標，或選擇 DiveFrame 潛點目錄中的潛點。",
   mappedPlacesTitle: "已定位位置",
+  mappedPlacesGroupingHint: "鄰近標記會合併顯示；放大地圖即可分開。",
   divesGroupedBySite: "按潛點分組的潛水",
   siteCoordinateAuditTitle: "配對未定位的潛點名稱",
   siteCoordinateAuditDescription: "將有潛點名稱但沒有座標的潛水，與目前 DiveFrame 目錄中完全相符的名稱及別名比較。",

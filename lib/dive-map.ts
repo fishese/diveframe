@@ -5,6 +5,7 @@ export const DIVE_MAP_WIDTH = 1200;
 export const DIVE_MAP_HEIGHT = 600;
 export const UNKNOWN_DIVE_CLUSTER_RADIUS_KM = 0.25;
 export const DIVE_MAP_MARKER_HIT_RADIUS_PX = 22;
+export const DIVE_MAP_CATALOG_CONTEXT_RADIUS_KM = 25;
 
 export type DiveMapDive = Pick<
   LocalDive,
@@ -46,6 +47,9 @@ export type DiveMapDiveSummary = {
   date: string | null;
   siteName: string | null;
   locationName: string | null;
+  localityName: string | null;
+  regionName: string | null;
+  countryName: string | null;
   knownSiteId: string | null;
 };
 
@@ -62,6 +66,9 @@ export type DiveMapMarker = {
   position: DiveMapPosition;
   title: string | null;
   regionName: string | null;
+  placeLocality: string | null;
+  placeRegion: string | null;
+  placeCountry: string | null;
   diveCount: number;
   knownSiteCount: number;
   coordinateSources: DiveMapCoordinateSource[];
@@ -180,10 +187,20 @@ export function buildDiveMapData(
 ): DiveMapData {
   const resolved: ResolvedDive[] = [];
   const unmappableDives: DiveMapDiveSummary[] = [];
+  const catalogNameIndex = buildCatalogNameIndex(catalog.sites);
 
   for (const dive of dives) {
     const coordinates = resolveDiveCoordinates(dive, catalog);
-    const summary = diveSummary(dive, coordinates?.catalogSite ?? null);
+    const selectedCatalogSite = coordinates?.catalogSite ?? null;
+    const contextCatalogSite = coordinates
+      ? selectedCatalogSite ??
+        nearbyExactCatalogSiteForDive(dive, coordinates, catalogNameIndex)
+      : null;
+    const summary = diveSummary(
+      dive,
+      selectedCatalogSite,
+      contextCatalogSite,
+    );
     if (!coordinates) {
       unmappableDives.push(summary);
       continue;
@@ -287,6 +304,30 @@ export function clusterOverlappingDiveMapMarkers(
         (left.title ?? "").localeCompare(right.title ?? "") ||
         left.id.localeCompare(right.id),
     );
+}
+
+export function orderDiveMapMarkersForList(
+  markers: DiveMapMarker[],
+  center: DiveMapPosition,
+  selectedMarkerId: string | null,
+) {
+  return [...markers].sort((left, right) => {
+    const leftSelected = left.id === selectedMarkerId;
+    const rightSelected = right.id === selectedMarkerId;
+    if (leftSelected !== rightSelected) return leftSelected ? -1 : 1;
+    const distanceDifference =
+      mapDistanceSquared(left.position, center) -
+      mapDistanceSquared(right.position, center);
+    return (
+      distanceDifference ||
+      (left.title ?? "").localeCompare(right.title ?? "") ||
+      left.id.localeCompare(right.id)
+    );
+  });
+}
+
+function mapDistanceSquared(left: DiveMapPosition, right: DiveMapPosition) {
+  return (left.x - right.x) ** 2 + (left.y - right.y) ** 2;
 }
 
 export function haversineDistanceKm(
@@ -426,6 +467,9 @@ function markerForGroup(id: string, group: ResolvedDive[]): DiveMapMarker {
     position,
     title: markerTitle(dives),
     regionName: commonValue(dives.map((dive) => dive.locationName)),
+    placeLocality: sharedDiveValue(dives, (dive) => dive.localityName),
+    placeRegion: sharedDiveValue(dives, (dive) => dive.regionName),
+    placeCountry: sharedDiveValue(dives, (dive) => dive.countryName),
     diveCount: dives.length,
     knownSiteCount: knownSites.size,
     coordinateSources: sources,
@@ -471,6 +515,24 @@ function mergeDisplayMarkerGroup(markers: DiveMapMarker[]): DiveMapMarker {
     markers,
     (marker) => marker.regionName,
   );
+  const placeLocality = sharedMarkerValue(
+    markers,
+    (marker) => marker.placeLocality,
+  );
+  const placeRegion = sharedMarkerValue(
+    markers,
+    (marker) => marker.placeRegion,
+  );
+  const placeCountry = sharedMarkerValue(
+    markers,
+    (marker) => marker.placeCountry,
+  );
+  const title =
+    regionName ??
+    placeLocality ??
+    placeRegion ??
+    placeCountry ??
+    sharedMarkerValue(markers, (marker) => marker.title);
 
   return {
     id: `display:${stableId(markers.map((marker) => marker.id))}`,
@@ -488,8 +550,12 @@ function mergeDisplayMarkerGroup(markers: DiveMapMarker[]): DiveMapMarker {
           0,
         ) / diveCount,
     },
-    title: regionName ?? sharedMarkerValue(markers, (marker) => marker.title),
-    regionName,
+    title,
+    regionName:
+      placeCountry && placeCountry !== title ? placeCountry : regionName,
+    placeLocality,
+    placeRegion,
+    placeCountry,
     diveCount,
     knownSiteCount: sites.size,
     coordinateSources: Array.from(
@@ -507,24 +573,82 @@ function mergeDisplayMarkerGroup(markers: DiveMapMarker[]): DiveMapMarker {
 
 function diveSummary(
   dive: DiveMapDive,
-  catalogSite: CatalogSite | null,
+  selectedCatalogSite: CatalogSite | null,
+  contextCatalogSite: CatalogSite | null = selectedCatalogSite,
 ): DiveMapDiveSummary {
+  const localityName =
+    clean(dive.resolvedCity) ?? clean(contextCatalogSite?.place.locality);
+  const regionName = clean(contextCatalogSite?.place.region);
+  const countryName =
+    clean(dive.resolvedCountry) ?? clean(contextCatalogSite?.place.country);
   return {
     id: dive.id,
     date: dive.diveDate,
     siteName:
       clean(dive.userSite) ??
-      clean(catalogSite?.name) ??
+      clean(selectedCatalogSite?.name) ??
       clean(dive.site) ??
       clean(preferredSourceSiteName(dive)),
     locationName:
       clean(dive.location) ??
       clean(dive.resolvedLocation) ??
-      clean(catalogSite?.place.locality) ??
-      clean(catalogSite?.place.region) ??
-      clean(catalogSite?.place.country),
+      localityName ??
+      regionName ??
+      countryName,
+    localityName,
+    regionName,
+    countryName,
     knownSiteId: clean(dive.userSiteCatalogId),
   };
+}
+
+function buildCatalogNameIndex(sites: CatalogSite[]) {
+  const index = new Map<string, CatalogSite[]>();
+  sites.forEach((site) => {
+    if (site.status !== "active") return;
+    [site.name, ...site.aliases].forEach((name) => {
+      const key = catalogNameKey(name);
+      if (!key) return;
+      const matches = index.get(key) ?? [];
+      matches.push(site);
+      index.set(key, matches);
+    });
+  });
+  return index;
+}
+
+function nearbyExactCatalogSiteForDive(
+  dive: DiveMapDive,
+  coordinates: Pick<DiveMapResolvedCoordinates, "latitude" | "longitude">,
+  catalogNameIndex: Map<string, CatalogSite[]>,
+) {
+  const name =
+    clean(dive.userSite) ??
+    clean(dive.site) ??
+    clean(preferredSourceSiteName(dive));
+  const key = catalogNameKey(name);
+  if (!key) return null;
+  return (catalogNameIndex.get(key) ?? [])
+    .map((site) => ({
+      site,
+      distanceKm: haversineDistanceKm(
+        coordinates.latitude,
+        coordinates.longitude,
+        site.coordinates.latitude,
+        site.coordinates.longitude,
+      ),
+    }))
+    .filter(({ distanceKm }) => distanceKm <= DIVE_MAP_CATALOG_CONTEXT_RADIUS_KM)
+    .sort(
+      (left, right) =>
+        left.distanceKm - right.distanceKm ||
+        left.site.id.localeCompare(right.site.id),
+    )[0]?.site ?? null;
+}
+
+function catalogNameKey(value: string | null | undefined) {
+  const normalized = value?.trim().replace(/\s+/g, " ");
+  return normalized ? normalized.toLocaleLowerCase("en") : null;
 }
 
 function markerTitle(dives: DiveMapDiveSummary[]) {
@@ -622,6 +746,24 @@ function sharedMarkerValue(
   const values = markers.map(value).map(clean);
   const first = values[0];
   if (!first || values.some((candidate) => candidate?.toLocaleLowerCase("en") !== first.toLocaleLowerCase("en"))) {
+    return null;
+  }
+  return first;
+}
+
+function sharedDiveValue(
+  dives: DiveMapDiveSummary[],
+  value: (dive: DiveMapDiveSummary) => string | null,
+) {
+  const values = dives.map(value).map(clean);
+  const first = values[0];
+  if (
+    !first ||
+    values.some(
+      (candidate) =>
+        candidate?.toLocaleLowerCase("en") !== first.toLocaleLowerCase("en"),
+    )
+  ) {
     return null;
   }
   return first;

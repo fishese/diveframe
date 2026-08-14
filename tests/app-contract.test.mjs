@@ -298,12 +298,34 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapApp, /pinchRef/);
   assert.match(diveMapApp, /siteAuditExpanded/);
   assert.match(diveMapApp, /clusterOverlappingDiveMapMarkers/);
+  assert.match(diveMapApp, /DIVE_MAP_DRAG_START_PX = 8/);
+  assert.match(diveMapApp, /MARKER_FOCUS_MAX_ZOOM = DETAIL_MAP_ZOOM/);
+  assert.match(diveMapApp, /MARKER_FOCUS_ZOOM_STEP = 1\.35/);
+  assert.match(diveMapApp, /MARKER_FOCUS_CENTER_TOLERANCE = 0\.1/);
+  assert.match(diveMapApp, /Math\.hypot\(deltaX, deltaY\)/);
+  assert.match(diveMapApp, /maximumCenteredWidth/);
+  assert.match(diveMapApp, /currentZoom \* MARKER_FOCUS_ZOOM_STEP/);
+  assert.match(diveMapApp, /marker\.position\.x - width \/ 2/);
+  assert.match(diveMapApp, /window\.setTimeout\(\(\) => \{/);
+  assert.match(diveMapApp, /mappedPlacesGroupingHint/);
+  assert.match(diveMapApp, /orderDiveMapMarkersForList/);
+  assert.match(diveMapApp, /selectedMarkerId=\{selectedMarker\.id\}/);
   assert.match(diveMapApp, /mapData\.placeCount/);
   assert.match(diveMapApp, /subscribeLocalDataChanges/);
   assert.match(diveMapApp, /href={`\/\?dive=\$\{encodeURIComponent\(dive\.id\)\}`}/);
   assert.match(diveMapApp, /Fit|fitToDives/);
   assert.match(diveMapApp, /\/maps\/world-dive-map\.svg/);
   assert.match(diveMapApp, /useColorTheme/);
+  const pointerDownSource = diveMapApp.slice(
+    diveMapApp.indexOf("function handlePointerDown"),
+    diveMapApp.indexOf("function handlePointerMove"),
+  );
+  const pointerMoveSource = diveMapApp.slice(
+    diveMapApp.indexOf("function handlePointerMove"),
+    diveMapApp.indexOf("function finishPointer"),
+  );
+  assert.doesNotMatch(pointerDownSource, /setPointerCapture/);
+  assert.match(pointerMoveSource, /setPointerCapture/);
   assert.match(diveMapApp, /DETAIL_MAP_ZOOM = 8/);
   assert.match(diveMapApp, /BUTTON_ZOOM_LEVELS/);
   assert.match(diveMapApp, /new Image\(\)/);
@@ -324,6 +346,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapAsset, /Natural Earth 4\.1\.0/);
   assert.match(diveMapAsset, /Hong Kong/);
   assert.match(diveMapAsset, /Puerto Galera/);
+  assert.match(diveMapAsset, /class="label country inline"[^>]*>Australia<\/text>/);
+  assert.match(diveMapAsset, /class="label country inline"[^>]*>Thailand<\/text>/);
+  assert.match(diveMapAsset, /class="anchor"[^>]*\/>\s*<text class="label country"[^>]*>New Zealand<\/text>/);
   assert.match(diveMapLightAsset, /#cfe8ec/);
   assert.match(diveMapLightAsset, /#163a3f/);
   assert.match(diveMapDetailAsset, /Natural Earth's 1:50m/);
@@ -338,6 +363,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapGenerator, /countries-110m\.json/);
   assert.match(diveMapGenerator, /countries-50m\.json/);
   assert.match(diveMapGenerator, /world-dive-map-detail-light\.svg/);
+  assert.match(diveMapGenerator, /label\.placement === "inline"/);
   assert.doesNotMatch(diveMapGenerator, /fetch\s*\(/);
   assert.match(diveMapSource, /"type":"Topology"/);
   assert.match(diveMapDetailSource, /"type":"Topology"/);

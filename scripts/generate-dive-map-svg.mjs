@@ -55,10 +55,16 @@ const THEMES = {
 };
 
 const labels = [
+  { text: "Hawaiʻi", latitude: 20.8, longitude: -156.3, kind: "region", dx: 12, dy: -8 },
+  { text: "Mexico", latitude: 23.5, longitude: -102, kind: "country", placement: "inline" },
+  { text: "Cozumel", latitude: 20.4, longitude: -86.9, kind: "region", dx: 14, dy: 12 },
   { text: "Galápagos", latitude: -0.6, longitude: -90.6, kind: "region", dx: -8, dy: -9 },
-  { text: "Egypt", latitude: 26.8, longitude: 30.8, kind: "country", dx: -12, dy: -10 },
+  { text: "Egypt", latitude: 26.8, longitude: 30.8, kind: "country", placement: "inline" },
   { text: "Red Sea", latitude: 22.2, longitude: 38.2, kind: "region", dx: 7, dy: 9 },
+  { text: "South Africa", latitude: -29, longitude: 24, kind: "country", placement: "inline" },
+  { text: "Zanzibar", latitude: -6.1, longitude: 39.2, kind: "region", dx: 18, dy: 10 },
   { text: "Maldives", latitude: 3.2, longitude: 73.2, kind: "region", dx: -14, dy: 12 },
+  { text: "Thailand", latitude: 16.5, longitude: 101.2, kind: "country", placement: "inline" },
   { text: "Similan Islands", latitude: 8.6, longitude: 97.6, kind: "region", dx: -44, dy: -12 },
   { text: "Indonesia", latitude: -2.4, longitude: 117.5, kind: "country", dx: -20, dy: 6 },
   { text: "Bali", latitude: -8.4, longitude: 115.2, kind: "region", dx: -22, dy: 11 },
@@ -70,8 +76,9 @@ const labels = [
   { text: "Hong Kong", latitude: 22.3, longitude: 114.2, kind: "region", dx: -51, dy: -18 },
   { text: "Japan", latitude: 36.2, longitude: 138.2, kind: "country", dx: 8, dy: -8 },
   { text: "Okinawa", latitude: 26.3, longitude: 127.8, kind: "region", dx: 12, dy: -4 },
-  { text: "Australia", latitude: -25.5, longitude: 134.5, kind: "country", dx: -31, dy: 3 },
+  { text: "Australia", latitude: -25.5, longitude: 134.5, kind: "country", placement: "inline" },
   { text: "Great Barrier Reef", latitude: -18.2, longitude: 147.5, kind: "region", dx: 8, dy: -2 },
+  { text: "New Zealand", latitude: -41.2, longitude: 173.2, kind: "country", dx: -32, dy: 8 },
 ];
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -158,6 +165,9 @@ function roundPath(value) {
 
 function renderLabel(label) {
   const anchor = project(label.latitude, label.longitude);
+  if (label.placement === "inline") {
+    return `    <text class="label ${label.kind} inline" x="${format(anchor.x)}" y="${format(anchor.y)}">${escapeXml(label.text)}</text>`;
+  }
   const x = anchor.x + (label.dx ?? 0);
   const y = anchor.y + (label.dy ?? 0);
   const leader =

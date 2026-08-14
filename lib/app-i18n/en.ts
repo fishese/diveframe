@@ -791,6 +791,8 @@ export const en = {
   unmappedDiveListDescription:
     "Open a dive to add coordinates or choose a DiveFrame catalog site.",
   mappedPlacesTitle: "Mapped places",
+  mappedPlacesGroupingHint:
+    "Nearby markers are grouped; zoom in to separate them.",
   divesGroupedBySite: "Dives grouped by site",
   siteCoordinateAuditTitle: "Match unmapped site names",
   siteCoordinateAuditDescription:
