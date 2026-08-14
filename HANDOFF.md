@@ -44,12 +44,14 @@ store distribution are not started yet.
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
 - The latest shared runtime commit on `main` is
-  `40ca426beef6f562bf0a615c99bc4ae9990ffe52`; the current Preview release
+  `745717c64875cb2beb49f9a8ab8cc352b2d29fdb`; the current Preview release
   also targets that commit (workflow run
-  `31723193269`). The published `diveframe-preview.apk` has SHA-256
-  `9cadb4c93783d9437fd61454bb250e2c63be3938247bde9d2e65d20d571171e0`.
+  `31806679858`). The published `diveframe-preview.apk` has SHA-256
+  `d1441dd0b26d341d469eebf93b830c83f74ed4660c6ce0d460be1b652d8554d0`.
   This is the intended no-drift state for the web/PWA and
   Preview APK, subject to normal hosted-deployment propagation.
+  A later `main` commit that only records this verified release is
+  documentation-only and does not introduce runtime drift.
 - The current F-Droid MR remains pinned to production commit
   `994a9571e8013672e8e6a91e10b361733a59251b`; this deliberate lag keeps the
   initial submission stable while Preview and the web continue to advance.
