@@ -1666,6 +1666,18 @@ button {
   padding: 0 20px 20px;
 }
 
+.site-name-match-prompt {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+  padding: 14px 20px 8px;
+}
+
+.site-name-suggestions {
+  padding-top: 0;
+}
+
 .site-suggestion-item {
   display: flex;
   flex-direction: column;

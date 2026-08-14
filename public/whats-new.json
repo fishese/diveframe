@@ -1,7 +1,19 @@
 {
-  "version": "2026-08-13-dive-map-zoom",
-  "updatedAt": "2026-08-13T16:00:00.000Z",
+  "version": "2026-08-14-catalog-coordinate-matches",
+  "updatedAt": "2026-08-14T13:30:00.000Z",
   "entries": [
+    {
+      "id": "2026-08-14-catalog-coordinate-matches",
+      "title": "Apply catalog coordinates from a site name",
+      "body": "When a dive has a site name but no GPS, DiveFrame now suggests exact or close matches from the active catalog. Choose a match to apply its catalog coordinates. The Updates bar now appears only on the logbook and Settings pages.",
+      "date": "2026-08-14",
+      "links": [
+        {
+          "label": "Download DiveFrame Preview APK",
+          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
+        }
+      ]
+    },
     {
       "id": "2026-08-13-dive-map-zoom",
       "title": "dive map - added zoom level",

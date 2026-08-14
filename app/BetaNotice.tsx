@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AlertTriangle, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getLocalAppPreferences, saveLocalAppPreferences } from "@/lib/indexed-db";
@@ -9,32 +10,38 @@ import { useAppI18n } from "./AppI18nProvider";
 
 export function BetaNotice() {
   const { t } = useAppI18n();
+  const pathname = usePathname();
+  const showNotice = pathname === "/" || pathname === "/settings" || pathname.startsWith("/settings/");
   const [whatsNew, setWhatsNew] = useState<WhatsNewDocument | null>(null);
   const [lastSeenVersion, setLastSeenVersion] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!showNotice) return;
     let active = true;
 
-    void getLocalAppPreferences()
-      .then((preferences) => {
+    void (async () => {
+      try {
+        const preferences = await getLocalAppPreferences();
         if (!active) return;
         setWhatsNew(preferences?.whatsNewCache ?? null);
         setLastSeenVersion(preferences?.lastSeenWhatsNewVersion ?? null);
-      })
-      .catch(() => undefined);
+      } catch {
+        // The network feed can still populate the notice when IndexedDB fails.
+      }
 
-    if (navigator.onLine) {
-      void fetchWhatsNewDocument()
-        .then(async (document) => {
-          if (!active) return;
-          setWhatsNew(document);
-          await saveLocalAppPreferences({
-            whatsNewCache: document,
-            whatsNewFetchedAt: new Date().toISOString(),
-          });
-        })
-        .catch(() => undefined);
-    }
+      if (!active || !navigator.onLine) return;
+      try {
+        const document = await fetchWhatsNewDocument();
+        if (!active) return;
+        setWhatsNew(document);
+        await saveLocalAppPreferences({
+          whatsNewCache: document,
+          whatsNewFetchedAt: new Date().toISOString(),
+        });
+      } catch {
+        // Cached What's new content remains available when the feed is offline.
+      }
+    })();
 
     function handleSeen(event: Event) {
       const version = (event as CustomEvent<{ version?: string }>).detail?.version;
@@ -46,7 +53,9 @@ export function BetaNotice() {
       active = false;
       window.removeEventListener("diveframe-whats-new-seen", handleSeen);
     };
-  }, []);
+  }, [showNotice]);
+
+  if (!showNotice) return null;
 
   const unread = whatsNew !== null && whatsNew.version !== lastSeenVersion;
   const latestEntry = whatsNew?.entries[0] ?? null;

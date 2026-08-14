@@ -332,6 +332,12 @@ export const en = {
   catalogSource: "DiveFrame catalog",
   mapFallback: "Map fallback",
   noNearbySites: "Dive site not found",
+  catalogExactMatchPrompt:
+    "Exact catalog match for “{name}”. Choose it to apply the catalog coordinates.",
+  catalogCloseMatchPrompt:
+    "Possible catalog matches for “{name}”. Choose one to apply its coordinates.",
+  catalogExactMatch: "Exact catalog match",
+  catalogCloseMatch: "Close catalog match",
   diveSiteName: "Dive-site name",
   siteLocationEditorHint: "Type a site or location name with suggestions from this logbook and the site catalog. Dive-computer GPS coordinates take priority; other coordinates are treated as user-provided.",
   typeSiteName: "Type a site name",

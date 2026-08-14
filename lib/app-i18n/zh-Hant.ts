@@ -331,6 +331,12 @@ export const zhHant: Record<keyof typeof en, string> = {
   catalogSource: "DiveFrame 潛點資料庫",
   mapFallback: "地圖搜尋結果",
   noNearbySites: "找不到潛點",
+  catalogExactMatchPrompt:
+    "「{name}」與目錄中的潛點名稱完全相符。選取它即可套用目錄座標。",
+  catalogCloseMatchPrompt:
+    "以下是「{name}」的目錄相近結果。請選取要套用座標的潛點。",
+  catalogExactMatch: "目錄名稱完全相符",
+  catalogCloseMatch: "目錄名稱相近",
   diveSiteName: "潛點名稱",
   siteLocationEditorHint: "輸入潛點或地點名稱，系統會根據現有潛水紀錄及潛點資料庫提供建議。潛水電腦的 GPS 座標會優先使用；其他座標則視為由使用者提供。",
   typeSiteName: "輸入潛點名稱",

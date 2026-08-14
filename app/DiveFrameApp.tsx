@@ -1785,6 +1785,7 @@ function DiveDetail({
     !dive.userSite && !dive.site,
   );
   const siteEditorRef = useRef<HTMLDetailsElement>(null);
+  const siteMutationInFlightRef = useRef(false);
   const [editingDetails, setEditingDetails] = useState(false);
   const [deleteDiveConfirmOpen, setDeleteDiveConfirmOpen] = useState(false);
   const [buddyDraft, setBuddyDraft] = useState(dive.buddy ?? "");
@@ -2155,10 +2156,23 @@ function DiveDetail({
   }, [dive.cylinderPresetId]);
 
   async function saveSiteAndCollapse(selection: SiteSelection) {
-    if (await onSaveSite(selection)) {
-      setManualSite(selection.name);
-      if (selection.location) setLocationDraft(selection.location);
-      setSitePickerOpen(false);
+    if (siteMutationInFlightRef.current) return;
+    siteMutationInFlightRef.current = true;
+    try {
+      if (await onSaveSite(selection)) {
+        setManualSite(selection.name);
+        if (selection.location !== undefined) {
+          setLocationDraft(selection.location ?? "");
+        }
+        if (selection.latitude !== null && selection.longitude !== null) {
+          setUserGpsDraft(
+            formatCoordinatePair(selection.latitude, selection.longitude),
+          );
+        }
+        setSitePickerOpen(false);
+      }
+    } finally {
+      siteMutationInFlightRef.current = false;
     }
   }
 
@@ -2170,29 +2184,51 @@ function DiveDetail({
   }
 
   async function saveSiteAndLocation() {
-    const name = manualSite.trim();
-    const currentSite = (dive.userSite ?? dive.site ?? "").trim();
-    if (name && name !== currentSite) {
-      const saved = await onSaveSite({
-        name,
-        source: "manual",
-        latitude: mapCoordinates?.latitude ?? null,
-        longitude: mapCoordinates?.longitude ?? null,
-      });
-      if (!saved) return;
-    }
+    if (siteMutationInFlightRef.current) return;
+    siteMutationInFlightRef.current = true;
+    try {
+      const name = manualSite.trim();
+      const currentSite = (dive.userSite ?? dive.site ?? "").trim();
+      if (name && name !== currentSite) {
+        const saved = await onSaveSite({
+          name,
+          source: "manual",
+          latitude: mapCoordinates?.latitude ?? null,
+          longitude: mapCoordinates?.longitude ?? null,
+        });
+        if (!saved) return;
+      }
 
-    const location = locationDraft.trim() || null;
-    if (location !== (dive.location ?? null)) {
-      const saved = await onSaveDetails({
-        location,
-        buddy: dive.buddy ?? null,
-        notes: dive.notes ?? null,
-      });
-      if (!saved) return;
-    }
+      const location = locationDraft.trim() || null;
+      if (location !== (dive.location ?? null)) {
+        const saved = await onSaveDetails({
+          location,
+          buddy: dive.buddy ?? null,
+          notes: dive.notes ?? null,
+        });
+        if (!saved) return;
+      }
 
-    setSitePickerOpen(false);
+      setSitePickerOpen(false);
+    } finally {
+      siteMutationInFlightRef.current = false;
+    }
+  }
+
+  async function clearSiteData() {
+    if (siteMutationInFlightRef.current) return;
+    siteMutationInFlightRef.current = true;
+    try {
+      const updated = await onClearSiteOverride();
+      if (!updated) return;
+      setManualSite(updated.userSite ?? updated.site ?? "");
+      setLocationDraft(updated.location ?? "");
+      setUserGpsDraft(
+        formatCoordinatePair(updated.userGpsLat, updated.userGpsLng),
+      );
+    } finally {
+      siteMutationInFlightRef.current = false;
+    }
   }
 
   return (
@@ -2362,21 +2398,7 @@ function DiveDetail({
                 <button
                   type="button"
                   className="button button-quiet"
-                  onClick={() =>
-                    void (async () => {
-                      const updated = await onClearSiteOverride();
-                      if (updated) {
-                        setManualSite(updated.userSite ?? updated.site ?? "");
-                        setLocationDraft(updated.location ?? "");
-                        setUserGpsDraft(
-                          formatCoordinatePair(
-                            updated.userGpsLat,
-                            updated.userGpsLng,
-                          ),
-                        );
-                      }
-                    })()
-                  }
+                  onClick={() => void clearSiteData()}
                   disabled={busy}
                 >
                   {t("clearSiteData")}
@@ -2388,9 +2410,11 @@ function DiveDetail({
           <DiveSiteSuggestions
             coordinates={mapCoordinates}
             catalog={localDiveSiteCatalog}
+            siteName={manualSite}
+            hasUserGpsInput={photoGpsBusy || userGpsDraft.trim() !== ""}
             selectedName={dive.userSite}
             selectedCatalogId={dive.userSiteCatalogId}
-            busy={busy}
+            busy={busy || photoGpsBusy}
             onSelect={saveSiteAndCollapse}
           />
 

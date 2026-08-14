@@ -332,6 +332,12 @@ export const ja: Record<keyof typeof en, string> = {
   catalogSource: "DiveFrame カタログ",
   mapFallback: "地図検索の候補",
   noNearbySites: "ダイビングポイントが見つかりません",
+  catalogExactMatchPrompt:
+    "「{name}」はカタログのポイント名と一致します。選択するとカタログの座標を適用します。",
+  catalogCloseMatchPrompt:
+    "「{name}」に近いカタログ候補です。座標を適用する候補を選択してください。",
+  catalogExactMatch: "カタログ名と完全一致",
+  catalogCloseMatch: "カタログ名に近い候補",
   diveSiteName: "ダイビングポイント名",
   siteLocationEditorHint: "ポイント名または場所名を入力すると、このログブックとポイントカタログから候補が表示されます。ダイブコンピューターのGPS座標を優先し、それ以外の座標はユーザー入力として扱います。",
   typeSiteName: "ポイント名を入力",

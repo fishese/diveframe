@@ -8,8 +8,11 @@ import {
   type DiveSiteCatalog,
 } from "@/lib/dive-site-catalog";
 import {
+  catalogSiteNameMatches,
+  catalogSiteSelection,
   nearbySiteCatalogId,
   nearbySiteSelection,
+  type CatalogSiteNameMatch,
   type NearbySite,
   type SiteSelection,
 } from "@/lib/dive-site-suggestions";
@@ -18,6 +21,8 @@ import { diveFrameApiUrl } from "@/lib/diveframe-api";
 export function DiveSiteSuggestions({
   coordinates,
   catalog,
+  siteName,
+  hasUserGpsInput = false,
   selectedName,
   selectedCatalogId,
   busy = false,
@@ -25,6 +30,8 @@ export function DiveSiteSuggestions({
 }: {
   coordinates: { latitude: number; longitude: number } | null;
   catalog: DiveSiteCatalog;
+  siteName?: string | null;
+  hasUserGpsInput?: boolean;
   selectedName?: string | null;
   selectedCatalogId?: string | null;
   busy?: boolean;
@@ -53,6 +60,13 @@ export function DiveSiteSuggestions({
           )
         : [],
     [catalog, latitude, longitude],
+  );
+  const nameMatches = useMemo(
+    () =>
+      !coordinates && !hasUserGpsInput
+        ? catalogSiteNameMatches(catalog, siteName)
+        : [],
+    [catalog, coordinates, hasUserGpsInput, siteName],
   );
   const sites = localSites.length
     ? localSites
@@ -105,7 +119,32 @@ export function DiveSiteSuggestions({
     };
   }, [coordinateKey, latitude, localSites.length, longitude]);
 
-  if (!coordinates) return <p className="site-empty">{t("noNearbySites")}</p>;
+  if (!coordinates) {
+    if (hasUserGpsInput || !siteName?.trim() || !nameMatches.length) return null;
+    return (
+      <>
+        <p className="site-name-match-prompt" role="status">
+          {t(
+            nameMatches[0].kind === "exact"
+              ? "catalogExactMatchPrompt"
+              : "catalogCloseMatchPrompt",
+            { name: siteName.trim() },
+          )}
+        </p>
+        <div className="site-suggestions site-name-suggestions">
+          {nameMatches.map((match) => (
+            <CatalogNameMatch
+              key={match.site.id}
+              match={match}
+              busy={busy}
+              selectedCatalogId={selectedCatalogId}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
+      </>
+    );
+  }
   if (loading) {
     return (
       <div className="site-loading">
@@ -179,6 +218,44 @@ export function DiveSiteSuggestions({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function CatalogNameMatch({
+  match,
+  busy,
+  selectedCatalogId,
+  onSelect,
+}: {
+  match: CatalogSiteNameMatch;
+  busy: boolean;
+  selectedCatalogId?: string | null;
+  onSelect: (selection: SiteSelection) => void | Promise<void>;
+}) {
+  const { t } = useAppI18n();
+  const matchedAlias = match.matchedName !== match.site.name;
+  return (
+    <div className="site-suggestion-item">
+      <div className="site-suggestion-main">
+        <button
+          type="button"
+          className="site-suggestion-name"
+          onClick={() => void onSelect(catalogSiteSelection(match.site))}
+          disabled={busy}
+          aria-pressed={selectedCatalogId === match.site.id}
+        >
+          <span>{match.site.name}</span>
+          {matchedAlias ? (
+            <em>{t("siteMatchedByAlias", { name: match.matchedName })}</em>
+          ) : null}
+          <small>
+            {t(match.kind === "exact" ? "catalogExactMatch" : "catalogCloseMatch")}
+            {" · "}
+            {t("catalogSource")}
+          </small>
+        </button>
+      </div>
     </div>
   );
 }

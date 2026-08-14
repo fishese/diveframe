@@ -35,7 +35,7 @@ so PWA, production, and Preview data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-13)
+## Current status (2026-08-14)
 
 - Preview channel implementation is complete. The explicit Gradle
   `preview` build type uses `cc.fishese.divelog.preview`; default
@@ -43,10 +43,11 @@ store distribution are not started yet.
 - The signed workflow is `.github/workflows/preview-apk.yml`. It checks out
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
-- The latest shared runtime commit on `main` is `05b030854`; the current
-  Preview release also targets `05b030854` (workflow run
-  `31629314694`). The published `diveframe-preview.apk` has SHA-256
-  `ae710995b584d19a5fd3bca5c687ffb7a956d3974097194ffb3fb1bda4c6a85c`.
+- The latest shared runtime commit on `main` is
+  `40ca426beef6f562bf0a615c99bc4ae9990ffe52`; the current Preview release
+  also targets that commit (workflow run
+  `31723193269`). The published `diveframe-preview.apk` has SHA-256
+  `9cadb4c93783d9437fd61454bb250e2c63be3938247bde9d2e65d20d571171e0`.
   This is the intended no-drift state for the web/PWA and
   Preview APK, subject to normal hosted-deployment propagation.
 - The current F-Droid MR remains pinned to production commit

@@ -10,7 +10,13 @@ const javascript = ts.transpileModule(source, {
     target: ts.ScriptTarget.ES2022,
   },
 }).outputText.replace(/^import .*;\s*/m, "");
-const { buildSiteLocationSuggestions, buildSiteNameSuggestions, nearbySiteSelection } =
+const {
+  buildSiteLocationSuggestions,
+  buildSiteNameSuggestions,
+  catalogSiteNameMatches,
+  catalogSiteSelection,
+  nearbySiteSelection,
+} =
   await import(
     `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`
   );
@@ -76,4 +82,23 @@ test("nearby selections preserve catalog identity and coordinates", () => {
       location: "Palau",
     },
   );
+});
+
+test("typed exact catalog names offer an explicit coordinate selection", () => {
+  const matches = catalogSiteNameMatches(catalog, "blue corner");
+  assert.equal(matches.length, 1);
+  assert.equal(matches[0].kind, "exact");
+  assert.deepEqual(catalogSiteSelection(matches[0].site), {
+    name: "Blue Corner",
+    source: "catalog",
+    catalogId: "blue-corner",
+    latitude: 7.1,
+    longitude: 134.2,
+    location: "Palau",
+  });
+});
+
+test("typed close catalog names are ranked without matching unrelated short text", () => {
+  assert.equal(catalogSiteNameMatches(catalog, "Blue Cornr")[0].kind, "close");
+  assert.deepEqual(catalogSiteNameMatches(catalog, "Blue"), []);
 });
