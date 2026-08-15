@@ -20,6 +20,9 @@ F-Droid-specific build contract and the failure that occurred during MR
 - The MR is pinned to production commit
   `24e09b38a4921d5c3c80ec291a9544734fe5851f`, version `1.0.22`, version code
   `23`, and immutable source tag `v1.0.22`.
+- Current web `main` contains documentation-only follow-ups. The stable APK
+  and recipe intentionally remain pinned to
+  `24e09b38a4921d5c3c80ec291a9544734fe5851f`.
 
 The staging recipe is:
 
@@ -197,6 +200,11 @@ Pipeline 2762156241 passed all nine jobs: `fdroid build`, `check apk`, `check
 source code`, `schema validation`, `tools check scripts`, `fdroid rewritemeta`,
 `fdroid lint`, `git redirect`, and `checkupdates`. The recipe still uses
 `subdir: android/app`, has no `output`, and retains all pinned native inputs.
+
+For the 1.0.22 update, checklist steps through reference publication, recipe
+validation, and MR pipeline verification are complete. Maintainer review is
+the only pending step; do not merge the MR from the release-preparation
+workflow.
 
 ## Repeatable F-Droid update checklist
 

@@ -116,6 +116,8 @@ The current stable/F-Droid MR update is pinned to production commit
 `24e09b38a4921d5c3c80ec291a9544734fe5851f`, version `1.0.22`, version code
 `23`, and the immutable `v1.0.22` source tag. Preview changes do not select
 the F-Droid source; only an intentional stable release updates the recipe.
+Current `main` contains documentation-only release records after the stable
+source; those commits are not the source of the published APK.
 
 The current verified Preview release targets shared runtime commit
 `5963a5ab1edc23b1163804361afb8d5c028788c2` (workflow run `31862669183`). It

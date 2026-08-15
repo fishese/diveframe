@@ -54,6 +54,8 @@ store distribution are not started yet.
   Preview APK, subject to normal hosted-deployment propagation.
   The stable release commit adds only release metadata after this runtime and
   does not introduce runtime drift.
+- Current `main` contains documentation-only stable-release records after the
+  APK source commit; those follow-ups are not APK sources.
 - Stable production/F-Droid release `1.0.22` uses source commit
   `24e09b38a4921d5c3c80ec291a9544734fe5851f`, version code `23`, and the
   production package `cc.fishese.divelog`. Immutable source tag/release:
