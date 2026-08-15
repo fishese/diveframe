@@ -118,9 +118,9 @@ changing that MR or recipe. Only reviewer feedback or a concrete F-Droid
 failure justifies touching the submission metadata.
 
 The current verified Preview release targets shared runtime commit
-`047e98121853f6dbf46040a9c84fb1a41fb61def` (workflow run `31861555726`). It
-is `preview.10.047e981`, version code `100010`, and its APK SHA-256 is
-`0564a573a1c70d1bf3fe0ac79dea8e1ad7b8fc1b1464dc4534df45a111840d59`.
+`5963a5ab1edc23b1163804361afb8d5c028788c2` (workflow run `31862669183`). It
+is `preview.11.5963a5a`, version code `100011`, and its APK SHA-256 is
+`69ab842198f37788cada96726c6da16b1d8a403b5552da6b2bf5cf3ab0704ab8`.
 
 The exact F-Droid working-directory rule, `Binaries` whitespace requirement,
 MR failure analysis, reference-APK contract, and future update checklist are

@@ -44,12 +44,12 @@ store distribution are not started yet.
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
 - The latest shared runtime commit on `main` is
-  `047e98121853f6dbf46040a9c84fb1a41fb61def`; the current Preview release
+  `5963a5ab1edc23b1163804361afb8d5c028788c2`; the current Preview release
   also targets that commit (workflow run
-  `31861555726`). The published Preview is version
-  `preview.10.047e981` (version code `100010`), and
+  `31862669183`). The published Preview is version
+  `preview.11.5963a5a` (version code `100011`), and
   `diveframe-preview.apk` has SHA-256
-  `0564a573a1c70d1bf3fe0ac79dea8e1ad7b8fc1b1464dc4534df45a111840d59`.
+  `69ab842198f37788cada96726c6da16b1d8a403b5552da6b2bf5cf3ab0704ab8`.
   This is the intended no-drift state for the web/PWA and
   Preview APK, subject to normal hosted-deployment propagation.
   A later `main` commit that only records this verified release is
