@@ -49,8 +49,6 @@ import java.util.concurrent.Executors;
 )
 public class DiveComputerPlugin extends Plugin {
     private static final String API_VERSION = "0.6-spike";
-    private static final String LIBDIVECOMPUTER_COMMIT =
-        "8e564eb5cf9fb4318af3d540895abb916e1809b0";
     private static final long DEFAULT_SCAN_TIMEOUT_MS = 15_000L;
 
     private DiveComputerSession session;
@@ -169,7 +167,7 @@ public class DiveComputerPlugin extends Plugin {
             "libdivecomputerVersion",
             DiveComputerNative.libdivecomputerVersion()
         );
-        result.put("libdivecomputerCommit", LIBDIVECOMPUTER_COMMIT);
+        result.put("libdivecomputerCommit", BuildConfig.LIBDIVECOMPUTER_COMMIT);
         result.put("transportReady", session != null && session.isTransportReady());
         result.put("phase", session == null ? "idle" : session.phase().name().toLowerCase());
         result.put("supportedOperations", operations);

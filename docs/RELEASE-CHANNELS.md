@@ -101,6 +101,9 @@ The staging recipe is
 
 - Keep `subdir: android/app` and `gradle: yes` unless F-Droid explicitly
   requests a recipe change.
+- Keep `submodules: true`; the stable source tag's libdivecomputer gitlink
+  must match `android/app/src/main/cpp/libdivecomputer.pin`. Do not restore a
+  separate recipe-level `srclibs` revision, which cannot follow auto-updates.
 - `gradle: yes` selects the default production `assembleRelease` path here;
   it must not select or publish `assemblePreview`.
 - Do not add a flavor or change the default task in order to publish Preview.
@@ -244,7 +247,8 @@ Before calling a release complete, verify all of the following:
 - The latest Preview release target SHA is the intended shared runtime commit,
   or any lag is explicitly recorded as intentional.
 - The F-Droid recipe still uses `subdir: android/app`, no `output`, the
-  production default build, and the required `Binaries:` formatting.
+  production default build, `submodules: true`, no `srclibs`, and the required
+  `Binaries:` formatting.
 - Auto-update remains `Version` with the exact stable-tag regex and
   `UpdateCheckData`; verify that Preview, nightly, debug, and `fdroid-v...`
   tags remain excluded.

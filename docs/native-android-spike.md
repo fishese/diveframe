@@ -187,9 +187,10 @@ pinned stale BLE UI during LAN/dev testing.
 Clear `DIVEFRAME_NATIVE_SERVER_URL` and re-run `npm run native:sync` to go back
 to the bundled product app.
 
-The source pin is recorded in
-`android/app/src/main/cpp/libdivecomputer.pin`. Fetched dependency source and
-compiled artifacts are intentionally ignored by Git. The matching upstream
+The exact source is tracked as the Git submodule at
+`android/app/src/main/cpp/vendor/libdivecomputer`. Its gitlink must match the
+commit recorded in `android/app/src/main/cpp/libdivecomputer.pin`; generated
+version headers and compiled artifacts remain untracked. The matching upstream
 Android source list is retained in `libdivecomputer-sources.cmake`. CMake is
 used instead of ndk-build because the latter cannot configure a project from
 this workspace's space-containing path.

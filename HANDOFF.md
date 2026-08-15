@@ -254,8 +254,8 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `app/api/whats-new/route.ts` — CORS-aware What's new feed for web and APK.
 - `data/dive-sites.json` — curated source-controlled dive-site catalog.
 - `public/whats-new.json` — seed What's new document served by the API.
-- `android/` — Capacitor shell, JNI libdivecomputer bridge, BLE plugin, file
-  export plugin.
+- `android/` — Capacitor shell, JNI libdivecomputer bridge, pinned
+  libdivecomputer Git submodule, BLE plugin, and file export plugin.
 - `scripts/archive/shearwater-gps-backfill/` — offline tooling to recover
   computer GPS from raw BLE bytes / backups if needed again.
 - `app/globals.css` — responsive application styling.

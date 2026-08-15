@@ -7,8 +7,30 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$repository = "https://github.com/libdivecomputer/libdivecomputer.git"
-$commit = "8e564eb5cf9fb4318af3d540895abb916e1809b0"
+$pinPath = Join-Path $PSScriptRoot `
+    "..\android\app\src\main\cpp\libdivecomputer.pin"
+$pin = @{}
+foreach ($line in Get-Content -LiteralPath $pinPath) {
+    if ($line -match "^([^=]+)=(.*)$") {
+        $pin[$Matches[1]] = $Matches[2]
+    }
+}
+
+$repository = $pin["repository"]
+$commit = $pin["commit"]
+$version = $pin["version"]
+if ($repository -notmatch "^https://") {
+    throw "libdivecomputer.pin must use an HTTPS repository URL."
+}
+if ($commit -notmatch "^[0-9a-f]{40}$") {
+    throw "libdivecomputer.pin must contain a full commit."
+}
+if ($version -notmatch "^(\d+)\.(\d+)\.(\d+)(?:-.+)?$") {
+    throw "libdivecomputer.pin is incomplete or invalid."
+}
+$versionMajor = $Matches[1]
+$versionMinor = $Matches[2]
+$versionMicro = $Matches[3]
 $resolvedDestination = [System.IO.Path]::GetFullPath($Destination)
 $workspace = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 
@@ -42,10 +64,10 @@ $versionTemplate = Get-Content -Raw -LiteralPath (
     Join-Path $resolvedDestination "include\libdivecomputer\version.h.in"
 )
 $versionHeaderContent = $versionTemplate `
-    -replace "@DC_VERSION@", "0.10.0-devel" `
-    -replace "@DC_VERSION_MAJOR@", "0" `
-    -replace "@DC_VERSION_MINOR@", "10" `
-    -replace "@DC_VERSION_MICRO@", "0"
+    -replace "@DC_VERSION@", $version `
+    -replace "@DC_VERSION_MAJOR@", $versionMajor `
+    -replace "@DC_VERSION_MINOR@", $versionMinor `
+    -replace "@DC_VERSION_MICRO@", $versionMicro
 [System.IO.File]::WriteAllText(
     $versionHeader,
     $versionHeaderContent,

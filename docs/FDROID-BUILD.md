@@ -83,15 +83,14 @@ pipeline before changing anything else.
 ### Recipe command working directories
 
 F-Droid executes `prebuild` and `build` from the resolved `subdir`, currently
-`android/app`. That explains the deliberately app-relative native paths:
+`android/app`. That explains the repository-root transition used to validate
+and prepare the pinned native submodule:
 
 ```yaml
+submodules: true
 prebuild:
-  - rm -rf src/main/cpp/vendor/libdivecomputer
-  - mkdir -p src/main/cpp/vendor/libdivecomputer
-  - cp -R $$libdivecomputer$$/. src/main/cpp/vendor/libdivecomputer/
-  - ... src/main/cpp/vendor/libdivecomputer/...
   - cd ../..
+  - sh scripts/fetch-libdivecomputer.sh
   - npm ci
   - npm run native:sync
 build:
@@ -100,21 +99,45 @@ build:
   - npm run native:sync
 ```
 
-The native library paths are relative to `android/app`; the repository-root
-Node commands require `cd ../..`. Do not change only `subdir` and leave the
-old `app/src/...` or `cd ..` paths in place.
+The build starts in `android/app`; the native preparation and Node commands
+require `cd ../..`. Do not change only `subdir` and leave the old `cd ..`
+transition in place.
 
 The current recipe also deliberately pins:
 
 - Node/npm installation from Debian forky because the project requires Node
   22.13+ and the native web build uses current tooling;
 - NDK `27.0.12077973`;
-- the `libdivecomputer` srclib revision and generated revision header; and
+- the `libdivecomputer` Git submodule revision, matching
+  `android/app/src/main/cpp/libdivecomputer.pin`, and generated revision
+  header; and
 - the offline second `npm ci` after the dependency cache has been prepared.
 
 These are build inputs, not optional cleanup. Keep them reproducible and do
-not replace the pinned srclib with an unpinned network checkout in an F-Droid
-build.
+not replace the pinned submodule with an unpinned branch or network checkout
+in an F-Droid build.
+
+### `libdivecomputer` update contract
+
+The app repository tracks `libdivecomputer` as a Git submodule at
+`android/app/src/main/cpp/vendor/libdivecomputer`. The source tag's gitlink is
+the dependency source of truth for F-Droid. The adjacent
+`libdivecomputer.pin` records the same full commit for generated version
+headers, the native build ID, and runtime provenance. They must always match.
+
+GitHub release workflows check out submodules recursively. The F-Droid recipe
+uses `submodules: true`, does not declare `srclibs`, and runs
+`scripts/fetch-libdivecomputer.sh` only to verify the checked-out commit and
+generate `version.h` / `revision.h`; it performs no dependency fetch when the
+submodule is initialized. This lets `AutoUpdateMode: Version` inherit the
+exact dependency pointer from each immutable DiveFrame source tag instead of
+copying an obsolete recipe-level hash.
+
+When intentionally updating libdivecomputer, update the gitlink and
+`libdivecomputer.pin` together, regenerate/verify the source manifest if
+upstream files changed, run both Preview and production native checks, and
+publish the change only through a new immutable stable tag. Never point the
+submodule at a branch or advance it merely because upstream HEAD changed.
 
 ### Preserve the `Binaries` formatting
 
@@ -229,7 +252,8 @@ Use this sequence for a future accumulated production/F-Droid update:
    code, and the developer signing key.
 6. Update both recipe copies with the same commit/version/code. Preserve
    `subdir: android/app`, remove `output`, preserve the `Binaries:` trailing
-   space, and keep the pinned NDK/srclib/native build commands.
+   space, keep `submodules: true`, and retain the pinned NDK/native build
+   commands. Do not reintroduce a recipe-level `srclibs` commit.
 7. Run metadata validation and a clean F-Droid build. The MR pipeline should
    pass `fdroid rewritemeta`, `fdroid lint`, schema validation, source checks,
    `checkupdates`, `fdroid build`, and `check apk`.

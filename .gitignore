@@ -45,9 +45,6 @@ next-env.d.ts
 /outputs/
 /work/
 
-# fetched native dependency source (see scripts/fetch-libdivecomputer.ps1)
-/android/app/src/main/cpp/vendor/
-
 # Android Studio local project metadata
 /android/.idea/
 

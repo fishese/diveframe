@@ -50,6 +50,23 @@ const files = {
     "../android/app/src/main/cpp/libdivecomputer.pin",
     import.meta.url,
   ),
+  gitmodules: new URL("../.gitmodules", import.meta.url),
+  fetchShell: new URL(
+    "../scripts/fetch-libdivecomputer.sh",
+    import.meta.url,
+  ),
+  fetchPowerShell: new URL(
+    "../scripts/fetch-libdivecomputer.ps1",
+    import.meta.url,
+  ),
+  fdroidWorkflow: new URL(
+    "../.github/workflows/fdroid-reference-apk.yml",
+    import.meta.url,
+  ),
+  previewWorkflow: new URL(
+    "../.github/workflows/preview-apk.yml",
+    import.meta.url,
+  ),
 };
 
 test("native shell remains isolated from the deployed web build", async () => {
@@ -72,17 +89,53 @@ test("native shell remains isolated from the deployed web build", async () => {
 });
 
 test("native bridge and linked library use the recorded source pin", async () => {
-  const [pin, javaPlugin, cmake, capability] = await Promise.all([
+  const [
+    pin,
+    javaPlugin,
+    cmake,
+    capability,
+    buildGradle,
+    gitmodules,
+    fetchShell,
+    fetchPowerShell,
+    fdroidWorkflow,
+    previewWorkflow,
+  ] = await Promise.all([
     readFile(files.pin, "utf8"),
     readFile(files.javaPlugin, "utf8"),
     readFile(files.cmake, "utf8"),
     readFile(files.capability, "utf8"),
+    readFile(files.buildGradle, "utf8"),
+    readFile(files.gitmodules, "utf8"),
+    readFile(files.fetchShell, "utf8"),
+    readFile(files.fetchPowerShell, "utf8"),
+    readFile(files.fdroidWorkflow, "utf8"),
+    readFile(files.previewWorkflow, "utf8"),
   ]);
   const commit = pin.match(/^commit=([a-f0-9]{40})$/m)?.[1];
 
   assert.ok(commit, "expected a full libdivecomputer commit pin");
   assert.match(pin, /^license=LGPL-2\.1-or-later$/m);
-  assert.match(javaPlugin, new RegExp(commit));
+  assert.match(javaPlugin, /BuildConfig\.LIBDIVECOMPUTER_COMMIT/);
+  assert.doesNotMatch(javaPlugin, new RegExp(commit));
+  assert.match(buildGradle, /libdivecomputer\.pin/);
+  assert.match(buildGradle, /buildConfig\s*=\s*true/);
+  assert.match(buildGradle, /buildConfigField "String", "LIBDIVECOMPUTER_COMMIT"/);
+  assert.doesNotMatch(buildGradle, new RegExp(commit));
+  assert.match(
+    gitmodules,
+    /path = android\/app\/src\/main\/cpp\/vendor\/libdivecomputer/,
+  );
+  assert.match(
+    gitmodules,
+    /url = https:\/\/github\.com\/libdivecomputer\/libdivecomputer\.git/,
+  );
+  assert.match(fetchShell, /libdivecomputer\.pin/);
+  assert.match(fetchPowerShell, /libdivecomputer\.pin/);
+  assert.doesNotMatch(fetchShell, new RegExp(commit));
+  assert.doesNotMatch(fetchPowerShell, new RegExp(commit));
+  assert.match(fdroidWorkflow, /submodules: recursive/);
+  assert.match(previewWorkflow, /submodules: recursive/);
   assert.match(javaPlugin, /DiveComputerNative\.libdivecomputerVersion\(\)/);
   assert.match(cmake, /add_library\(libdivecomputer SHARED/);
   assert.match(cmake, /add_library\(diveframe_dc SHARED/);

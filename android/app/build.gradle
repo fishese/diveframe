@@ -2,17 +2,29 @@ apply plugin: 'com.android.application'
 
 def configuredVersionCode = project.findProperty('previewVersionCode')
 def configuredVersionName = project.findProperty('previewVersionName')
+def libdivecomputerPin = new Properties()
+file('src/main/cpp/libdivecomputer.pin').withInputStream {
+    libdivecomputerPin.load(it)
+}
+def libdivecomputerCommit = libdivecomputerPin.getProperty('commit')
+if (!(libdivecomputerCommit ==~ /[0-9a-f]{40}/)) {
+    throw new GradleException('libdivecomputer.pin must contain a full commit')
+}
 
 android {
     namespace = "cc.fishese.divelog"
     compileSdk = rootProject.ext.compileSdkVersion
     ndkVersion = rootProject.ext.ndkVersion
+    buildFeatures {
+        buildConfig = true
+    }
     defaultConfig {
         applicationId "cc.fishese.divelog"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode configuredVersionCode ? configuredVersionCode.toInteger() : 23
-        versionName configuredVersionName ?: "1.0.22"
+        versionCode configuredVersionCode ? configuredVersionCode.toInteger() : 24
+        versionName configuredVersionName ?: "1.0.23"
+        buildConfigField "String", "LIBDIVECOMPUTER_COMMIT", "\"${libdivecomputerCommit}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             // The native build currently targets arm64-v8a.

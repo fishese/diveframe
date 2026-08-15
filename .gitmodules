@@ -1,0 +1,4 @@
+[submodule "android/app/src/main/cpp/vendor/libdivecomputer"]
+	path = android/app/src/main/cpp/vendor/libdivecomputer
+	url = https://github.com/libdivecomputer/libdivecomputer.git
+	ignore = untracked
