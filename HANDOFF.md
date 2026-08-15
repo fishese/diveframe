@@ -35,7 +35,7 @@ so PWA, production, and Preview data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-14)
+## Current status (2026-08-15)
 
 - Preview channel implementation is complete. The explicit Gradle
   `preview` build type uses `cc.fishese.divelog.preview`; default
@@ -44,10 +44,12 @@ store distribution are not started yet.
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
 - The latest shared runtime commit on `main` is
-  `745717c64875cb2beb49f9a8ab8cc352b2d29fdb`; the current Preview release
+  `047e98121853f6dbf46040a9c84fb1a41fb61def`; the current Preview release
   also targets that commit (workflow run
-  `31806679858`). The published `diveframe-preview.apk` has SHA-256
-  `d1441dd0b26d341d469eebf93b830c83f74ed4660c6ce0d460be1b652d8554d0`.
+  `31861555726`). The published Preview is version
+  `preview.10.047e981` (version code `100010`), and
+  `diveframe-preview.apk` has SHA-256
+  `0564a573a1c70d1bf3fe0ac79dea8e1ad7b8fc1b1464dc4534df45a111840d59`.
   This is the intended no-drift state for the web/PWA and
   Preview APK, subject to normal hosted-deployment propagation.
   A later `main` commit that only records this verified release is
