@@ -18,11 +18,11 @@ F-Droid-specific build contract and the failure that occurred during MR
 - The current submission MR is
   [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472).
 - The MR is pinned to production commit
-  `24e09b38a4921d5c3c80ec291a9544734fe5851f`, version `1.0.22`, version code
-  `23`, and immutable source tag `v1.0.22`.
+  `169cb26a12e398e9872b1d58cd0b974077059cd3`, version `1.0.23`, version code
+  `24`, and immutable source tag `v1.0.23`.
 - Current web `main` contains documentation-only follow-ups. The stable APK
   and recipe intentionally remain pinned to
-  `24e09b38a4921d5c3c80ec291a9544734fe5851f`.
+  `169cb26a12e398e9872b1d58cd0b974077059cd3`.
 - Stable-only auto-update is enabled with `AutoUpdateMode: Version` and
   `UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$`. `UpdateCheckData` reads
   the production fallback versionCode/versionName from
@@ -45,9 +45,9 @@ These fields are coupled to the current Android project layout:
 
 ```yaml
 Builds:
-  - versionName: 1.0.22
-    versionCode: 23
-    commit: 24e09b38a4921d5c3c80ec291a9544734fe5851f
+  - versionName: 1.0.23
+    versionCode: 24
+    commit: 169cb26a12e398e9872b1d58cd0b974077059cd3
     subdir: android/app
     gradle:
       - yes
@@ -204,33 +204,33 @@ Gradle task:            assembleRelease
 ```
 
 The reference workflow is
-`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.22` values
+`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.23` values
 are hard-coded together for the stable release and were run from the exact
-`v1.0.22` source tag. Never use the mutable `preview` release as the
+`v1.0.23` source tag. Never use the mutable `preview` release as the
 reference asset.
 
 ## Verified stable release update
 
-- Stable source/tag: `24e09b38a4921d5c3c80ec291a9544734fe5851f` / `v1.0.22`
-- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.22
-- Reference workflow: https://github.com/fishese/diveframe/actions/runs/31863414099
-- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.22
-- Reference asset: `diveframe-1.0.22.apk`, `15723961` bytes,
-  SHA-256 `DA8491902321104B3A01B16996BDB8EDF91FE578DD4B97023647FE69A3EED02A`
-- APK identity: `cc.fishese.divelog`, `DiveFrame`, version `1.0.22` / code
-  `23`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
+- Stable source/tag: `169cb26a12e398e9872b1d58cd0b974077059cd3` / `v1.0.23`
+- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.23
+- Reference workflow: https://github.com/fishese/diveframe/actions/runs/31884601030
+- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.23
+- Reference asset: `diveframe-1.0.23.apk`, `15723961` bytes,
+  SHA-256 `9EC1357437488E0FEFF87F85739920E95E3744854091D8DE1F1379ECF27B9C6F`
+- APK identity: `cc.fishese.divelog`, `DiveFrame`, version `1.0.23` / code
+  `24`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
-- Recipe/MR commit: `b7b84caef9c19ff589a2ef3013d119da327d86af`
+- Recipe/MR commit: `c9b200bf5ee3d96a528f2dd43de5662f7a25b225`
 - MR/pipeline: [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472),
-  [pipeline 2762335476](https://gitlab.com/fishese/fdroiddata/-/pipelines/2762335476)
+  [pipeline 2762596244](https://gitlab.com/fishese/fdroiddata/-/pipelines/2762596244)
 
-Pipeline 2762335476 passed all nine jobs and validates the reviewer-requested
-stable-tag-only auto-update configuration. The local `fdroid rewritemeta` and
-`fdroid checkupdates` commands also passed after `UpdateCheckData` was added.
-The recipe still uses `subdir: android/app`, has no `output`, and retains all
-pinned native inputs.
+Pipeline 2762596244 passed all nine jobs and validates stable-tag-only
+auto-update plus the reviewer-requested Git submodule dependency path. The
+recipe uses `submodules: true`; the source gitlink and `libdivecomputer.pin`
+both resolve to `8e564eb5cf9fb4318af3d540895abb916e1809b0`. It still uses
+`subdir: android/app`, has no `output`, and retains all pinned native inputs.
 
-For the 1.0.22 update, checklist steps through reference publication, recipe
+For the 1.0.23 update, checklist steps through reference publication, recipe
 validation, and MR pipeline verification are complete. Maintainer review is
 the only pending step; do not merge the MR from the release-preparation
 workflow.

@@ -126,46 +126,49 @@ The staging recipe is
   `fdroid-v...` reference tags do not match and cannot trigger an update.
 
 The current stable/F-Droid MR update is pinned to production commit
-`24e09b38a4921d5c3c80ec291a9544734fe5851f`, version `1.0.22`, version code
-`23`, and the immutable `v1.0.22` source tag. Preview changes do not select
+`169cb26a12e398e9872b1d58cd0b974077059cd3`, version `1.0.23`, version code
+`24`, and the immutable `v1.0.23` source tag. Preview changes do not select
 the F-Droid source; only an intentional stable release updates the recipe.
 Current `main` contains documentation-only release records after the stable
 source; those commits are not the source of the published APK.
 
-The current verified Preview release targets shared runtime commit
-`5963a5ab1edc23b1163804361afb8d5c028788c2` (workflow run `31862669183`). It
-is `preview.11.5963a5a`, version code `100011`, and its APK SHA-256 is
-`69ab842198f37788cada96726c6da16b1d8a403b5552da6b2bf5cf3ab0704ab8`.
+The current verified Preview release targets stable source commit
+`169cb26a12e398e9872b1d58cd0b974077059cd3` (workflow run `31884361612`). It
+is `preview.12.169cb26`, version code `100012`, and its APK SHA-256 is
+`26a89a1be37c3b4fb94cbf6858aa3ce71c0cd9bbe45b24cbd47bba37a67f5649`.
 
 ## Current stable production/F-Droid release
 
 The stable production source is commit
-`24e09b38a4921d5c3c80ec291a9544734fe5851f`, tagged immutably as `v1.0.22`.
+`169cb26a12e398e9872b1d58cd0b974077059cd3`, tagged immutably as `v1.0.23`.
 It uses the default `assembleRelease` path, package
-`cc.fishese.divelog`, version name `1.0.22`, and version code `23`.
+`cc.fishese.divelog`, version name `1.0.23`, and version code `24`.
 
 The matching developer-signed F-Droid reference is published at
-`fdroid-v1.0.22` as `diveframe-1.0.22.apk`:
+`fdroid-v1.0.23` as `diveframe-1.0.23.apk`:
 
-- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.22
-- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.22
-- Reference workflow: https://github.com/fishese/diveframe/actions/runs/31863414099
+- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.23
+- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.23
+- Reference workflow: https://github.com/fishese/diveframe/actions/runs/31884601030
 - Size: `15723961` bytes; SHA-256:
-  `DA8491902321104B3A01B16996BDB8EDF91FE578DD4B97023647FE69A3EED02A`
+  `9EC1357437488E0FEFF87F85739920E95E3744854091D8DE1F1379ECF27B9C6F`
 - ABI: `arm64-v8a`; signer: `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
 
 The F-Droid recipe update commit is
-`b7b84caef9c19ff589a2ef3013d119da327d86af`. MR !45472 remains open and
-unmerged; pipeline `2762335476` passed all nine jobs and validates the
-stable-tag-only auto-update configuration. The F-Droid source, reference
-release, and recipe all resolve to the same stable source commit.
+`c9b200bf5ee3d96a528f2dd43de5662f7a25b225`. MR !45472 remains open and
+unmerged; pipeline `2762596244` passed all nine jobs and validates the
+stable-tag-only auto-update configuration and Git submodule dependency path.
+The F-Droid source, reference release, and recipe all resolve to the same
+stable source commit.
 
-The current Preview deliberately remains at shared runtime commit
-`5963a5ab1edc23b1163804361afb8d5c028788c2` and package
-`cc.fishese.divelog.preview`. The stable source adds only the documentation
-record `2dc375a` and release-only version/workflow metadata after that runtime;
-there is no unrecorded client-behavior difference.
+The current Preview and stable release use the same exact source commit, while
+their packages remain deliberately separate. The latest shared application
+runtime change is still `5963a5ab1edc23b1163804361afb8d5c028788c2`.
+Subsequent source changes are documentation/release records and the pinned
+libdivecomputer submodule/build contract; the dependency commit remains
+`8e564eb5cf9fb4318af3d540895abb916e1809b0`, so there is no unrecorded
+client-behavior difference.
 
 ## Requesting a production release
 

@@ -44,30 +44,33 @@ store distribution are not started yet.
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
 - The latest shared runtime commit on `main` is
-  `5963a5ab1edc23b1163804361afb8d5c028788c2`; the current Preview release
-  also targets that commit (workflow run
-  `31862669183`). The published Preview is version
-  `preview.11.5963a5a` (version code `100011`), and
+  `5963a5ab1edc23b1163804361afb8d5c028788c2`. The current Preview release
+  targets stable source commit `169cb26a12e398e9872b1d58cd0b974077059cd3`
+  (workflow run `31884361612`). The published Preview is version
+  `preview.12.169cb26` (version code `100012`), and
   `diveframe-preview.apk` has SHA-256
-  `69ab842198f37788cada96726c6da16b1d8a403b5552da6b2bf5cf3ab0704ab8`.
+  `26a89a1be37c3b4fb94cbf6858aa3ce71c0cd9bbe45b24cbd47bba37a67f5649`.
   This is the intended no-drift state for the web/PWA and
   Preview APK, subject to normal hosted-deployment propagation.
-  The stable release commit adds only release metadata after this runtime and
-  does not introduce runtime drift.
+  After the shared runtime commit, the stable source adds documentation,
+  release metadata, and the pinned libdivecomputer submodule/build contract;
+  the native dependency remains at the same commit, so there is no unrecorded
+  client-behavior difference.
 - Current `main` contains documentation-only stable-release records after the
   APK source commit; those follow-ups are not APK sources.
-- Stable production/F-Droid release `1.0.22` uses source commit
-  `24e09b38a4921d5c3c80ec291a9544734fe5851f`, version code `23`, and the
+- Stable production/F-Droid release `1.0.23` uses source commit
+  `169cb26a12e398e9872b1d58cd0b974077059cd3`, version code `24`, and the
   production package `cc.fishese.divelog`. Immutable source tag/release:
-  `v1.0.22`.
+  `v1.0.23`.
 - The matching signed F-Droid reference is
-  `fdroid-v1.0.22` / `diveframe-1.0.22.apk`, size `15723961` bytes, SHA-256
-  `DA8491902321104B3A01B16996BDB8EDF91FE578DD4B97023647FE69A3EED02A`,
+  `fdroid-v1.0.23` / `diveframe-1.0.23.apk`, size `15723961` bytes, SHA-256
+  `9EC1357437488E0FEFF87F85739920E95E3744854091D8DE1F1379ECF27B9C6F`,
   signed by the existing `CN=Fishese` certificate and arm64-only.
-  Reference workflow: `31863414099`. F-Droid recipe commit:
-  `b7b84caef9c19ff589a2ef3013d119da327d86af`.
+  Reference workflow: `31884601030`. F-Droid recipe commit:
+  `c9b200bf5ee3d96a528f2dd43de5662f7a25b225`.
 - MR !45472 remains open and unmerged. Its update pipeline
-  `2762335476` passed all nine jobs and validates stable-tag-only auto-update.
+  `2762596244` passed all nine jobs and validates stable-tag-only auto-update
+  plus the reviewer-requested Git submodule dependency path.
   The recipe remains production-only: `AutoUpdateMode: Version` follows only
   exact immutable `vMAJOR.MINOR.PATCH` tags, and Preview changes are not
   submitted.
