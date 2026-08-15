@@ -23,6 +23,11 @@ F-Droid-specific build contract and the failure that occurred during MR
 - Current web `main` contains documentation-only follow-ups. The stable APK
   and recipe intentionally remain pinned to
   `24e09b38a4921d5c3c80ec291a9544734fe5851f`.
+- Stable-only auto-update is enabled with `AutoUpdateMode: Version` and
+  `UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$`. `UpdateCheckData` reads
+  the production fallback versionCode/versionName from
+  `android/app/build.gradle` because those lines also support explicit
+  Preview properties.
 
 The staging recipe is:
 
@@ -192,14 +197,15 @@ reference asset.
 - APK identity: `cc.fishese.divelog`, `DiveFrame`, version `1.0.22` / code
   `23`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
-- Recipe/MR commit: `6d3a1795c9344dd86264ceee71496d74d77f1414`
+- Recipe/MR commit: `b7b84caef9c19ff589a2ef3013d119da327d86af`
 - MR/pipeline: [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472),
-  [pipeline 2762156241](https://gitlab.com/fishese/fdroiddata/-/pipelines/2762156241)
+  [pipeline 2762335476](https://gitlab.com/fishese/fdroiddata/-/pipelines/2762335476)
 
-Pipeline 2762156241 passed all nine jobs: `fdroid build`, `check apk`, `check
-source code`, `schema validation`, `tools check scripts`, `fdroid rewritemeta`,
-`fdroid lint`, `git redirect`, and `checkupdates`. The recipe still uses
-`subdir: android/app`, has no `output`, and retains all pinned native inputs.
+Pipeline 2762335476 passed all nine jobs and validates the reviewer-requested
+stable-tag-only auto-update configuration. The local `fdroid rewritemeta` and
+`fdroid checkupdates` commands also passed after `UpdateCheckData` was added.
+The recipe still uses `subdir: android/app`, has no `output`, and retains all
+pinned native inputs.
 
 For the 1.0.22 update, checklist steps through reference publication, recipe
 validation, and MR pipeline verification are complete. Maintainer review is
@@ -232,15 +238,17 @@ Use this sequence for a future accumulated production/F-Droid update:
    URL must all agree.
 9. Keep Preview and F-Droid work separate. A Preview workflow run or a web
    typography/content change does not justify changing the F-Droid MR.
-10. After initial approval, enable stable-only metadata updates. The intended
-    metadata is:
+10. Preserve the enabled stable-only metadata updates:
 
     ```yaml
     AutoUpdateMode: Version
-    UpdateCheckMode: 'Tags ^v[0-9]+\.[0-9]+\.[0-9]+$'
+    UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
+    UpdateCheckData: android/app/build.gradle|versionCode.*:\s*(\d+)|.|versionName.*"([^"]+)"
     ```
 
-    Never enable updates from mutable Preview tags or from `fdroid-v...`
+    The production `vMAJOR.MINOR.PATCH` tag is the update gate. Ordinary
+    `main` commits and mutable Preview tags do not trigger F-Droid. Never
+    broaden the pattern to Preview, nightly, debug, or `fdroid-v...`
     reference tags.
 
 ## Drift-prevention rule

@@ -65,10 +65,12 @@ store distribution are not started yet.
   `DA8491902321104B3A01B16996BDB8EDF91FE578DD4B97023647FE69A3EED02A`,
   signed by the existing `CN=Fishese` certificate and arm64-only.
   Reference workflow: `31863414099`. F-Droid recipe commit:
-  `6d3a1795c9344dd86264ceee71496d74d77f1414`.
+  `b7b84caef9c19ff589a2ef3013d119da327d86af`.
 - MR !45472 remains open and unmerged. Its update pipeline
-  `2762156241` passed all nine jobs, including `fdroid build` and `check apk`.
-  The recipe remains production-only and Preview changes are not submitted.
+  `2762335476` passed all nine jobs and validates stable-tag-only auto-update.
+  The recipe remains production-only: `AutoUpdateMode: Version` follows only
+  exact immutable `vMAJOR.MINOR.PATCH` tags, and Preview changes are not
+  submitted.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.

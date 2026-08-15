@@ -111,6 +111,16 @@ The staging recipe is
   source/version only when requested.
 - The F-Droid reference APK and source tag must come from the same production
   source commit. A Preview APK must never be used as the F-Droid reference.
+- Automatic updates must remain restricted to exact immutable production tags:
+
+  ```yaml
+  AutoUpdateMode: Version
+  UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
+  UpdateCheckData: android/app/build.gradle|versionCode.*:\s*(\d+)|.|versionName.*"([^"]+)"
+  ```
+
+  Untagged `main` commits, `preview`, `nightly`, debug tags, and
+  `fdroid-v...` reference tags do not match and cannot trigger an update.
 
 The current stable/F-Droid MR update is pinned to production commit
 `24e09b38a4921d5c3c80ec291a9544734fe5851f`, version `1.0.22`, version code
@@ -143,15 +153,41 @@ The matching developer-signed F-Droid reference is published at
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
 
 The F-Droid recipe update commit is
-`6d3a1795c9344dd86264ceee71496d74d77f1414`. MR !45472 remains open and
-unmerged; pipeline `2762156241` passed all nine jobs. The F-Droid source,
-reference release, and recipe all resolve to the same stable source commit.
+`b7b84caef9c19ff589a2ef3013d119da327d86af`. MR !45472 remains open and
+unmerged; pipeline `2762335476` passed all nine jobs and validates the
+stable-tag-only auto-update configuration. The F-Droid source, reference
+release, and recipe all resolve to the same stable source commit.
 
 The current Preview deliberately remains at shared runtime commit
 `5963a5ab1edc23b1163804361afb8d5c028788c2` and package
 `cc.fishese.divelog.preview`. The stable source adds only the documentation
 record `2dc375a` and release-only version/workflow metadata after that runtime;
 there is no unrecorded client-behavior difference.
+
+## Requesting a production release
+
+Use this instruction when accumulated changes are ready for F-Droid
+production:
+
+```text
+Prepare the next stable DiveFrame production/F-Droid release from the latest
+intended shared-runtime source. Read docs/RELEASE-CHANNELS.md and
+docs/FDROID-BUILD.md completely before changing anything. Audit main and the
+latest Preview, choose and record the exact stable source, run the complete
+stable checks, select the next versionName/versionCode, and use the default
+assembleRelease production path. Push the release commit, create immutable
+vMAJOR.MINOR.PATCH and fdroid-vMAJOR.MINOR.PATCH tags at that same source,
+publish and inspect the signed reference APK, and update all release records.
+Treat creation of the vMAJOR.MINOR.PATCH tag as the F-Droid auto-update gate:
+do not create it for Preview, test, documentation-only, or routine minor
+changes. Never move or reuse tags, use a Preview APK as the reference, or
+merge an F-Droid MR.
+```
+
+After the app is accepted, F-Droid's updater should generate future build
+entries only from matching stable tags. Do not manually edit fdroiddata for
+ordinary Preview/main changes; intervene only for a concrete automation
+failure or maintainer request.
 
 The exact F-Droid working-directory rule, `Binaries` whitespace requirement,
 MR failure analysis, reference-APK contract, and future update checklist are
@@ -209,5 +245,8 @@ Before calling a release complete, verify all of the following:
   or any lag is explicitly recorded as intentional.
 - The F-Droid recipe still uses `subdir: android/app`, no `output`, the
   production default build, and the required `Binaries:` formatting.
+- Auto-update remains `Version` with the exact stable-tag regex and
+  `UpdateCheckData`; verify that Preview, nightly, debug, and `fdroid-v...`
+  tags remain excluded.
 - F-Droid recipe, pinned commit, and stable release conventions remain
   untouched unless the task explicitly concerns a stable F-Droid update.
