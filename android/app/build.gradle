@@ -11,8 +11,8 @@ android {
         applicationId "cc.fishese.divelog"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode configuredVersionCode ? configuredVersionCode.toInteger() : 22
-        versionName configuredVersionName ?: "1.0.21"
+        versionCode configuredVersionCode ? configuredVersionCode.toInteger() : 23
+        versionName configuredVersionName ?: "1.0.22"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             // The native build currently targets arm64-v8a.
