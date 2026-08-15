@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   Archive,
   Camera,
@@ -20,6 +19,7 @@ import {
   Upload,
 } from "lucide-react";
 import { AppTopbar } from "../components/AppTopbar";
+import { useAppRouteHref } from "../AppRouteProvider";
 import {
   type ChangeEvent,
   useEffect,
@@ -77,10 +77,9 @@ import {
   DEFAULT_CYLINDER_PRESET_ID,
 } from "@/lib/gas-calculations";
 import {
-  resolveActiveDiveSiteCatalog,
+  deviceSiteCatalogFromContributions,
   takeSessionSupplementaryCatalogMigration,
   validateDiveSiteCatalog,
-  type CatalogSite,
   type DiveSiteCatalog,
 } from "@/lib/dive-site-catalog";
 import { validateDiveSitesFile } from "@/lib/dive-site-validation";
@@ -105,18 +104,15 @@ import { useAppI18n } from "../AppI18nProvider";
 import { useColorTheme } from "../ThemeProvider";
 import { PwaInstallCard } from "../PwaInstall";
 
-type SiteContributionDraft = LocalSiteContribution & {
-  aliasesText: string;
-};
-
 const BUILT_IN_CATALOG = bundledCatalog as DiveSiteCatalog;
 
 export function SettingsApp() {
+  const appRouteHref = useAppRouteHref();
   const { language, setLanguage, t } = useAppI18n();
   const { colorTheme, setColorTheme } = useColorTheme();
   const [contributions, setContributions] = useState<LocalSiteContribution[]>([]);
-  const [reviewedSites, setReviewedSites] = useState<SiteContributionDraft[]>([]);
-  const [catalog, setCatalog] = useState<DiveSiteCatalog>(BUILT_IN_CATALOG);
+  const [supplementaryCatalog, setSupplementaryCatalog] =
+    useState<DiveSiteCatalog | null>(null);
   const [catalogLabel, setCatalogLabel] = useState<string | null>(null);
   const [backgrounds, setBackgrounds] = useState<LocalBackground[]>([]);
   const [logo, setLogo] = useState<LocalBrandingAsset | null>(null);
@@ -155,6 +151,7 @@ export function SettingsApp() {
   const [lastSeenWhatsNewVersion, setLastSeenWhatsNewVersion] = useState<
     string | null
   >(null);
+  const dataRefreshGenerationRef = useRef(0);
 
   useEffect(() => {
     if (!backupPreview) return;
@@ -214,7 +211,11 @@ export function SettingsApp() {
 
   useEffect(() => {
     let active = true;
+    const generation = ++dataRefreshGenerationRef.current;
     const migrated = takeSessionSupplementaryCatalogMigration();
+    const whatsNewFrame = window.requestAnimationFrame(() => {
+      void refreshWhatsNew();
+    });
     Promise.all([
       listLocalSiteContributions(),
       listLocalBackgrounds(),
@@ -229,15 +230,9 @@ export function SettingsApp() {
           migrated && !savedCatalog
             ? await saveLocalSupplementaryCatalog(migrated.label, migrated.catalog)
             : savedCatalog;
-        if (!active) return;
+        if (!active || generation !== dataRefreshGenerationRef.current) return;
         setContributions(items);
-        setReviewedSites(items.map(toSiteDraft));
-        setCatalog(
-          resolveActiveDiveSiteCatalog(
-            BUILT_IN_CATALOG,
-            supplementary?.catalog ?? null,
-          ),
-        );
+        setSupplementaryCatalog(supplementary?.catalog ?? null);
         setCatalogLabel(supplementary?.label ?? null);
         setBackgrounds(savedBackgrounds);
         setLogo(savedLogo ?? null);
@@ -258,10 +253,9 @@ export function SettingsApp() {
             ? t("manualSitesReady", { count: items.length, suffix: items.length === 1 ? "" : "s" })
             : t("noManualSites"),
         );
-        void refreshWhatsNew();
       })
       .catch((error) => {
-        if (active) {
+        if (active && generation === dataRefreshGenerationRef.current) {
           setStatus(error instanceof Error ? error.message : t("settingsLoadFailed"));
         }
       })
@@ -270,15 +264,20 @@ export function SettingsApp() {
       });
     return () => {
       active = false;
+      dataRefreshGenerationRef.current += 1;
+      window.cancelAnimationFrame(whatsNewFrame);
     };
   }, [t]);
 
   useEffect(() => {
-    return subscribeLocalDataChanges(() => {
+    let active = true;
+    const unsubscribe = subscribeLocalDataChanges(() => {
+      const generation = ++dataRefreshGenerationRef.current;
       void Promise.all([
         listLocalSiteContributions(),
         listLocalBackgrounds(),
         getLocalOverlayLogo(),
+        getLocalAppPreferences(),
         listLocalDives(),
         getLocalBackupSizeEstimate(),
         getLocalSupplementaryCatalog(),
@@ -288,21 +287,26 @@ export function SettingsApp() {
             items,
             savedBackgrounds,
             savedLogo,
+            preferences,
             nextDives,
             estimate,
             savedCatalog,
           ]) => {
+            if (!active || generation !== dataRefreshGenerationRef.current) return;
             setContributions(items);
-            setReviewedSites(items.map(toSiteDraft));
-            setCatalog(
-              resolveActiveDiveSiteCatalog(
-                BUILT_IN_CATALOG,
-                savedCatalog?.catalog ?? null,
-              ),
-            );
+            setSupplementaryCatalog(savedCatalog?.catalog ?? null);
             setCatalogLabel(savedCatalog?.label ?? null);
             setBackgrounds(savedBackgrounds);
             setLogo(savedLogo ?? null);
+            setDefaultCylinderPresetId(
+              preferences?.defaultCylinderPresetId ?? DEFAULT_CYLINDER_PRESET_ID,
+            );
+            setDismissedDuplicates(preferences?.dismissedDuplicatePairs ?? []);
+            setBundledBackgroundVisible(!preferences?.bundledBackgroundHidden);
+            setWhatsNew(preferences?.whatsNewCache ?? null);
+            setLastSeenWhatsNewVersion(
+              preferences?.lastSeenWhatsNewVersion ?? null,
+            );
             setDuplicateCandidates(findPotentialDuplicateDives(nextDives));
             setDives(nextDives);
             setStorageEstimate(estimate);
@@ -310,6 +314,11 @@ export function SettingsApp() {
         )
         .catch(() => undefined);
     });
+    return () => {
+      active = false;
+      dataRefreshGenerationRef.current += 1;
+      unsubscribe();
+    };
   }, []);
 
   async function markWhatsNewSeen() {
@@ -554,16 +563,18 @@ export function SettingsApp() {
     setStatus(t("restoringBackup"));
     try {
       const result = await restorePreparedAppBackup(backupPreview, mode);
-      const [items, savedBackgrounds, savedLogo, restoredPreferences] = await Promise.all([
+      const [items, savedBackgrounds, savedLogo, restoredPreferences, restoredCatalog] = await Promise.all([
         listLocalSiteContributions(),
         listLocalBackgrounds(),
         getLocalOverlayLogo(),
         getLocalAppPreferences(),
+        getLocalSupplementaryCatalog(),
       ]);
       setContributions(items);
-      setReviewedSites(items.map(toSiteDraft));
       setBackgrounds(savedBackgrounds);
       setLogo(savedLogo ?? null);
+      setSupplementaryCatalog(restoredCatalog?.catalog ?? null);
+      setCatalogLabel(restoredCatalog?.label ?? null);
       if (restoredPreferences?.uiLanguage) {
         await setLanguage(restoredPreferences.uiLanguage);
       }
@@ -685,7 +696,6 @@ export function SettingsApp() {
     try {
       await clearAllLocalData();
       setContributions([]);
-      setReviewedSites([]);
       setDuplicateCandidates([]);
       setDismissedDuplicates([]);
       setBackgrounds([]);
@@ -693,7 +703,7 @@ export function SettingsApp() {
       setLogo(null);
       setStorageEstimate(null);
       setDefaultCylinderPresetId(DEFAULT_CYLINDER_PRESET_ID);
-      setCatalog(BUILT_IN_CATALOG);
+      setSupplementaryCatalog(null);
       setCatalogLabel(null);
       setDives([]);
       setManualMergeFirstId("");
@@ -713,7 +723,6 @@ export function SettingsApp() {
     try {
       await clearLocalDiveData();
       setContributions([]);
-      setReviewedSites([]);
       setDuplicateCandidates([]);
       setStorageEstimate(await getLocalBackupSizeEstimate());
       setStatus(t("eraseDiveDataComplete"));
@@ -833,9 +842,13 @@ export function SettingsApp() {
     }
   }
 
-  const mergePreview = useMemo(
-    () => mergeContributions(catalog, reviewedSites),
-    [catalog, reviewedSites],
+  const deviceCatalog = useMemo(
+    () =>
+      deviceSiteCatalogFromContributions(
+        contributions,
+        BUILT_IN_CATALOG.schemaVersion,
+      ),
+    [contributions],
   );
 
   async function shareSavedBackup() {
@@ -904,9 +917,7 @@ export function SettingsApp() {
       }
       const validated = validateDiveSiteCatalog(validation.catalog);
       const saved = await saveLocalSupplementaryCatalog(file.name, validated);
-      setCatalog(
-        resolveActiveDiveSiteCatalog(BUILT_IN_CATALOG, saved.catalog),
-      );
+      setSupplementaryCatalog(saved.catalog);
       setCatalogLabel(saved.label);
       setStatus(
         validation.warningCount > 0
@@ -931,7 +942,7 @@ export function SettingsApp() {
     setBusy(true);
     try {
       await clearLocalSupplementaryCatalog();
-      setCatalog(BUILT_IN_CATALOG);
+      setSupplementaryCatalog(null);
       setCatalogLabel(null);
       setStatus(t("sessionCatalogRemoved"));
     } catch (error) {
@@ -1391,20 +1402,10 @@ export function SettingsApp() {
           </section>
         </div>
 
-        <details className="settings-advanced">
-          <summary className="settings-advanced-summary">
-            <div className="settings-card-heading">
-              <span className="settings-icon"><Database size={21} /></span>
-              <div>
-                <p className="eyebrow">{t("advancedSettings")}</p>
-                <h2>{t("advancedSettingsTitle")}</h2>
-              </div>
-            </div>
-            <span className="settings-advanced-toggle">{t("advancedSettingsDescription")} <ChevronDown size={17} /></span>
-          </summary>
-          <div className="settings-advanced-body">
-
-        <section className="settings-card catalog-settings">
+        <section
+          className="settings-card catalog-settings"
+          id="dive-site-catalog"
+        >
           <div className="settings-card-heading">
             <span className="settings-icon"><Database size={21} /></span>
             <div>
@@ -1414,96 +1415,46 @@ export function SettingsApp() {
           </div>
 
           <div className="catalog-summary">
-            <Link
-              href="/catalog"
+            <a
+              href={appRouteHref("/catalog")}
               className="catalog-summary-link"
               aria-label={t("openCatalogBrowser", {
-                count: catalog.sites.length,
+                count: BUILT_IN_CATALOG.sites.length,
               })}
             >
               <span>
-                <strong>{catalog.sites.length}</strong>
+                <strong>{BUILT_IN_CATALOG.sites.length}</strong>
                 <small>{t("catalogSites")}</small>
               </span>
               <ChevronRight size={18} aria-hidden="true" />
-            </Link>
-            <div>
-              <strong>{contributions.length}</strong>
-              <span>{t("deviceAdditions")}</span>
-            </div>
-            <div>
-              <strong>{mergePreview.added}</strong>
-              <span>{t("newAfterMerge")}</span>
-            </div>
-          </div>
-
-          <details className="site-review">
-            <summary>
+            </a>
+            <a
+              href={appRouteHref("/catalog/device-additions")}
+              className="catalog-summary-link"
+              aria-label={t("openDeviceCatalog", {
+                count: deviceCatalog.sites.length,
+              })}
+            >
               <span>
-                {t("reviewSitesToAdd")}
-                <small>{t("reviewSitesDescription")}</small>
+                <strong>{deviceCatalog.sites.length}</strong>
+                <small>{t("deviceAdditions")}</small>
               </span>
-              <strong>{reviewedSites.length}</strong>
-            </summary>
-            <div className="site-review-list">
-              {reviewedSites.length ? (
-                reviewedSites.map((site) => (
-                  <article className="site-review-item" key={site.id}>
-                    <div className="site-review-fields">
-                      <label>
-                        <span>{t("siteName")}</span>
-                        <input
-                          value={site.name}
-                          onChange={(event) =>
-                            setReviewedSites((items) =>
-                              items.map((item) =>
-                                item.id === site.id
-                                  ? { ...item, name: event.target.value }
-                                  : item,
-                              ),
-                            )
-                          }
-                        />
-                      </label>
-                      <label>
-                        <span>{t("aliases")}</span>
-                        <input
-                          value={site.aliasesText}
-                          placeholder={t("aliasesPlaceholder")}
-                          onChange={(event) =>
-                            setReviewedSites((items) =>
-                              items.map((item) =>
-                                item.id === site.id
-                                  ? { ...item, aliasesText: event.target.value }
-                                  : item,
-                              ),
-                            )
-                          }
-                        />
-                      </label>
-                    </div>
-                    <small>
-                      {site.latitude.toFixed(5)}, {site.longitude.toFixed(5)}
-                      {site.diveDate ? ` \u00b7 ${site.diveDate}` : ""}
-                    </small>
-                    <button
-                      type="button"
-                      className="button button-quiet"
-                      onClick={() =>
-                        setReviewedSites((items) =>
-                          items.filter((item) => item.id !== site.id),
-                        )
-                      }
-                    >
-                      <Trash2 size={15} /> {t("excludeFromMerge")}
-                    </button>
-                  </article>
-                ))
-              ) : (
-                <p className="empty-compact">{t("noSitesInMerge")}</p>
-              )}
-            </div>
-          </details>
+              <ChevronRight size={18} aria-hidden="true" />
+            </a>
+            <a
+              href={appRouteHref("/catalog/supplement")}
+              className="catalog-summary-link"
+              aria-label={t("openSupplementCatalog", {
+                count: supplementaryCatalog?.sites.length ?? 0,
+              })}
+            >
+              <span>
+                <strong>{supplementaryCatalog?.sites.length ?? 0}</strong>
+                <small>{t("fromSupplement")}</small>
+              </span>
+              <ChevronRight size={18} aria-hidden="true" />
+            </a>
+          </div>
 
           <div className="catalog-source">
             <div>
@@ -1558,6 +1509,19 @@ export function SettingsApp() {
           </p>
 
         </section>
+
+        <details className="settings-advanced">
+          <summary className="settings-advanced-summary">
+            <div className="settings-card-heading">
+              <span className="settings-icon"><Database size={21} /></span>
+              <div>
+                <p className="eyebrow">{t("advancedSettings")}</p>
+                <h2>{t("advancedSettingsTitle")}</h2>
+              </div>
+            </div>
+            <span className="settings-advanced-toggle">{t("advancedSettingsDescription")} <ChevronDown size={17} /></span>
+          </summary>
+          <div className="settings-advanced-body">
 
         <section className="settings-card duplicate-settings">
           <div className="settings-card-heading">
@@ -1963,131 +1927,4 @@ function LogoPreview({ logo }: { logo: LocalBrandingAsset }) {
       <img src={source} alt={`${logo.fileName} preview`} />
     </div>
   );
-}
-
-function mergeContributions(
-  base: DiveSiteCatalog,
-  contributions: SiteContributionDraft[],
-) {
-  const sites = base.sites.map((site) => {
-    const clean = structuredClone(site) as CatalogSite & { notes?: unknown };
-    delete clean.notes;
-    return clean;
-  });
-  const usedIds = new Set(sites.map((site) => site.id));
-  let added = 0;
-  let skipped = 0;
-
-  for (const contribution of contributions) {
-    if (!contribution.name.trim()) {
-      skipped += 1;
-      continue;
-    }
-    const normalized = normalizeName(contribution.name);
-    const duplicate = sites.some((site) => {
-      const names = [site.name, ...(site.aliases ?? [])].map(normalizeName);
-      return (
-        names.includes(normalized) &&
-        distanceKm(
-          site.coordinates.latitude,
-          site.coordinates.longitude,
-          contribution.latitude,
-          contribution.longitude,
-        ) <= 0.25
-      );
-    });
-    if (duplicate) {
-      skipped += 1;
-      continue;
-    }
-
-    const id = uniqueCatalogId(contribution, usedIds);
-    usedIds.add(id);
-    sites.push({
-      id,
-      name: contribution.name,
-      aliases: aliasesForDraft(contribution),
-      coordinates: {
-        latitude: contribution.latitude,
-        longitude: contribution.longitude,
-      },
-      place: {
-        countryCode: null,
-        country: null,
-        region: null,
-        locality: null,
-      },
-      source: {
-        kind: "diveframe_manual",
-        reference: `diveframe-dive:${contribution.diveId}`,
-      },
-      status: "active",
-      updatedAt: contribution.updatedAt,
-    });
-    added += 1;
-  }
-
-  return {
-    catalog: {
-      schemaVersion: base.schemaVersion,
-      sites: sites.sort((a, b) => a.id.localeCompare(b.id)),
-    },
-    added,
-    skipped,
-  };
-}
-
-function uniqueCatalogId(
-  contribution: SiteContributionDraft,
-  usedIds: Set<string>,
-) {
-  const slug =
-    contribution.name
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 60) || "unnamed-site";
-  const coordinateKey = `${Math.abs(contribution.latitude).toFixed(3).replace(".", "")}-${Math.abs(contribution.longitude).toFixed(3).replace(".", "")}`;
-  const base = `user-${slug}-${coordinateKey}`;
-  let id = base;
-  let suffix = 2;
-  while (usedIds.has(id)) {
-    id = `${base}-${suffix}`;
-    suffix += 1;
-  }
-  return id;
-}
-
-function toSiteDraft(site: LocalSiteContribution): SiteContributionDraft {
-  return { ...site, aliasesText: "" };
-}
-
-function aliasesForDraft(site: SiteContributionDraft) {
-  const primaryName = normalizeName(site.name);
-  return [
-    ...new Set(
-      site.aliasesText
-        .split(",")
-        .map((alias) => alias.trim())
-        .filter((alias) => alias && normalizeName(alias) !== primaryName),
-    ),
-  ];
-}
-
-function normalizeName(value: string) {
-  return value.trim().toLocaleLowerCase("en").replace(/\s+/g, " ");
-}
-
-function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
-  const radians = (degrees: number) => (degrees * Math.PI) / 180;
-  const deltaLat = radians(lat2 - lat1);
-  const deltaLng = radians(lng2 - lng1);
-  const a =
-    Math.sin(deltaLat / 2) ** 2 +
-    Math.cos(radians(lat1)) *
-      Math.cos(radians(lat2)) *
-      Math.sin(deltaLng / 2) ** 2;
-  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

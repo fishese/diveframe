@@ -19,6 +19,16 @@ export type DiveSiteCatalog = {
   sites: CatalogSite[];
 };
 
+export type DeviceSiteContribution = {
+  id: string;
+  diveId: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  updatedAt: string;
+  aliases?: string[];
+};
+
 export type NearbyCatalogSite = {
   id: string;
   catalogId: string;
@@ -122,8 +132,91 @@ export function combineDiveSiteCatalogs(
 export function resolveActiveDiveSiteCatalog(
   bundled: DiveSiteCatalog,
   supplementary: DiveSiteCatalog | null,
+  deviceAdditions: DiveSiteCatalog | null = null,
 ) {
-  return combineDiveSiteCatalogs(bundled, supplementary);
+  return combineDiveSiteCatalogs(
+    combineDiveSiteCatalogs(bundled, supplementary),
+    deviceAdditions,
+  );
+}
+
+export function deviceSiteCatalogFromContributions(
+  contributions: DeviceSiteContribution[],
+  schemaVersion = 1,
+): DiveSiteCatalog {
+  const sites: CatalogSite[] = [];
+  const usedIds = new Set<string>();
+  const ordered = [...contributions].sort(
+    (left, right) =>
+      right.updatedAt.localeCompare(left.updatedAt) ||
+      left.id.localeCompare(right.id),
+  );
+
+  for (const contribution of ordered) {
+    const name = contribution.name.trim();
+    if (
+      !name ||
+      !Number.isFinite(contribution.latitude) ||
+      !Number.isFinite(contribution.longitude) ||
+      Math.abs(contribution.latitude) > 90 ||
+      Math.abs(contribution.longitude) > 180
+    ) {
+      continue;
+    }
+
+    const normalizedName = normalizeCatalogName(name);
+    const duplicate = sites.some(
+      (site) =>
+        normalizeCatalogName(site.name) === normalizedName &&
+        distanceKm(
+          site.coordinates.latitude,
+          site.coordinates.longitude,
+          contribution.latitude,
+          contribution.longitude,
+        ) <= 0.25,
+    );
+    if (duplicate) continue;
+
+    const aliases = [
+      ...new Set(
+        (contribution.aliases ?? [])
+          .map((alias) => alias.trim())
+          .filter(
+            (alias) =>
+              alias.length > 0 &&
+              normalizeCatalogName(alias) !== normalizedName,
+          ),
+      ),
+    ];
+    const id = uniqueDeviceCatalogId(contribution, usedIds);
+    usedIds.add(id);
+    sites.push({
+      id,
+      name,
+      aliases,
+      coordinates: {
+        latitude: contribution.latitude,
+        longitude: contribution.longitude,
+      },
+      place: {
+        countryCode: null,
+        country: null,
+        region: null,
+        locality: null,
+      },
+      source: {
+        kind: "diveframe_manual",
+        reference: `diveframe-dive:${contribution.diveId}`,
+      },
+      status: "active",
+      updatedAt: contribution.updatedAt,
+    });
+  }
+
+  return {
+    schemaVersion,
+    sites: sites.sort((left, right) => left.id.localeCompare(right.id)),
+  };
 }
 
 export function nearbySessionCatalogSites(
@@ -194,6 +287,34 @@ function isNullableString(value: unknown): value is string | null {
 
 function sitePositionKey(site: CatalogSite) {
   return `${site.name.trim().toLocaleLowerCase("en")}\u0000${site.coordinates.latitude.toFixed(4)}\u0000${site.coordinates.longitude.toFixed(4)}`;
+}
+
+function uniqueDeviceCatalogId(
+  contribution: DeviceSiteContribution,
+  usedIds: Set<string>,
+) {
+  const slug =
+    contribution.name
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 60) || "unnamed-site";
+  const latitude = `${contribution.latitude < 0 ? "s" : "n"}${Math.abs(contribution.latitude).toFixed(3).replace(".", "")}`;
+  const longitude = `${contribution.longitude < 0 ? "w" : "e"}${Math.abs(contribution.longitude).toFixed(3).replace(".", "")}`;
+  const base = `user-${slug}-${latitude}-${longitude}`;
+  let id = base;
+  let suffix = 2;
+  while (usedIds.has(id)) {
+    id = `${base}-${suffix}`;
+    suffix += 1;
+  }
+  return id;
+}
+
+function normalizeCatalogName(value: string) {
+  return value.trim().toLocaleLowerCase("en").replace(/\s+/g, " ");
 }
 
 function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {

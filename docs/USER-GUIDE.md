@@ -401,10 +401,20 @@ backups. The combined list is used for nearby-site suggestions. Duplicate IDs
 and identical name/coordinate entries retain the bundled entry. Remove the
 additional catalog from the same card at any time.
 
-Select the catalog site count to open the searchable catalog browser. It reads
-the active bundled-plus-supplementary catalog dynamically, groups entries by
-country or region, and shows each site’s place, preferred name, and aliases.
-Search matches country, region, locality, site name, ID, and aliases.
+The catalog card appears directly below **Reusable dive backgrounds**. Its
+three counts open separate searchable views:
+
+- **Catalog sites** shows only the built-in `dive-sites.json` shipped with the
+  current DiveFrame version.
+- **Device additions** shows distinct sites captured when a dive had
+  coordinates and you entered its site name manually. These entries also
+  become local site suggestions. The view starts expanded and can download a
+  compatible supplementary-catalog JSON file.
+- **From supplement** shows only the currently loaded supplementary catalog.
+  It also starts expanded and can download a copy in the same JSON format.
+
+The views group entries by country or region and show the place, preferred
+name, ID, source, aliases, and coordinates. Search includes those fields.
 
 If you need a catalog for another region, download the AI catalog prompt from
 that card, replace the region placeholder, and give it to an AI assistant that

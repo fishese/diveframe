@@ -3967,6 +3967,7 @@ button {
 .catalog-settings {
   margin-top: 0;
   padding: 24px;
+  scroll-margin-top: calc(96px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
 }
 
 .background-settings,
@@ -4854,6 +4855,32 @@ button {
   margin: 0;
 }
 
+.catalog-file-label {
+  color: var(--teal);
+  display: block;
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.catalog-hero-actions {
+  align-items: stretch;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.catalog-hero-actions > .button {
+  justify-content: center;
+}
+
+.catalog-download-status {
+  color: var(--teal);
+  font-size: 12px;
+  margin: -16px 0 18px;
+  text-align: right;
+}
+
 .catalog-browser-count {
   background: var(--fill-01);
   border: 1px solid var(--line);
@@ -4949,7 +4976,7 @@ button {
 .catalog-table-head,
 .catalog-site-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(150px, 0.75fr);
 }
 
 .catalog-table-head {
@@ -5034,6 +5061,24 @@ button {
 
 .catalog-site-row strong {
   color: var(--text);
+}
+
+.catalog-site-row code,
+.catalog-site-row small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.catalog-site-row code {
+  color: var(--mist);
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.catalog-site-row small {
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 3px;
 }
 
 .catalog-no-results {
@@ -6321,6 +6366,21 @@ button {
   flex: 0 0 auto;
 }
 
+.dive-site-audit-actions {
+  align-items: stretch;
+  display: grid;
+  flex: 0 0 min(310px, 38%);
+  gap: 8px;
+}
+
+.dive-site-audit-catalog-hint {
+  color: var(--teal);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: center;
+  text-underline-offset: 3px;
+}
+
 .dive-site-audit-status,
 .dive-site-audit-summary {
   background: var(--fill-03);
@@ -6588,6 +6648,10 @@ button {
 
   .dive-site-audit-heading .button {
     justify-content: center;
+  }
+
+  .dive-site-audit-actions {
+    width: 100%;
   }
 
   .dive-site-audit-compare {

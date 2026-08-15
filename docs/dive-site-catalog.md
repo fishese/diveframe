@@ -6,19 +6,29 @@ DiveFrame uses a catalog-first lookup:
    structured GPS point (computer entry, computer exit, then user GPS).
 2. If one or more bundled sites are found, return those entries; otherwise
    query the existing OpenStreetMap suggestion providers.
-3. On the client, add active entries from any user-loaded supplementary catalog,
-   remove exact duplicates, and sort the combined list by proximity.
-4. Manual site entry is always available. A manual site needs coordinates
-   before it can be exported as a catalog contribution.
+3. On the client, add active entries from any user-loaded supplementary catalog
+   and from device additions, remove exact duplicates, and sort the combined
+   list by proximity.
+4. Manual site entry is always available. When a manually named dive has valid
+   coordinates, DiveFrame records a device addition for future local
+   suggestions and supplementary-catalog export.
 
 The application bundles the catalog as `data/dive-sites.json`. It is loaded by
 the stateless nearby-site route. Settings can add or remove a supplementary
 catalog without replacing the bundled file.
 
-The catalog count in Settings links to `/catalog`, which reads this same active
-bundled-plus-supplementary catalog at runtime. The browser groups sites by
-country or region and supports searches across IDs, names, aliases, country,
-region, and locality; it does not maintain a separate display-only site list.
+The catalog card in Settings keeps the three source inventories explicit:
+
+- `/catalog` displays only the bundled file;
+- `/catalog/device-additions` displays distinct manual name/coordinate
+  additions stored on this device; and
+- `/catalog/supplement` displays only the user-loaded supplementary file.
+
+Each browser groups sites by country or region and supports searches across
+IDs, names, aliases, coordinates, source details, country, region, and
+locality. Device and supplementary groups start expanded. Their download
+buttons emit a complete `schemaVersion`/`sites` document accepted by the same
+supplementary-catalog validator.
 
 ## Regional supplementary catalogs
 
@@ -31,9 +41,10 @@ name/coordinate records retain the bundled entry. It is never uploaded to the
 server. Choosing **Remove additional catalog** removes only those additional
 entries; the bundled catalog and OpenStreetMap behavior remain.
 
-The combined bundled-plus-additional catalog becomes the base for the existing
-catalog merge/download tool. This lets a user work with a regional catalog
-without requiring the main repository to cover every dive destination.
+The active suggestion catalog combines bundled, supplementary, and device-added
+sites while retaining bundled entries when IDs or exact name/coordinate records
+collide. The source-specific viewers and downloads remain separate so a user
+can inspect what came from each layer.
 
 Settings links to
 `public/examples/dive-site-catalog-ai-prompt.md`, a reusable prompt for asking

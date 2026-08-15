@@ -49,6 +49,7 @@ import {
   diveSiteAuditFingerprint,
   type DiveSiteAuditDiveSummary,
 } from "./dive-map-site-audit";
+import { resolveDiveMapCoordinates } from "./dive-gps";
 import type { WhatsNewDocument } from "./whats-new";
 import {
   ALL_STORE_NAMES,
@@ -1063,21 +1064,14 @@ export async function updateLocalDiveSite(
     selection.latitude !== null &&
     selection.longitude !== null
   ) {
-    const existing = await request<LocalSiteContribution | undefined>(
-      contributionsStore.get(id),
+    await putManualSiteContribution(
+      contributionsStore,
+      updated,
+      selection.name,
+      selection.latitude,
+      selection.longitude,
+      now,
     );
-    contributionsStore.put({
-      id,
-      diveId: id,
-      name: selection.name,
-      latitude: selection.latitude,
-      longitude: selection.longitude,
-      diveDate: current.diveDate,
-      shearwaterDiveNumber: current.sourceDiveNumbers?.shearwater ?? null,
-      subsurfaceDiveNumber: current.sourceDiveNumbers?.subsurface ?? null,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    } satisfies LocalSiteContribution);
   } else {
     contributionsStore.delete(id);
   }
@@ -1570,28 +1564,85 @@ export async function updateLocalDiveUserGps(
   ) {
     throw new Error("Supply valid GPS coordinates.");
   }
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [DIVES_STORE, SITE_CONTRIBUTIONS_STORE],
+    "readwrite",
+  );
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
+  const stored = await request<LocalDive | undefined>(divesStore.get(id));
+  if (!stored) {
+    transaction.abort();
+    throw new Error("Dive not found in this browser.");
+  }
   const now = new Date().toISOString();
-  return updateDive(id, (dive) => {
-    if (gps === null) {
-      return {
-        ...dive,
-        userGpsLat: null,
-        userGpsLng: null,
-        userGpsSource: null,
-        userGpsUpdatedAt: null,
-        appEditedAt: now,
-      };
-    }
-    return {
-      ...dive,
-      userGpsLat: gps.lat,
-      userGpsLng: gps.lng,
-      userGpsSource: gps.source,
-      userGpsUpdatedAt: now,
-      resolvedLocationSuppressed: false,
-      appEditedAt: now,
-    };
-  });
+  const current = hydrateDive(stored);
+  const updated: LocalDive =
+    gps === null
+      ? {
+          ...current,
+          userGpsLat: null,
+          userGpsLng: null,
+          userGpsSource: null,
+          userGpsUpdatedAt: null,
+          appEditedAt: now,
+        }
+      : {
+          ...current,
+          userGpsLat: gps.lat,
+          userGpsLng: gps.lng,
+          userGpsSource: gps.source,
+          userGpsUpdatedAt: now,
+          resolvedLocationSuppressed: false,
+          appEditedAt: now,
+        };
+  divesStore.put(updated);
+
+  const coordinates = resolveDiveMapCoordinates(updated);
+  const manualName =
+    updated.userSiteSource === "manual" ? updated.userSite?.trim() : null;
+  if (manualName && coordinates) {
+    await putManualSiteContribution(
+      contributionsStore,
+      updated,
+      manualName,
+      coordinates.latitude,
+      coordinates.longitude,
+      now,
+    );
+  } else {
+    contributionsStore.delete(id);
+  }
+
+  await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
+  return updated;
+}
+
+async function putManualSiteContribution(
+  store: IDBObjectStore,
+  dive: LocalDive,
+  name: string,
+  latitude: number,
+  longitude: number,
+  updatedAt: string,
+) {
+  const existing = await request<LocalSiteContribution | undefined>(
+    store.get(dive.id),
+  );
+  store.put({
+    id: dive.id,
+    diveId: dive.id,
+    name: name.trim(),
+    latitude,
+    longitude,
+    diveDate: dive.diveDate,
+    shearwaterDiveNumber: dive.sourceDiveNumbers?.shearwater ?? null,
+    subsurfaceDiveNumber: dive.sourceDiveNumbers?.subsurface ?? null,
+    createdAt: existing?.createdAt ?? updatedAt,
+    updatedAt,
+  } satisfies LocalSiteContribution);
 }
 
 export async function getLocalComposerSettings(diveId: string) {

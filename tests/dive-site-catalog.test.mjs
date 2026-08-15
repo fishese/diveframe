@@ -132,6 +132,56 @@ test("resolveActiveDiveSiteCatalog combines bundled with supplementary", () => {
   assert.equal(combined.sites.length, 2);
 });
 
+test("device additions become a valid, deduplicated supplementary catalog", () => {
+  const device = catalogTools.deviceSiteCatalogFromContributions([
+    {
+      id: "dive-2",
+      diveId: "dive-2",
+      name: "  My Reef  ",
+      latitude: -16.5001,
+      longitude: 145.7501,
+      updatedAt: "2026-08-15T02:00:00.000Z",
+    },
+    {
+      id: "dive-1",
+      diveId: "dive-1",
+      name: "My Reef",
+      latitude: -16.5,
+      longitude: 145.75,
+      updatedAt: "2026-08-15T01:00:00.000Z",
+    },
+  ]);
+
+  assert.equal(device.sites.length, 1);
+  assert.equal(device.sites[0].name, "My Reef");
+  assert.match(device.sites[0].id, /^user-my-reef-s16500-e145750$/);
+  assert.deepEqual(device.sites[0].coordinates, {
+    latitude: -16.5001,
+    longitude: 145.7501,
+  });
+  assert.equal(catalogTools.validateDiveSiteCatalog(device), device);
+});
+
+test("active catalog can include supplementary and device additions", () => {
+  const device = catalogTools.deviceSiteCatalogFromContributions([
+    {
+      id: "dive-3",
+      diveId: "dive-3",
+      name: "Device Reef",
+      latitude: 1.25,
+      longitude: 103.75,
+      updatedAt: "2026-08-15T03:00:00.000Z",
+    },
+  ]);
+  const combined = catalogTools.resolveActiveDiveSiteCatalog(
+    catalog,
+    additional,
+    device,
+  );
+  assert.equal(combined.sites.length, 3);
+  assert.equal(combined.sites.at(-1).name, "Device Reef");
+});
+
 test("takeSessionSupplementaryCatalogMigration copies then clears session keys", () => {
   const values = new Map();
   globalThis.sessionStorage = {

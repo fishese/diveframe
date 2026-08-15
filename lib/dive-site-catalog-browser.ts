@@ -64,6 +64,11 @@ function catalogSiteSearchText(site: CatalogSite) {
       site.place.country,
       site.place.region,
       site.place.locality,
+      site.coordinates.latitude,
+      site.coordinates.longitude,
+      site.source.kind,
+      site.source.reference,
+      site.status,
     ]
       .filter(Boolean)
       .join(" "),

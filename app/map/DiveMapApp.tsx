@@ -23,6 +23,7 @@ import {
   useState,
 } from "react";
 import bundledDiveSiteCatalog from "@/data/dive-sites.json";
+import { useAppRouteHref } from "../AppRouteProvider";
 import {
   buildDiveMapData,
   clusterOverlappingDiveMapMarkers,
@@ -43,9 +44,12 @@ import {
   applyCatalogSiteCoordinatesToLocalDives,
   getLocalSupplementaryCatalog,
   listLocalDives,
+  listLocalSiteContributions,
   type LocalDive,
+  type LocalSiteContribution,
 } from "@/lib/indexed-db";
 import {
+  deviceSiteCatalogFromContributions,
   resolveActiveDiveSiteCatalog,
   type DiveSiteCatalog,
 } from "@/lib/dive-site-catalog";
@@ -91,6 +95,9 @@ export function DiveMapApp() {
   const [supplementaryCatalog, setSupplementaryCatalog] = useState<{
     catalog: DiveSiteCatalog;
   } | null>(null);
+  const [siteContributions, setSiteContributions] = useState<
+    LocalSiteContribution[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
@@ -138,9 +145,10 @@ export function DiveMapApp() {
     setSiteAudit(null);
     setSiteAuditBusy(false);
     try {
-      const [nextDives, nextSupplementaryCatalog] = await Promise.all([
+      const [nextDives, nextSupplementaryCatalog, nextContributions] = await Promise.all([
         listLocalDives(),
         getLocalSupplementaryCatalog(),
+        listLocalSiteContributions(),
       ]);
       if (generation !== refreshGenerationRef.current) return null;
       siteAuditGenerationRef.current += 1;
@@ -149,12 +157,18 @@ export function DiveMapApp() {
       setSiteAuditBusy(false);
       setDives(nextDives);
       setSupplementaryCatalog(nextSupplementaryCatalog);
+      setSiteContributions(nextContributions);
       setError(null);
+      const nextDeviceCatalog = deviceSiteCatalogFromContributions(
+        nextContributions,
+        (bundledDiveSiteCatalog as DiveSiteCatalog).schemaVersion,
+      );
       return {
         dives: nextDives,
         catalog: resolveActiveDiveSiteCatalog(
           bundledDiveSiteCatalog as DiveSiteCatalog,
           nextSupplementaryCatalog?.catalog ?? null,
+          nextDeviceCatalog,
         ),
       } satisfies RefreshedMapState;
     } catch (refreshError) {
@@ -190,13 +204,22 @@ export function DiveMapApp() {
     };
   }, [refresh]);
 
+  const deviceSiteCatalog = useMemo(
+    () =>
+      deviceSiteCatalogFromContributions(
+        siteContributions,
+        (bundledDiveSiteCatalog as DiveSiteCatalog).schemaVersion,
+      ),
+    [siteContributions],
+  );
   const catalog = useMemo(
     () =>
       resolveActiveDiveSiteCatalog(
         bundledDiveSiteCatalog as DiveSiteCatalog,
         supplementaryCatalog?.catalog ?? null,
+        deviceSiteCatalog,
       ),
-    [supplementaryCatalog],
+    [deviceSiteCatalog, supplementaryCatalog],
   );
   const mapData = useMemo(
     () => buildDiveMapData(dives, catalog),
@@ -938,6 +961,10 @@ function DiveSiteCoordinateAuditPanel({
   onApply: (group: DiveSiteAuditGroup, candidateIndex: number) => void;
 }) {
   const { t } = useAppI18n();
+  const appRouteHref = useAppRouteHref();
+  const catalogSettingsHref = appRouteHref(
+    "/settings#dive-site-catalog",
+  );
   return (
     <section
       className={`dive-site-audit${expanded ? " expanded" : ""}`}
@@ -950,15 +977,23 @@ function DiveSiteCoordinateAuditPanel({
           <p>{t("siteCoordinateAuditDescription")}</p>
           <small>{t("siteCoordinateAuditPerformance")}</small>
         </div>
-        <button
-          className="button button-secondary"
-          type="button"
-          onClick={onRun}
-          disabled={busy || applyingKey !== null}
-        >
-          {busy ? <LoaderCircle className="spin" size={17} /> : <Database size={17} />}
-          {busy ? t("checkingSiteCoordinates") : t("checkSiteCoordinates")}
-        </button>
+        <div className="dive-site-audit-actions">
+          <button
+            className="button button-secondary"
+            type="button"
+            onClick={onRun}
+            disabled={busy || applyingKey !== null}
+          >
+            {busy ? <LoaderCircle className="spin" size={17} /> : <Database size={17} />}
+            {busy ? t("checkingSiteCoordinates") : t("checkSiteCoordinates")}
+          </button>
+          <Link
+            className="dive-site-audit-catalog-hint"
+            href={catalogSettingsHref}
+          >
+            {t("createFrequentSitesSupplement")}
+          </Link>
+        </div>
       </div>
       {status ? <p className="dive-site-audit-status" role="status">{status}</p> : null}
       {expanded && audit ? (
@@ -1028,7 +1063,10 @@ function DiveSiteCoordinateAuditPanel({
                   <AuditDiveLinks group={group} language={language} />
                 </div>
               ))}
-              <Link className="button button-secondary" href="/settings">
+              <Link
+                className="button button-secondary"
+                href={catalogSettingsHref}
+              >
                 {t("openCatalogSettings")}
               </Link>
             </div>

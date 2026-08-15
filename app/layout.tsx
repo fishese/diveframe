@@ -5,6 +5,7 @@ import { AppI18nProvider } from "./AppI18nProvider";
 import { BetaNotice } from "./BetaNotice";
 import { PwaManager } from "./PwaInstall";
 import { ThemeProvider } from "./ThemeProvider";
+import { AppRouteProvider } from "./AppRouteProvider";
 
 const THEME_BOOTSTRAP = `(function(){try{var r=document.documentElement,t=localStorage.getItem("diveframe-color-theme");if(t!=="light"&&t!=="dark")t="dark";r.setAttribute("data-theme",t);r.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="light"?"#eef6f4":"#071820");["top","right","bottom","left"].forEach(function(k){var v=localStorage.getItem("diveframe-native-safe-area-"+k);if(v)r.style.setProperty("--safe-area-inset-"+k,v);});}catch(e){}})();`;
 
@@ -68,6 +69,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const routeSuffix =
+    process.env.DIVEFRAME_NATIVE_STATIC === "1" ? ".html" : "";
+
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
@@ -78,14 +82,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppI18nProvider>
-          <ThemeProvider>
-            <PwaManager />
-            <div className="app-safe-top" aria-hidden="true" />
-            <BetaNotice />
-            {children}
-          </ThemeProvider>
-        </AppI18nProvider>
+        <AppRouteProvider routeSuffix={routeSuffix}>
+          <AppI18nProvider>
+            <ThemeProvider>
+              <PwaManager />
+              <div className="app-safe-top" aria-hidden="true" />
+              <BetaNotice />
+              {children}
+            </ThemeProvider>
+          </AppI18nProvider>
+        </AppRouteProvider>
       </body>
     </html>
   );

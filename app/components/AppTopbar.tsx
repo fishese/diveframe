@@ -15,6 +15,7 @@ import { useEffect, type ReactNode } from "react";
 import { diveComputerCapability } from "../../lib/dive-computer-capability";
 import { useAppI18n } from "../AppI18nProvider";
 import { AndroidAppLink } from "./AndroidAppLink";
+import { useAppRouteHref } from "../AppRouteProvider";
 
 export type AppTopbarBrand =
   | {
@@ -76,6 +77,7 @@ export function AppTopbar({
   className,
 }: AppTopbarProps) {
   const { t } = useAppI18n();
+  const appRouteHref = useAppRouteHref();
   const bleAvailable = diveComputerCapability.isAvailable();
 
   useEffect(() => {
@@ -104,7 +106,7 @@ export function AppTopbar({
   const brandNode =
     brand.mode === "link" ? (
       <Link
-        href={brand.href}
+        href={appRouteHref(brand.href)}
         className="brand"
         aria-label={brand.ariaLabel ?? t("home")}
       >
@@ -151,7 +153,7 @@ export function AppTopbar({
         {afterHomeActions}
         {showImportCluster ? (
           <Link
-            href="/about"
+            href={appRouteHref("/about")}
             className="button button-quiet topbar-about-link"
             aria-label={t("about")}
             title={t("about")}
@@ -160,13 +162,13 @@ export function AppTopbar({
             {t("about")}
           </Link>
         ) : null}
-        <Link href="/settings" className="button button-quiet">
+        <Link href={appRouteHref("/settings")} className="button button-quiet">
           <Settings size={16} />
           {t("settings")}
         </Link>
         {showDiveMap ? (
           <Link
-            href="/map"
+            href={appRouteHref("/map")}
             className="button button-quiet topbar-dive-map-link"
             aria-label={t("diveMap")}
             title={t("diveMap")}
@@ -205,7 +207,7 @@ export function AppTopbar({
               <AndroidAppLink />
             )}
             <Link
-              href="/memos"
+              href={appRouteHref("/memos")}
               className="button button-quiet topbar-memos-link"
               aria-label={t("openDiveMemos")}
               title={t("openDiveMemos")}

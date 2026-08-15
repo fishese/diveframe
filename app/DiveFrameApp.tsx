@@ -51,6 +51,7 @@ import {
   listLocalBackgrounds,
   listLocalDiveMemos,
   listLocalDives,
+  listLocalSiteContributions,
   listLocalTrips,
   renameLocalTrip,
   requestPersistentLocalStorage,
@@ -59,6 +60,7 @@ import {
   type LocalAttachment,
   type LocalDive,
   type LocalImportedDive,
+  type LocalSiteContribution,
   type LocalTrip,
   type DiveSource,
   type UserGpsSource,
@@ -106,6 +108,7 @@ import {
 } from "@/lib/gas-calculations";
 import { toNormalizedDive } from "@/lib/normalize-dive";
 import {
+  deviceSiteCatalogFromContributions,
   resolveActiveDiveSiteCatalog,
   type DiveSiteCatalog,
 } from "@/lib/dive-site-catalog";
@@ -205,18 +208,25 @@ export function DiveFrameApp() {
   const [supplementaryCatalog, setSupplementaryCatalog] = useState<{
     catalog: DiveSiteCatalog;
   } | null>(null);
+  const [siteContributions, setSiteContributions] = useState<
+    LocalSiteContribution[]
+  >([]);
 
   const refreshDives = useCallback(async (preferredId?: string) => {
     const generation = ++refreshGenerationRef.current;
-    const [next, nextStorageEstimate, nextTrips] = await Promise.all([
+    const [next, nextStorageEstimate, nextTrips, nextSupplementaryCatalog, nextContributions] = await Promise.all([
       listLocalDives(),
       getLocalBackupSizeEstimate(),
       listLocalTrips(),
+      getLocalSupplementaryCatalog(),
+      listLocalSiteContributions(),
     ]);
     if (generation !== refreshGenerationRef.current) return;
     setDives(next);
     setStorageEstimate(nextStorageEstimate);
     setTrips(nextTrips);
+    setSupplementaryCatalog(nextSupplementaryCatalog);
+    setSiteContributions(nextContributions);
     setSelectedId((current) =>
       preferredId ??
       (current && next.some((dive) => dive.id === current)
@@ -234,13 +244,15 @@ export function DiveFrameApp() {
       getLocalBackupSizeEstimate(),
       listLocalTrips(),
       getLocalSupplementaryCatalog(),
+      listLocalSiteContributions(),
     ])
-      .then(([next, nextStorageEstimate, nextTrips, nextSupplementaryCatalog]) => {
+      .then(([next, nextStorageEstimate, nextTrips, nextSupplementaryCatalog, nextContributions]) => {
         if (!active || generation !== refreshGenerationRef.current) return;
         setDives(next);
         setStorageEstimate(nextStorageEstimate);
         setTrips(nextTrips);
         setSupplementaryCatalog(nextSupplementaryCatalog);
+        setSiteContributions(nextContributions);
         const requestedDiveId = new URLSearchParams(window.location.search).get("dive");
         const requestedDive = next.find((dive) => dive.id === requestedDiveId);
         setSelectedId(requestedDive?.id ?? next[0]?.id ?? null);
@@ -261,9 +273,6 @@ export function DiveFrameApp() {
   useEffect(() => {
     return subscribeLocalDataChanges(() => {
       void refreshDives();
-      void getLocalSupplementaryCatalog()
-        .then(setSupplementaryCatalog)
-        .catch(() => undefined);
     });
   }, [refreshDives]);
 
@@ -447,13 +456,22 @@ export function DiveFrameApp() {
     () => dives.find((dive) => dive.id === selectedId) ?? null,
     [dives, selectedId],
   );
+  const deviceSiteCatalog = useMemo(
+    () =>
+      deviceSiteCatalogFromContributions(
+        siteContributions,
+        (bundledDiveSiteCatalog as DiveSiteCatalog).schemaVersion,
+      ),
+    [siteContributions],
+  );
   const activeDiveSiteCatalog = useMemo(
     () =>
       resolveActiveDiveSiteCatalog(
         bundledDiveSiteCatalog as DiveSiteCatalog,
         supplementaryCatalog?.catalog ?? null,
+        deviceSiteCatalog,
       ),
-    [supplementaryCatalog],
+    [deviceSiteCatalog, supplementaryCatalog],
   );
 
   useEffect(() => {

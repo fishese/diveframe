@@ -33,10 +33,13 @@ import {
   getLocalSupplementaryCatalog,
   listOrCreateLocalDiveMemos,
   listLocalDives,
+  listLocalSiteContributions,
   saveLocalDiveMemo,
   type LocalDive,
+  type LocalSiteContribution,
 } from "@/lib/indexed-db";
 import {
+  deviceSiteCatalogFromContributions,
   resolveActiveDiveSiteCatalog,
   type DiveSiteCatalog,
 } from "@/lib/dive-site-catalog";
@@ -72,6 +75,9 @@ export function MemosApp() {
   const [supplementaryCatalog, setSupplementaryCatalog] = useState<{
     catalog: DiveSiteCatalog;
   } | null>(null);
+  const [siteContributions, setSiteContributions] = useState<
+    LocalSiteContribution[]
+  >([]);
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(false);
   const [editingHeadingId, setEditingHeadingId] = useState<string | null>(null);
@@ -80,54 +86,83 @@ export function MemosApp() {
   const webPhotoInputRef = useRef<HTMLInputElement>(null);
   const photoTargetIdRef = useRef<string | null>(null);
   const photoPendingSaveRef = useRef<Promise<DiveMemo | null> | null>(null);
+  const memoRefreshGenerationRef = useRef(0);
+  const diveContextGenerationRef = useRef(0);
 
   const refresh = useCallback(async () => {
-    setMemos(await listOrCreateLocalDiveMemos());
-    setStatus("");
-  }, []);
+    const generation = ++memoRefreshGenerationRef.current;
+    try {
+      const nextMemos = await listOrCreateLocalDiveMemos();
+      if (generation !== memoRefreshGenerationRef.current) return;
+      setMemos(nextMemos);
+      setStatus("");
+    } catch (error) {
+      if (generation !== memoRefreshGenerationRef.current) return;
+      setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
+    }
+  }, [t]);
 
   const refreshDiveContext = useCallback(async () => {
-    const [listedDives, supplementary] = await Promise.all([
-      listLocalDives(),
-      getLocalSupplementaryCatalog(),
-    ]);
-    setDives(listedDives);
-    setSupplementaryCatalog(supplementary);
-  }, []);
+    const generation = ++diveContextGenerationRef.current;
+    try {
+      const [listedDives, supplementary, contributions] = await Promise.all([
+        listLocalDives(),
+        getLocalSupplementaryCatalog(),
+        listLocalSiteContributions(),
+      ]);
+      if (generation !== diveContextGenerationRef.current) return;
+      setDives(listedDives);
+      setSupplementaryCatalog(supplementary);
+      setSiteContributions(contributions);
+    } catch (error) {
+      if (generation !== diveContextGenerationRef.current) return;
+      setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
+    }
+  }, [t]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      void refresh().catch((error) => {
-        setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
-      });
+      void refresh();
     });
-    return () => window.cancelAnimationFrame(frame);
-  }, [refresh, t]);
+    return () => {
+      memoRefreshGenerationRef.current += 1;
+      window.cancelAnimationFrame(frame);
+    };
+  }, [refresh]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      void refreshDiveContext().catch((error) => {
-        setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
-      });
+      void refreshDiveContext();
     });
-    return () => window.cancelAnimationFrame(frame);
-  }, [refreshDiveContext, t]);
+    return () => {
+      diveContextGenerationRef.current += 1;
+      window.cancelAnimationFrame(frame);
+    };
+  }, [refreshDiveContext]);
 
   useEffect(() => {
     return subscribeLocalDataChanges(() => {
-      void Promise.all([refresh(), refreshDiveContext()]).catch((error) => {
-        setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
-      });
+      void refresh();
+      void refreshDiveContext();
     });
-  }, [refresh, refreshDiveContext, t]);
+  }, [refresh, refreshDiveContext]);
 
+  const deviceSiteCatalog = useMemo(
+    () =>
+      deviceSiteCatalogFromContributions(
+        siteContributions,
+        (bundledDiveSiteCatalog as DiveSiteCatalog).schemaVersion,
+      ),
+    [siteContributions],
+  );
   const activeDiveSiteCatalog = useMemo(
     () =>
       resolveActiveDiveSiteCatalog(
         bundledDiveSiteCatalog as DiveSiteCatalog,
         supplementaryCatalog?.catalog ?? null,
+        deviceSiteCatalog,
       ),
-    [supplementaryCatalog],
+    [deviceSiteCatalog, supplementaryCatalog],
   );
   const siteNameSuggestions = useMemo(
     () =>
@@ -155,9 +190,7 @@ export function MemosApp() {
     setMemos((current) => {
       const remaining = current.filter((memo) => memo.id !== id);
       if (remaining.length === 0) {
-        void refresh().catch((error) => {
-          setStatus(error instanceof Error ? error.message : t("unableLoadDives"));
-        });
+        void refresh();
       }
       return remaining;
     });
