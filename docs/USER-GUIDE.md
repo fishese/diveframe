@@ -329,9 +329,9 @@ cylinder, buddy, notes, location, category) also match this filter.
 Open **Edit dive details** to enter or change both the specific dive-site name
 and the broader location. The fields suggest site and location names already
 present in the local logbook. For a dive with GPS, the separate site picker
-continues to offer the bundled catalog and OpenStreetMap results. A manually
-entered location is used by the existing approximate map lookup when the dive
-has no GPS.
+offers sites from the bundled catalog, a loaded supplement, device additions,
+and the OpenStreetMap fallback. A manually entered location is used by the
+existing approximate map lookup when the dive has no GPS.
 
 ### User GPS and maps
 
@@ -370,7 +370,9 @@ coordinate is stored as user data without replacing the displayed site or
 location text. After coordinates are applied, the results stay expanded and
 refresh for the current map visit so the next match can be reviewed. Names not
 found are listed separately so they can be entered manually or added to a
-supplementary `dive-sites.json`.
+supplementary `dive-sites.json`. The text below the audit button and the
+expanded results both include **Open catalog settings**, which goes directly
+to the **Dive-site catalog** card rather than the top of Settings.
 
 ### Catalog alias names
 

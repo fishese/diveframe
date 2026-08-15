@@ -108,13 +108,16 @@ click targeted at the marker while still capturing active pans and pinches.
 The map can explicitly check named dives that still have no usable coordinate.
 This check runs only when the user presses the audit button; it is not part of
 normal rendering or background data refresh. The comparison uses normalized
-exact matches against active catalog site names and aliases. Location names are
-shown side by side for human verification but are never used to assign a site
-silently.
+exact matches against names and aliases in the active bundled, supplementary,
+and device-added catalog. Location names are shown side by side for human
+verification but are never used to assign a site silently.
 
 After verification, the chosen catalog coordinate and catalog ID are stored as
 user data on all dives in that matching site/location group. Names not found in
 the active catalog are listed separately so they can be entered manually or
-used to prepare a supplementary dive-site JSON catalog. After coordinates are
-applied, the user-triggered audit is rerun and remains expanded for the current
-visit so the next match can be reviewed without reopening it.
+used to prepare a supplementary dive-site JSON catalog. The audit introduction
+and expanded results both link directly to the **Dive-site catalog** card in
+Settings. That card has a dedicated scroll target with top clearance, so the
+heading is not hidden beneath the sticky application bar. After coordinates
+are applied, the user-triggered audit is rerun and remains expanded for the
+current visit so the next match can be reviewed without reopening it.

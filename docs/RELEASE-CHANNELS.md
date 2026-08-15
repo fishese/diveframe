@@ -1,6 +1,6 @@
 # DiveFrame release channels and web/APK parity
 
-Last verified: 2026-08-13 (Asia/Singapore)
+Last verified: 2026-08-15 (Asia/Singapore)
 
 This is the canonical release note for future sessions. Read it before
 changing a version, release tag, APK workflow, or F-Droid metadata. The
@@ -116,6 +116,11 @@ The current MR is pinned to production commit
 `994a9571e8013672e8e6a91e10b361733a59251b`; Preview changes do not require
 changing that MR or recipe. Only reviewer feedback or a concrete F-Droid
 failure justifies touching the submission metadata.
+
+The current verified Preview release targets shared runtime commit
+`047e98121853f6dbf46040a9c84fb1a41fb61def` (workflow run `31861555726`). It
+is `preview.10.047e981`, version code `100010`, and its APK SHA-256 is
+`0564a573a1c70d1bf3fe0ac79dea8e1ad7b8fc1b1464dc4534df45a111840d59`.
 
 The exact F-Droid working-directory rule, `Binaries` whitespace requirement,
 MR failure analysis, reference-APK contract, and future update checklist are

@@ -207,8 +207,8 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `app/components/AppTopbar.tsx` — shared top-bar chrome (brand, home, about,
   settings, BLE/Android app, memos, import).
 - `app/compose/ComposerApp.tsx` — live preview and composer controls.
-- `app/settings/SettingsApp.tsx` — device-local settings and catalog maintenance
-  tools, including the reusable background library.
+- `app/settings/SettingsApp.tsx` — device-local settings, the source-specific
+  catalog card, and the reusable background library.
 - `app/about/AboutApp.tsx` — trilingual user-facing explanation of imports,
   exports, local persistence, source-log reconciliation, and licensing.
 - `app/android/AndroidAppPage.tsx` and `app/components/AndroidAppLink.tsx` —
@@ -229,8 +229,9 @@ Deployment is managed by the repository's Cloudflare Worker integration.
   translations, overlay translations, and units.
 - `lib/composer-fonts.ts` — curated multilingual overlay fonts and export-time
   font loading.
-- `lib/dive-site-catalog.ts` — validation, combine bundled + supplementary
-  catalogs, proximity ranking, and one-time session→IDB migration helper.
+- `lib/dive-site-catalog.ts` — validation, combining bundled, supplementary,
+  and device-added sites, proximity ranking, source-specific exports, and the
+  one-time session→IDB migration helper.
 - `lib/whats-new.ts` — What's new document model, link sanitization, and body
   rendering helpers.
 - `lib/indexed-db.ts` — device-local persistence and merge orchestration
@@ -486,11 +487,17 @@ notes.
 Selecting a catalog or map suggestion stores the assignment on the local dive.
 Typing a new name for a GPS-backed dive additionally creates or updates a
 `siteContributions` record using the dive's GPS position. A manual site without
-coordinates remains a valid local site override but is not offered for catalog
-merge. The settings review/export controls are currently archived under
-`scripts/archive/catalog-review-export/` while the catalog workflow is decided.
-Same-name sites within 250 metres are treated as duplicates. The deployed
-browser cannot directly commit changes to the repository.
+coordinates remains a valid local site override but is not offered as a device
+addition. Same-name sites within 250 metres are treated as duplicates.
+
+The **Dive-site catalog** card appears directly below **Reusable dive
+backgrounds**, outside the collapsed Advanced section. Its three counts open
+searchable, source-specific viewers for the bundled catalog, device additions,
+and loaded supplement. Device and supplement viewers start expanded, show
+coordinates, and download validator-compatible supplementary-catalog JSON.
+The active nearby-site list combines all three sources, while the viewers and
+downloads keep their provenance separate. The deployed browser cannot directly
+commit changes to the repository.
 
 The supplied full test data produced 168 cross-source matches and 19
 Subsurface-only records. Perdix dives 17, 18, and 19 received their Subsurface
@@ -741,8 +748,9 @@ before hosted sync.
 - Add browser integration tests for IndexedDB, backup/restore, PWA updates, and
   high-resolution image export.
 - Consider image downscaling or optional originals for large phone photos.
-- Decide whether to restore the archived catalog-review exports, then add a
-  catalog-maintenance script for the selected workflow.
+- Consider an optional curation workflow for device-addition exports if
+  real-world use shows that users need to edit aliases or place metadata before
+  contributing them to the bundled catalog.
 
 ## Recovery and rollback
 
