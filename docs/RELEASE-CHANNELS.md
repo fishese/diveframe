@@ -193,15 +193,18 @@ APK at the prior runtime commit; a shared client change should not.
 
 Before calling a release complete, verify all of the following:
 
-- `git rev-parse HEAD` is the commit intended for both web and APK.
+- The build checkout's `git rev-parse HEAD` is the exact commit intended for
+  the APK; if `main` has later documentation-only commits, record that
+  deliberate difference and keep the APK source SHA pinned.
 - `npm test` passes.
 - `npm run native:sync` completed from that checkout.
 - Production metadata reports `cc.fishese.divelog` and one release APK.
 - Preview metadata reports `cc.fishese.divelog.preview` only when
   `assemblePreview` was explicitly requested.
 - The APK version name/code match the release notes and workflow properties.
-- The workflow URL, release tag, asset name, and documentation all refer to
-  Preview consistently.
+- The Preview workflow URL, mutable tag, asset name, package, and version all
+  refer to Preview consistently; production/F-Droid records separately use
+  the immutable stable tag, production package, and stable version.
 - The latest Preview release target SHA is the intended shared runtime commit,
   or any lag is explicitly recorded as intentional.
 - The F-Droid recipe still uses `subdir: android/app`, no `output`, the
