@@ -3937,12 +3937,16 @@ button {
   order: 6;
 }
 
-.settings-advanced {
+.catalog-settings {
   order: 7;
 }
 
-.settings-status {
+.settings-advanced {
   order: 8;
+}
+
+.settings-status {
+  order: 9;
 }
 
 .settings-hero h1 {
@@ -4140,10 +4144,6 @@ button {
 
 .settings-advanced-body > .storage-settings {
   order: 3;
-}
-
-.settings-advanced-body > .catalog-settings {
-  order: 4;
 }
 
 .settings-advanced-body > .danger-settings {

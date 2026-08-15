@@ -306,6 +306,19 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveMapApp, /createFrequentSitesSupplement/);
   assert.match(diveMapApp, /appRouteHref\(\s*"\/settings#dive-site-catalog"/);
   assert.match(settings, /id="dive-site-catalog"/);
+  assert.ok(
+    settings.indexOf('className="settings-card background-settings"') <
+      settings.indexOf('id="dive-site-catalog"'),
+    "catalog settings should follow reusable backgrounds",
+  );
+  assert.match(
+    settings,
+    /className="settings-card background-settings"[\s\S]*?<\/section>\s*<\/div>\s*<section[\s\S]*?id="dive-site-catalog"[\s\S]*?<\/section>\s*<details className="settings-advanced">/,
+    "catalog settings should be a separate section after backgrounds and before Advanced",
+  );
+  const settingsStyles = await readFile("app/globals.css", "utf8");
+  assert.match(settingsStyles, /\.catalog-settings\s*\{[^}]*order:\s*7/);
+  assert.match(settingsStyles, /\.settings-advanced\s*\{[^}]*order:\s*8/);
   assert.match(diveMapApp, /clusterOverlappingDiveMapMarkers/);
   assert.match(diveMapApp, /DIVE_MAP_DRAG_START_PX = 8/);
   assert.match(diveMapApp, /MARKER_FOCUS_MAX_ZOOM = DETAIL_MAP_ZOOM/);

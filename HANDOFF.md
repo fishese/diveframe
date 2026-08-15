@@ -490,8 +490,10 @@ Typing a new name for a GPS-backed dive additionally creates or updates a
 coordinates remains a valid local site override but is not offered as a device
 addition. Same-name sites within 250 metres are treated as duplicates.
 
-The **Dive-site catalog** card appears directly below **Reusable dive
-backgrounds**, outside the collapsed Advanced section. Its three counts open
+The **Dive-site catalog** card is a separate top-level Settings section,
+directly after the **Image Composer Settings** group that ends with **Reusable
+dive backgrounds**, and immediately before the collapsed Advanced section. Its
+three counts open
 searchable, source-specific viewers for the bundled catalog, device additions,
 and loaded supplement. Device and supplement viewers start expanded, show
 coordinates, and download validator-compatible supplementary-catalog JSON.

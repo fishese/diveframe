@@ -403,8 +403,10 @@ backups. The combined list is used for nearby-site suggestions. Duplicate IDs
 and identical name/coordinate entries retain the bundled entry. Remove the
 additional catalog from the same card at any time.
 
-The catalog card appears directly below **Reusable dive backgrounds**. Its
-three counts open separate searchable views:
+The catalog card is a separate Settings section directly after the **Image
+Composer Settings** group, whose last card is **Reusable dive backgrounds**,
+and immediately before **Advanced settings**. Its three counts open separate
+searchable views:
 
 - **Catalog sites** shows only the built-in `dive-sites.json` shipped with the
   current DiveFrame version.
