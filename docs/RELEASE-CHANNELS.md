@@ -112,15 +112,44 @@ The staging recipe is
 - The F-Droid reference APK and source tag must come from the same production
   source commit. A Preview APK must never be used as the F-Droid reference.
 
-The current MR is pinned to production commit
-`994a9571e8013672e8e6a91e10b361733a59251b`; Preview changes do not require
-changing that MR or recipe. Only reviewer feedback or a concrete F-Droid
-failure justifies touching the submission metadata.
+The current stable/F-Droid MR update is pinned to production commit
+`24e09b38a4921d5c3c80ec291a9544734fe5851f`, version `1.0.22`, version code
+`23`, and the immutable `v1.0.22` source tag. Preview changes do not select
+the F-Droid source; only an intentional stable release updates the recipe.
 
 The current verified Preview release targets shared runtime commit
 `5963a5ab1edc23b1163804361afb8d5c028788c2` (workflow run `31862669183`). It
 is `preview.11.5963a5a`, version code `100011`, and its APK SHA-256 is
 `69ab842198f37788cada96726c6da16b1d8a403b5552da6b2bf5cf3ab0704ab8`.
+
+## Current stable production/F-Droid release
+
+The stable production source is commit
+`24e09b38a4921d5c3c80ec291a9544734fe5851f`, tagged immutably as `v1.0.22`.
+It uses the default `assembleRelease` path, package
+`cc.fishese.divelog`, version name `1.0.22`, and version code `23`.
+
+The matching developer-signed F-Droid reference is published at
+`fdroid-v1.0.22` as `diveframe-1.0.22.apk`:
+
+- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.22
+- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.22
+- Reference workflow: https://github.com/fishese/diveframe/actions/runs/31863414099
+- Size: `15723961` bytes; SHA-256:
+  `DA8491902321104B3A01B16996BDB8EDF91FE578DD4B97023647FE69A3EED02A`
+- ABI: `arm64-v8a`; signer: `CN=Fishese`, certificate digest
+  `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
+
+The F-Droid recipe update commit is
+`6d3a1795c9344dd86264ceee71496d74d77f1414`. MR !45472 remains open and
+unmerged; pipeline `2762156241` passed all nine jobs. The F-Droid source,
+reference release, and recipe all resolve to the same stable source commit.
+
+The current Preview deliberately remains at shared runtime commit
+`5963a5ab1edc23b1163804361afb8d5c028788c2` and package
+`cc.fishese.divelog.preview`. The stable source adds only the documentation
+record `2dc375a` and release-only version/workflow metadata after that runtime;
+there is no unrecorded client-behavior difference.
 
 The exact F-Droid working-directory rule, `Binaries` whitespace requirement,
 MR failure analysis, reference-APK contract, and future update checklist are

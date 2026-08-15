@@ -52,12 +52,21 @@ store distribution are not started yet.
   `69ab842198f37788cada96726c6da16b1d8a403b5552da6b2bf5cf3ab0704ab8`.
   This is the intended no-drift state for the web/PWA and
   Preview APK, subject to normal hosted-deployment propagation.
-  A later `main` commit that only records this verified release is
-  documentation-only and does not introduce runtime drift.
-- The current F-Droid MR remains pinned to production commit
-  `994a9571e8013672e8e6a91e10b361733a59251b`; this deliberate lag keeps the
-  initial submission stable while Preview and the web continue to advance.
-  Preview changes do not require changing its recipe.
+  The stable release commit adds only release metadata after this runtime and
+  does not introduce runtime drift.
+- Stable production/F-Droid release `1.0.22` uses source commit
+  `24e09b38a4921d5c3c80ec291a9544734fe5851f`, version code `23`, and the
+  production package `cc.fishese.divelog`. Immutable source tag/release:
+  `v1.0.22`.
+- The matching signed F-Droid reference is
+  `fdroid-v1.0.22` / `diveframe-1.0.22.apk`, size `15723961` bytes, SHA-256
+  `DA8491902321104B3A01B16996BDB8EDF91FE578DD4B97023647FE69A3EED02A`,
+  signed by the existing `CN=Fishese` certificate and arm64-only.
+  Reference workflow: `31863414099`. F-Droid recipe commit:
+  `6d3a1795c9344dd86264ceee71496d74d77f1414`.
+- MR !45472 remains open and unmerged. Its update pipeline
+  `2762156241` passed all nine jobs, including `fdroid build` and `check apk`.
+  The recipe remains production-only and Preview changes are not submitted.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.

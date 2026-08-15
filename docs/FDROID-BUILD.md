@@ -1,6 +1,6 @@
 # DiveFrame F-Droid build and update guide
 
-Last verified: 2026-08-13 (Asia/Singapore)
+Last verified: 2026-08-15 (Asia/Singapore)
 
 Read this before changing the F-Droid metadata, creating a production
 release, or preparing a new F-Droid merge-request update. The canonical
@@ -18,9 +18,8 @@ F-Droid-specific build contract and the failure that occurred during MR
 - The current submission MR is
   [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472).
 - The MR is pinned to production commit
-  `994a9571e8013672e8e6a91e10b361733a59251b`, version `1.0.21`, version code
-  `22`. The newer web/Preview commits are intentionally not part of that
-  initial submission.
+  `24e09b38a4921d5c3c80ec291a9544734fe5851f`, version `1.0.22`, version code
+  `23`, and immutable source tag `v1.0.22`.
 
 The staging recipe is:
 
@@ -38,9 +37,9 @@ These fields are coupled to the current Android project layout:
 
 ```yaml
 Builds:
-  - versionName: 1.0.21
-    versionCode: 22
-    commit: 994a9571e8013672e8e6a91e10b361733a59251b
+  - versionName: 1.0.22
+    versionCode: 23
+    commit: 24e09b38a4921d5c3c80ec291a9544734fe5851f
     subdir: android/app
     gradle:
       - yes
@@ -174,12 +173,30 @@ Gradle task:            assembleRelease
 ```
 
 The reference workflow is
-`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.21` values
-are intentionally hard-coded for the initial submission. Before a future
-stable release, update its version name, version code/Gradle defaults, asset
-name, tag, title, and release notes together, then run it from the exact
-production source commit. Never use the mutable `preview` release as the
+`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.22` values
+are hard-coded together for the stable release and were run from the exact
+`v1.0.22` source tag. Never use the mutable `preview` release as the
 reference asset.
+
+## Verified stable release update
+
+- Stable source/tag: `24e09b38a4921d5c3c80ec291a9544734fe5851f` / `v1.0.22`
+- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.22
+- Reference workflow: https://github.com/fishese/diveframe/actions/runs/31863414099
+- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.22
+- Reference asset: `diveframe-1.0.22.apk`, `15723961` bytes,
+  SHA-256 `DA8491902321104B3A01B16996BDB8EDF91FE578DD4B97023647FE69A3EED02A`
+- APK identity: `cc.fishese.divelog`, `DiveFrame`, version `1.0.22` / code
+  `23`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
+  `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
+- Recipe/MR commit: `6d3a1795c9344dd86264ceee71496d74d77f1414`
+- MR/pipeline: [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472),
+  [pipeline 2762156241](https://gitlab.com/fishese/fdroiddata/-/pipelines/2762156241)
+
+Pipeline 2762156241 passed all nine jobs: `fdroid build`, `check apk`, `check
+source code`, `schema validation`, `tools check scripts`, `fdroid rewritemeta`,
+`fdroid lint`, `git redirect`, and `checkupdates`. The recipe still uses
+`subdir: android/app`, has no `output`, and retains all pinned native inputs.
 
 ## Repeatable F-Droid update checklist
 
