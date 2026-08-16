@@ -4,7 +4,21 @@ import test from "node:test";
 import ts from "typescript";
 import { DOMParser } from "linkedom";
 
-const source = await readFile("lib/subsurface-logbook-export.ts", "utf8");
+const awaited = await readFile("lib/subsurface-logbook-export.ts", "utf8");
+const gpsJavascript = ts.transpileModule(
+  await readFile("lib/dive-gps.ts", "utf8"),
+  {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+  },
+).outputText;
+const gpsUrl = `data:text/javascript;base64,${Buffer.from(gpsJavascript).toString("base64")}`;
+const source = awaited.replace(
+  /from "\.\/dive-gps"/,
+  `from "${gpsUrl}"`,
+);
 const javascript = ts.transpileModule(source, {
   compilerOptions: {
     module: ts.ModuleKind.ESNext,
@@ -128,7 +142,6 @@ test("preserves computer GPS and falls back to a complete user pair", () => {
     gpsEntryLng: 114.2,
     userGpsLat: 1.2,
     userGpsLng: 2.3,
-    exportGpsPreference: "user",
   };
   const xml = createSubsurfaceLogbook([userGpsDive]);
   const document = new DOMParser().parseFromString(xml, "application/xml");
@@ -163,6 +176,47 @@ test("preserves computer GPS and falls back to a complete user pair", () => {
   assert.equal(
     exitDocument.querySelector("divesites > site")?.getAttribute("gps"),
     "7.400000 134.500000",
+  );
+});
+
+test("user GPS preference wins in the full logbook and falls back when invalid", () => {
+  const both = {
+    ...completeDive,
+    gpsEntryLat: 22.3,
+    gpsEntryLng: 114.2,
+    userGpsLat: 1.2,
+    userGpsLng: 2.3,
+    exportGpsPreference: "user",
+  };
+  const userDocument = new DOMParser().parseFromString(
+    createSubsurfaceLogbook([both]),
+    "application/xml",
+  );
+  assert.equal(
+    userDocument.querySelector("divesites > site")?.getAttribute("gps"),
+    "1.200000 2.300000",
+  );
+
+  const legacy = createSubsurfaceLogbook([
+    { ...both, exportGpsPreference: "user-if-missing" },
+  ]);
+  assert.equal(
+    new DOMParser()
+      .parseFromString(legacy, "application/xml")
+      .querySelector("divesites > site")
+      ?.getAttribute("gps"),
+    "22.300000 114.200000",
+  );
+
+  const invalidUser = createSubsurfaceLogbook([
+    { ...both, userGpsLat: 91, userGpsLng: 2.3 },
+  ]);
+  assert.equal(
+    new DOMParser()
+      .parseFromString(invalidUser, "application/xml")
+      .querySelector("divesites > site")
+      ?.getAttribute("gps"),
+    "22.300000 114.200000",
   );
 });
 

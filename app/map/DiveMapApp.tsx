@@ -44,8 +44,10 @@ import {
   applyCatalogSiteCoordinatesToLocalDives,
   getLocalSupplementaryCatalog,
   listLocalDives,
+  listLocalDiveMergeGroups,
   listLocalSiteContributions,
   type LocalDive,
+  type LocalDiveMergeGroup,
   type LocalSiteContribution,
 } from "@/lib/indexed-db";
 import {
@@ -54,6 +56,7 @@ import {
   type DiveSiteCatalog,
 } from "@/lib/dive-site-catalog";
 import { subscribeLocalDataChanges } from "@/lib/cross-tab-sync";
+import { projectLogbookDives } from "@/lib/dive-segment-merge";
 import { useAppI18n } from "../AppI18nProvider";
 import { AppTopbar } from "../components/AppTopbar";
 import { useColorTheme } from "../ThemeProvider";
@@ -92,6 +95,7 @@ export function DiveMapApp() {
   const { language, t } = useAppI18n();
   const { colorTheme } = useColorTheme();
   const [dives, setDives] = useState<LocalDive[]>([]);
+  const [mergeGroups, setMergeGroups] = useState<LocalDiveMergeGroup[]>([]);
   const [supplementaryCatalog, setSupplementaryCatalog] = useState<{
     catalog: DiveSiteCatalog;
   } | null>(null);
@@ -145,8 +149,9 @@ export function DiveMapApp() {
     setSiteAudit(null);
     setSiteAuditBusy(false);
     try {
-      const [nextDives, nextSupplementaryCatalog, nextContributions] = await Promise.all([
+      const [nextDives, nextMergeGroups, nextSupplementaryCatalog, nextContributions] = await Promise.all([
         listLocalDives(),
+        listLocalDiveMergeGroups(),
         getLocalSupplementaryCatalog(),
         listLocalSiteContributions(),
       ]);
@@ -156,6 +161,7 @@ export function DiveMapApp() {
       setSiteAudit(null);
       setSiteAuditBusy(false);
       setDives(nextDives);
+      setMergeGroups(nextMergeGroups);
       setSupplementaryCatalog(nextSupplementaryCatalog);
       setSiteContributions(nextContributions);
       setError(null);
@@ -221,9 +227,13 @@ export function DiveMapApp() {
       ),
     [deviceSiteCatalog, supplementaryCatalog],
   );
+  const presentationDives = useMemo(
+    () => projectLogbookDives(dives, mergeGroups),
+    [dives, mergeGroups],
+  );
   const mapData = useMemo(
-    () => buildDiveMapData(dives, catalog),
-    [catalog, dives],
+    () => buildDiveMapData(presentationDives, catalog),
+    [catalog, presentationDives],
   );
   const zoom = DIVE_MAP_WIDTH / view.width;
   const baseMapAsset =

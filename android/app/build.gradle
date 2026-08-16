@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
-def configuredVersionCode = project.findProperty('previewVersionCode')
-def configuredVersionName = project.findProperty('previewVersionName')
+def configuredPreviewVersionCode = project.findProperty('previewVersionCode')
+def configuredPreviewVersionName = project.findProperty('previewVersionName')
 def libdivecomputerPin = new Properties()
 file('src/main/cpp/libdivecomputer.pin').withInputStream {
     libdivecomputerPin.load(it)
@@ -22,8 +22,8 @@ android {
         applicationId "cc.fishese.divelog"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode configuredVersionCode ? configuredVersionCode.toInteger() : 24
-        versionName configuredVersionName ?: "1.0.23"
+        versionCode 24
+        versionName "1.0.23"
         buildConfigField "String", "LIBDIVECOMPUTER_COMMIT", "\"${libdivecomputerCommit}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
@@ -56,6 +56,19 @@ android {
         cmake {
             path file("src/main/cpp/CMakeLists.txt")
             version "3.22.1"
+        }
+    }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("preview")) { variant ->
+        variant.outputs.each { output ->
+            if (configuredPreviewVersionCode) {
+                output.versionCode.set(configuredPreviewVersionCode.toInteger())
+            }
+            if (configuredPreviewVersionName) {
+                output.versionName.set(configuredPreviewVersionName)
+            }
         }
     }
 }

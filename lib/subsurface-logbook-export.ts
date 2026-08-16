@@ -1,3 +1,4 @@
+import { resolvePreferredDiveCoordinates } from "./dive-gps";
 import type { LocalDive } from "./indexed-db";
 
 export type SubsurfaceLogbookExportValidation =
@@ -236,21 +237,9 @@ function timeWeightedAverageDepth(
 }
 
 function exportCoordinates(dive: LocalDive) {
-  const computer =
-    validCoordinatePair(dive.gpsEntryLat, dive.gpsEntryLng) ??
-    validCoordinatePair(dive.gpsExitLat, dive.gpsExitLng);
-  const user = validCoordinatePair(dive.userGpsLat, dive.userGpsLng);
-  return computer ?? user;
-}
-
-function validCoordinatePair(latitude: number | null, longitude: number | null) {
-  return latitude !== null &&
-    longitude !== null &&
-    Number.isFinite(latitude) &&
-    Number.isFinite(longitude) &&
-    Math.abs(latitude) <= 90 &&
-    Math.abs(longitude) <= 180
-    ? { latitude, longitude }
+  const preferred = resolvePreferredDiveCoordinates(dive);
+  return preferred
+    ? { latitude: preferred.latitude, longitude: preferred.longitude }
     : null;
 }
 

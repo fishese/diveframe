@@ -1,7 +1,19 @@
 {
-  "version": "2026-08-14-catalog-coordinate-matches",
-  "updatedAt": "2026-08-14T13:30:00.000Z",
+  "version": "2026-08-16-reversible-segment-merge",
+  "updatedAt": "2026-08-16T02:08:03.719Z",
   "entries": [
+    {
+      "id": "2026-08-16-reversible-segment-merge",
+      "title": "Combine split dive segments safely",
+      "body": "Combine adjacent dive-computer segments without deleting the originals, and unmerge them at any time. You can also select short dives for review, rename trips directly from their headers, delete selected dives with an explicit confirmation, and choose user-entered coordinates for export. Backups that include combined dives use backup format 5 and should be restored with this or a newer DiveFrame build.",
+      "date": "2026-08-16",
+      "links": [
+        {
+          "label": "Download DiveFrame Preview APK",
+          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
+        }
+      ]
+    },
     {
       "id": "2026-08-14-catalog-coordinate-matches",
       "title": "Apply catalog coordinates from a site name",

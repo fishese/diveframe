@@ -1,3 +1,4 @@
+import { prefersUserExportGps } from "./dive-gps";
 import type { LocalDive, SourceRecord } from "./indexed-db";
 import { subsurfaceSourceId } from "./parsers/subsurface";
 
@@ -72,7 +73,9 @@ export async function addDiveFrameSitesToSubsurface(
       currentSite?.getAttribute("gps")?.trim() ||
       sourceDiveGps(sourceDive);
     const userGps = formattedGps(dive.userGpsLat, dive.userGpsLng);
-    const targetGps = sourceGps || userGps;
+    const targetGps = prefersUserExportGps(dive.exportGpsPreference) && userGps
+      ? userGps
+      : sourceGps || userGps;
     const currentName = currentSite?.getAttribute("name")?.trim() || null;
     const resolvedName = targetName || currentName || targetGps;
     if (resolvedName) {

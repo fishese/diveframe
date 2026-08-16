@@ -49,13 +49,24 @@ import {
   diveSiteAuditFingerprint,
   type DiveSiteAuditDiveSummary,
 } from "./dive-map-site-audit";
-import { resolveDiveMapCoordinates } from "./dive-gps";
+import {
+  normalizeExportGpsPreference,
+  resolveDiveMapCoordinates,
+} from "./dive-gps";
 import type { WhatsNewDocument } from "./whats-new";
+import {
+  captureMemberRevision,
+  evaluateSegmentMerge,
+  orderSegmentMembers,
+  type LocalDiveMergeGroup,
+} from "./dive-segment-merge";
 import {
   ALL_STORE_NAMES,
   STORE_NAMES,
   storeNamesForErase,
 } from "./store-manifest";
+
+export type { LocalDiveMergeGroup } from "./dive-segment-merge";
 
 export type { DiveMemo } from "./dive-memos";
 
@@ -301,12 +312,13 @@ export type LocalBackupSnapshot = {
   trips: LocalTrip[];
   supplementaryCatalog: LocalSupplementaryCatalog[];
   diveMemos: DiveMemo[];
+  diveMergeGroups: LocalDiveMergeGroup[];
 };
 
 export type BackupImportMode = "merge" | "replace" | "replace-dives";
 
 const DATABASE_NAME = "diveframe-local";
-export const DATABASE_VERSION = 11;
+export const DATABASE_VERSION = 12;
 const DIVES_STORE = STORE_NAMES.dives;
 const SOURCES_STORE = STORE_NAMES.sourceRecords;
 const ATTACHMENTS_STORE = STORE_NAMES.attachments;
@@ -321,6 +333,7 @@ const DEVICE_CHECKPOINTS_STORE = STORE_NAMES.deviceCheckpoints;
 const TRIPS_STORE = STORE_NAMES.trips;
 const SUPPLEMENTARY_CATALOG_STORE = STORE_NAMES.supplementaryCatalog;
 const DIVE_MEMOS_STORE = STORE_NAMES.diveMemos;
+const MERGE_GROUPS_STORE = STORE_NAMES.diveMergeGroups;
 
 export async function listLocalDives() {
   const database = await openDatabase();
@@ -331,6 +344,96 @@ export async function listLocalDives() {
     const dateOrder = String(b.diveDate ?? "").localeCompare(String(a.diveDate ?? ""));
     return dateOrder || (b.diveNumber ?? 0) - (a.diveNumber ?? 0);
   });
+}
+
+export async function listLocalDiveMergeGroups() {
+  const database = await openDatabase();
+  return request<LocalDiveMergeGroup[]>(
+    database
+      .transaction(MERGE_GROUPS_STORE)
+      .objectStore(MERGE_GROUPS_STORE)
+      .getAll(),
+  );
+}
+
+export async function createLocalDiveMergeGroup(diveIds: string[]) {
+  const uniqueIds = [...new Set(diveIds)];
+  if (uniqueIds.length < 2) {
+    throw new Error("Choose at least two dive segments.");
+  }
+  const database = await openDatabase();
+  const transaction = database.transaction(
+    [DIVES_STORE, MERGE_GROUPS_STORE],
+    "readwrite",
+  );
+  const divesStore = transaction.objectStore(DIVES_STORE);
+  const groupsStore = transaction.objectStore(MERGE_GROUPS_STORE);
+  const groups = await request<LocalDiveMergeGroup[]>(groupsStore.getAll());
+  const intersecting = groups.filter((group) =>
+    group.memberDiveIds.some((id) => uniqueIds.includes(id)),
+  );
+  if (intersecting.length > 1) {
+    transaction.abort();
+    throw new Error(
+      "Unmerge existing combined dives before merging these segments.",
+    );
+  }
+  const existing = intersecting[0];
+  const candidateIds = [
+    ...new Set([...(existing?.memberDiveIds ?? []), ...uniqueIds]),
+  ];
+  const loaded = await Promise.all(
+    candidateIds.map((id) =>
+      request<LocalDive | undefined>(divesStore.get(id)),
+    ),
+  );
+  if (loaded.some((dive) => !dive)) {
+    transaction.abort();
+    throw new Error("Dive not found in this browser.");
+  }
+  const members = orderSegmentMembers(loaded.map((dive) => hydrateDive(dive!)));
+  const evaluation = evaluateSegmentMerge(members);
+  if (!evaluation.ok) {
+    transaction.abort();
+    throw new Error("These dives cannot be merged.");
+  }
+  const now = new Date().toISOString();
+  const group: LocalDiveMergeGroup = {
+    id: existing?.id ?? crypto.randomUUID(),
+    memberDiveIds: evaluation.ordered.map((dive) => dive.id),
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+    memberRevision: evaluation.ordered.map(captureMemberRevision),
+    overlay: existing?.overlay ?? null,
+  };
+  groupsStore.put(group);
+  await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
+  return group;
+}
+
+export async function unmergeLocalDiveGroup(groupId: string) {
+  await unmergeLocalDiveGroups([groupId]);
+}
+
+export async function unmergeLocalDiveGroups(groupIds: string[]) {
+  const uniqueIds = [...new Set(groupIds)];
+  if (!uniqueIds.length) throw new Error("No merged dives selected.");
+  const database = await openDatabase();
+  const transaction = database.transaction(MERGE_GROUPS_STORE, "readwrite");
+  const store = transaction.objectStore(MERGE_GROUPS_STORE);
+  const existing = await Promise.all(
+    uniqueIds.map((id) =>
+      request<LocalDiveMergeGroup | undefined>(store.get(id)),
+    ),
+  );
+  if (existing.some((group) => !group)) {
+    transaction.abort();
+    throw new Error("Merged dive not found.");
+  }
+  uniqueIds.forEach((id) => store.delete(id));
+  await transactionComplete(transaction);
+  notifyLocalDataChanged("mutation");
 }
 
 export async function listLocalSourceRecords() {
@@ -350,6 +453,7 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
       SITE_CONTRIBUTIONS_STORE,
       COMPOSER_SETTINGS_STORE,
       RAW_DIVE_RECORDS_STORE,
+      MERGE_GROUPS_STORE,
     ],
     "readwrite",
   );
@@ -359,6 +463,7 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
   const attachmentsStore = transaction.objectStore(ATTACHMENTS_STORE);
   const composerSettingsStore = transaction.objectStore(COMPOSER_SETTINGS_STORE);
   const rawStore = transaction.objectStore(RAW_DIVE_RECORDS_STORE);
+  const mergeGroupsStore = transaction.objectStore(MERGE_GROUPS_STORE);
   const [storedDives, storedSources] = await Promise.all([
     request<LocalDive[]>(divesStore.getAll()),
     request<SourceRecord[]>(sourcesStore.getAll()),
@@ -396,6 +501,7 @@ export async function upsertLocalDives(importedDives: LocalImportedDive[]) {
         contributionsStore,
         composerSettingsStore,
         rawStore,
+        mergeGroupsStore,
       );
       canonicalId = promotedId;
     }
@@ -438,6 +544,7 @@ export async function persistBleImport(options: {
       COMPOSER_SETTINGS_STORE,
       RAW_DIVE_RECORDS_STORE,
       DEVICE_CHECKPOINTS_STORE,
+      MERGE_GROUPS_STORE,
     ],
     "readwrite",
   );
@@ -448,6 +555,7 @@ export async function persistBleImport(options: {
   const composerSettingsStore = transaction.objectStore(COMPOSER_SETTINGS_STORE);
   const rawStore = transaction.objectStore(RAW_DIVE_RECORDS_STORE);
   const checkpointStore = transaction.objectStore(DEVICE_CHECKPOINTS_STORE);
+  const mergeGroupsStore = transaction.objectStore(MERGE_GROUPS_STORE);
   const [storedDives, storedSources] = await Promise.all([
     request<LocalDive[]>(divesStore.getAll()),
     request<SourceRecord[]>(sourcesStore.getAll()),
@@ -489,6 +597,7 @@ export async function persistBleImport(options: {
         contributionsStore,
         composerSettingsStore,
         rawStore,
+        mergeGroupsStore,
       );
       canonicalId = promotedId;
     }
@@ -570,12 +679,13 @@ async function rekeyDive(
   contributionsStore: IDBObjectStore,
   composerSettingsStore: IDBObjectStore,
   rawStore: IDBObjectStore,
+  mergeGroupsStore: IDBObjectStore,
 ) {
   if (previousId === nextId) return;
   const dive = divesById.get(previousId);
   if (!dive) return;
 
-  const [attachments, contribution, composerSettings, rawRecords] =
+  const [attachments, contribution, composerSettings, rawRecords, groups] =
     await Promise.all([
       request<LocalAttachment[]>(
         attachmentsStore.index("diveId").getAll(previousId),
@@ -587,6 +697,7 @@ async function rekeyDive(
         composerSettingsStore.get(previousId),
       ),
       request<LocalRawDiveRecord[]>(rawStore.index("diveId").getAll(previousId)),
+      request<LocalDiveMergeGroup[]>(mergeGroupsStore.getAll()),
     ]);
 
   divesStore.delete(previousId);
@@ -621,6 +732,21 @@ async function rekeyDive(
     record.diveId = nextId;
     sourceMappings.set(record.key, nextId);
     sourcesStore.put(record);
+  });
+
+  groups.forEach((group) => {
+    if (!group.memberDiveIds.includes(previousId)) return;
+    mergeGroupsStore.put({
+      ...group,
+      memberDiveIds: group.memberDiveIds.map((id) =>
+        id === previousId ? nextId : id,
+      ),
+      memberRevision: group.memberRevision.map((revision) =>
+        revision.diveId === previousId
+          ? { ...revision, diveId: nextId }
+          : revision,
+      ),
+    });
   });
 }
 
@@ -702,10 +828,16 @@ export async function deleteLocalAttachment(diveId: string, attachmentId: string
 }
 
 /**
- * Removes one dive and only the records that belong to it. Re-importing its
- * source later creates a new local record through the normal merge pipeline.
+ * Removes the requested dives and only the records that belong to them in one
+ * transaction. Re-importing a source later creates a new local record through
+ * the normal merge pipeline.
  */
-export async function deleteLocalDive(id: string) {
+export async function deleteLocalDives(ids: string[]) {
+  const uniqueIds = [...new Set(ids)];
+  if (!uniqueIds.length) {
+    throw new Error("No dives selected.");
+  }
+
   const database = await openDatabase();
   const transaction = database.transaction(
     [
@@ -715,6 +847,7 @@ export async function deleteLocalDive(id: string) {
       SITE_CONTRIBUTIONS_STORE,
       COMPOSER_SETTINGS_STORE,
       RAW_DIVE_RECORDS_STORE,
+      MERGE_GROUPS_STORE,
     ],
     "readwrite",
   );
@@ -724,27 +857,50 @@ export async function deleteLocalDive(id: string) {
   const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
   const composerSettingsStore = transaction.objectStore(COMPOSER_SETTINGS_STORE);
   const rawStore = transaction.objectStore(RAW_DIVE_RECORDS_STORE);
-  const [dive, sources, attachments, rawRecords] = await Promise.all([
-    request<LocalDive | undefined>(divesStore.get(id)),
+  const mergeGroupsStore = transaction.objectStore(MERGE_GROUPS_STORE);
+  const [sources, groups, ...loaded] = await Promise.all([
     request<SourceRecord[]>(sourcesStore.getAll()),
-    request<LocalAttachment[]>(attachmentsStore.index("diveId").getAll(id)),
-    request<LocalRawDiveRecord[]>(rawStore.index("diveId").getAll(id)),
+    request<LocalDiveMergeGroup[]>(mergeGroupsStore.getAll()),
+    ...uniqueIds.map(async (id) => {
+      const [dive, attachments, rawRecords] = await Promise.all([
+        request<LocalDive | undefined>(divesStore.get(id)),
+        request<LocalAttachment[]>(attachmentsStore.index("diveId").getAll(id)),
+        request<LocalRawDiveRecord[]>(rawStore.index("diveId").getAll(id)),
+      ]);
+      return { id, dive, attachments, rawRecords };
+    }),
   ]);
-  if (!dive) {
+  const dives = loaded.map((item) => item.dive);
+  if (dives.some((dive) => !dive)) {
     transaction.abort();
     throw new Error("Dive not found in this browser.");
   }
 
-  divesStore.delete(id);
-  sources
-    .filter((source) => source.diveId === id)
-    .forEach((source) => sourcesStore.delete(source.key));
-  attachments.forEach((attachment) => attachmentsStore.delete(attachment.id));
-  rawRecords.forEach((record) => rawStore.delete(record.id));
-  contributionsStore.delete(id);
-  composerSettingsStore.delete(id);
+  for (const { id, attachments, rawRecords } of loaded) {
+    divesStore.delete(id);
+    sources
+      .filter((source) => source.diveId === id)
+      .forEach((source) => sourcesStore.delete(source.key));
+    attachments.forEach((attachment) => attachmentsStore.delete(attachment.id));
+    rawRecords.forEach((record) => rawStore.delete(record.id));
+    contributionsStore.delete(id);
+    composerSettingsStore.delete(id);
+  }
+  groups
+    .filter((group) =>
+      group.memberDiveIds.some((memberId) => uniqueIds.includes(memberId)),
+    )
+    .forEach((group) => mergeGroupsStore.delete(group.id));
   await transactionComplete(transaction);
   notifyLocalDataChanged("mutation");
+}
+
+/**
+ * Removes one dive and only the records that belong to it. Re-importing its
+ * source later creates a new local record through the normal merge pipeline.
+ */
+export async function deleteLocalDive(id: string) {
+  await deleteLocalDives([id]);
 }
 
 /** Removes a known seeded record after a real user import, if it exists. */
@@ -1586,6 +1742,7 @@ export async function updateLocalDiveUserGps(
           userGpsLng: null,
           userGpsSource: null,
           userGpsUpdatedAt: null,
+          exportGpsPreference: "computer",
           appEditedAt: now,
         }
       : {
@@ -1618,6 +1775,18 @@ export async function updateLocalDiveUserGps(
   await transactionComplete(transaction);
   notifyLocalDataChanged("mutation");
   return updated;
+}
+
+export async function updateLocalDiveExportGpsPreference(
+  id: string,
+  preference: ExportGpsPreference,
+) {
+  const next = normalizeExportGpsPreference(preference);
+  return updateDive(id, (dive) => ({
+    ...dive,
+    exportGpsPreference: next,
+    appEditedAt: new Date().toISOString(),
+  }));
 }
 
 async function putManualSiteContribution(
@@ -1761,6 +1930,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     trips,
     supplementaryCatalog,
     diveMemos,
+    diveMergeGroups,
   ] = await Promise.all([
     request<LocalDive[]>(transaction.objectStore(DIVES_STORE).getAll()),
     request<SourceRecord[]>(transaction.objectStore(SOURCES_STORE).getAll()),
@@ -1792,6 +1962,9 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
       transaction.objectStore(SUPPLEMENTARY_CATALOG_STORE).getAll(),
     ),
     request<DiveMemo[]>(transaction.objectStore(DIVE_MEMOS_STORE).getAll()),
+    request<LocalDiveMergeGroup[]>(
+      transaction.objectStore(MERGE_GROUPS_STORE).getAll(),
+    ),
   ]);
   return {
     dives: dives.map(hydrateDive),
@@ -1808,6 +1981,7 @@ export async function exportLocalBackupSnapshot(): Promise<LocalBackupSnapshot> 
     trips,
     supplementaryCatalog,
     diveMemos,
+    diveMergeGroups,
   };
 }
 
@@ -1832,6 +2006,7 @@ export async function importLocalBackupSnapshot(
     [TRIPS_STORE, snapshot.trips],
     [SUPPLEMENTARY_CATALOG_STORE, snapshot.supplementaryCatalog],
     [DIVE_MEMOS_STORE, snapshot.diveMemos],
+    [MERGE_GROUPS_STORE, snapshot.diveMergeGroups ?? []],
   ];
   const replacedStoreNames = new Set(
     mode === "replace"
@@ -1910,6 +2085,7 @@ export async function getLocalBackupSizeEstimate() {
     trips,
     supplementaryCatalog,
     diveMemos,
+    diveMergeGroups,
     attachments,
     backgrounds,
     brandingAssets,
@@ -1935,6 +2111,9 @@ export async function getLocalBackupSizeEstimate() {
       transaction.objectStore(SUPPLEMENTARY_CATALOG_STORE).getAll(),
     ),
     request<DiveMemo[]>(transaction.objectStore(DIVE_MEMOS_STORE).getAll()),
+    request<LocalDiveMergeGroup[]>(
+      transaction.objectStore(MERGE_GROUPS_STORE).getAll(),
+    ),
     collectStoreRecords(transaction.objectStore(ATTACHMENTS_STORE), (record) => {
       const value = record as LocalAttachment;
       return {
@@ -2014,6 +2193,7 @@ export async function getLocalBackupSizeEstimate() {
       trips,
       supplementaryCatalog,
       diveMemos,
+      diveMergeGroups,
       attachments: attachments.records,
       backgrounds: backgrounds.records,
       brandingAssets: brandingAssets.records,
@@ -2123,6 +2303,7 @@ export async function mergeLocalDuplicateDives(
       SITE_CONTRIBUTIONS_STORE,
       COMPOSER_SETTINGS_STORE,
       RAW_DIVE_RECORDS_STORE,
+      MERGE_GROUPS_STORE,
     ],
     "readwrite",
   );
@@ -2132,7 +2313,8 @@ export async function mergeLocalDuplicateDives(
   const contributionsStore = transaction.objectStore(SITE_CONTRIBUTIONS_STORE);
   const composerSettingsStore = transaction.objectStore(COMPOSER_SETTINGS_STORE);
   const rawStore = transaction.objectStore(RAW_DIVE_RECORDS_STORE);
-  const [keepRaw, removeRaw, keepAttachments, removeAttachments, sources, keepContribution, removeContribution, keepSettings, removeSettings, rawRecords] =
+  const mergeGroupsStore = transaction.objectStore(MERGE_GROUPS_STORE);
+  const [keepRaw, removeRaw, keepAttachments, removeAttachments, sources, keepContribution, removeContribution, keepSettings, removeSettings, rawRecords, groups] =
     await Promise.all([
       request<LocalDive | undefined>(divesStore.get(keepId)),
       request<LocalDive | undefined>(divesStore.get(removeId)),
@@ -2148,10 +2330,22 @@ export async function mergeLocalDuplicateDives(
       request<ComposerSettings | undefined>(composerSettingsStore.get(keepId)),
       request<ComposerSettings | undefined>(composerSettingsStore.get(removeId)),
       request<LocalRawDiveRecord[]>(rawStore.index("diveId").getAll(removeId)),
+      request<LocalDiveMergeGroup[]>(mergeGroupsStore.getAll()),
     ]);
   if (!keepRaw || !removeRaw) {
     transaction.abort();
     throw new Error("One of these dives no longer exists.");
+  }
+  if (
+    groups.some((group) =>
+      group.memberDiveIds.includes(keepId) ||
+      group.memberDiveIds.includes(removeId),
+    )
+  ) {
+    transaction.abort();
+    throw new Error(
+      "Unmerge combined segments before merging duplicate records.",
+    );
   }
   const keep = hydrateDive(keepRaw);
   const remove = hydrateDive(removeRaw);
@@ -2358,7 +2552,9 @@ function mergeDive(
     userGpsLng: existing?.userGpsLng ?? null,
     userGpsSource: existing?.userGpsSource ?? null,
     userGpsUpdatedAt: existing?.userGpsUpdatedAt ?? null,
-    exportGpsPreference: existing?.exportGpsPreference ?? "computer",
+    exportGpsPreference: normalizeExportGpsPreference(
+      existing?.exportGpsPreference,
+    ),
     tripId: existing?.tripId ?? null,
     resolvedLocation: existing?.resolvedLocation ?? null,
     resolvedCity: existing?.resolvedCity ?? null,
@@ -2451,8 +2647,9 @@ function mergeStoredDives(
     userGpsLng: value(keep.userGpsLng, remove.userGpsLng),
     userGpsSource: value(keep.userGpsSource, remove.userGpsSource),
     userGpsUpdatedAt: value(keep.userGpsUpdatedAt, remove.userGpsUpdatedAt),
-    exportGpsPreference:
-      keep.exportGpsPreference ?? remove.exportGpsPreference ?? "computer",
+    exportGpsPreference: normalizeExportGpsPreference(
+      keep.exportGpsPreference ?? remove.exportGpsPreference,
+    ),
     tripId: value(keep.tripId, remove.tripId),
     resolvedLocation: value(keep.resolvedLocation, remove.resolvedLocation),
     resolvedCity: value(keep.resolvedCity, remove.resolvedCity),
@@ -2551,6 +2748,10 @@ function openDatabase() {
       if (previousVersion < 11) {
         createV11ObjectStores(database);
       }
+      // v12 is additive: reversible segment-merge groups only.
+      if (previousVersion < 12) {
+        createV12ObjectStores(database);
+      }
     };
     operation.onsuccess = () => resolve(operation.result);
     operation.onerror = () =>
@@ -2629,6 +2830,12 @@ function createV10ObjectStores(database: IDBDatabase) {
 function createV11ObjectStores(database: IDBDatabase) {
   if (!database.objectStoreNames.contains(DIVE_MEMOS_STORE)) {
     database.createObjectStore(DIVE_MEMOS_STORE, { keyPath: "id" });
+  }
+}
+
+function createV12ObjectStores(database: IDBDatabase) {
+  if (!database.objectStoreNames.contains(MERGE_GROUPS_STORE)) {
+    database.createObjectStore(MERGE_GROUPS_STORE, { keyPath: "id" });
   }
 }
 
@@ -2750,7 +2957,7 @@ function hydrateDive(dive: LocalDive): LocalDive {
     userGpsLng: dive.userGpsLng ?? null,
     userGpsSource: dive.userGpsSource ?? null,
     userGpsUpdatedAt: dive.userGpsUpdatedAt ?? null,
-    exportGpsPreference: dive.exportGpsPreference ?? "computer",
+    exportGpsPreference: normalizeExportGpsPreference(dive.exportGpsPreference),
     tripId: dive.tripId ?? null,
     resolvedLocationSuppressed: dive.resolvedLocationSuppressed ?? false,
     sourceDiveNumbers: dive.sourceDiveNumbers ?? {},

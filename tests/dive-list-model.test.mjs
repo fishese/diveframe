@@ -13,8 +13,11 @@ const javascript = ts.transpileModule(source, {
 const {
   buildDiveListRows,
   compareDives,
+  DEFAULT_SHORT_DIVE_MAX_MINUTES,
   diveMatchesListFilters,
   diveWasEditedHere,
+  parsePositiveWholeMinutes,
+  shortDiveCandidateIds,
 } = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`
 );
@@ -198,4 +201,102 @@ test("diveMatchesListFilters search includes computerModel", () => {
     ),
     false,
   );
+});
+
+test("short-dive threshold is a positive whole number of minutes defaulting to 3", () => {
+  assert.equal(DEFAULT_SHORT_DIVE_MAX_MINUTES, 3);
+  assert.equal(parsePositiveWholeMinutes(3), 3);
+  assert.equal(parsePositiveWholeMinutes("3"), 3);
+  assert.equal(parsePositiveWholeMinutes("01"), null);
+  assert.equal(parsePositiveWholeMinutes(0), null);
+  assert.equal(parsePositiveWholeMinutes(-3), null);
+  assert.equal(parsePositiveWholeMinutes(3.5), null);
+  assert.equal(parsePositiveWholeMinutes("3.5"), null);
+  assert.equal(parsePositiveWholeMinutes(""), null);
+  assert.equal(parsePositiveWholeMinutes("abc"), null);
+  assert.equal(parsePositiveWholeMinutes(Number.NaN), null);
+  assert.equal(parsePositiveWholeMinutes(Number.POSITIVE_INFINITY), null);
+});
+
+test("short-dive candidates include 180s and exclude 181s at the 3-minute default", () => {
+  const dives = [
+    dive({ id: "at-limit", durationSeconds: 180 }),
+    dive({ id: "over-limit", durationSeconds: 181 }),
+    dive({ id: "one-second", durationSeconds: 1 }),
+  ];
+  assert.deepEqual(shortDiveCandidateIds(dives, DEFAULT_SHORT_DIVE_MAX_MINUTES), [
+    "at-limit",
+    "one-second",
+  ]);
+});
+
+test("unknown, zero, negative, and non-finite durations are never short-dive candidates", () => {
+  const dives = [
+    dive({ id: "null-duration", durationSeconds: null }),
+    dive({ id: "zero", durationSeconds: 0 }),
+    dive({ id: "negative", durationSeconds: -12 }),
+    dive({ id: "nan", durationSeconds: Number.NaN }),
+    dive({ id: "infinity", durationSeconds: Number.POSITIVE_INFINITY }),
+    dive({ id: "valid", durationSeconds: 60 }),
+  ];
+  assert.deepEqual(shortDiveCandidateIds(dives, 3), ["valid"]);
+  assert.deepEqual(shortDiveCandidateIds(dives, 0), []);
+  assert.deepEqual(shortDiveCandidateIds(dives, 2.5), []);
+  assert.deepEqual(shortDiveCandidateIds(dives, Number.NaN), []);
+});
+
+test("active search, date, and computer filters constrain short-dive candidates", () => {
+  const dives = [
+    dive({
+      id: "in-range",
+      diveDate: "2026-07-15",
+      durationSeconds: 90,
+      computerModel: "Peregrine",
+      notes: "pool check",
+    }),
+    dive({
+      id: "wrong-date",
+      diveDate: "2026-08-01",
+      durationSeconds: 60,
+      computerModel: "Peregrine",
+      notes: "pool check",
+    }),
+    dive({
+      id: "wrong-computer",
+      diveDate: "2026-07-15",
+      durationSeconds: 45,
+      computerModel: "Perdix 2",
+      notes: "pool check",
+    }),
+    dive({
+      id: "wrong-search",
+      diveDate: "2026-07-15",
+      durationSeconds: 30,
+      computerModel: "Peregrine",
+      notes: "reef wall",
+    }),
+    dive({
+      id: "too-long",
+      diveDate: "2026-07-15",
+      durationSeconds: 240,
+      computerModel: "Peregrine",
+      notes: "pool check",
+    }),
+  ];
+  const visible = dives.filter((item) =>
+    diveMatchesListFilters(
+      item,
+      defaultFilters({
+        dateFrom: "2026-07-01",
+        dateTo: "2026-07-31",
+        computerModel: "Peregrine",
+        searchText: "pool",
+      }),
+    ),
+  );
+  assert.deepEqual(
+    visible.map((item) => item.id),
+    ["in-range", "too-long"],
+  );
+  assert.deepEqual(shortDiveCandidateIds(visible, 3), ["in-range"]);
 });

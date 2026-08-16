@@ -11,7 +11,18 @@ globalThis.XMLSerializer = class {
   }
 };
 
+const gpsJavascript = ts.transpileModule(
+  await readFile("lib/dive-gps.ts", "utf8"),
+  {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+  },
+).outputText;
+const gpsUrl = `data:text/javascript;base64,${Buffer.from(gpsJavascript).toString("base64")}`;
 let source = await readFile("lib/subsurface-site-export.ts", "utf8");
+source = source.replace(/from "\.\/dive-gps"/, `from "${gpsUrl}"`);
 source = source.replace(
   /import \{ subsurfaceSourceId \} from "\.\/parsers\/subsurface";/,
   `function subsurfaceSourceId(dive) {
@@ -176,4 +187,82 @@ test("preserves a Subsurface start-location coordinate when no site is linked", 
   );
 
   assert.equal(linkedSite.getAttribute("gps"), "7.100000 8.200000");
+});
+
+test("user GPS preference overrides source GPS and falls back when invalid", async () => {
+  const xml = `<divelog program="subsurface" version="3">
+  <divesites><site uuid="source-site" name="Old name" gps="1.000000 2.000000"/></divesites>
+  <dives><dive divesiteid="source-site"><divecomputer deviceid="device" diveid="1"/></dive></dives>
+</divelog>`;
+  const sourceRecords = [
+    { source: "subsurface", sourceId: "device:1", diveId: "canonical" },
+  ];
+  const preferred = await addDiveFrameSitesToSubsurface(
+    new File([xml], "source.ssrf", { type: "application/xml" }),
+    [{
+      id: "canonical",
+      userSite: "DiveFrame name",
+      sourceSiteNames: {},
+      gpsEntryLat: 3,
+      gpsEntryLng: 4,
+      userGpsLat: 5,
+      userGpsLng: 6,
+      exportGpsPreference: "user",
+      buddy: null,
+      notes: null,
+    }],
+    sourceRecords,
+  );
+  const preferredDoc = new DOMParser().parseFromString(preferred.xml, "application/xml");
+  const preferredDive = preferredDoc.querySelector("dives > dive");
+  const preferredSite = preferredDoc.querySelector(
+    `divesites > site[uuid="${preferredDive.getAttribute("divesiteid")}"]`,
+  );
+  assert.equal(preferredSite.getAttribute("gps"), "5.000000 6.000000");
+
+  const invalid = await addDiveFrameSitesToSubsurface(
+    new File([xml], "source.ssrf", { type: "application/xml" }),
+    [{
+      id: "canonical",
+      userSite: "DiveFrame name",
+      sourceSiteNames: {},
+      gpsEntryLat: 3,
+      gpsEntryLng: 4,
+      userGpsLat: 91,
+      userGpsLng: 6,
+      exportGpsPreference: "user",
+      buddy: null,
+      notes: null,
+    }],
+    sourceRecords,
+  );
+  const invalidDoc = new DOMParser().parseFromString(invalid.xml, "application/xml");
+  const invalidDive = invalidDoc.querySelector("dives > dive");
+  const invalidSite = invalidDoc.querySelector(
+    `divesites > site[uuid="${invalidDive.getAttribute("divesiteid")}"]`,
+  );
+  assert.equal(invalidSite.getAttribute("gps"), "1.000000 2.000000");
+
+  const legacy = await addDiveFrameSitesToSubsurface(
+    new File([xml], "source.ssrf", { type: "application/xml" }),
+    [{
+      id: "canonical",
+      userSite: "DiveFrame name",
+      sourceSiteNames: {},
+      gpsEntryLat: 3,
+      gpsEntryLng: 4,
+      userGpsLat: 5,
+      userGpsLng: 6,
+      exportGpsPreference: "user-if-missing",
+      buddy: null,
+      notes: null,
+    }],
+    sourceRecords,
+  );
+  const legacyDoc = new DOMParser().parseFromString(legacy.xml, "application/xml");
+  const legacyDive = legacyDoc.querySelector("dives > dive");
+  const legacySite = legacyDoc.querySelector(
+    `divesites > site[uuid="${legacyDive.getAttribute("divesiteid")}"]`,
+  );
+  assert.equal(legacySite.getAttribute("gps"), "1.000000 2.000000");
 });

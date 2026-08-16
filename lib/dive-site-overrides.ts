@@ -67,6 +67,7 @@ export function clearedDiveFrameSiteData(dive: {
     userGpsLng: null,
     userGpsSource: null,
     userGpsUpdatedAt: null,
+    exportGpsPreference: "computer" as const,
     resolvedLocation: null,
     resolvedCity: null,
     resolvedCountry: null,

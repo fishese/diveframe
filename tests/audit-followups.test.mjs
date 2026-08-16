@@ -154,6 +154,24 @@ test("backup record validation rejects crash-prone dive and memo shapes", () => 
     sources: [],
   };
   assert.equal(backupRecords.isValidBackupDive(dive), true);
+  assert.equal(
+    backupRecords.isValidBackupDive({ ...dive, exportGpsPreference: "user" }),
+    true,
+  );
+  assert.equal(
+    backupRecords.isValidBackupDive({
+      ...dive,
+      exportGpsPreference: "user-if-missing",
+    }),
+    true,
+  );
+  assert.equal(
+    backupRecords.isValidBackupDive({
+      ...dive,
+      exportGpsPreference: "computer-first",
+    }),
+    false,
+  );
   assert.equal(backupRecords.isValidBackupDive({ id: "dive-1" }), false);
   assert.equal(
     backupRecords.isValidBackupDive({ ...dive, samples: {} }),
@@ -255,6 +273,59 @@ test("backup record validation rejects crash-prone dive and memo shapes", () => 
       sourceId: "source-1",
       diveId: "dive-1",
       importedAt: "2026-08-09T00:00:00.000Z",
+    }),
+    false,
+  );
+});
+
+test("backup merge groups require aligned revisions and a safe overlay", () => {
+  const group = {
+    id: "group-1",
+    memberDiveIds: ["dive-a", "dive-b"],
+    createdAt: "2026-08-16T12:00:00.000Z",
+    updatedAt: "2026-08-16T12:00:00.000Z",
+    memberRevision: ["dive-a", "dive-b"].map((diveId) => ({
+      diveId,
+      importedAt: "2026-08-16T11:00:00.000Z",
+      appEditedAt: null,
+      diveDate: "2026-08-16T10:00:00.000Z",
+      durationSeconds: 120,
+      maxDepthM: 6,
+    })),
+    overlay: {
+      buddy: "Ada",
+      userGpsLat: 22.3,
+      userGpsLng: 114.2,
+      userGpsSource: "manual",
+      exportGpsPreference: "user",
+    },
+  };
+  assert.equal(backupRecords.isValidBackupDiveMergeGroup(group), true);
+  assert.equal(
+    backupRecords.isValidBackupDiveMergeGroup({
+      ...group,
+      memberRevision: group.memberRevision.slice(0, 1),
+    }),
+    false,
+  );
+  assert.equal(
+    backupRecords.isValidBackupDiveMergeGroup({
+      ...group,
+      memberRevision: [...group.memberRevision].reverse(),
+    }),
+    false,
+  );
+  assert.equal(
+    backupRecords.isValidBackupDiveMergeGroup({
+      ...group,
+      overlay: { ...group.overlay, userGpsLat: 91 },
+    }),
+    false,
+  );
+  assert.equal(
+    backupRecords.isValidBackupDiveMergeGroup({
+      ...group,
+      overlay: { ...group.overlay, durationSeconds: 900 },
     }),
     false,
   );

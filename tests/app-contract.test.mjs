@@ -188,7 +188,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(backup, /blobBase64/);
   assert.match(app, /deleteLocalAttachment/);
   assert.match(app, /deleteLocalDive/);
+  assert.match(app, /deleteLocalDives/);
   assert.match(app, /deleteLocalDiveBySource/);
+  assert.match(storage, /export async function deleteLocalDives/);
+  assert.match(storage, /deleteLocalDives\(\[\s*id\s*\]\)/);
   assert.match(app, /loadSampleLog/);
   assert.match(app, /deleteDiveConfirmOpen/);
   assert.match(app, /onDeletePhoto/);
@@ -196,7 +199,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /show-mobile-detail/);
   assert.match(app, /hourCycle: "h23"/);
   assert.match(app, /getElementById\("dive-gallery"\)/);
-  assert.match(app, /href=\{`\/compose\?dive=\$\{encodeURIComponent\(dive\.id\)\}`\}/);
+  assert.match(app, /href=\{`\/compose\?dive=\$\{encodeURIComponent\(composeDiveId\)\}`\}/);
   assert.doesNotMatch(app, /href="#dive-gallery"/);
   assert.match(app, /\/compose\?dive=/);
   assert.match(app, /openstreetmap\.org/);
@@ -318,6 +321,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   );
   const settingsStyles = await readFile("app/globals.css", "utf8");
   assert.match(settingsStyles, /\.catalog-settings\s*\{[^}]*order:\s*7/);
+  assert.match(settingsStyles, /\.catalog-settings\s*\{[^}]*margin-top:\s*14px/);
   assert.match(settingsStyles, /\.settings-advanced\s*\{[^}]*order:\s*8/);
   assert.match(diveMapApp, /clusterOverlappingDiveMapMarkers/);
   assert.match(diveMapApp, /DIVE_MAP_DRAG_START_PX = 8/);
@@ -521,7 +525,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(composerPresets, /selectedPhotoId/);
   assert.match(composerPresets, /photoOffsetX/);
   assert.match(storage, /composerPresets/);
-  assert.match(storage, /DATABASE_VERSION = 11/);
+  assert.match(storage, /DATABASE_VERSION = 12/);
   assert.match(storage, /previousVersion < 8/);
   assert.match(storage, /supplementaryCatalog/);
   assert.doesNotMatch(
@@ -542,6 +546,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /createV9ObjectStores/);
   assert.match(storage, /createV10ObjectStores/);
   assert.match(storage, /createV11ObjectStores/);
+  assert.match(storage, /createV12ObjectStores/);
   assert.match(storage, /listLocalDiveMemos/);
   assert.match(storage, /saveLocalDiveMemo/);
   assert.match(storage, /deleteLocalDiveMemo/);
@@ -594,7 +599,12 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(diveSiteSuggestions, /setTimeout\(\(\) => controller\.abort\(\), 10000\)/);
   assert.match(app, /source: "manual"/);
   assert.match(app, /source: "photo-exif"/);
-  assert.doesNotMatch(app, /exportGpsPreference/);
+  assert.match(app, /exportGpsPreference/);
+  assert.match(app, /updateLocalDiveExportGpsPreference/);
+  assert.match(app, /t\("preferUserCoordinates"\)/);
+  assert.match(app, /t\("preferUserCoordinatesHint"\)/);
+  assert.match(appI18n, /preferUserCoordinates:/);
+  assert.match(appI18n, /preferUserCoordinatesHint:/);
   const diveGps = await readFile("lib/dive-gps.ts", "utf8");
   assert.match(diveGps, /export function resolveDiveMapCoordinates/);
   assert.match(diveGps, /validatedPair\(dive\.gpsEntryLat, dive\.gpsEntryLng\)/);
@@ -609,8 +619,24 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /collapsedTripIds/);
   assert.match(app, /"dive-row-trip-member"/);
   assert.match(app, /className="trip-header"/);
+  assert.match(app, /className="trip-header-rename"/);
+  assert.match(app, /className="trip-header-rename-form"/);
+  assert.match(app, /beginTripHeaderRename\(row\.trip\)/);
+  assert.match(app, /submitTripHeaderRename/);
   assert.match(app, /className="trip-block"/);
   assert.match(app, /className="select-action-bar"/);
+  assert.match(app, /className="select-short-dives"/);
+  assert.match(app, /t\("selectShortDives"\)/);
+  assert.match(app, /t\("clearSelection"\)/);
+  assert.match(app, /t\("deleteSelectedDives"\)/);
+  assert.match(app, /deleteSelectedConfirmOpen/);
+  assert.match(app, /t\("deleteSelectedDivesTitle", \{ count: visibleSelectedCount \}\)/);
+  assert.match(appI18n, /deleteSelectedDives:/);
+  assert.match(appI18n, /deleteSelectedDivesTitle:/);
+  assert.match(appI18n, /deleteSelectedDivesDescription:/);
+  assert.match(appI18n, /maxDurationMinutes:/);
+  assert.match(appI18n, /selectShortDives:/);
+  assert.match(appI18n, /clearSelection:/);
   assert.match(app, /createLocalTripWithAssignments\(name, ids\)/);
   assert.match(app, /setLocalDiveTripIds\(ids, null\)/);
   assert.match(app, /deleteLocalTrip\(tripId, \{ clearAssignments: assignedCount > 0 \}\)/);
@@ -639,8 +665,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(appI18n, /deleteTripConfirm: "Delete trip \\"\{name\}\\"/);
   assert.match(appI18n, /deleteTripConfirmWithDives: "Delete trip \\"\{name\}\\"/);
   assert.match(app, /const mapCoordinates = resolveDiveMapCoordinates\(dive\);/);
+  assert.match(app, /const preferredCoordinates = resolvePreferredDiveCoordinates\(dive\);/);
   assert.match(app, /<DiveSiteSuggestions/);
-  assert.match(app, /coordinates=\{mapCoordinates\}/);
+  assert.match(app, /coordinates=\{preferredCoordinates\}/);
   const diveListModel = await readFile("lib/dive-list-model.ts", "utf8");
   assert.match(diveListModel, /userGpsLat/);
   assert.match(diveListModel, /function diveHasGps/);
@@ -709,7 +736,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     bleImportPanel,
     /className="button button-primary ble-history-download"/,
   );
-  assert.match(backup, /BACKUP_VERSION = 4/);
+  assert.match(backup, /BACKUP_VERSION = 5/);
   assert.match(backup, /diveMemos/);
   assert.match(backup, /rawBytesBase64/);
   assert.match(backup, /fingerprintBase64/);

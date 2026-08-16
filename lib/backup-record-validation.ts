@@ -138,6 +138,7 @@ export function isValidBackupDive(value: unknown): boolean {
     !isOptionalFiniteNumber(value.gpsExitLng, 180) ||
     !isOptionalFiniteNumber(value.userGpsLat, 90) ||
     !isOptionalFiniteNumber(value.userGpsLng, 180) ||
+    !isValidExportGpsPreference(value.exportGpsPreference) ||
     !isOptionalArray(value.gasMixes) ||
     (Array.isArray(value.gasMixes) && !value.gasMixes.every(isValidGasMix)) ||
     !isOptionalArray(value.tanks) ||
@@ -175,6 +176,109 @@ function isValidDateOnly(value: string) {
     date.getUTCFullYear() === year &&
     date.getUTCMonth() === month - 1 &&
     date.getUTCDate() === day
+  );
+}
+
+function isValidExportGpsPreference(value: unknown): boolean {
+  return (
+    value === undefined ||
+    value === null ||
+    value === "computer" ||
+    value === "user" ||
+    value === "user-if-missing"
+  );
+}
+
+export function isValidBackupDiveMergeGroup(value: unknown): boolean {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    !value.id ||
+    !Array.isArray(value.memberDiveIds) ||
+    value.memberDiveIds.length < 2 ||
+    !value.memberDiveIds.every(
+      (id) => typeof id === "string" && id.length > 0,
+    ) ||
+    new Set(value.memberDiveIds).size !== value.memberDiveIds.length ||
+    !isValidTimestamp(value.createdAt) ||
+    !isValidTimestamp(value.updatedAt) ||
+    !Array.isArray(value.memberRevision) ||
+    value.memberRevision.length !== value.memberDiveIds.length
+  ) {
+    return false;
+  }
+  if (!isValidMergeGroupOverlay(value.overlay)) {
+    return false;
+  }
+  const memberDiveIds = value.memberDiveIds as string[];
+  return value.memberRevision.every(
+    (revision, index) =>
+      isRecord(revision) &&
+      typeof revision.diveId === "string" &&
+      revision.diveId === memberDiveIds[index] &&
+      isValidTimestamp(revision.importedAt) &&
+      (revision.appEditedAt === undefined ||
+        revision.appEditedAt === null ||
+        isValidTimestamp(revision.appEditedAt)) &&
+      typeof revision.diveDate === "string" &&
+      isValidDiveDate(revision.diveDate) &&
+      typeof revision.durationSeconds === "number" &&
+      Number.isFinite(revision.durationSeconds) &&
+      revision.durationSeconds > 0 &&
+      isOptionalFiniteNumber(revision.maxDepthM) &&
+      !(
+        typeof revision.maxDepthM === "number" && revision.maxDepthM < 0
+      ),
+  );
+}
+
+function isValidMergeGroupOverlay(value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  if (!isRecord(value)) return false;
+  const allowedKeys = new Set([
+    "buddy",
+    "notes",
+    "userSite",
+    "userSiteSource",
+    "userSiteCatalogId",
+    "userGpsLat",
+    "userGpsLng",
+    "userGpsSource",
+    "exportGpsPreference",
+  ]);
+  if (Object.keys(value).some((key) => !allowedKeys.has(key))) return false;
+  if (
+    !isOptionalString(value.buddy) ||
+    !isOptionalString(value.notes) ||
+    !isOptionalString(value.userSite) ||
+    !isOptionalString(value.userSiteCatalogId) ||
+    !(
+      value.userSiteSource === undefined ||
+      value.userSiteSource === null ||
+      value.userSiteSource === "catalog" ||
+      value.userSiteSource === "suggestion" ||
+      value.userSiteSource === "manual" ||
+      value.userSiteSource === "memo"
+    ) ||
+    !(
+      value.userGpsSource === undefined ||
+      value.userGpsSource === null ||
+      value.userGpsSource === "manual" ||
+      value.userGpsSource === "photo-exif" ||
+      value.userGpsSource === "memo" ||
+      value.userGpsSource === "catalog" ||
+      value.userGpsSource === "site-selection"
+    ) ||
+    !isValidExportGpsPreference(value.exportGpsPreference)
+  ) {
+    return false;
+  }
+  const hasLatitude = value.userGpsLat !== undefined && value.userGpsLat !== null;
+  const hasLongitude = value.userGpsLng !== undefined && value.userGpsLng !== null;
+  if (hasLatitude !== hasLongitude) return false;
+  return (
+    isOptionalFiniteNumber(value.userGpsLat, 90) &&
+    isOptionalFiniteNumber(value.userGpsLng, 180)
   );
 }
 

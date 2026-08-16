@@ -36,6 +36,50 @@ export type DiveListItem = {
   >;
 };
 
+export const DEFAULT_SHORT_DIVE_MAX_MINUTES = 3;
+
+export function parsePositiveWholeMinutes(value: unknown): number | null {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value) || !Number.isInteger(value) || value < 1) {
+      return null;
+    }
+    return value;
+  }
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!/^[1-9]\d*$/.test(trimmed)) return null;
+  const parsed = Number(trimmed);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) return null;
+  return parsed;
+}
+
+export function isShortDiveCandidate(
+  dive: Pick<DiveListItem, "durationSeconds">,
+  maxDurationMinutes: number,
+): boolean {
+  const thresholdMinutes = parsePositiveWholeMinutes(maxDurationMinutes);
+  if (thresholdMinutes === null) return false;
+  const duration = dive.durationSeconds;
+  if (
+    duration === null ||
+    duration === undefined ||
+    !Number.isFinite(duration) ||
+    duration <= 0
+  ) {
+    return false;
+  }
+  return duration <= thresholdMinutes * 60;
+}
+
+export function shortDiveCandidateIds(
+  dives: readonly Pick<DiveListItem, "id" | "durationSeconds">[],
+  maxDurationMinutes: number,
+): string[] {
+  return dives
+    .filter((dive) => isShortDiveCandidate(dive, maxDurationMinutes))
+    .map((dive) => dive.id);
+}
+
 export type DiveListFilters = {
   namedOnly: boolean;
   gpsOnly: boolean;

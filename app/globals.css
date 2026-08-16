@@ -922,8 +922,79 @@ button {
   white-space: nowrap;
 }
 
+.select-short-dives {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.select-short-dives-field {
+  display: grid;
+  gap: 4px;
+  min-width: 8.5rem;
+}
+
+.select-short-dives-field span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.select-short-dives-field input {
+  background: var(--fill-04);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--text-bright);
+  font-size: 12px;
+  padding: 8px 9px;
+  width: 5.5rem;
+}
+
+@media (max-width: 560px) {
+  .select-short-dives {
+    width: 100%;
+  }
+
+  .select-short-dives-field {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .select-short-dives-field input {
+    width: 100%;
+  }
+}
+
 .select-action-buttons {
   align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.merged-segment-badge {
+  color: var(--teal);
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.merge-segment-preview {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.merge-segment-error {
+  color: var(--danger, #f0b4b4);
+}
+
+.merged-segment-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -970,21 +1041,71 @@ button {
   border-bottom: 1px solid rgba(196, 233, 225, 0.07);
 }
 
+.trip-header-row {
+  align-items: stretch;
+  background: rgba(141, 235, 215, 0.04);
+  display: flex;
+}
+
 .trip-header {
   align-items: center;
-  background: rgba(141, 235, 215, 0.04);
+  background: transparent;
   border: 0;
   color: var(--mist);
   cursor: pointer;
   display: flex;
+  flex: 1;
   gap: 8px;
+  min-width: 0;
   padding: 11px 18px;
   text-align: left;
-  width: 100%;
 }
 
 .trip-header:hover {
   background: rgba(141, 235, 215, 0.08);
+}
+
+.trip-header-rename {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 5px;
+  padding: 8px 14px;
+}
+
+.trip-header-rename:hover,
+.trip-header-rename:focus-visible {
+  background: rgba(141, 235, 215, 0.08);
+  color: var(--teal);
+}
+
+.trip-header-rename:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.trip-header-rename-form {
+  align-items: center;
+  background: rgba(141, 235, 215, 0.035);
+  border-top: 1px solid rgba(196, 233, 225, 0.07);
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.trip-header-rename-form input {
+  background: var(--fill-03);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--text-bright);
+  flex: 1;
+  min-width: 100px;
+  padding: 8px 10px;
 }
 
 .trip-header-chevron {
@@ -1520,6 +1641,13 @@ button {
 .photo-location-keep input {
   accent-color: var(--teal);
   margin-top: 2px;
+}
+
+.user-gps-preference-hint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: -4px 0 0;
 }
 
 .photo-gps-status {
@@ -3969,7 +4097,7 @@ button {
 }
 
 .catalog-settings {
-  margin-top: 0;
+  margin-top: 14px;
   padding: 24px;
   scroll-margin-top: calc(96px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
 }

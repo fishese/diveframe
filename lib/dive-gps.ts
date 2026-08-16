@@ -13,7 +13,20 @@ export type DiveGpsInput = {
   gpsExitLng?: number | null;
   userGpsLat: number | null;
   userGpsLng: number | null;
+  exportGpsPreference?: string | null;
 };
+
+export function normalizeExportGpsPreference(
+  value: unknown,
+): "computer" | "user" | "user-if-missing" {
+  return value === "user" || value === "user-if-missing" || value === "computer"
+    ? value
+    : "computer";
+}
+
+export function prefersUserExportGps(value: unknown): boolean {
+  return normalizeExportGpsPreference(value) === "user";
+}
 
 /**
  * Resolves the coordinates to show on the map: dive-computer GPS always wins
@@ -32,6 +45,30 @@ export function resolveDiveMapCoordinates(
     return { ...computerExit, source: "computer" };
   }
   const user = validatedPair(dive.userGpsLat, dive.userGpsLng);
+  if (user) {
+    return { ...user, source: "user" };
+  }
+  return null;
+}
+
+/**
+ * Resolves coordinates for site suggestions and export. A stored "user"
+ * preference lets a valid user pair win; missing, legacy, and invalid values
+ * keep computer/source-first fallback. Never mutates gpsEntry* or gpsExit*.
+ */
+export function resolvePreferredDiveCoordinates(
+  dive: DiveGpsInput,
+): DiveMapCoordinates | null {
+  const computer = validatedPair(dive.gpsEntryLat, dive.gpsEntryLng);
+  const computerExit = validatedPair(dive.gpsExitLat, dive.gpsExitLng);
+  const source = computer ?? computerExit;
+  const user = validatedPair(dive.userGpsLat, dive.userGpsLng);
+  if (prefersUserExportGps(dive.exportGpsPreference) && user) {
+    return { ...user, source: "user" };
+  }
+  if (source) {
+    return { ...source, source: "computer" };
+  }
   if (user) {
     return { ...user, source: "user" };
   }

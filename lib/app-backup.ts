@@ -26,6 +26,7 @@ import {
   isValidBackupDeviceCheckpoint,
   isValidBackupDive,
   isValidBackupDiveMemo,
+  isValidBackupDiveMergeGroup,
   isValidBackupRawDiveRecord,
   isValidBackupSiteContribution,
   isValidBackupSourceRecord,
@@ -39,8 +40,8 @@ export {
 } from "./backup-crypto";
 
 const BACKUP_FORMAT = "diveframe-local-backup";
-const BACKUP_VERSION = 4;
-const SUPPORTED_BACKUP_VERSIONS = [1, 2, 3, 4] as const;
+const BACKUP_VERSION = 5;
+const SUPPORTED_BACKUP_VERSIONS = [1, 2, 3, 4, 5] as const;
 const LEGACY_BACKUP_VERSION = 1;
 
 type EncodedBlobRecord<T> = Omit<T, "blob"> & { blobBase64: string };
@@ -127,6 +128,7 @@ export async function createLocalAppBackup(password?: string) {
       trips: snapshot.trips,
       supplementaryCatalog: snapshot.supplementaryCatalog,
       diveMemos: snapshot.diveMemos,
+      diveMergeGroups: snapshot.diveMergeGroups,
     },
   } satisfies Omit<BackupDocument, "integrity">;
   const document: BackupDocument = {
@@ -254,6 +256,7 @@ async function decodeSnapshot(document: BackupDocument): Promise<LocalBackupSnap
     trips: document.stores.trips ?? [],
     supplementaryCatalog: document.stores.supplementaryCatalog ?? [],
     diveMemos: (document.stores.diveMemos ?? []) as DiveMemo[],
+    diveMergeGroups: document.stores.diveMergeGroups ?? [],
   };
 }
 
@@ -406,6 +409,7 @@ function validateBackupDocument(value: unknown): BackupDocument {
     ["trips", stores.trips ?? [], "id"],
     ["supplementary catalog", stores.supplementaryCatalog ?? [], "id"],
     ["dive memos", stores.diveMemos ?? [], "id"],
+    ["dive merge groups", stores.diveMergeGroups ?? [], "id"],
   ];
   for (const [label, records, key] of keyedStores) {
     const keys = records.map((record) =>
@@ -431,6 +435,9 @@ function validateBackupDocument(value: unknown): BackupDocument {
   }
   if (!(stores.diveMemos ?? []).every(isValidBackupDiveMemo)) {
     throw new Error("The backup contains invalid dive memos.");
+  }
+  if (!(stores.diveMergeGroups ?? []).every(isValidBackupDiveMergeGroup)) {
+    throw new Error("The backup contains invalid dive merge groups.");
   }
   if (!stores.composerSettings.every(isValidBackupComposerSettings)) {
     throw new Error("The backup contains invalid composer settings.");
@@ -470,10 +477,20 @@ function validateBackupDocument(value: unknown): BackupDocument {
 function validateSnapshotReferences(snapshot: LocalBackupSnapshot) {
   const diveIds = new Set(snapshot.dives.map((dive) => dive.id));
   const tripIds = new Set(snapshot.trips.map((trip) => trip.id));
+  const mergeMemberIds = new Set<string>();
+  const invalidMergeGroup = (snapshot.diveMergeGroups ?? []).some((group) => {
+    if (diveIds.has(group.id)) return true;
+    return group.memberDiveIds.some((memberId) => {
+      if (!diveIds.has(memberId) || mergeMemberIds.has(memberId)) return true;
+      mergeMemberIds.add(memberId);
+      return false;
+    });
+  });
   const invalidReference =
     snapshot.sourceRecords.some((record) => !diveIds.has(record.diveId)) ||
     snapshot.siteContributions.some((record) => !diveIds.has(record.diveId)) ||
     snapshot.rawDiveRecords.some((record) => !diveIds.has(record.diveId)) ||
+    invalidMergeGroup ||
     snapshot.dives.some(
       (dive) =>
         typeof dive.tripId === "string" &&
@@ -544,6 +561,7 @@ function arraysPresent(stores: Partial<EncodedStores>) {
     (stores.trips === undefined || Array.isArray(stores.trips)) &&
     (stores.supplementaryCatalog === undefined ||
       Array.isArray(stores.supplementaryCatalog)) &&
-    (stores.diveMemos === undefined || Array.isArray(stores.diveMemos))
+    (stores.diveMemos === undefined || Array.isArray(stores.diveMemos)) &&
+    (stores.diveMergeGroups === undefined || Array.isArray(stores.diveMergeGroups))
   );
 }

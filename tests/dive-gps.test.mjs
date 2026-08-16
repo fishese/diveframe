@@ -23,7 +23,12 @@ async function loadTsModule(path) {
   return import(`data:text/javascript;base64,${Buffer.from(resolvedJavascript).toString("base64")}`);
 }
 
-const { resolveDiveMapCoordinates } = await loadTsModule("lib/dive-gps.ts");
+const {
+  normalizeExportGpsPreference,
+  prefersUserExportGps,
+  resolveDiveMapCoordinates,
+  resolvePreferredDiveCoordinates,
+} = await loadTsModule("lib/dive-gps.ts");
 const { readJpegExifGps, readPhotoExifGps } = await loadTsModule("lib/photo-exif-gps.ts");
 
 function diveGps(overrides = {}) {
@@ -127,4 +132,87 @@ test("readJpegExifGps returns null for a non-JPEG buffer", async () => {
   const buffer = buildNonJpegBuffer();
   const gps = await readJpegExifGps(buffer);
   assert.equal(gps, null);
+});
+
+test("missing and legacy export GPS preferences stay computer-first", () => {
+  assert.equal(normalizeExportGpsPreference(undefined), "computer");
+  assert.equal(normalizeExportGpsPreference(null), "computer");
+  assert.equal(normalizeExportGpsPreference("user-if-missing"), "user-if-missing");
+  assert.equal(normalizeExportGpsPreference("nope"), "computer");
+  assert.equal(prefersUserExportGps(undefined), false);
+  assert.equal(prefersUserExportGps("computer"), false);
+  assert.equal(prefersUserExportGps("user-if-missing"), false);
+  assert.equal(prefersUserExportGps("user"), true);
+});
+
+test("preferred coordinates stay computer-first when the override is off", () => {
+  const both = diveGps({
+    gpsEntryLat: 22.1,
+    gpsEntryLng: 114.1,
+    userGpsLat: 1,
+    userGpsLng: 2,
+  });
+  assert.deepEqual(resolvePreferredDiveCoordinates(both), {
+    latitude: 22.1,
+    longitude: 114.1,
+    source: "computer",
+  });
+  assert.deepEqual(
+    resolvePreferredDiveCoordinates({ ...both, exportGpsPreference: "computer" }),
+    { latitude: 22.1, longitude: 114.1, source: "computer" },
+  );
+  assert.deepEqual(
+    resolvePreferredDiveCoordinates({
+      ...both,
+      exportGpsPreference: "user-if-missing",
+    }),
+    { latitude: 22.1, longitude: 114.1, source: "computer" },
+  );
+  assert.deepEqual(
+    resolveDiveMapCoordinates({ ...both, exportGpsPreference: "user" }),
+    { latitude: 22.1, longitude: 114.1, source: "computer" },
+  );
+});
+
+test("preferred coordinates use valid user GPS only when the override is on", () => {
+  const both = diveGps({
+    gpsEntryLat: 22.1,
+    gpsEntryLng: 114.1,
+    gpsExitLat: 22.2,
+    gpsExitLng: 114.2,
+    userGpsLat: 1,
+    userGpsLng: 2,
+    exportGpsPreference: "user",
+  });
+  assert.deepEqual(resolvePreferredDiveCoordinates(both), {
+    latitude: 1,
+    longitude: 2,
+    source: "user",
+  });
+  assert.deepEqual(
+    resolvePreferredDiveCoordinates({
+      ...both,
+      userGpsLat: 91,
+      userGpsLng: 2,
+    }),
+    { latitude: 22.1, longitude: 114.1, source: "computer" },
+  );
+  assert.deepEqual(
+    resolvePreferredDiveCoordinates({
+      ...both,
+      userGpsLat: null,
+      userGpsLng: null,
+    }),
+    { latitude: 22.1, longitude: 114.1, source: "computer" },
+  );
+  assert.deepEqual(
+    resolvePreferredDiveCoordinates({
+      ...both,
+      gpsEntryLat: null,
+      gpsEntryLng: null,
+      userGpsLat: Number.NaN,
+      userGpsLng: 2,
+    }),
+    { latitude: 22.2, longitude: 114.2, source: "computer" },
+  );
 });

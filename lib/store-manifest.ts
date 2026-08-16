@@ -13,6 +13,7 @@ export const STORE_NAMES = {
   trips: "trips",
   supplementaryCatalog: "supplementaryCatalog",
   diveMemos: "diveMemos",
+  diveMergeGroups: "diveMergeGroups",
 } as const;
 
 export type StoreName = (typeof STORE_NAMES)[keyof typeof STORE_NAMES];
@@ -40,6 +41,7 @@ export const STORE_MANIFEST: Record<StoreName, StoreErasePolicy> = {
   trips: { eraseAllData: true, eraseDiveDataOnly: true },
   supplementaryCatalog: { eraseAllData: true, eraseDiveDataOnly: false },
   diveMemos: { eraseAllData: true, eraseDiveDataOnly: false },
+  diveMergeGroups: { eraseAllData: true, eraseDiveDataOnly: true },
 };
 
 export const ALL_STORE_NAMES: StoreName[] = Object.values(STORE_NAMES);

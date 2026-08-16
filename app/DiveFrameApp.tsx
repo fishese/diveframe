@@ -13,6 +13,7 @@ import {
   Database as DatabaseIcon,
   Droplets,
   Gauge,
+  GitMerge,
   ImagePlus,
   LoaderCircle,
   MapPin,
@@ -40,8 +41,10 @@ import {
   addLocalPhotos,
   clearLocalDiveSiteOverride,
   createLocalTripWithAssignments,
+  createLocalDiveMergeGroup,
   deleteLocalAttachment,
   deleteLocalDive,
+  deleteLocalDives,
   deleteLocalDiveBySource,
   deleteLocalTrip,
   getLocalBackupSizeEstimate,
@@ -50,12 +53,12 @@ import {
   listLocalAttachments,
   listLocalBackgrounds,
   listLocalDiveMemos,
+  listLocalDiveMergeGroups,
   listLocalDives,
   listLocalSiteContributions,
   listLocalTrips,
   renameLocalTrip,
   requestPersistentLocalStorage,
-  setLocalDiveTripId,
   setLocalDiveTripIds,
   type LocalAttachment,
   type LocalDive,
@@ -64,21 +67,41 @@ import {
   type LocalTrip,
   type DiveSource,
   type UserGpsSource,
+  unmergeLocalDiveGroup,
+  unmergeLocalDiveGroups,
   updateLocalDiveLocation,
   updateLocalDiveDetails,
   updateLocalDiveSite,
+  updateLocalDiveExportGpsPreference,
   updateLocalDiveUserGps,
   upsertLocalDives,
 } from "@/lib/indexed-db";
+import {
+  evaluateSegmentMerge,
+  expandSelectionToOriginalIds,
+  isMergePresentationId,
+  parseMergePresentationId,
+  projectLogbookDives,
+  type LocalDiveMergeGroup,
+  type ProjectedMergeFields,
+  type SegmentMergeErrorCode,
+  type SegmentMergeWarningCode,
+} from "@/lib/dive-segment-merge";
 import { subscribeLocalDataChanges } from "@/lib/cross-tab-sync";
 import {
   buildDiveListRows,
   compareDives,
+  DEFAULT_SHORT_DIVE_MAX_MINUTES,
   diveMatchesListFilters,
+  parsePositiveWholeMinutes,
+  shortDiveCandidateIds,
   type DiveListFilters,
   type DiveSortOption,
 } from "@/lib/dive-list-model";
-import { resolveDiveMapCoordinates } from "@/lib/dive-gps";
+import {
+  resolveDiveMapCoordinates,
+  resolvePreferredDiveCoordinates,
+} from "@/lib/dive-gps";
 import {
   collectBuddyNames,
   completeBuddyToken,
@@ -139,7 +162,7 @@ import {
   MEMO_MATCH_WINDOWS_MS,
 } from "@/lib/memo-dive-match";
 
-type Dive = LocalDive;
+type Dive = LocalDive & Partial<ProjectedMergeFields>;
 type Attachment = LocalAttachment;
 
 type MapLocation = {
@@ -161,6 +184,7 @@ const MINIMUM_AVERAGE_SAC_DURATION_SECONDS = 20 * 60;
 export function DiveFrameApp() {
   const { language, t } = useAppI18n();
   const [dives, setDives] = useState<Dive[]>([]);
+  const [mergeGroups, setMergeGroups] = useState<LocalDiveMergeGroup[]>([]);
   const [trips, setTrips] = useState<LocalTrip[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -186,6 +210,15 @@ export function DiveFrameApp() {
   const [newTripFormOpen, setNewTripFormOpen] = useState(false);
   const [newTripNameDraft, setNewTripNameDraft] = useState("");
   const [addToTripDraft, setAddToTripDraft] = useState("");
+  const [tripHeaderRenameId, setTripHeaderRenameId] = useState<string | null>(
+    null,
+  );
+  const [tripHeaderRenameDraft, setTripHeaderRenameDraft] = useState("");
+  const [deleteSelectedConfirmOpen, setDeleteSelectedConfirmOpen] =
+    useState(false);
+  const [mergeConfirmOpen, setMergeConfirmOpen] = useState(false);
+  const [showOriginalSegments, setShowOriginalSegments] = useState(false);
+  const [shortDiveMaxMinutesInput, setShortDiveMaxMinutesInput] = useState(String(DEFAULT_SHORT_DIVE_MAX_MINUTES));
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(false);
   const [mobileDetail, setMobileDetail] = useState(false);
@@ -214,24 +247,27 @@ export function DiveFrameApp() {
 
   const refreshDives = useCallback(async (preferredId?: string) => {
     const generation = ++refreshGenerationRef.current;
-    const [next, nextStorageEstimate, nextTrips, nextSupplementaryCatalog, nextContributions] = await Promise.all([
+    const [next, nextStorageEstimate, nextTrips, nextSupplementaryCatalog, nextContributions, nextGroups] = await Promise.all([
       listLocalDives(),
       getLocalBackupSizeEstimate(),
       listLocalTrips(),
       getLocalSupplementaryCatalog(),
       listLocalSiteContributions(),
+      listLocalDiveMergeGroups(),
     ]);
     if (generation !== refreshGenerationRef.current) return;
     setDives(next);
+    setMergeGroups(nextGroups);
     setStorageEstimate(nextStorageEstimate);
     setTrips(nextTrips);
     setSupplementaryCatalog(nextSupplementaryCatalog);
     setSiteContributions(nextContributions);
+    const presentation = projectLogbookDives(next, nextGroups);
     setSelectedId((current) =>
       preferredId ??
-      (current && next.some((dive) => dive.id === current)
+      (current && presentation.some((dive) => dive.id === current)
         ? current
-        : next[0]?.id ?? null),
+        : presentation[0]?.id ?? null),
     );
     setStatus(next.length ? t("divesReady", { count: next.length }) : t("importDiveLog"));
   }, [t]);
@@ -245,17 +281,20 @@ export function DiveFrameApp() {
       listLocalTrips(),
       getLocalSupplementaryCatalog(),
       listLocalSiteContributions(),
+      listLocalDiveMergeGroups(),
     ])
-      .then(([next, nextStorageEstimate, nextTrips, nextSupplementaryCatalog, nextContributions]) => {
+      .then(([next, nextStorageEstimate, nextTrips, nextSupplementaryCatalog, nextContributions, nextGroups]) => {
         if (!active || generation !== refreshGenerationRef.current) return;
         setDives(next);
+        setMergeGroups(nextGroups);
         setStorageEstimate(nextStorageEstimate);
         setTrips(nextTrips);
         setSupplementaryCatalog(nextSupplementaryCatalog);
         setSiteContributions(nextContributions);
         const requestedDiveId = new URLSearchParams(window.location.search).get("dive");
-        const requestedDive = next.find((dive) => dive.id === requestedDiveId);
-        setSelectedId(requestedDive?.id ?? next[0]?.id ?? null);
+        const presentation = projectLogbookDives(next, nextGroups);
+        const requestedDive = presentation.find((dive) => dive.id === requestedDiveId);
+        setSelectedId(requestedDive?.id ?? presentation[0]?.id ?? null);
         setMobileDetail(Boolean(requestedDive));
         setStatus(next.length ? t("divesReady", { count: next.length }) : t("importDiveLog"));
         void requestPersistentLocalStorage();
@@ -452,9 +491,14 @@ export function DiveFrameApp() {
     });
   }
 
+  const presentationDives = useMemo(
+    () => projectLogbookDives(dives, mergeGroups) as Dive[],
+    [dives, mergeGroups],
+  );
+
   const selected = useMemo(
-    () => dives.find((dive) => dive.id === selectedId) ?? null,
-    [dives, selectedId],
+    () => presentationDives.find((dive) => dive.id === selectedId) ?? null,
+    [presentationDives, selectedId],
   );
   const deviceSiteCatalog = useMemo(
     () =>
@@ -554,9 +598,12 @@ export function DiveFrameApp() {
     if (!selectedId) {
       return;
     }
-    listLocalAttachments(selectedId)
-      .then((next) => {
-        if (active) setAttachments(next);
+    const memberIds = selected?.memberDiveIds?.length
+      ? selected.memberDiveIds
+      : [selectedId];
+    Promise.all(memberIds.map((id) => listLocalAttachments(id)))
+      .then((lists) => {
+        if (active) setAttachments(lists.flat());
       })
       .catch(() => {
         if (active) setAttachments([]);
@@ -564,7 +611,7 @@ export function DiveFrameApp() {
     return () => {
       active = false;
     };
-  }, [selectedId]);
+  }, [selected, selectedId]);
 
   const computerModels = useMemo(
     () =>
@@ -607,7 +654,7 @@ export function DiveFrameApp() {
       searchText: search.text,
       sourceOnly: search.sourceOnly,
     };
-    return dives
+    return presentationDives
       .filter((dive) => diveMatchesListFilters(dive, filters))
       .sort((a, b) => compareDives(a, b, sortOption));
   }, [
@@ -615,7 +662,7 @@ export function DiveFrameApp() {
     computerFilter,
     dateFrom,
     dateTo,
-    dives,
+    presentationDives,
     gpsOnly,
     namedOnly,
     query,
@@ -654,7 +701,7 @@ export function DiveFrameApp() {
           depth !== null && Number.isFinite(depth) && depth >= 0,
       );
     return {
-      dives: dives.length,
+      dives: presentationDives.length,
       namedDives: dives.filter((dive) => Boolean(dive.userSite || dive.site))
         .length,
       locations: new Set(
@@ -685,7 +732,7 @@ export function DiveFrameApp() {
           maxDepths.length
         : null,
     };
-  }, [defaultCylinderPresetId, dives]);
+  }, [defaultCylinderPresetId, dives, presentationDives.length]);
   const backupWarningThreshold = backupSizeWarningThreshold();
   const showStorageWarning =
     storageEstimate !== null &&
@@ -750,6 +797,10 @@ export function DiveFrameApp() {
 
   async function savePhotoFiles(files: File[]) {
     if (!files.length || !selected) return false;
+    if (selected.mergeGroupId) {
+      setStatus(t("cannotEditMergedPhotos"));
+      return false;
+    }
     setBusy(true);
     setStatus(t("savingPhotos", { count: files.length, suffix: files.length === 1 ? "" : "s" }));
     try {
@@ -774,6 +825,10 @@ export function DiveFrameApp() {
 
   async function deletePhoto(attachment: Attachment) {
     if (!selected || !window.confirm(t("deletePhotoConfirm"))) return;
+    if (selected.mergeGroupId) {
+      setStatus(t("cannotEditMergedPhotos"));
+      return;
+    }
     setBusy(true);
     setStatus(t("deletingPhoto"));
     try {
@@ -856,6 +911,7 @@ export function DiveFrameApp() {
     endPressureBar?: number | null;
   }) {
     if (!selected) return false;
+    if (selected.mergeGroupId) return true;
     setBusy(true);
     setStatus(t("savingDiveDetails"));
     try {
@@ -875,6 +931,26 @@ export function DiveFrameApp() {
 
   async function deleteDiveLog(id: string) {
     setBusy(true);
+    const groupId = parseMergePresentationId(id);
+    if (groupId) {
+      setStatus(t("unmergingSegments"));
+      try {
+        await unmergeLocalDiveGroup(groupId);
+        setAttachments([]);
+        setSelectedId(null);
+        setMobileDetail(false);
+        await refreshDives();
+        setStatus(t("segmentsUnmerged"));
+        return true;
+      } catch (error) {
+        setStatus(
+          error instanceof Error ? error.message : t("segmentsUnmergeFailed"),
+        );
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    }
     setStatus(t("deletingDiveLog"));
     try {
       await deleteLocalDive(id);
@@ -886,6 +962,27 @@ export function DiveFrameApp() {
       return true;
     } catch (error) {
       setStatus(error instanceof Error ? error.message : t("diveDeleteFailed"));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveDiveExportGpsPreference(id: string, preferUser: boolean) {
+    setBusy(true);
+    try {
+      const updated = await updateLocalDiveExportGpsPreference(
+        id,
+        preferUser ? "user" : "computer",
+      );
+      setDives((current) =>
+        current.map((dive) => (dive.id === updated.id ? updated : dive)),
+      );
+      return true;
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : t("settingsSaveFailed"),
+      );
       return false;
     } finally {
       setBusy(false);
@@ -962,6 +1059,8 @@ export function DiveFrameApp() {
       setNewTripFormOpen(false);
       setNewTripNameDraft("");
       setAddToTripDraft("");
+      setDeleteSelectedConfirmOpen(false);
+      setMergeConfirmOpen(false);
       return next;
     });
   }
@@ -971,9 +1070,79 @@ export function DiveFrameApp() {
   }
 
   const visibleSelectedCount = visibleSelectedDiveIds().length;
+  const selectedMergedOnly =
+    visibleSelectedCount > 0 &&
+    visibleSelectedDiveIds().every((id) => isMergePresentationId(id));
+  const mergeSelectionIds = expandSelectionToOriginalIds(
+    visibleSelectedDiveIds(),
+    mergeGroups,
+  );
+  const mergePreviewMembers = mergeSelectionIds
+    .map((id) => dives.find((dive) => dive.id === id))
+    .filter((dive): dive is Dive => Boolean(dive));
+  const mergePreview = evaluateSegmentMerge(mergePreviewMembers);
+
+  async function mergeSelectedSegments() {
+    if (!mergePreview.ok || mergeSelectionIds.length < 2) return;
+    setBusy(true);
+    setStatus(t("mergingSegments"));
+    try {
+      const group = await createLocalDiveMergeGroup(mergeSelectionIds);
+      setSelectedDiveIds(new Set());
+      setSelectMode(false);
+      setMergeConfirmOpen(false);
+      await refreshDives(`merge:${group.id}`);
+      setStatus(t("segmentsMerged", { count: mergeSelectionIds.length }));
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : t("segmentsMergeFailed"),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function unmergeSelectedPresentation() {
+    if (!selected?.mergeGroupId) return;
+    setBusy(true);
+    setStatus(t("unmergingSegments"));
+    try {
+      const firstId = selected.memberDiveIds?.[0];
+      await unmergeLocalDiveGroup(selected.mergeGroupId);
+      setShowOriginalSegments(false);
+      await refreshDives(firstId);
+      setStatus(t("segmentsUnmerged"));
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : t("segmentsUnmergeFailed"),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  const shortDiveMaxMinutes = parsePositiveWholeMinutes(
+    shortDiveMaxMinutesInput,
+  );
+
+  function selectShortDives() {
+    if (shortDiveMaxMinutes === null) return;
+    const ids = shortDiveCandidateIds(visibleDives, shortDiveMaxMinutes);
+    setSelectedDiveIds((current) => {
+      const next = new Set(current);
+      for (const id of ids) next.add(id);
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelectedDiveIds(new Set());
+  }
 
   async function createTripFromSelection(name: string) {
-    const ids = visibleSelectedDiveIds();
+    const ids = expandSelectionToOriginalIds(
+      visibleSelectedDiveIds(),
+      mergeGroups,
+    );
     if (!ids.length || !name.trim()) return;
     setBusy(true);
     setStatus(t("savingTripAssignment"));
@@ -992,7 +1161,10 @@ export function DiveFrameApp() {
   }
 
   async function addSelectionToTrip(tripId: string) {
-    const ids = visibleSelectedDiveIds();
+    const ids = expandSelectionToOriginalIds(
+      visibleSelectedDiveIds(),
+      mergeGroups,
+    );
     if (!ids.length || !tripId) return;
     setBusy(true);
     setStatus(t("savingTripAssignment"));
@@ -1010,7 +1182,10 @@ export function DiveFrameApp() {
   }
 
   async function removeSelectionFromTrip() {
-    const ids = visibleSelectedDiveIds();
+    const ids = expandSelectionToOriginalIds(
+      visibleSelectedDiveIds(),
+      mergeGroups,
+    );
     if (!ids.length) return;
     setBusy(true);
     setStatus(t("savingTripAssignment"));
@@ -1026,14 +1201,72 @@ export function DiveFrameApp() {
     }
   }
 
+  async function deleteSelectedDives() {
+    const ids = visibleSelectedDiveIds();
+    if (!ids.length) return false;
+    const presentationIds = ids.filter((id) => isMergePresentationId(id));
+    const originalIds = ids.filter((id) => !isMergePresentationId(id));
+    if (presentationIds.length && originalIds.length) {
+      setStatus(t("mergeSelectionMixed"));
+      return false;
+    }
+    setBusy(true);
+    if (presentationIds.length) {
+      setStatus(t("unmergingSegments"));
+      try {
+        const groupIds = presentationIds
+          .map(parseMergePresentationId)
+          .filter((id): id is string => Boolean(id));
+        await unmergeLocalDiveGroups(groupIds);
+        setSelectedDiveIds(new Set());
+        setSelectMode(false);
+        setDeleteSelectedConfirmOpen(false);
+        await refreshDives();
+        setStatus(t("segmentsUnmerged"));
+        return true;
+      } catch (error) {
+        setStatus(
+          error instanceof Error ? error.message : t("segmentsUnmergeFailed"),
+        );
+        return false;
+      } finally {
+        setBusy(false);
+      }
+    }
+    setStatus(t("deletingSelectedDives"));
+    try {
+      await deleteLocalDives(originalIds);
+      setSelectedDiveIds(new Set());
+      setSelectMode(false);
+      setNewTripFormOpen(false);
+      setNewTripNameDraft("");
+      setAddToTripDraft("");
+      setDeleteSelectedConfirmOpen(false);
+      if (selectedId && ids.includes(selectedId)) {
+        setAttachments([]);
+        setSelectedId(null);
+        setMobileDetail(false);
+      }
+      await refreshDives();
+      setStatus(t("selectedDivesDeleted", { count: ids.length }));
+      return true;
+    } catch (error) {
+      setStatus(
+        error instanceof Error ? error.message : t("selectedDivesDeleteFailed"),
+      );
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function assignDiveTrip(diveId: string, tripId: string | null) {
+    const ids = expandSelectionToOriginalIds([diveId], mergeGroups);
     setBusy(true);
     setStatus(t("savingTripAssignment"));
     try {
-      const updated = await setLocalDiveTripId(diveId, tripId);
-      setDives((current) =>
-        current.map((dive) => (dive.id === updated.id ? updated : dive)),
-      );
+      await setLocalDiveTripIds(ids, tripId);
+      await refreshDives(diveId);
       setStatus(t("tripAssignmentSaved"));
       return true;
     } catch (error) {
@@ -1045,19 +1278,13 @@ export function DiveFrameApp() {
   }
 
   async function createTripForDive(diveId: string, name: string) {
+    const ids = expandSelectionToOriginalIds([diveId], mergeGroups);
+    if (!ids.length || !name.trim()) return false;
     setBusy(true);
     setStatus(t("savingTripAssignment"));
     try {
-      const { trip, dives: updatedDives } =
-        await createLocalTripWithAssignments(name, [diveId]);
-      const updated = updatedDives[0];
-      if (!updated) throw new Error("Dive not found in this browser.");
-      setTrips((current) =>
-        [...current, trip].sort((a, b) => a.name.localeCompare(b.name)),
-      );
-      setDives((current) =>
-        current.map((dive) => (dive.id === updated.id ? updated : dive)),
-      );
+      await createLocalTripWithAssignments(name, ids);
+      await refreshDives(diveId);
       setStatus(t("tripAssignmentSaved"));
       return true;
     } catch (error) {
@@ -1085,6 +1312,23 @@ export function DiveFrameApp() {
       return false;
     } finally {
       setBusy(false);
+    }
+  }
+
+  function beginTripHeaderRename(trip: Pick<LocalTrip, "id" | "name">) {
+    setTripHeaderRenameId(trip.id);
+    setTripHeaderRenameDraft(trip.name);
+  }
+
+  function cancelTripHeaderRename() {
+    setTripHeaderRenameId(null);
+    setTripHeaderRenameDraft("");
+  }
+
+  async function submitTripHeaderRename() {
+    if (!tripHeaderRenameId || !tripHeaderRenameDraft.trim()) return;
+    if (await renameTrip(tripHeaderRenameId, tripHeaderRenameDraft)) {
+      cancelTripHeaderRename();
     }
   }
 
@@ -1398,9 +1642,51 @@ export function DiveFrameApp() {
                 ) : null}
                 {selectMode ? (
                   <div className="select-action-bar">
-                    <span className="select-action-count">
+                    <span className="select-action-count" aria-live="polite">
                       {t("selectedCount", { count: visibleSelectedCount })}
                     </span>
+                    <div className="select-short-dives">
+                      <label
+                        className="select-short-dives-field"
+                        htmlFor="short-dive-max-minutes"
+                      >
+                        <span>{t("maxDurationMinutes")}</span>
+                        <input
+                          id="short-dive-max-minutes"
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          step={1}
+                          value={shortDiveMaxMinutesInput}
+                          onChange={(event) =>
+                            setShortDiveMaxMinutesInput(event.target.value)
+                          }
+                          aria-describedby="short-dive-select-hint"
+                        />
+                      </label>
+                      <p
+                        id="short-dive-select-hint"
+                        className="visually-hidden"
+                      >
+                        {t("selectShortDivesHint")}
+                      </p>
+                      <button
+                        type="button"
+                        className="button button-secondary"
+                        onClick={selectShortDives}
+                        disabled={busy || shortDiveMaxMinutes === null}
+                      >
+                        {t("selectShortDives")}
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-quiet"
+                        onClick={clearSelection}
+                        disabled={busy || !visibleSelectedCount}
+                      >
+                        {t("clearSelection")}
+                      </button>
+                    </div>
                     <div className="select-action-buttons">
                       {newTripFormOpen ? (
                         <form
@@ -1470,6 +1756,22 @@ export function DiveFrameApp() {
                       >
                         {t("removeFromTrip")}
                       </button>
+                      <button
+                        type="button"
+                        className="button button-secondary"
+                        onClick={() => setMergeConfirmOpen(true)}
+                        disabled={busy || visibleSelectedCount < 2}
+                      >
+                        <GitMerge size={16} /> {t("mergeSegments")}
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-danger-secondary"
+                        onClick={() => setDeleteSelectedConfirmOpen(true)}
+                        disabled={busy || !visibleSelectedCount}
+                      >
+                        {t("deleteSelectedDives")}
+                      </button>
                     </div>
                   </div>
                 ) : null}
@@ -1484,27 +1786,88 @@ export function DiveFrameApp() {
                       selectMode={selectMode}
                       isChecked={selectedDiveIds.has(row.dive.id)}
                       onClick={() => handleDiveRowClick(row.dive.id)}
+                      mergedSegmentCount={row.dive.memberDiveIds?.length}
+                      mergeStale={row.dive.mergeStale}
                     />
                   ) : (
                     <div className="trip-block" key={row.trip.id}>
-                      <button
-                        type="button"
-                        className="trip-header"
-                        onClick={() => toggleTripCollapse(row.trip.id)}
-                        aria-expanded={!collapsedTripIds.has(row.trip.id)}
-                      >
-                        <ChevronDown
-                          size={15}
-                          className={`trip-header-chevron ${collapsedTripIds.has(row.trip.id) ? "collapsed" : ""}`}
-                        />
-                        <Briefcase size={14} />
-                        <span className="trip-header-name">{row.trip.name}</span>
-                        {collapsedTripIds.has(row.trip.id) ? (
-                          <span className="trip-header-count">
-                            {t("tripDiveCount", { count: row.dives.length })}
-                          </span>
-                        ) : null}
-                      </button>
+                      <div className="trip-header-row">
+                        <button
+                          type="button"
+                          className="trip-header"
+                          onClick={() => toggleTripCollapse(row.trip.id)}
+                          aria-expanded={!collapsedTripIds.has(row.trip.id)}
+                        >
+                          <ChevronDown
+                            size={15}
+                            className={`trip-header-chevron ${collapsedTripIds.has(row.trip.id) ? "collapsed" : ""}`}
+                          />
+                          <Briefcase size={14} />
+                          <span className="trip-header-name">{row.trip.name}</span>
+                          {collapsedTripIds.has(row.trip.id) ? (
+                            <span className="trip-header-count">
+                              {t("tripDiveCount", { count: row.dives.length })}
+                            </span>
+                          ) : null}
+                        </button>
+                        <button
+                          type="button"
+                          className="trip-header-rename"
+                          onClick={() => beginTripHeaderRename(row.trip)}
+                          disabled={busy}
+                          aria-label={`${t("renameTrip")}: ${row.trip.name}`}
+                          title={t("renameTrip")}
+                        >
+                          <Pencil size={13} aria-hidden="true" />
+                          <span>{t("renameTrip")}</span>
+                        </button>
+                      </div>
+                      {tripHeaderRenameId === row.trip.id ? (
+                        <form
+                          className="trip-header-rename-form"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            void submitTripHeaderRename();
+                          }}
+                        >
+                          <label
+                            className="visually-hidden"
+                            htmlFor={`trip-header-rename-${row.trip.id}`}
+                          >
+                            {t("renameTrip")}
+                          </label>
+                          <input
+                            id={`trip-header-rename-${row.trip.id}`}
+                            value={tripHeaderRenameDraft}
+                            onChange={(event) =>
+                              setTripHeaderRenameDraft(event.target.value)
+                            }
+                            onKeyDown={(event) => {
+                              if (event.key === "Escape") {
+                                event.preventDefault();
+                                cancelTripHeaderRename();
+                              }
+                            }}
+                            maxLength={120}
+                            autoFocus
+                          />
+                          <button
+                            type="submit"
+                            className="button button-secondary"
+                            disabled={busy || !tripHeaderRenameDraft.trim()}
+                          >
+                            {t("saveChanges")}
+                          </button>
+                          <button
+                            type="button"
+                            className="button button-quiet"
+                            onClick={cancelTripHeaderRename}
+                            disabled={busy}
+                          >
+                            {t("cancel")}
+                          </button>
+                        </form>
+                      ) : null}
                       {collapsedTripIds.has(row.trip.id)
                         ? null
                         : row.dives.map((dive) => (
@@ -1518,6 +1881,8 @@ export function DiveFrameApp() {
                               isChecked={selectedDiveIds.has(dive.id)}
                               onClick={() => handleDiveRowClick(dive.id)}
                               member
+                              mergedSegmentCount={dive.memberDiveIds?.length}
+                              mergeStale={dive.mergeStale}
                             />
                           ))}
                     </div>
@@ -1541,7 +1906,20 @@ export function DiveFrameApp() {
                   onClearSiteOverride={clearDiveSiteOverride}
                   onSaveDetails={saveDiveDetails}
                   onDeleteDive={deleteDiveLog}
+                  onUnmerge={
+                    selected.mergeGroupId ? unmergeSelectedPresentation : undefined
+                  }
+                  showOriginalSegments={showOriginalSegments}
+                  onToggleOriginalSegments={() =>
+                    setShowOriginalSegments((value) => !value)
+                  }
+                  originalSegments={
+                    selected.memberDiveIds?.map(
+                      (id) => dives.find((dive) => dive.id === id) ?? null,
+                    ) ?? []
+                  }
                   onSaveUserGps={saveDiveUserGps}
+                  onSaveExportGpsPreference={saveDiveExportGpsPreference}
                   siteSuggestions={siteSuggestions}
                   locationSuggestions={locationSuggestions}
                   knownBuddyNames={knownBuddyNames}
@@ -1568,6 +1946,162 @@ export function DiveFrameApp() {
           </div>
         </>
       )}
+
+      {deleteSelectedConfirmOpen ? (
+        <div
+          className="photo-location-help-backdrop"
+          role="presentation"
+          onClick={() => {
+            if (!busy) setDeleteSelectedConfirmOpen(false);
+          }}
+        >
+          <section
+            className="photo-location-help-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-selected-dives-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="photo-location-help-header">
+              <h2 id="delete-selected-dives-title">
+                {selectedMergedOnly
+                  ? t("deleteMergedIsUnmergeTitle")
+                  : t("deleteSelectedDivesTitle", { count: visibleSelectedCount })}
+              </h2>
+              <button
+                type="button"
+                className="button button-quiet"
+                disabled={busy}
+                onClick={() => setDeleteSelectedConfirmOpen(false)}
+                aria-label={t("cancel")}
+                title={t("cancel")}
+              >
+                <X size={16} />
+              </button>
+            </header>
+            <p>
+              {selectedMergedOnly
+                ? t("deleteMergedIsUnmergeDescription")
+                : t("deleteSelectedDivesDescription")}
+            </p>
+            <div className="details-editor-actions">
+              <button
+                type="button"
+                className="button button-quiet"
+                disabled={busy}
+                onClick={() => setDeleteSelectedConfirmOpen(false)}
+              >
+                {t("cancel")}
+              </button>
+              <button
+                type="button"
+                className="button button-danger"
+                disabled={busy || !visibleSelectedCount}
+                onClick={() => {
+                  void deleteSelectedDives();
+                }}
+              >
+                {selectedMergedOnly ? t("unmergeSegments") : t("deleteSelectedDives")}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {mergeConfirmOpen ? (
+        <div
+          className="photo-location-help-backdrop"
+          role="presentation"
+          onClick={() => {
+            if (!busy) setMergeConfirmOpen(false);
+          }}
+        >
+          <section
+            className="photo-location-help-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="merge-segments-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="photo-location-help-header">
+              <h2 id="merge-segments-title">
+                {t("mergeSegmentsTitle", { count: mergeSelectionIds.length })}
+              </h2>
+              <button
+                type="button"
+                className="button button-quiet"
+                disabled={busy}
+                onClick={() => setMergeConfirmOpen(false)}
+                aria-label={t("cancel")}
+                title={t("cancel")}
+              >
+                <X size={16} />
+              </button>
+            </header>
+            <p>{t("mergeSegmentsDescription")}</p>
+            <ul className="merge-segment-preview">
+              {mergePreview.ordered.map((dive, index) => (
+                <li key={dive.id}>
+                  {t("dive")} {dive.diveNumber ?? "—"} ·{" "}
+                  {formatDuration(dive.durationSeconds)}
+                  {index < mergePreview.gapsSeconds.length ? (
+                    <span>
+                      {" "}
+                      {t("mergeSegmentsGap", {
+                        number: dive.diveNumber ?? index + 1,
+                        gap: formatDuration(mergePreview.gapsSeconds[index]),
+                      })}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            {mergePreview.clockDurationSeconds !== null ? (
+              <p>
+                {t("mergeSegmentsClockDuration", {
+                  duration: formatDuration(mergePreview.clockDurationSeconds),
+                })}
+              </p>
+            ) : null}
+            {mergePreview.underwaterDurationSeconds !== null ? (
+              <p>
+                {t("mergeSegmentsUnderwaterDuration", {
+                  duration: formatDuration(mergePreview.underwaterDurationSeconds),
+                })}
+              </p>
+            ) : null}
+            {mergePreview.errors.map((code) => (
+              <p key={code} className="merge-segment-error">
+                {mergeIssueText(code, t)}
+              </p>
+            ))}
+            {mergePreview.warnings.map((code) => (
+              <p key={code}>{mergeIssueText(code, t)}</p>
+            ))}
+            {!mergePreview.ok ? <p>{t("mergeSegmentsBlocked")}</p> : null}
+            <div className="details-editor-actions">
+              <button
+                type="button"
+                className="button button-quiet"
+                disabled={busy}
+                onClick={() => setMergeConfirmOpen(false)}
+              >
+                {t("cancel")}
+              </button>
+              <button
+                type="button"
+                className="button button-primary"
+                disabled={busy || !mergePreview.ok}
+                onClick={() => {
+                  void mergeSelectedSegments();
+                }}
+              >
+                <GitMerge size={16} /> {t("mergeSegments")}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -1677,6 +2211,8 @@ function DiveRowButton({
   isChecked,
   onClick,
   member = false,
+  mergedSegmentCount,
+  mergeStale = false,
 }: {
   dive: Dive;
   language: AppLanguage;
@@ -1686,6 +2222,8 @@ function DiveRowButton({
   isChecked: boolean;
   onClick: () => void;
   member?: boolean;
+  mergedSegmentCount?: number;
+  mergeStale?: boolean;
 }) {
   return (
     <button
@@ -1714,6 +2252,12 @@ function DiveRowButton({
       <span className="dive-summary">
         <strong>{displaySite(dive, t("unnamedDiveSite"))}</strong>
         <span>{formatDate(dive.diveDate, language, t("dateUnknown"))}</span>
+        {mergedSegmentCount && mergedSegmentCount > 1 ? (
+          <span className="merged-segment-badge">
+            {t("mergedSegmentsBadge", { count: mergedSegmentCount })}
+            {mergeStale ? ` · ${t("staleMergeBadge")}` : ""}
+          </span>
+        ) : null}
       </span>
       <span className="dive-meta">
         <strong>{formatDepth(dive.depth)}</strong>
@@ -1738,7 +2282,12 @@ function DiveDetail({
   onClearSiteOverride,
   onSaveDetails,
   onDeleteDive,
+  onUnmerge,
+  showOriginalSegments = false,
+  onToggleOriginalSegments,
+  originalSegments = [],
   onSaveUserGps,
+  onSaveExportGpsPreference,
   siteSuggestions,
   locationSuggestions,
   knownBuddyNames,
@@ -1770,9 +2319,17 @@ function DiveDetail({
     endPressureBar?: number | null;
   }) => Promise<boolean>;
   onDeleteDive: (diveId: string) => Promise<boolean>;
+  onUnmerge?: () => Promise<void> | void;
+  showOriginalSegments?: boolean;
+  onToggleOriginalSegments?: () => void;
+  originalSegments?: Array<Dive | null>;
   onSaveUserGps: (
     diveId: string,
     gps: { lat: number; lng: number; source: UserGpsSource } | null,
+  ) => Promise<boolean>;
+  onSaveExportGpsPreference: (
+    diveId: string,
+    preferUser: boolean,
   ) => Promise<boolean>;
   siteSuggestions: string[];
   locationSuggestions: string[];
@@ -1787,6 +2344,8 @@ function DiveDetail({
   onDiveChange: (dive: Dive) => void;
 }) {
   const { language, t } = useAppI18n();
+  const merged = Boolean(dive.mergeGroupId);
+  const composeDiveId = dive.memberDiveIds?.[0] ?? dive.id;
   const calculated = safeJson(dive.calculatedJson);
   const averageDepth = averageDepthForDive(dive);
   const minTemp = numberFrom(calculated?.MinTemp) ?? positiveNumber(dive.minTemp);
@@ -1800,7 +2359,7 @@ function DiveDetail({
   const [locationDraft, setLocationDraft] = useState(dive.location ?? "");
   const [sharedBackgrounds, setSharedBackgrounds] = useState<SharedBackgroundChoice[]>([]);
   const [sitePickerOpen, setSitePickerOpen] = useState(
-    !dive.userSite && !dive.site,
+    !dive.mergeGroupId && !dive.userSite && !dive.site,
   );
   const siteEditorRef = useRef<HTMLDetailsElement>(null);
   const siteMutationInFlightRef = useRef(false);
@@ -1947,6 +2506,15 @@ function DiveDetail({
     ],
   );
   const mapCoordinates = resolveDiveMapCoordinates(dive);
+  const preferredCoordinates = resolvePreferredDiveCoordinates(dive);
+  const storedUserCoordinates = Boolean(
+    dive.userGpsLat !== null &&
+      dive.userGpsLng !== null &&
+      Number.isFinite(dive.userGpsLat) &&
+      Number.isFinite(dive.userGpsLng) &&
+      Math.abs(dive.userGpsLat) <= 90 &&
+      Math.abs(dive.userGpsLng) <= 180,
+  );
   const [geocodeResult, setGeocodeResult] = useState<{
     query: string;
     location: MapLocation | null;
@@ -2154,7 +2722,11 @@ function DiveDetail({
     dive.cylinderPresetId ?? defaultCylinderPresetId,
   );
   const cylinderVolumeL = dive.cylinderVolumeL ?? selectedCylinder.volumeL;
-  const sacRate = calculateSacLitresPerMinute({
+  // A merged presentation may span a surface gap or a cylinder change. Keep
+  // SAC on the immutable original segments until continuity can be proven.
+  const sacRate = dive.mergeGroupId || dive.gasConflict
+    ? null
+    : calculateSacLitresPerMinute({
     startPressureBar: pressurePair?.start ?? null,
     endPressureBar: pressurePair?.end ?? null,
     cylinderVolumeL,
@@ -2195,6 +2767,7 @@ function DiveDetail({
   }
 
   function openSiteEditor() {
+    if (merged) return;
     setSitePickerOpen(true);
     window.requestAnimationFrame(() => {
       siteEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2271,6 +2844,12 @@ function DiveDetail({
       <div className="detail-hero" id="dive-hero">
         <div className="hero-topline">
           <span>{t("dive")} {dive.diveNumber ?? "—"}</span>
+          {dive.memberDiveIds && dive.memberDiveIds.length > 1 ? (
+            <span className="merged-segment-badge">
+              {t("mergedSegmentsBadge", { count: dive.memberDiveIds.length })}
+              {dive.mergeStale ? ` · ${t("staleMergeBadge")}` : ""}
+            </span>
+          ) : null}
           <span>{formatDate(dive.diveDate, language, t("dateUnknown"))}</span>
         </div>
         <div className="detail-hero-site-row">
@@ -2280,7 +2859,7 @@ function DiveDetail({
               type="button"
               className="detail-site-edit-button"
               onClick={openSiteEditor}
-              disabled={busy}
+              disabled={busy || merged}
               aria-label={t("editSite")}
               title={t("editSite")}
             >
@@ -2310,6 +2889,41 @@ function DiveDetail({
                   : t("resolvingGps")
                 : t("locationNotEntered"))}
           </p>
+          {onUnmerge ? (
+            <div className="merged-segment-actions">
+              <button
+                type="button"
+                className="button button-secondary"
+                disabled={busy}
+                onClick={() => onToggleOriginalSegments?.()}
+              >
+                {showOriginalSegments
+                  ? t("hideOriginalSegments")
+                  : t("showOriginalSegments")}
+              </button>
+              <button
+                type="button"
+                className="button button-quiet"
+                disabled={busy}
+                onClick={() => void onUnmerge()}
+              >
+                {t("unmergeSegments")}
+              </button>
+            </div>
+          ) : null}
+          {showOriginalSegments ? (
+            <ul className="merge-segment-preview">
+              {originalSegments.map((segment) =>
+                segment ? (
+                  <li key={segment.id}>
+                    {t("dive")} {segment.diveNumber ?? "—"} ·{" "}
+                    {formatDuration(segment.durationSeconds)} ·{" "}
+                    {formatDepth(segment.depth)}
+                  </li>
+                ) : null,
+              )}
+            </ul>
+          ) : null}
         </div>
       </div>
 
@@ -2352,9 +2966,21 @@ function DiveDetail({
         ref={siteEditorRef}
         className="card site-picker-card site-location-card"
         open={sitePickerOpen}
-        onToggle={(event) => setSitePickerOpen(event.currentTarget.open)}
+        onToggle={(event) => {
+          if (merged) {
+            event.currentTarget.open = false;
+            setSitePickerOpen(false);
+            return;
+          }
+          setSitePickerOpen(event.currentTarget.open);
+        }}
       >
-        <summary className="card-heading site-picker-summary">
+        <summary
+          className="card-heading site-picker-summary"
+          onClick={(event) => {
+            if (merged) event.preventDefault();
+          }}
+        >
           <div>
             <p className="eyebrow">{t("siteAndLocation")}</p>
             <h3>{displaySite(dive, t("unnamedDiveSite"))}</h3>
@@ -2426,7 +3052,7 @@ function DiveDetail({
           </form>
 
           <DiveSiteSuggestions
-            coordinates={mapCoordinates}
+            coordinates={preferredCoordinates}
             catalog={localDiveSiteCatalog}
             siteName={manualSite}
             hasUserGpsInput={photoGpsBusy || userGpsDraft.trim() !== ""}
@@ -2445,7 +3071,7 @@ function DiveDetail({
                 type="button"
                 className="button button-quiet detail-edit-button"
                 onClick={() => setGpsEditorOpen((value) => !value)}
-                disabled={busy}
+                disabled={busy || merged}
               >
                 {gpsEditorOpen ? t("cancel") : t("editLocation")}
               </button>
@@ -2475,6 +3101,26 @@ function DiveDetail({
                     {t("invalidLocationValues")}
                   </p>
                 ) : null}
+                <label className="photo-location-keep">
+                  <input
+                    type="checkbox"
+                    checked={
+                      dive.exportGpsPreference === "user" &&
+                      storedUserCoordinates
+                    }
+                    disabled={busy || !storedUserCoordinates}
+                    onChange={(event) => {
+                      void onSaveExportGpsPreference(
+                        dive.id,
+                        event.target.checked,
+                      );
+                    }}
+                  />
+                  <span>{t("preferUserCoordinates")}</span>
+                </label>
+                <p className="user-gps-preference-hint">
+                  {t("preferUserCoordinatesHint")}
+                </p>
                 <label className="photo-location-keep">
                   <input
                     type="checkbox"
@@ -2637,15 +3283,17 @@ function DiveDetail({
                     const tripSaved = await onAssignTrip(dive.id, tripDraft || null);
                     if (!tripSaved) return;
                   }
-                  const saved = await onSaveDetails({
-                    location: locationDraft.trim() || null,
-                    buddy: buddyDraft.trim() || null,
-                    notes: notesDraft.trim() || null,
-                    cylinderPresetId: cylinderPresetDraft,
-                    cylinderVolumeL: cylinderPreset(cylinderPresetDraft).volumeL,
-                    startPressureBar: optionalPositiveNumber(startPressureDraft),
-                    endPressureBar: optionalPositiveNumber(endPressureDraft),
-                  });
+                  const saved = merged
+                    ? true
+                    : await onSaveDetails({
+                        location: locationDraft.trim() || null,
+                        buddy: buddyDraft.trim() || null,
+                        notes: notesDraft.trim() || null,
+                        cylinderPresetId: cylinderPresetDraft,
+                        cylinderVolumeL: cylinderPreset(cylinderPresetDraft).volumeL,
+                        startPressureBar: optionalPositiveNumber(startPressureDraft),
+                        endPressureBar: optionalPositiveNumber(endPressureDraft),
+                      });
                   if (saved) {
                     resetTripEditorDrafts();
                     setEditingDetails(false);
@@ -2747,6 +3395,7 @@ function DiveDetail({
                   onChange={(event) => setBuddyDraft(event.target.value)}
                   maxLength={300}
                   autoComplete="off"
+                  disabled={merged}
                 />
               </label>
               {buddySuggestions.length ? (
@@ -2758,7 +3407,7 @@ function DiveDetail({
                       className="buddy-suggestion"
                       role="option"
                       aria-selected={false}
-                      disabled={busy}
+                      disabled={busy || merged}
                       onClick={() =>
                         setBuddyDraft(completeBuddyToken(buddyDraft, name))
                       }
@@ -2775,6 +3424,7 @@ function DiveDetail({
                   onChange={(event) => setNotesDraft(event.target.value)}
                   rows={5}
                   maxLength={5000}
+                  disabled={merged}
                 />
               </label>
               <div className="details-editor-row">
@@ -2785,6 +3435,7 @@ function DiveDetail({
                     onChange={(event) =>
                       setCylinderPresetDraft(event.target.value)
                     }
+                    disabled={merged}
                   >
                     {CYLINDER_PRESETS.map((preset) => (
                       <option key={preset.id} value={preset.id}>
@@ -2802,6 +3453,7 @@ function DiveDetail({
                     inputMode="decimal"
                     value={startPressureDraft}
                     onChange={(event) => setStartPressureDraft(event.target.value)}
+                    disabled={merged}
                   />
                 </label>
                 <label>
@@ -2813,6 +3465,7 @@ function DiveDetail({
                     inputMode="decimal"
                     value={endPressureDraft}
                     onChange={(event) => setEndPressureDraft(event.target.value)}
+                    disabled={merged}
                   />
                 </label>
               </div>
@@ -2894,7 +3547,7 @@ function DiveDetail({
               accept="image/*"
               multiple
               onChange={onUpload}
-              disabled={busy}
+              disabled={busy || merged}
               className="visually-hidden"
             />
           </label>
@@ -2905,7 +3558,7 @@ function DiveDetail({
             {attachments.map((attachment) => (
               <article className="photo-tile" key={attachment.id}>
                 <Link
-                  href={`/compose?dive=${encodeURIComponent(dive.id)}&photo=${encodeURIComponent(attachment.id)}`}
+                  href={`/compose?dive=${encodeURIComponent(attachment.diveId)}&photo=${encodeURIComponent(attachment.id)}`}
                   className="photo-compose-target"
                   aria-label={t("compose")}
                 >
@@ -2921,7 +3574,7 @@ function DiveDetail({
                   type="button"
                   className="photo-delete-button"
                   onClick={() => onDeletePhoto(attachment)}
-                  disabled={busy}
+                  disabled={busy || merged}
                   aria-label={t("deletePhoto")}
                   title={t("deletePhoto")}
                 >
@@ -2941,7 +3594,7 @@ function DiveDetail({
                 accept="image/*"
                 multiple
                 onChange={onUpload}
-                disabled={busy}
+                disabled={busy || merged}
                 className="visually-hidden"
               />
             </label>
@@ -2953,7 +3606,7 @@ function DiveDetail({
                     <SharedBackgroundChoiceTile
                       key={background.id}
                       background={background}
-                      diveId={dive.id}
+                      diveId={composeDiveId}
                       t={t}
                     />
                   ))}
@@ -2964,7 +3617,7 @@ function DiveDetail({
         )}
         <div className="photo-gallery-actions">
           <Link
-            href={`/compose?dive=${encodeURIComponent(dive.id)}`}
+            href={`/compose?dive=${encodeURIComponent(composeDiveId)}`}
             className="button button-primary"
           >
             <Sparkles size={17} /> {t("createShareImage")}
@@ -2979,7 +3632,7 @@ function DiveDetail({
           disabled={busy}
           onClick={() => setDeleteDiveConfirmOpen(true)}
         >
-          {t("deleteDiveLog")}
+          {merged ? t("unmergeSegments") : t("deleteDiveLog")}
         </button>
       </div>
 
@@ -3000,7 +3653,7 @@ function DiveDetail({
           >
             <header className="photo-location-help-header">
               <h2 id={`delete-dive-title-${dive.id}`}>
-                {t("deleteDiveLogTitle")}
+                {merged ? t("deleteMergedIsUnmergeTitle") : t("deleteDiveLogTitle")}
               </h2>
               <button
                 type="button"
@@ -3013,7 +3666,11 @@ function DiveDetail({
                 <X size={16} />
               </button>
             </header>
-            <p>{t("deleteDiveLogDescription")}</p>
+            <p>
+              {merged
+                ? t("deleteMergedIsUnmergeDescription")
+                : t("deleteDiveLogDescription")}
+            </p>
             <div className="details-editor-actions">
               <button
                 type="button"
@@ -3035,7 +3692,7 @@ function DiveDetail({
                   })();
                 }}
               >
-                {t("deleteDiveLog")}
+                {merged ? t("unmergeSegments") : t("deleteDiveLog")}
               </button>
             </div>
           </section>
@@ -3418,6 +4075,35 @@ function compactNumber(value: number) {
 function formatDepth(value: string | null) {
   const number = Number(value);
   return Number.isFinite(number) ? `${number.toFixed(number % 1 ? 1 : 0)} m` : "—";
+}
+
+function mergeIssueText(
+  code: SegmentMergeErrorCode | SegmentMergeWarningCode,
+  t: AppTranslate,
+) {
+  const keys: Record<string, Parameters<AppTranslate>[0]> = {
+    "too-few": "mergeErrorSelection",
+    "duplicate-id": "mergeErrorSelection",
+    overlap: "mergeErrorOverlap",
+    "serial-mismatch": "mergeErrorComputer",
+    "computer-mismatch": "mergeErrorComputer",
+    "unknown-computer": "mergeErrorComputer",
+    "category-mismatch": "mergeErrorCategory",
+    "dive-mode-mismatch": "mergeErrorCategory",
+    "gap-too-large": "mergeErrorGap",
+    "missing-start": "mergeErrorDuration",
+    "missing-duration": "mergeErrorDuration",
+    "missing-serial": "mergeWarningComputerMissing",
+    "unknown-dive-mode": "mergeWarningModeUnknown",
+    "site-mismatch": "mergeWarningSite",
+    "trip-mismatch": "mergeWarningTrip",
+    "buddy-mismatch": "mergeWarningBuddy",
+    "notes-mismatch": "mergeWarningNotes",
+    "gas-conflict": "mergeWarningGas",
+    "long-gap": "mergeWarningLongGap",
+  };
+  const key = keys[code];
+  return key ? t(key) : code;
 }
 
 function formatDuration(value: string | number | null) {
