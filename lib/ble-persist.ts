@@ -4,6 +4,7 @@ import {
   BLE_NORMALIZER_CONTRACT_VERSION,
   normalizeBleDownloadPreview,
 } from "./ble-dive-normalizer";
+import { readShearwaterRawDiveNumber } from "./shearwater-raw-dive-number";
 import type { DiveComputerDownloadResult } from "./dive-computer-capability";
 import type {
   LocalDeviceCheckpoint,
@@ -28,12 +29,13 @@ export function rawDiveRecordId(fingerprintHex: string) {
  */
 export function previewToImportedDive(
   preview: BleNormalizedDivePreview,
+  diveNumber: number | null = null,
 ): LocalImportedDive {
   return {
     id: preview.proposedCanonicalId,
     source: "shearwater-ble",
     sourceId: preview.sourceId,
-    diveNumber: null,
+    diveNumber,
     diveDate: preview.diveDate,
     lastModified: null,
     depth: preview.depth,
@@ -173,7 +175,11 @@ async function persistPayloadFromPairs(options: {
   const rawRecords: LocalRawDiveRecord[] = [];
 
   for (const pair of options.pairs) {
-    const dive = previewToImportedDive(pair.preview);
+    const bytes = new Uint8Array(await pair.rawBytes.arrayBuffer());
+    const dive = previewToImportedDive(
+      pair.preview,
+      readShearwaterRawDiveNumber(bytes),
+    );
     const checksum = await sha256Blob(pair.rawBytes);
     dives.push(dive);
     rawRecords.push(
@@ -238,6 +244,10 @@ export async function prepareBlePersistFromDownload(
       size: dive.size,
       fingerprintHex: dive.fingerprintHex,
       parsed: dive.parsed,
+      rawBytes:
+        typeof dive.dataBase64 === "string"
+          ? base64ToBytes(dive.dataBase64)
+          : undefined,
     })),
   );
   const pairs: Array<{
@@ -299,6 +309,7 @@ export async function prepareBlePersistFromCapturedDive(options: {
       size: Math.floor((options.dataBase64.length * 3) / 4),
       fingerprintHex: options.fingerprintHex,
       parsed: options.parsed,
+      rawBytes: base64ToBytes(options.dataBase64),
     },
   ])[0];
 
@@ -349,13 +360,17 @@ export async function sha256Blob(blob: Blob) {
   ).join("");
 }
 
-function base64ToBlob(value: string) {
+function base64ToBytes(value: string) {
   const binary = atob(value);
   const bytes = new Uint8Array(binary.length);
   for (let index = 0; index < binary.length; index += 1) {
     bytes[index] = binary.charCodeAt(index);
   }
-  return new Blob([bytes], { type: "application/octet-stream" });
+  return bytes;
+}
+
+function base64ToBlob(value: string) {
+  return new Blob([base64ToBytes(value)], { type: "application/octet-stream" });
 }
 
 function hexToBlob(hex: string) {

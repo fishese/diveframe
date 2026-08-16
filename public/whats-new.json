@@ -1,7 +1,19 @@
 {
-  "version": "2026-08-16-reversible-segment-merge",
-  "updatedAt": "2026-08-16T02:57:18.041Z",
+  "version": "2026-08-16-ble-dive-number",
+  "updatedAt": "2026-08-16T10:40:00.000Z",
   "entries": [
+    {
+      "id": "2026-08-16-ble-dive-number",
+      "title": "BLE imports keep the computer dive number",
+      "body": "Downloads from a classic Shearwater now store the dive number shown on the computer. It appears in the logbook list and as shearwater-ble #N under Imported from. A factory test dive numbered 0 is kept. Dives saved from an older BLE import stay blank until you download them again.",
+      "date": "2026-08-16",
+      "links": [
+        {
+          "label": "Download DiveFrame Preview APK",
+          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
+        }
+      ]
+    },
     {
       "id": "2026-08-16-reversible-segment-merge",
       "title": "Combine split dive segments safely",

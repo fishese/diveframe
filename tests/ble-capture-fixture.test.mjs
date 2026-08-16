@@ -37,9 +37,9 @@ function dataUrlFor(path) {
 }
 
 const diveModelUrl = await dataUrlFor("lib/dive-model.ts");
+const readerUrl = await dataUrlFor("lib/shearwater-raw-dive-number.ts");
 const normalizerUrl = await dataUrlFor("lib/ble-dive-normalizer.ts").then(
   async () => {
-    // Re-transpile with dive-model remapped.
     const source = await readFile("lib/ble-dive-normalizer.ts", "utf8");
     let javascript = ts.transpileModule(source, {
       compilerOptions: {
@@ -47,10 +47,12 @@ const normalizerUrl = await dataUrlFor("lib/ble-dive-normalizer.ts").then(
         target: ts.ScriptTarget.ES2022,
       },
     }).outputText;
-    javascript = javascript.replaceAll(
-      /from\s+["']\.\/dive-model["']/g,
-      `from "${diveModelUrl}"`,
-    );
+    javascript = javascript
+      .replaceAll(/from\s+["']\.\/dive-model["']/g, `from "${diveModelUrl}"`)
+      .replaceAll(
+        /from\s+["']\.\/shearwater-raw-dive-number["']/g,
+        `from "${readerUrl}"`,
+      );
     return `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`;
   },
 );

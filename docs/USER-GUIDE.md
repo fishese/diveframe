@@ -15,10 +15,11 @@ replace that application's cloud backup and does not write changes back to it.
 >
 > **Schema note:** The one-time IndexedDB **v8** upgrade erased local DiveFrame
 > data on first open of that version. Later upgrades (including **v9**, the
-> v10 repair migration, and **v11** dive memos) are additive and keep existing
-> dives, BLE raw records, trips, overlays, and memos. A
-> pre-v8 backup still does not auto-migrate into v8 — re-import source logs if
-> you are coming from an older schema.
+> v10 repair migration, **v11** dive memos, and **v12** reversible segment
+> merge groups) are additive and keep existing dives, BLE raw records, trips,
+> overlays, memos, and merge relations. A pre-v8 backup still does not
+> auto-migrate into v8 — re-import source logs if you are coming from an older
+> schema.
 
 The full interface and exported-image controls support English, Traditional
 Chinese (Hong Kong), and Japanese. Change the interface language in **Settings**
@@ -81,6 +82,13 @@ is normal rather than a fault. When reverse geocoding cannot reach the DiveFrame
 API (for example if a production deployment temporarily omits APK CORS), the dive still
 keeps its pin and shows that a place name is unavailable instead of spinning.
 
+BLE downloads also store the sequential dive number shown on the computer (the
+same integer Shearwater Cloud lists as DiveNumber). The logbook row and
+**Imported from** use that number, including a factory test dive numbered 0 if
+the computer logged one. Cloud `DiveId` is still Cloud-only. Dives saved from
+an older BLE import keep a blank number until you download them again or
+restore a backup that already has the field filled.
+
 Dives are identified by per-dive fingerprints, so a later fuller download that
 re-sends recent dives merges them instead of duplicating logbook entries. Each
 dive is saved as it arrives, so Cancel (or an interrupted transfer) keeps
@@ -140,35 +148,81 @@ The search box also matches the dive computer model name when present.
 
 ### Trips
 
-Use **Select dives** on the logbook list to assign multiple dives to a trip at
-once. While select mode is on, checkboxes appear on each dive row; tap a row to
-toggle its checkbox instead of opening the dive. The action bar offers **New
-trip…**, **Add to existing…**, and **Remove from trip**. Leaving select mode
-clears the selection. Actions apply only to dives that are currently visible
-after any active filters or search.
+Use **Select** on the logbook list to work on several visible dives at once.
+While select mode is on, checkboxes appear on each dive row; tap a row to
+toggle its checkbox instead of opening the dive. The action bar is grouped:
+
+- **Selection:** **Select shown** replaces the current selection with every
+  dive the active filters display. **Clear selection** unchecks them. Neither
+  action changes stored data.
+- **Trip:** **New trip…**, **Add to trip…**, and **Remove from trip**.
+- **Selected dives:** **Merge segments** (reversible; see below) and
+  **Delete selected**. Deletion asks for confirmation with the exact count,
+  then removes those dives and the same dependent records as single-dive
+  deletion (photos, added site entries, composer settings, raw records, source
+  links, and any merge-group membership) in one transaction. It cannot be
+  undone. Hidden or filtered-out checked rows are not deleted.
+
+Leaving select mode clears the selection. Actions apply only to dives that are
+currently visible after any active filters or search.
 
 Assigned dives appear under a trip header in the list. Members are indented
 beneath the header. Tap the header to expand or collapse the block for this
-session only; collapse state is not saved between reloads. Trip blocks and
-unassigned dives are ordered together using the current sort option.
+session only; collapse state is not saved between reloads. Each trip header
+has a **Rename trip** action; the older rename control inside a dive’s
+**Edit dive details** form is still there. Trip blocks and unassigned dives
+are ordered together using the current sort option.
 
 Open **Edit dive details** on a dive to assign or change its trip, create a
-new trip, rename the selected trip, or delete a trip. Deleting a trip that still
-has dives requires confirmation and clears those assignments first.
+new trip, or delete a trip. Deleting a trip that still has dives requires
+confirmation and clears those assignments first.
 
 ### List filters
 
-Below the existing **Has site**, **GPS Data**, and **Edited here** chips, open
-**Filters** for a collapsible panel with **From** and **To** date bounds
-(inclusive on dive date; leave a bound empty for no limit) and a **Computer**
-dropdown listing distinct computer models in the logbook.
+The logbook chips and the collapsible **Filters** panel cover:
 
-**Reset filters** clears the date range, computer choice, and chip filters. It
-does not clear the search box; use the search clear control for typed queries.
+- **GPS**, plus inside **Filters:** **Has site**, **No site named**, **Gas
+  data**, **Edited here**, and **Short dives**
+- **Maximum duration (minutes)** for the short-dive chip, defaulting to 3.
+  Only dives with a finite duration greater than zero and at or below that
+  threshold match. Unknown or invalid durations are excluded.
+- **From** and **To** date bounds (inclusive on dive date; leave a bound empty
+  for no limit)
+- **Dive computer**, listing distinct computer models in the logbook
+
+**Clear** sits beside **Select**. It resets the chips, date range, computer
+choice, short-dive chip, and the duration threshold back to 3 minutes. It does
+not clear the search box; use the search clear control for typed queries.
 
 When search or filters are active, a trip header appears only if at least one
 member matches. Non-matching members in that trip are hidden until filters and
 search clear.
+
+### Merged dive segments
+
+Some outings are stored as two or more adjacent computer records (a bounce,
+tank switch, or a restart after a short surface interval). **Merge segments**
+in select mode presents those originals as one logbook row without deleting
+them.
+
+- Choose at least two visible dives from the same computer. They must not
+  overlap in time, and the surface gap between them cannot exceed one hour.
+  A gap longer than about 15 minutes is allowed but shown as a warning.
+  Overlapping or near-identical starts belong in Settings **Review possible
+  duplicates** instead; that tool is destructive and is not this flow.
+- Confirmation shows ordered segments, gaps, combined clock time, and
+  underwater time. Original dives, photos, source links, and raw records stay
+  stored. Normal Subsurface export still emits the separate original dives.
+- The merged row is labelled with a segment count. **Show original segments**
+  on the dive page lists the members. **Unmerge** restores the previous
+  logbook presentation. Adding or removing photos on the merged view is
+  blocked; open an original segment for those edits. Assigning a trip on the
+  merged row writes through to every member.
+- If a later import changes a member so the group no longer matches, the row
+  keeps a **Needs review** badge until you unmerge or merge again.
+- Overview SAC and longest-dive statistics continue to use the stored
+  original dives (including the 20-minute SAC floor). The Places Dived map
+  plots originals, not a synthetic merged pin.
 
 ## Dive memos
 
@@ -179,8 +233,9 @@ on; tap a heading to rename it. Photo location only reads GPS from the selected
 image and does not keep the photo on the memo.
 
 Memos are stored in IndexedDB, included in app-data backups (backup format
-**v4**), and cleared only by **Erase all local DiveFrame data** — not by erase
-dives only.
+**v5**), and cleared only by **Erase all local DiveFrame data** — not by erase
+dives only. Merge groups from reversible segment merge are also in that
+backup.
 
 When a dive is open and still lacks a place name, DiveFrame may show
 **Possible Memo Match** hints for memos near that dive’s start time. On the
@@ -212,9 +267,9 @@ dive.
 ## Local data and privacy
 
 Imported records, edits, photos, reusable backgrounds, the overlay logo,
-per-dive settings, and named composer presets are stored in IndexedDB for the
-current browser profile and web address. The source files are read in the
-browser and never modified.
+per-dive settings, named composer presets, and reversible segment-merge groups
+are stored in IndexedDB for the current browser profile and web address. The
+source files are read in the browser and never modified.
 
 DiveFrame does not store the logbook on its server. Map-name and nearby-site
 lookups use network services. Composer overlay fonts are bundled with the app
@@ -255,9 +310,10 @@ checksum are identified as legacy backups. Nothing is written until you choose:
   local record rather than merging individual fields. Photos with different
   IDs are both kept; an exact matching photo ID is replaced by the backup copy.
 - **Replace dives with backup** replaces the dive-domain records (dives, source
-  mappings, site contributions, BLE raw/checkpoint records, and trips) while
-  keeping dive photos, composer settings and presets, reusable backgrounds,
-  logo, app preferences, and supplementary catalogs.
+  mappings, site contributions, BLE raw/checkpoint records, trips, and
+  segment-merge groups) while keeping dive photos, composer settings and
+  presets, reusable backgrounds, logo, app preferences, and supplementary
+  catalogs.
 - **Replace all data with backup** atomically clears DiveFrame's current local
   stores and restores exactly what is in the backup. Review the preview and
   confirmation carefully because device-only records are removed.
@@ -267,15 +323,18 @@ record counts. Settings also contains a collapsed **Review possible
 duplicates** tool. It compares likely pairs and lets you choose which record
 keeps its ID and preferred values, or leave the pair separate. If matching
 imports use different clock times—for example, UTC and local time—use
-**Merge two dives manually** to select the two records directly.
+**Merge two dives manually** to select the two records directly. That
+duplicate merge cannot be undone and is not the same as logbook **Merge
+segments**, which keeps both original dives.
 
 The Settings danger zone has three reset choices:
 
 - **Erase all dive photos** removes only images attached to dives. It keeps the
   dives, reusable backgrounds, logo, and settings, and is useful when a backup
   has grown too large.
-- **Erase dive data only** removes imported dives, source mappings, and
-  app-added site records. It keeps dive photos, reusable backgrounds, the
+- **Erase dive data only** removes imported dives, source mappings,
+  app-added site records, BLE raw/checkpoint records, trips, and reversible
+  segment-merge groups. It keeps dive photos, reusable backgrounds, the
   global logo, per-dive composer settings, named composer presets, and app
   preferences. Re-import the same source logs so their deterministic IDs
   reconnect the retained per-dive photos and composer settings.
@@ -336,15 +395,25 @@ existing approximate map lookup when the dive has no GPS.
 ### User GPS and maps
 
 Computer GPS from an import (`gpsEntry*` or `gpsExit*` fields) is never replaced
-by a user pin. The map prefers a valid computer entry coordinate, then a valid
-computer exit coordinate, then user GPS. When none is present, the dive-detail
-map can still use its approximate name-based lookup.
+by a user pin. The dive-detail map and the offline Places Dived map prefer a
+valid computer entry coordinate, then a valid computer exit coordinate, then
+user GPS. When none is present, the dive-detail map can still use its
+approximate name-based lookup.
 
 On the dive's map card, tap **Edit location** to enter latitude and longitude,
 then **Save location**, or choose **Clear location** to remove the pin. **Use
 location from photo** scans attached JPEG photos for EXIF coordinates and,
 when found, saves them with a photo-exif source. Photos without GPS or
 unsupported formats are skipped with a status message.
+
+After a valid user coordinate is stored, **Use this location for site
+suggestions and export** can be checked. That preference is off by default and
+is per dive. When it is on, nearby-site suggestions and both Subsurface export
+paths use the saved user coordinate; the map display stays computer-first, and
+imported `gpsEntry*` / `gpsExit*` values are not changed. Clearing the user
+coordinate also turns the preference off so a stale checked state cannot
+remain without a pin. Older backups and dives that lack the field stay
+computer-first.
 
 ### Places Dived map
 
@@ -559,9 +628,10 @@ BLE hardening, and questions for outside reviewers. It is the best single
 document to share when asking divers, accessibility/localization reviewers,
 privacy reviewers, or developers what should be addressed next.
 
-Future directions include hardening and distributing the Android APK (classic
-Shearwater BLE import already works in the debug build), optional Google Drive
-backup/sync, and optional accounts for hosted record and settings recovery.
-Web/PWA Bluetooth and other computer brands remain out of the current beta.
-Those extensions are intended to reuse the same portable data and merge
-behavior, keep the web app fully supported, and preserve anonymous local use.
+The production Android APK (`cc.fishese.divelog`) and the separately
+installable Preview APK already ship classic Shearwater BLE import. Future
+directions include optional Google Drive backup/sync and optional accounts for
+hosted record and settings recovery. Web/PWA Bluetooth and other computer
+brands remain out of the current beta. Those extensions are intended to reuse
+the same portable data and merge behavior, keep the web app fully supported,
+and preserve anonymous local use.

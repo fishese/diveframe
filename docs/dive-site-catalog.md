@@ -3,7 +3,11 @@
 DiveFrame uses a catalog-first lookup:
 
 1. Search active bundled catalog entries within 6 km of the dive's preferred
-   structured GPS point (computer entry, computer exit, then user GPS).
+   structured GPS point. By default that is computer entry, then computer
+   exit, then user GPS. When Edit Location has **Use this location for site
+   suggestions and export** checked, a valid saved user coordinate is used
+   first. The offline Places Dived map stays computer-first and is not
+   affected by that checkbox.
 2. If one or more bundled sites are found, return those entries; otherwise
    query the existing OpenStreetMap suggestion providers.
 3. On the client, add active entries from any user-loaded supplementary catalog

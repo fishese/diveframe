@@ -21,11 +21,14 @@ async function dataUrlFor(path, imports = {}) {
 }
 
 const diveModelUrl = await dataUrlFor("lib/dive-model.ts");
+const readerUrl = await dataUrlFor("lib/shearwater-raw-dive-number.ts");
 const normalizerUrl = await dataUrlFor("lib/ble-dive-normalizer.ts", {
   "./dive-model": diveModelUrl,
+  "./shearwater-raw-dive-number": readerUrl,
 });
 const persistUrl = await dataUrlFor("lib/ble-persist.ts", {
   "./ble-dive-normalizer": normalizerUrl,
+  "./shearwater-raw-dive-number": readerUrl,
 });
 const normalizer = await import(normalizerUrl);
 const persist = await import(persistUrl);
@@ -159,7 +162,69 @@ test("prepareBlePersistFromDownload maps a live-shaped download result", async (
   assert.equal(payload.rawRecords.length, 1);
   assert.equal(payload.failedParseCount, 0);
   assert.equal(payload.dives[0].source, "shearwater-ble");
+  assert.equal(payload.dives[0].diveNumber, null);
   assert.ok(payload.checkpoint);
+});
+
+function pnfOpening0(diveNumber) {
+  const record = new Uint8Array(32);
+  record[0] = 0x10;
+  record[1] = 0xff;
+  record[2] = (diveNumber >> 8) & 0xff;
+  record[3] = diveNumber & 0xff;
+  return Buffer.from(record).toString("base64");
+}
+
+function liveDownload(diveNumber) {
+  return {
+    status: 0,
+    message: "Success",
+    vendor: "Shearwater",
+    product: "Perdix 2",
+    family: 0,
+    model: 16,
+    firmware: 89,
+    serial: -1461490243,
+    serialHex: "A8E705BD",
+    cancelled: false,
+    persisted: false,
+    diveCount: 1,
+    newestFingerprintHex: "6A3FDA66",
+    logTail: "",
+    dives: [
+      {
+        size: 32,
+        fingerprintHex: "6A3FDA66",
+        dataBase64: pnfOpening0(diveNumber),
+        parsed: {
+          parseStatus: 0,
+          parseMessage: "Success",
+          datetime: "2026-06-27T14:12:54",
+          diveTimeSeconds: 100,
+          maxDepthM: 10,
+          diveMode: "OC",
+          sampleCount: 0,
+          gasmixes: [],
+          tanks: [],
+          profile: [],
+        },
+      },
+    ],
+  };
+}
+
+test("prepareBlePersistFromDownload copies the PNF header dive number", async () => {
+  const payload = await persist.prepareBlePersistFromDownload(liveDownload(31), {
+    libdivecomputerVersion: "0.9-test",
+  });
+  assert.equal(payload.dives[0].diveNumber, 31);
+});
+
+test("prepareBlePersistFromDownload keeps factory test dive number 0", async () => {
+  const payload = await persist.prepareBlePersistFromDownload(liveDownload(0), {
+    libdivecomputerVersion: "0.9-test",
+  });
+  assert.equal(payload.dives[0].diveNumber, 0);
 });
 
 test("prepareBlePersistFromFixture maps fixture pairs when present", async () => {

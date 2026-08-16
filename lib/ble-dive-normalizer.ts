@@ -8,6 +8,7 @@ import {
   type DiveTankUsage,
   type GasMix,
 } from "./dive-model";
+import { readShearwaterRawDiveNumber } from "./shearwater-raw-dive-number";
 
 /**
  * Import-contract preview for BLE captures. Aligns with
@@ -15,7 +16,7 @@ import {
  * {@link import("./ble-persist").previewToImportedDive} /
  * {@link import("./ble-persist").persistBleCaptureFromFixture} to write IndexedDB.
  */
-export const BLE_NORMALIZER_CONTRACT_VERSION = "1.2";
+export const BLE_NORMALIZER_CONTRACT_VERSION = "1.3";
 
 export type BleDeviceContext = {
   vendor: string;
@@ -78,6 +79,8 @@ export type BleRawDiveInput = {
   size: number;
   fingerprintHex: string;
   parsed?: BleParsedDiveInput;
+  /** Original PNF bytes when available; used to recover the computer dive number. */
+  rawBytes?: Uint8Array;
 };
 
 export type BleNormalizedDivePreview = {
@@ -94,6 +97,8 @@ export type BleNormalizedDivePreview = {
    */
   proposedCanonicalId: string;
   diveDate: string | null;
+  /** Computer log number from the PNF header; 0 is a valid factory-test dive. */
+  diveNumber: number | null;
   durationSeconds: number | null;
   lengthText: string | null;
   maxDepthM: number | null;
@@ -150,10 +155,13 @@ export function normalizeBleDivePreview(
     (device.serialHex || unsignedSerialHex(device.serial)).toUpperCase();
   const parsed = dive.parsed;
   const parseOk = Boolean(parsed && parsed.parseStatus === 0);
+  const diveNumber =
+    dive.rawBytes != null ? readShearwaterRawDiveNumber(dive.rawBytes) : null;
   const omissions: string[] = [
-    "Shearwater Cloud DiveId / dive number",
+    "Shearwater Cloud DiveId",
     "site, location, buddy, notes",
   ];
+  if (diveNumber == null) omissions.splice(1, 0, "dive number");
 
   if (!parsed || !parseOk) {
     return {
@@ -162,6 +170,7 @@ export function normalizeBleDivePreview(
       sourceId: fingerprintHex || `raw:${dive.size}`,
       proposedCanonicalId: proposedId(fingerprintHex || `raw:${dive.size}`),
       diveDate: null,
+      diveNumber,
       durationSeconds: null,
       lengthText: null,
       maxDepthM: null,
@@ -317,6 +326,7 @@ export function normalizeBleDivePreview(
     sourceId: fingerprintHex,
     proposedCanonicalId: proposedId(fingerprintHex),
     diveDate: parsed.datetime || null,
+    diveNumber,
     durationSeconds,
     lengthText: durationSeconds != null ? String(durationSeconds) : null,
     maxDepthM,

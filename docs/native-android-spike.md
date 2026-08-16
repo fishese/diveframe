@@ -130,6 +130,13 @@ duration, and max depth (`lib/ble-cloud-identity.ts`). No unmatched BLE dives.
 Settled for now:
 
 - BLE durable id = libdivecomputer fingerprint hex (not Cloud `DiveId`).
+- The sequential computer log number **is** in the raw PNF payload: opening
+  record `0x10`, bytes 2–3 as a big-endian uint16. That value matches Cloud
+  `DiveNumber` on the paired Perdix 2 rows above (including a factory-test
+  `0` when the computer stored one). Product persist contract v1.3 writes it
+  onto the imported dive; libdivecomputer still does not expose a dive-number
+  field, and Cloud `DiveId` remains Cloud-only. Dive number is not part of
+  BLE identity or Cloud matching.
 - Cross-source link to Shearwater Cloud uses serial + device-local datetime +
   duration + max depth; do not invent a shared id from Cloud alone.
 - `shearwater-ble` is a real `DiveSource`; product UI should call

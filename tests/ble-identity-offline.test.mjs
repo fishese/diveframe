@@ -19,6 +19,15 @@ async function loadIdentityModules() {
     }).outputText,
   ).toString("base64")}`;
 
+  const readerUrl = `data:text/javascript;base64,${Buffer.from(
+    ts.transpileModule(await readFile("lib/shearwater-raw-dive-number.ts", "utf8"), {
+      compilerOptions: {
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ES2022,
+      },
+    }).outputText,
+  ).toString("base64")}`;
+
   const normalizerSource = await readFile("lib/ble-dive-normalizer.ts", "utf8");
   let normalizerJs = ts.transpileModule(normalizerSource, {
     compilerOptions: {
@@ -26,10 +35,12 @@ async function loadIdentityModules() {
       target: ts.ScriptTarget.ES2022,
     },
   }).outputText;
-  normalizerJs = normalizerJs.replaceAll(
-    /from\s+["']\.\/dive-model["']/g,
-    `from "${diveModelUrl}"`,
-  );
+  normalizerJs = normalizerJs
+    .replaceAll(/from\s+["']\.\/dive-model["']/g, `from "${diveModelUrl}"`)
+    .replaceAll(
+      /from\s+["']\.\/shearwater-raw-dive-number["']/g,
+      `from "${readerUrl}"`,
+    );
   const normalizerUrl = `data:text/javascript;base64,${Buffer.from(normalizerJs).toString("base64")}`;
 
   const fixtureSource = await readFile("lib/ble-capture-fixture.ts", "utf8");

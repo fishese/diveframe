@@ -76,6 +76,10 @@ store distribution are not started yet.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.
+- Next deferred application work is F-Droid tester-review friction: move
+  What's New off the top-of-page notice into Settings, fetch only on an
+  explicit Refresh, and add a check-for-update control only where F-Droid
+  policy and signing allow it. See `docs/.local/DEFERRED-PRODUCT-PLAN.md`.
 
 ## Historical Android debug releases (do not use for new releases)
 
@@ -116,14 +120,20 @@ Previously shipped on `main`:
 
 - IndexedDB **v10** additive schema: trips, user GPS overlays, BLE raw /
   checkpoints (from v8), persistent **supplementary** dive-site catalog, and a
-  repair migration that recreates any missing stores without deleting data
-- Trip list blocks, select mode, user GPS + JPEG EXIF, catalog alias display,
-  date/computer/GPS list filters
+  repair migration that recreates any missing stores without deleting data.
+  Later additive upgrades: **v11** dive memos, **v12** reversible
+  `diveMergeGroups`. Current backup format is **v5**.
+- Trip list blocks, select mode (**Select shown**, **Delete selected**,
+  **Merge segments**), user GPS + JPEG EXIF, per-dive export-GPS preference,
+  catalog alias display, date/computer/GPS/short-dive list filters
 - Android product BLE import with incremental persist; Shearwater computer GPS
   via `DC_SAMPLE_LOCATION` sample callbacks. The native parser contract is
   v1.2: new downloads retain sample temperature, independent tank-indexed
   pressure series, exact dive mode, atmosphere/salinity/decompression metadata,
-  and computer-reported tank metadata.
+  and computer-reported tank metadata. BLE persist/normalizer contract **v1.3**
+  also stores the computer log number from PNF opening record `0x10` (bytes
+  2–3). libdivecomputer still has no dive-number field; Cloud `DiveId` remains
+  Cloud-only. Factory test dives numbered 0 are kept.
 - Photo GPS extraction: the APK uses the MediaStore picker with
   `ACCESS_MEDIA_LOCATION`; web/PWA extraction still reads metadata from the
   selected file when a browser provides it. Android web uploads commonly have
@@ -250,7 +260,7 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `lib/whats-new.ts` — What's new document model, link sanitization, and body
   rendering helpers.
 - `lib/indexed-db.ts` — device-local persistence and merge orchestration
-  (schema v10; v10 repairs missing stores additively).
+  (schema **v12**; v10+ repairs missing stores additively).
 - `app/api/geocode/route.ts` — stateless OpenStreetMap/Nominatim lookup proxy.
 - `app/api/nearby-sites/route.ts` — local catalog and OpenStreetMap fallback.
 - `app/api/whats-new/route.ts` — CORS-aware What's new feed for web and APK.
@@ -323,16 +333,17 @@ real dive exports, photos, or generated share cards to the repository.
 
 Database: `diveframe-local`
 
-Version: `10` (v9 added `supplementaryCatalog`; v10 repairs any missing stores
-without deleting existing stores or records). Opening an origin still on schema
-**&lt; 8** still performs the destructive v8 wipe once, then applies the
-additive v9/v10 migrations.
+Version: `12` (v9 added `supplementaryCatalog`; v10 repairs any missing stores
+without deleting existing stores or records; v11 added `diveMemos`; v12 added
+`diveMergeGroups`). Opening an origin still on schema **&lt; 8** still
+performs the destructive v8 wipe once, then applies the later additive
+migrations.
 
 Object stores (see also `lib/store-manifest.ts`):
 
 | Store | Key | Purpose |
 | --- | --- | --- |
-| `dives` | `id` | Canonical merged dive records, site overlays, user GPS, `tripId` |
+| `dives` | `id` | Canonical dive records, site overlays, user GPS, `exportGpsPreference`, `tripId` |
 | `sourceRecords` | `key` | Maps a source record to its canonical dive ID |
 | `attachments` | `id` | Photo metadata and the original image `Blob` (optional `role`) |
 | `siteContributions` | `id` | Sites manually typed for a dive and available for JSON export |
@@ -345,6 +356,8 @@ Object stores (see also `lib/store-manifest.ts`):
 | `deviceCheckpoints` | `id` | Per-computer download fingerprints (descriptor+serial) |
 | `trips` | `id` | Trip labels referenced by `dives.tripId` |
 | `supplementaryCatalog` | fixed | At most one user-loaded regional dive-site catalog |
+| `diveMemos` | `id` | Pre-import dive memos (erase-all only, not dive-data-only) |
+| `diveMergeGroups` | `id` | Reversible adjacent-segment presentation; members stay stored |
 
 The official dive-site catalog ships in `data/dive-sites.json` with each web
 deploy / APK build. A user-loaded **supplementary** catalog is stored in
@@ -463,8 +476,11 @@ Merge rules:
   override, so the “Set in App” filter tracks records still needing
   correction in the source log.
 - Each canonical dive stores separate source-specific dive numbers captured
-  during import. Existing browser data needs one re-import to
-  populate numbers that were not retained by the version-1 schema.
+  during import. BLE imports now fill `sourceDiveNumbers["shearwater-ble"]`
+  from the computer header (and the list number when no other source has one).
+  Existing browser data needs one re-import to populate numbers that were not
+  retained by the version-1 schema, and a fresh BLE download (or a patched
+  backup) for BLE rows saved before persist contract v1.3.
 
 ### Subsurface pass-through export
 

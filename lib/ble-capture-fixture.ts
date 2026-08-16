@@ -50,6 +50,10 @@ export function buildBleCaptureFixture(options: {
             profile: dive.parsed.profile,
           }
         : undefined,
+      rawBytes:
+        typeof dive.dataBase64 === "string"
+          ? decodeBase64(dive.dataBase64)
+          : undefined,
     })),
   );
 
@@ -112,7 +116,15 @@ export function parseBleCaptureFixture(value: unknown): BleCaptureFixture {
           firmware: download.firmware,
           model: download.model,
         },
-        download.dives,
+        download.dives.map((dive) => ({
+          size: dive.size,
+          fingerprintHex: dive.fingerprintHex,
+          parsed: dive.parsed,
+          rawBytes:
+            typeof dive.dataBase64 === "string"
+              ? decodeBase64(dive.dataBase64)
+              : undefined,
+        })),
       );
 
   return {
@@ -142,6 +154,10 @@ export function bleCaptureFixtureFilename(download: DiveComputerDownloadResult) 
   const serial = (download.serialHex || "unknown").toLowerCase();
   const stamp = new Date().toISOString().slice(0, 10);
   return `${product}-${serial}-${stamp}.json`;
+}
+
+function decodeBase64(value: string) {
+  return Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
 }
 
 function slug(value: string) {

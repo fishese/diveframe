@@ -25,15 +25,27 @@ async function loadModule(path, imports = {}) {
 }
 
 const diveModel = await loadModule("lib/dive-model.ts");
+const readerSource = ts.transpileModule(
+  await readFile("lib/shearwater-raw-dive-number.ts", "utf8"),
+  {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+  },
+).outputText;
+const readerDataUrl = `data:text/javascript;base64,${Buffer.from(readerSource).toString("base64")}`;
+const diveModelUrl = `data:text/javascript;base64,${Buffer.from(
+  ts.transpileModule(await readFile("lib/dive-model.ts", "utf8"), {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText,
+).toString("base64")}`;
 const normalizer = await loadModule("lib/ble-dive-normalizer.ts", {
-  "./dive-model": `data:text/javascript;base64,${Buffer.from(
-    ts.transpileModule(await readFile("lib/dive-model.ts", "utf8"), {
-      compilerOptions: {
-        module: ts.ModuleKind.ESNext,
-        target: ts.ScriptTarget.ES2022,
-      },
-    }).outputText,
-  ).toString("base64")}`,
+  "./dive-model": diveModelUrl,
+  "./shearwater-raw-dive-number": readerDataUrl,
 });
 
 test("BLE normalizer maps a parsed Perdix-shaped dive into an import preview", () => {
@@ -157,7 +169,55 @@ test("BLE normalizer maps a parsed Perdix-shaped dive into an import preview", (
   assert.equal(preview.samples[0]?.temperatureC, 28.5);
   assert.deepEqual(preview.samples[0]?.pressuresBar, [113.2, 201.4]);
   assert.ok(preview.omissions.some((item) => /Cloud DiveId/i.test(item)));
+  assert.ok(preview.omissions.some((item) => item === "dive number"));
+  assert.equal(preview.diveNumber, null);
   assert.equal(diveModel.gasMixLabel(21, 0), "Air");
+});
+
+function pnfOpening0(diveNumber) {
+  const record = new Uint8Array(32);
+  record[0] = 0x10;
+  record[1] = 0xff;
+  record[2] = (diveNumber >> 8) & 0xff;
+  record[3] = diveNumber & 0xff;
+  return record;
+}
+
+test("BLE normalizer reads the PNF header dive number from raw bytes", () => {
+  const preview = normalizer.normalizeBleDivePreview(
+    {
+      vendor: "Shearwater",
+      product: "Perdix 2",
+      serial: 2833712573,
+      serialHex: "A8E705BD",
+      firmware: 102,
+      model: 11,
+    },
+    {
+      size: 32,
+      fingerprintHex: "6A3FDA66",
+      rawBytes: pnfOpening0(31),
+      parsed: {
+        parseStatus: 0,
+        parseMessage: "Success",
+        datetime: "2026-06-27T14:12:54",
+        diveTimeSeconds: 518,
+        maxDepthM: 4.2,
+        diveMode: "oc",
+        sampleCount: 0,
+        gasmixes: [],
+        tanks: [],
+        profile: [],
+      },
+    },
+  );
+
+  assert.equal(preview.diveNumber, 31);
+  assert.ok(preview.omissions.some((item) => /Cloud DiveId/i.test(item)));
+  assert.equal(
+    preview.omissions.some((item) => /dive number/i.test(item)),
+    false,
+  );
 });
 
 test("BLE normalizer records parse failure without inventing dive fields", () => {
