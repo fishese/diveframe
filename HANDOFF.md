@@ -43,18 +43,19 @@ store distribution are not started yet.
 - The signed workflow is `.github/workflows/preview-apk.yml`. It checks out
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
-- The current shared runtime and stable source commit is
-  `fbfbc228ee050120e3840db47c45de2e01136485`. It includes reversible
-  dive-segment review, streamlined logbook filters/Select shown, and a
-  single Clear control that also resets the short-dive threshold.
+- The current shared runtime commit is
+  `05bf87cbde04315d638ac3b294038ed9b6794e9a`. It includes Shearwater BLE
+  dive-number recovery from the computer log, reversible dive-segment
+  review, streamlined logbook filters/Select shown, and a single Clear
+  control that also resets the short-dive threshold.
 - The current Preview release targets that same commit (workflow run
-  `31924989954`). The published Preview is version `preview.16.fbfbc22`
-  (version code `100016`), and `diveframe-preview.apk` has SHA-256
-  `C25C4403D7D150D8D303A9DBE90AD8BAAD6A1C44323F82A07ED052EAC9D58F58`.
+  `31942332748`). The published Preview is version `preview.17.05bf87c`
+  (version code `100017`), and `diveframe-preview.apk` has SHA-256
+  `718104032F56A2B9A64F997D7A56E9A53AD08D018D0ED532F875FC3C567DCD4E`.
   This is the intended no-drift state for the web/PWA and Preview APK,
   subject to normal hosted-deployment propagation.
-- Current `main` contains documentation-only stable-release records after
-  APK source `fbfbc22`; those follow-ups are not APK sources.
+- Current `main` may contain documentation-only records after APK source
+  `05bf87c`; those follow-ups are not APK sources.
 - Stable production/F-Droid release `1.0.24` uses source commit
   `fbfbc228ee050120e3840db47c45de2e01136485`, version code `25`, and the
   production package `cc.fishese.divelog`. Immutable source tag/release:

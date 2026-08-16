@@ -135,10 +135,10 @@ later matching tags without a manual recipe edit.
 Current `main` may contain documentation-only release records after the
 stable source; those commits are not the source of the published APK.
 
-The current verified Preview release targets stable source commit
-`fbfbc228ee050120e3840db47c45de2e01136485` (workflow run `31924989954`). It
-is `preview.16.fbfbc22`, version code `100016`, and its APK SHA-256 is
-`C25C4403D7D150D8D303A9DBE90AD8BAAD6A1C44323F82A07ED052EAC9D58F58`.
+The current verified Preview release targets shared runtime commit
+`05bf87cbde04315d638ac3b294038ed9b6794e9a` (workflow run `31942332748`). It
+is `preview.17.05bf87c`, version code `100017`, and its APK SHA-256 is
+`718104032F56A2B9A64F997D7A56E9A53AD08D018D0ED532F875FC3C567DCD4E`.
 
 ## Current stable production/F-Droid release
 
@@ -165,9 +165,9 @@ stable-tag-only auto-update configuration against the plain production
 Gradle version lines. The F-Droid source, reference release, and recipe all
 resolve to the same stable source commit.
 
-The current Preview and stable release use the same exact source commit, while
-their packages remain deliberately separate. The libdivecomputer dependency
-commit remains `8e564eb5cf9fb4318af3d540895abb916e1809b0`.
+The current Preview release is ahead of stable `1.0.24`; their packages remain
+deliberately separate. The libdivecomputer dependency commit remains
+`8e564eb5cf9fb4318af3d540895abb916e1809b0`.
 
 ## Requesting a production release
 
