@@ -42,8 +42,8 @@ older commit.
 
 Production tags are immutable and must never be moved or reused. The mutable
 `preview` tag is never a production or F-Droid source tag. Do not use
-`v1.0.21` as a Preview tag or release name; it is reserved for the existing
-production/F-Droid history.
+`v1.0.21` or current `v1.0.24` as a Preview tag or release name; they are
+reserved for the existing production/F-Droid history.
 
 Preview and production have separate Android application IDs, provider
 authorities, private WebView storage, and IndexedDB partitions. They can be

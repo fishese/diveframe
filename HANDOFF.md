@@ -53,8 +53,8 @@ store distribution are not started yet.
   `C25C4403D7D150D8D303A9DBE90AD8BAAD6A1C44323F82A07ED052EAC9D58F58`.
   This is the intended no-drift state for the web/PWA and Preview APK,
   subject to normal hosted-deployment propagation.
-- Current `main` may contain documentation-only stable-release records after
-  the APK source commit; those follow-ups are not APK sources.
+- Current `main` contains documentation-only stable-release records after
+  APK source `fbfbc22`; those follow-ups are not APK sources.
 - Stable production/F-Droid release `1.0.24` uses source commit
   `fbfbc228ee050120e3840db47c45de2e01136485`, version code `25`, and the
   production package `cc.fishese.divelog`. Immutable source tag/release:
