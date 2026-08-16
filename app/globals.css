@@ -746,10 +746,6 @@ button {
   grid-column: 1 / -1;
 }
 
-.filter-panel-clear {
-  justify-self: start;
-}
-
 .filter-panel-field {
   display: grid;
   gap: 5px;
@@ -928,8 +924,12 @@ button {
   color: var(--teal);
 }
 
-.filter-row .select-mode-toggle {
+.filter-row .filter-clear-main {
   margin-left: auto;
+}
+
+.filter-row .select-mode-toggle {
+  margin-left: 0;
 }
 
 .select-action-bar {

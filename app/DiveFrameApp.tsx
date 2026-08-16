@@ -651,6 +651,7 @@ export function DiveFrameApp() {
     setAppSiteOnly(false);
     setGasDataOnly(false);
     setShortDiveOnly(false);
+    setShortDiveMaxMinutesInput(String(DEFAULT_SHORT_DIVE_MAX_MINUTES));
     setDateFrom(null);
     setDateTo(null);
     setComputerFilter(null);
@@ -1567,6 +1568,14 @@ export function DiveFrameApp() {
                   </button>
                   <button
                     type="button"
+                    className="filter-clear-main"
+                    onClick={resetFilters}
+                    disabled={!hasActiveFilters}
+                  >
+                    <X size={14} /> {t("clearFilter")}
+                  </button>
+                  <button
+                    type="button"
                     className={`select-mode-toggle ${selectMode ? "active" : ""}`}
                     onClick={toggleSelectMode}
                     aria-pressed={selectMode}
@@ -1682,14 +1691,6 @@ export function DiveFrameApp() {
                         </select>
                       </label>
                     </div>
-                    <button
-                      type="button"
-                      className="button button-quiet filter-panel-clear"
-                      onClick={resetFilters}
-                      disabled={!hasActiveFilters}
-                    >
-                      <X size={14} /> {t("clearFilter")}
-                    </button>
                   </div>
                 ) : null}
                 {selectMode ? (

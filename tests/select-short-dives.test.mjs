@@ -51,6 +51,10 @@ test("the collapsed filter panel owns the short-dive duration control", () => {
   assert.match(app, /shortDiveMaxMinutes: shortDiveOnly/);
   assert.match(
     app,
+    /const resetFilters = useCallback\([\s\S]*setShortDiveMaxMinutesInput\(String\(DEFAULT_SHORT_DIVE_MAX_MINUTES\)\)/,
+  );
+  assert.match(
+    app,
     /className="filter-panel"[\s\S]*id="short-dive-max-minutes"/,
   );
 });
@@ -78,7 +82,11 @@ test("Select shown replaces selection with exactly the visible filtered dives", 
 
 test("the main toolbar stays on one row and selection actions are grouped", () => {
   assert.match(styles, /\.filter-row\s*\{[^}]*flex-wrap:\s*nowrap/);
-  assert.match(styles, /\.filter-row \.select-mode-toggle\s*\{[^}]*margin-left:\s*auto/);
+  assert.match(styles, /\.filter-row \.filter-clear-main\s*\{[^}]*margin-left:\s*auto/);
+  assert.match(
+    app,
+    /className="filter-clear-main"[\s\S]*onClick=\{resetFilters\}[\s\S]*disabled=\{!hasActiveFilters\}[\s\S]*className=\{`select-mode-toggle/,
+  );
   assert.match(styles, /\.select-action-group\s*\{/);
   assert.match(
     styles,
