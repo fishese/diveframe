@@ -1,11 +1,11 @@
 {
   "version": "2026-08-16-reversible-segment-merge",
-  "updatedAt": "2026-08-16T02:08:03.719Z",
+  "updatedAt": "2026-08-16T02:57:18.041Z",
   "entries": [
     {
       "id": "2026-08-16-reversible-segment-merge",
       "title": "Combine split dive segments safely",
-      "body": "Combine adjacent dive-computer segments without deleting the originals, and unmerge them at any time. You can also select short dives for review, rename trips directly from their headers, delete selected dives with an explicit confirmation, and choose user-entered coordinates for export. Backups that include combined dives use backup format 5 and should be restored with this or a newer DiveFrame build.",
+      "body": "Combine adjacent dive-computer segments without deleting the originals, and unmerge them at any time. The logbook filters now cover named and unnamed sites, gas-pressure data, local edits, and short dives; use Select shown to review the exact filtered set before deleting it. You can also rename trips directly from their headers and choose user-entered coordinates for export. Backups that include combined dives use backup format 5 and should be restored with this or a newer DiveFrame build.",
       "date": "2026-08-16",
       "links": [
         {

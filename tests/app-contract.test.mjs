@@ -625,8 +625,9 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /submitTripHeaderRename/);
   assert.match(app, /className="trip-block"/);
   assert.match(app, /className="select-action-bar"/);
-  assert.match(app, /className="select-short-dives"/);
-  assert.match(app, /t\("selectShortDives"\)/);
+  assert.match(app, /className="filter-panel-chips"/);
+  assert.match(app, /t\("shortDives"\)/);
+  assert.match(app, /t\("selectShown"\)/);
   assert.match(app, /t\("clearSelection"\)/);
   assert.match(app, /t\("deleteSelectedDives"\)/);
   assert.match(app, /deleteSelectedConfirmOpen/);
@@ -635,7 +636,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(appI18n, /deleteSelectedDivesTitle:/);
   assert.match(appI18n, /deleteSelectedDivesDescription:/);
   assert.match(appI18n, /maxDurationMinutes:/);
-  assert.match(appI18n, /selectShortDives:/);
+  assert.match(appI18n, /selectShown:/);
   assert.match(appI18n, /clearSelection:/);
   assert.match(app, /createLocalTripWithAssignments\(name, ids\)/);
   assert.match(app, /setLocalDiveTripIds\(ids, null\)/);

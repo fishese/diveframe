@@ -40,6 +40,9 @@ function dive(overrides = {}) {
     gpsEntryLng: null,
     userGpsLat: null,
     userGpsLng: null,
+    tankPressuresStartBar: [],
+    tankPressuresEndBar: [],
+    tanks: [],
     buddy: null,
     notes: null,
     sources: [],
@@ -51,8 +54,11 @@ function dive(overrides = {}) {
 function defaultFilters(overrides = {}) {
   return {
     namedOnly: false,
+    unnamedOnly: false,
     gpsOnly: false,
     appSiteOnly: false,
+    gasDataOnly: false,
+    shortDiveMaxMinutes: null,
     dateFrom: null,
     dateTo: null,
     computerModel: null,
@@ -118,6 +124,90 @@ test("gpsOnly filter matches dives with only user GPS", () => {
   );
   assert.equal(
     diveMatchesListFilters(dive(), defaultFilters({ gpsOnly: true })),
+    false,
+  );
+});
+
+test("named and unnamed site filters use site names rather than place text", () => {
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ userSite: "Blue Corner" }),
+      defaultFilters({ namedOnly: true }),
+    ),
+    true,
+  );
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ location: "Palau" }),
+      defaultFilters({ namedOnly: true }),
+    ),
+    false,
+  );
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ location: "Palau" }),
+      defaultFilters({ unnamedOnly: true }),
+    ),
+    true,
+  );
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ site: "German Channel" }),
+      defaultFilters({ unnamedOnly: true }),
+    ),
+    false,
+  );
+});
+
+test("gas data filter requires a positive pressure reading", () => {
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ tankPressuresStartBar: [200] }),
+      defaultFilters({ gasDataOnly: true }),
+    ),
+    true,
+  );
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ tanks: [{ endPressureBar: 65 }] }),
+      defaultFilters({ gasDataOnly: true }),
+    ),
+    true,
+  );
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ tankPressuresStartBar: [null, 0] }),
+      defaultFilters({ gasDataOnly: true }),
+    ),
+    false,
+  );
+});
+
+test("short-dive duration composes with the other filters", () => {
+  const filters = defaultFilters({
+    unnamedOnly: true,
+    gasDataOnly: true,
+    shortDiveMaxMinutes: 5,
+  });
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ durationSeconds: 300, tankPressuresEndBar: [80] }),
+      filters,
+    ),
+    true,
+  );
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ durationSeconds: 301, tankPressuresEndBar: [80] }),
+      filters,
+    ),
+    false,
+  );
+  assert.equal(
+    diveMatchesListFilters(
+      dive({ durationSeconds: 60, tankPressuresEndBar: [] }),
+      filters,
+    ),
     false,
   );
 });

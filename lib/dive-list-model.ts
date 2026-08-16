@@ -27,6 +27,12 @@ export type DiveListItem = {
   userGpsLng?: number | null;
   cylinderPresetId?: string | null;
   cylinderVolumeL?: number | null;
+  tankPressuresStartBar?: Array<number | null>;
+  tankPressuresEndBar?: Array<number | null>;
+  tanks?: Array<{
+    startPressureBar?: number | null;
+    endPressureBar?: number | null;
+  }>;
   appEditedAt?: string | null;
   buddy?: string | null;
   notes?: string | null;
@@ -82,8 +88,11 @@ export function shortDiveCandidateIds(
 
 export type DiveListFilters = {
   namedOnly: boolean;
+  unnamedOnly: boolean;
   gpsOnly: boolean;
   appSiteOnly: boolean;
+  gasDataOnly: boolean;
+  shortDiveMaxMinutes: number | null;
   dateFrom: string | null;
   dateTo: string | null;
   computerModel: string | null;
@@ -135,8 +144,11 @@ export function diveMatchesListFilters(
   filters: Partial<DiveListFilters>,
 ): boolean {
   const namedOnly = filters.namedOnly ?? false;
+  const unnamedOnly = filters.unnamedOnly ?? false;
   const gpsOnly = filters.gpsOnly ?? false;
   const appSiteOnly = filters.appSiteOnly ?? false;
+  const gasDataOnly = filters.gasDataOnly ?? false;
+  const shortDiveMaxMinutes = filters.shortDiveMaxMinutes ?? null;
   const dateFrom = filters.dateFrom ?? null;
   const dateTo = filters.dateTo ?? null;
   const computerModel = filters.computerModel ?? null;
@@ -155,15 +167,11 @@ export function diveMatchesListFilters(
     }
   }
 
-  if (
-    namedOnly &&
-    !(
-      dive.userSite ||
-      dive.site ||
-      dive.location ||
-      dive.resolvedLocation
-    )
-  ) {
+  if (namedOnly && !diveHasNamedSite(dive)) {
+    return false;
+  }
+
+  if (unnamedOnly && diveHasNamedSite(dive)) {
     return false;
   }
 
@@ -172,6 +180,17 @@ export function diveMatchesListFilters(
   }
 
   if (appSiteOnly && !diveWasEditedHere(dive)) {
+    return false;
+  }
+
+  if (gasDataOnly && !diveHasGasPressureData(dive)) {
+    return false;
+  }
+
+  if (
+    shortDiveMaxMinutes !== null &&
+    !isShortDiveCandidate(dive, shortDiveMaxMinutes)
+  ) {
     return false;
   }
 
@@ -214,6 +233,34 @@ export function diveMatchesListFilters(
   ]
     .filter(Boolean)
     .some((value) => String(value).toLowerCase().includes(needle));
+}
+
+export function diveHasNamedSite(
+  dive: Pick<DiveListItem, "userSite" | "site">,
+): boolean {
+  return Boolean(dive.userSite?.trim() || dive.site?.trim());
+}
+
+export function diveHasGasPressureData(
+  dive: Pick<
+    DiveListItem,
+    "tankPressuresStartBar" | "tankPressuresEndBar" | "tanks"
+  >,
+): boolean {
+  const pressures = [
+    ...(dive.tankPressuresStartBar ?? []),
+    ...(dive.tankPressuresEndBar ?? []),
+    ...(dive.tanks ?? []).flatMap((tank) => [
+      tank.startPressureBar,
+      tank.endPressureBar,
+    ]),
+  ];
+  return pressures.some(
+    (pressure) =>
+      typeof pressure === "number" &&
+      Number.isFinite(pressure) &&
+      pressure > 0,
+  );
 }
 
 export function buildDiveListRows<T extends DiveListItem>(

@@ -17,6 +17,7 @@ import {
   ImagePlus,
   LoaderCircle,
   MapPin,
+  MapPinOff,
   Pencil,
   Search,
   Share2,
@@ -94,7 +95,6 @@ import {
   DEFAULT_SHORT_DIVE_MAX_MINUTES,
   diveMatchesListFilters,
   parsePositiveWholeMinutes,
-  shortDiveCandidateIds,
   type DiveListFilters,
   type DiveSortOption,
 } from "@/lib/dive-list-model";
@@ -190,8 +190,11 @@ export function DiveFrameApp() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [query, setQuery] = useState("");
   const [namedOnly, setNamedOnly] = useState(false);
+  const [unnamedOnly, setUnnamedOnly] = useState(false);
   const [gpsOnly, setGpsOnly] = useState(false);
   const [appSiteOnly, setAppSiteOnly] = useState(false);
+  const [gasDataOnly, setGasDataOnly] = useState(false);
+  const [shortDiveOnly, setShortDiveOnly] = useState(false);
   const [dateFrom, setDateFrom] = useState<string | null>(null);
   const [dateTo, setDateTo] = useState<string | null>(null);
   const [computerFilter, setComputerFilter] = useState<string | null>(null);
@@ -218,7 +221,9 @@ export function DiveFrameApp() {
     useState(false);
   const [mergeConfirmOpen, setMergeConfirmOpen] = useState(false);
   const [showOriginalSegments, setShowOriginalSegments] = useState(false);
-  const [shortDiveMaxMinutesInput, setShortDiveMaxMinutesInput] = useState(String(DEFAULT_SHORT_DIVE_MAX_MINUTES));
+  const [shortDiveMaxMinutesInput, setShortDiveMaxMinutesInput] = useState(
+    String(DEFAULT_SHORT_DIVE_MAX_MINUTES),
+  );
   const [status, setStatus] = useState(t("loadingLogbook"));
   const [busy, setBusy] = useState(false);
   const [mobileDetail, setMobileDetail] = useState(false);
@@ -625,18 +630,27 @@ export function DiveFrameApp() {
     [dives],
   );
 
-  const hasActiveFilters =
+  const shortDiveMaxMinutes = parsePositiveWholeMinutes(
+    shortDiveMaxMinutesInput,
+  );
+  const hasCollapsedActiveFilters =
     namedOnly ||
-    gpsOnly ||
+    unnamedOnly ||
     appSiteOnly ||
+    gasDataOnly ||
+    shortDiveOnly ||
     Boolean(dateFrom) ||
     Boolean(dateTo) ||
     Boolean(computerFilter);
+  const hasActiveFilters = gpsOnly || hasCollapsedActiveFilters;
 
   const resetFilters = useCallback(() => {
     setNamedOnly(false);
+    setUnnamedOnly(false);
     setGpsOnly(false);
     setAppSiteOnly(false);
+    setGasDataOnly(false);
+    setShortDiveOnly(false);
     setDateFrom(null);
     setDateTo(null);
     setComputerFilter(null);
@@ -646,8 +660,13 @@ export function DiveFrameApp() {
     const search = parseDiveSearch(query);
     const filters: Partial<DiveListFilters> = {
       namedOnly,
+      unnamedOnly,
       gpsOnly,
       appSiteOnly,
+      gasDataOnly,
+      shortDiveMaxMinutes: shortDiveOnly
+        ? (shortDiveMaxMinutes ?? 0)
+        : null,
       dateFrom,
       dateTo,
       computerModel: computerFilter,
@@ -662,11 +681,15 @@ export function DiveFrameApp() {
     computerFilter,
     dateFrom,
     dateTo,
+    gasDataOnly,
     presentationDives,
     gpsOnly,
     namedOnly,
     query,
+    shortDiveMaxMinutes,
+    shortDiveOnly,
     sortOption,
+    unnamedOnly,
   ]);
 
   const diveListRows = useMemo(
@@ -1120,18 +1143,8 @@ export function DiveFrameApp() {
       setBusy(false);
     }
   }
-  const shortDiveMaxMinutes = parsePositiveWholeMinutes(
-    shortDiveMaxMinutesInput,
-  );
-
-  function selectShortDives() {
-    if (shortDiveMaxMinutes === null) return;
-    const ids = shortDiveCandidateIds(visibleDives, shortDiveMaxMinutes);
-    setSelectedDiveIds((current) => {
-      const next = new Set(current);
-      for (const id of ids) next.add(id);
-      return next;
-    });
+  function selectVisibleDives() {
+    setSelectedDiveIds(new Set(visibleDives.map((dive) => dive.id)));
   }
 
   function clearSelection() {
@@ -1534,43 +1547,15 @@ export function DiveFrameApp() {
                 <div className="filter-row" aria-label={t("diveFilters")}>
                   <button
                     type="button"
-                    className={namedOnly ? "active" : ""}
-                    onClick={() => {
-                      setNamedOnly((value) => !value);
-                      setGpsOnly(false);
-                      setAppSiteOnly(false);
-                    }}
-                    aria-pressed={namedOnly}
-                  >
-                    <MapPin size={14} /> {t("siteNamed")}
-                  </button>
-                  <button
-                    type="button"
                     className={gpsOnly ? "active" : ""}
-                    onClick={() => {
-                      setGpsOnly((value) => !value);
-                      setNamedOnly(false);
-                      setAppSiteOnly(false);
-                    }}
+                    onClick={() => setGpsOnly((value) => !value)}
                     aria-pressed={gpsOnly}
                   >
                     <Compass size={14} /> {t("gpsData")}
                   </button>
                   <button
                     type="button"
-                    className={appSiteOnly ? "active" : ""}
-                    onClick={() => {
-                      setAppSiteOnly((value) => !value);
-                      setNamedOnly(false);
-                      setGpsOnly(false);
-                    }}
-                    aria-pressed={appSiteOnly}
-                  >
-                    <Sparkles size={14} /> {t("setInApp")}
-                  </button>
-                  <button
-                    type="button"
-                    className={`filter-toggle ${filtersOpen ? "active" : ""}`}
+                    className={`filter-toggle ${filtersOpen || hasCollapsedActiveFilters ? "active" : ""}`}
                     onClick={() => setFiltersOpen((value) => !value)}
                     aria-expanded={filtersOpen}
                   >
@@ -1579,14 +1564,6 @@ export function DiveFrameApp() {
                       className={`filter-toggle-chevron ${filtersOpen ? "" : "collapsed"}`}
                     />
                     {t("moreFilters")}
-                  </button>
-                  <button
-                    type="button"
-                    className="filter-clear"
-                    onClick={resetFilters}
-                    disabled={!hasActiveFilters}
-                  >
-                    <X size={14} /> {t("clearFilter")}
                   </button>
                   <button
                     type="button"
@@ -1600,56 +1577,58 @@ export function DiveFrameApp() {
                 </div>
                 {filtersOpen ? (
                   <div className="filter-panel">
-                    <label className="filter-panel-field">
-                      <span>{t("dateFrom")}</span>
-                      <input
-                        type="date"
-                        value={dateFrom ?? ""}
-                        onChange={(event) =>
-                          setDateFrom(event.target.value || null)
-                        }
-                        max={dateTo ?? undefined}
-                      />
-                    </label>
-                    <label className="filter-panel-field">
-                      <span>{t("dateTo")}</span>
-                      <input
-                        type="date"
-                        value={dateTo ?? ""}
-                        onChange={(event) =>
-                          setDateTo(event.target.value || null)
-                        }
-                        min={dateFrom ?? undefined}
-                      />
-                    </label>
-                    <label className="filter-panel-field">
-                      <span>{t("computerFilterLabel")}</span>
-                      <select
-                        value={computerFilter ?? ""}
-                        onChange={(event) =>
-                          setComputerFilter(event.target.value || null)
-                        }
+                    <div className="filter-panel-chips">
+                      <button
+                        type="button"
+                        className={`filter-panel-chip ${namedOnly ? "active" : ""}`}
+                        onClick={() => {
+                          const next = !namedOnly;
+                          setNamedOnly(next);
+                          if (next) setUnnamedOnly(false);
+                        }}
+                        aria-pressed={namedOnly}
                       >
-                        <option value="">{t("allComputers")}</option>
-                        {computerModels.map((model) => (
-                          <option key={model} value={model}>
-                            {model}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                ) : null}
-                {selectMode ? (
-                  <div className="select-action-bar">
-                    <span className="select-action-count" aria-live="polite">
-                      {t("selectedCount", { count: visibleSelectedCount })}
-                    </span>
-                    <div className="select-short-dives">
-                      <label
-                        className="select-short-dives-field"
-                        htmlFor="short-dive-max-minutes"
+                        <MapPin size={14} /> {t("siteNamed")}
+                      </button>
+                      <button
+                        type="button"
+                        className={`filter-panel-chip ${unnamedOnly ? "active" : ""}`}
+                        onClick={() => {
+                          const next = !unnamedOnly;
+                          setUnnamedOnly(next);
+                          if (next) setNamedOnly(false);
+                        }}
+                        aria-pressed={unnamedOnly}
                       >
+                        <MapPinOff size={14} /> {t("noSiteNamed")}
+                      </button>
+                      <button
+                        type="button"
+                        className={`filter-panel-chip ${gasDataOnly ? "active" : ""}`}
+                        onClick={() => setGasDataOnly((value) => !value)}
+                        aria-pressed={gasDataOnly}
+                      >
+                        <Gauge size={14} /> {t("gasData")}
+                      </button>
+                      <button
+                        type="button"
+                        className={`filter-panel-chip ${appSiteOnly ? "active" : ""}`}
+                        onClick={() => setAppSiteOnly((value) => !value)}
+                        aria-pressed={appSiteOnly}
+                      >
+                        <Sparkles size={14} /> {t("setInApp")}
+                      </button>
+                      <button
+                        type="button"
+                        className={`filter-panel-chip ${shortDiveOnly ? "active" : ""}`}
+                        onClick={() => setShortDiveOnly((value) => !value)}
+                        aria-pressed={shortDiveOnly}
+                      >
+                        <Clock3 size={14} /> {t("shortDives")}
+                      </button>
+                    </div>
+                    <div className="filter-panel-fields">
+                      <label className="filter-panel-field" htmlFor="short-dive-max-minutes">
                         <span>{t("maxDurationMinutes")}</span>
                         <input
                           id="short-dive-max-minutes"
@@ -1661,118 +1640,182 @@ export function DiveFrameApp() {
                           onChange={(event) =>
                             setShortDiveMaxMinutesInput(event.target.value)
                           }
-                          aria-describedby="short-dive-select-hint"
+                          aria-invalid={shortDiveMaxMinutes === null}
                         />
                       </label>
-                      <p
-                        id="short-dive-select-hint"
-                        className="visually-hidden"
-                      >
-                        {t("selectShortDivesHint")}
-                      </p>
-                      <button
-                        type="button"
-                        className="button button-secondary"
-                        onClick={selectShortDives}
-                        disabled={busy || shortDiveMaxMinutes === null}
-                      >
-                        {t("selectShortDives")}
-                      </button>
-                      <button
-                        type="button"
-                        className="button button-quiet"
-                        onClick={clearSelection}
-                        disabled={busy || !visibleSelectedCount}
-                      >
-                        {t("clearSelection")}
-                      </button>
-                    </div>
-                    <div className="select-action-buttons">
-                      {newTripFormOpen ? (
-                        <form
-                          className="select-new-trip-form"
-                          onSubmit={(event) => {
-                            event.preventDefault();
-                            void createTripFromSelection(newTripNameDraft);
-                          }}
+                      <label className="filter-panel-field">
+                        <span>{t("dateFrom")}</span>
+                        <input
+                          type="date"
+                          value={dateFrom ?? ""}
+                          onChange={(event) =>
+                            setDateFrom(event.target.value || null)
+                          }
+                          max={dateTo ?? undefined}
+                        />
+                      </label>
+                      <label className="filter-panel-field">
+                        <span>{t("dateTo")}</span>
+                        <input
+                          type="date"
+                          value={dateTo ?? ""}
+                          onChange={(event) =>
+                            setDateTo(event.target.value || null)
+                          }
+                          min={dateFrom ?? undefined}
+                        />
+                      </label>
+                      <label className="filter-panel-field">
+                        <span>{t("computerFilterLabel")}</span>
+                        <select
+                          value={computerFilter ?? ""}
+                          onChange={(event) =>
+                            setComputerFilter(event.target.value || null)
+                          }
                         >
-                          <input
-                            value={newTripNameDraft}
-                            onChange={(event) => setNewTripNameDraft(event.target.value)}
-                            placeholder={t("newTripNamePlaceholder")}
-                            maxLength={120}
-                            autoFocus
-                          />
-                          <button
-                            type="submit"
-                            className="button button-secondary"
-                            disabled={busy || !newTripNameDraft.trim() || !visibleSelectedCount}
-                          >
-                            {t("createTrip")}
-                          </button>
-                          <button
-                            type="button"
-                            className="button button-quiet"
-                            onClick={() => {
-                              setNewTripFormOpen(false);
-                              setNewTripNameDraft("");
-                            }}
-                          >
-                            {t("cancel")}
-                          </button>
-                        </form>
-                      ) : (
+                          <option value="">{t("allComputers")}</option>
+                          {computerModels.map((model) => (
+                            <option key={model} value={model}>
+                              {model}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      className="button button-quiet filter-panel-clear"
+                      onClick={resetFilters}
+                      disabled={!hasActiveFilters}
+                    >
+                      <X size={14} /> {t("clearFilter")}
+                    </button>
+                  </div>
+                ) : null}
+                {selectMode ? (
+                  <div className="select-action-bar">
+                    <section className="select-action-group">
+                      <span className="select-action-label">{t("selectionTools")}</span>
+                      <div className="select-action-row">
+                        <span className="select-action-count" aria-live="polite">
+                          {t("selectedCount", { count: visibleSelectedCount })}
+                        </span>
                         <button
                           type="button"
                           className="button button-secondary"
-                          onClick={() => setNewTripFormOpen(true)}
+                          onClick={selectVisibleDives}
+                          disabled={busy || !visibleDives.length}
+                          aria-describedby="select-visible-dives-hint"
+                        >
+                          {t("selectShown")}
+                        </button>
+                        <span id="select-visible-dives-hint" className="visually-hidden">
+                          {t("selectShownHint")}
+                        </span>
+                        <button
+                          type="button"
+                          className="button button-quiet"
+                          onClick={clearSelection}
                           disabled={busy || !visibleSelectedCount}
                         >
-                          {t("newTripOption")}
+                          {t("clearSelection")}
                         </button>
-                      )}
-                      <select
-                        value={addToTripDraft}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          setAddToTripDraft(value);
-                          if (value) void addSelectionToTrip(value);
-                        }}
-                        disabled={busy || !visibleSelectedCount || !trips.length}
-                        aria-label={t("addToExistingTrip")}
-                      >
-                        <option value="">{t("addToExistingTrip")}</option>
-                        {trips.map((trip) => (
-                          <option key={trip.id} value={trip.id}>
-                            {trip.name}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        className="button button-quiet"
-                        onClick={() => void removeSelectionFromTrip()}
-                        disabled={busy || !visibleSelectedCount}
-                      >
-                        {t("removeFromTrip")}
-                      </button>
-                      <button
-                        type="button"
-                        className="button button-secondary"
-                        onClick={() => setMergeConfirmOpen(true)}
-                        disabled={busy || visibleSelectedCount < 2}
-                      >
-                        <GitMerge size={16} /> {t("mergeSegments")}
-                      </button>
-                      <button
-                        type="button"
-                        className="button button-danger-secondary"
-                        onClick={() => setDeleteSelectedConfirmOpen(true)}
-                        disabled={busy || !visibleSelectedCount}
-                      >
-                        {t("deleteSelectedDives")}
-                      </button>
-                    </div>
+                      </div>
+                    </section>
+                    <section className="select-action-group">
+                      <span className="select-action-label">{t("trip")}</span>
+                      <div className="select-action-buttons">
+                        {newTripFormOpen ? (
+                          <form
+                            className="select-new-trip-form"
+                            onSubmit={(event) => {
+                              event.preventDefault();
+                              void createTripFromSelection(newTripNameDraft);
+                            }}
+                          >
+                            <input
+                              value={newTripNameDraft}
+                              onChange={(event) => setNewTripNameDraft(event.target.value)}
+                              placeholder={t("newTripNamePlaceholder")}
+                              maxLength={120}
+                              autoFocus
+                            />
+                            <button
+                              type="submit"
+                              className="button button-secondary"
+                              disabled={busy || !newTripNameDraft.trim() || !visibleSelectedCount}
+                            >
+                              {t("createTrip")}
+                            </button>
+                            <button
+                              type="button"
+                              className="button button-quiet"
+                              onClick={() => {
+                                setNewTripFormOpen(false);
+                                setNewTripNameDraft("");
+                              }}
+                            >
+                              {t("cancel")}
+                            </button>
+                          </form>
+                        ) : (
+                          <button
+                            type="button"
+                            className="button button-secondary"
+                            onClick={() => setNewTripFormOpen(true)}
+                            disabled={busy || !visibleSelectedCount}
+                          >
+                            {t("newTripOption")}
+                          </button>
+                        )}
+                        <select
+                          value={addToTripDraft}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setAddToTripDraft(value);
+                            if (value) void addSelectionToTrip(value);
+                          }}
+                          disabled={busy || !visibleSelectedCount || !trips.length}
+                          aria-label={t("addToExistingTrip")}
+                        >
+                          <option value="">{t("addToExistingTrip")}</option>
+                          {trips.map((trip) => (
+                            <option key={trip.id} value={trip.id}>
+                              {trip.name}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="button button-quiet"
+                          onClick={() => void removeSelectionFromTrip()}
+                          disabled={busy || !visibleSelectedCount}
+                        >
+                          {t("removeFromTrip")}
+                        </button>
+                      </div>
+                    </section>
+                    <section className="select-action-group select-action-final">
+                      <span className="select-action-label">{t("selectedDiveActions")}</span>
+                      <div className="select-action-buttons">
+                        <button
+                          type="button"
+                          className="button button-secondary"
+                          onClick={() => setMergeConfirmOpen(true)}
+                          disabled={busy || visibleSelectedCount < 2}
+                        >
+                          <GitMerge size={16} /> {t("mergeSegments")}
+                        </button>
+                        <button
+                          type="button"
+                          className="button button-danger-secondary"
+                          onClick={() => setDeleteSelectedConfirmOpen(true)}
+                          disabled={busy || !visibleSelectedCount}
+                        >
+                          {t("deleteSelectedDives")}
+                        </button>
+                      </div>
+                    </section>
                   </div>
                 ) : null}
                 {diveListRows.map((row) =>

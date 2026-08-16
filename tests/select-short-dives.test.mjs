@@ -30,15 +30,14 @@ const [app, styles, model, en, ja, zhHant] = await Promise.all([
   readFile("lib/app-i18n/zh-Hant.ts", "utf8"),
 ]);
 
-test("select mode exposes a positive whole-minute short-dive control defaulting to 3", () => {
+test("the collapsed filter panel owns the short-dive duration control", () => {
   assert.match(model, /export const DEFAULT_SHORT_DIVE_MAX_MINUTES = 3/);
   assert.match(app, /from "@\/lib\/dive-list-model"/);
   assert.match(app, /DEFAULT_SHORT_DIVE_MAX_MINUTES/);
   assert.match(app, /parsePositiveWholeMinutes/);
-  assert.match(app, /shortDiveCandidateIds/);
   assert.match(
     app,
-    /useState\(\s*String\(DEFAULT_SHORT_DIVE_MAX_MINUTES\)\s*\)/,
+    /useState\(\s*String\(DEFAULT_SHORT_DIVE_MAX_MINUTES\),?\s*\)/,
   );
   assert.match(app, /id="short-dive-max-minutes"/);
   assert.match(app, /type="number"/);
@@ -47,29 +46,24 @@ test("select mode exposes a positive whole-minute short-dive control defaulting 
   assert.match(app, /inputMode="numeric"/);
   assert.match(app, /htmlFor="short-dive-max-minutes"/);
   assert.match(app, /t\("maxDurationMinutes"\)/);
-  assert.match(app, /t\("selectShortDives"\)/);
-  assert.match(app, /t\("clearSelection"\)/);
-  assert.match(app, /aria-describedby="short-dive-select-hint"/);
-  assert.match(app, /t\("selectShortDivesHint"\)/);
+  assert.match(app, /className={`filter-panel-chip \$\{shortDiveOnly/);
+  assert.match(app, /t\("shortDives"\)/);
+  assert.match(app, /shortDiveMaxMinutes: shortDiveOnly/);
   assert.match(
     app,
-    /className="select-action-count"[\s\S]*aria-live="polite"/,
+    /className="filter-panel"[\s\S]*id="short-dive-max-minutes"/,
   );
 });
 
-test("Select short dives unions visible candidates and never deletes", () => {
-  const selectShort = namedFunction(app, "selectShortDives");
+test("Select shown replaces selection with exactly the visible filtered dives", () => {
+  const selectVisible = namedFunction(app, "selectVisibleDives");
   const clearSelection = namedFunction(app, "clearSelection");
 
-  assert.match(selectShort, /shortDiveCandidateIds\(visibleDives/);
-  assert.match(selectShort, /setSelectedDiveIds/);
-  assert.match(selectShort, /next\.add\(/);
+  assert.match(selectVisible, /new Set\(visibleDives\.map\(\(dive\) => dive\.id\)\)/);
   assert.doesNotMatch(
-    selectShort,
-    /setSelectedDiveIds\(\s*new Set\(\s*\)\s*\)/,
-    "do not replace the existing selection",
+    selectVisible,
+    /deleteLocalDives|deleteSelectedDives|deleteLocalDive\(/,
   );
-  assert.doesNotMatch(selectShort, /deleteLocalDives|deleteSelectedDives|deleteLocalDive\(/);
   assert.match(clearSelection, /setSelectedDiveIds\(\s*new Set\(\s*\)\s*\)/);
   assert.doesNotMatch(
     clearSelection,
@@ -77,33 +71,39 @@ test("Select short dives unions visible candidates and never deletes", () => {
   );
   assert.match(
     app,
-    /onClick=\{selectShortDives\}[\s\S]*t\("selectShortDives"\)/,
+    /onClick=\{selectVisibleDives\}[\s\S]*t\("selectShown"\)/,
   );
   assert.match(app, /onClick=\{clearSelection\}[\s\S]*t\("clearSelection"\)/);
 });
 
-test("short-dive controls wrap on the existing mobile breakpoint", () => {
+test("the main toolbar stays on one row and selection actions are grouped", () => {
+  assert.match(styles, /\.filter-row\s*\{[^}]*flex-wrap:\s*nowrap/);
+  assert.match(styles, /\.filter-row \.select-mode-toggle\s*\{[^}]*margin-left:\s*auto/);
+  assert.match(styles, /\.select-action-group\s*\{/);
   assert.match(
     styles,
-    /\.select-short-dives\s*\{[^}]*flex-wrap:\s*wrap/,
+    /\.select-action-buttons > \.button,\s*\.select-action-buttons > select\s*\{[^}]*height:\s*40px;[^}]*min-height:\s*40px/,
   );
-  assert.match(
-    styles,
-    /@media \(max-width: 560px\)\s*\{[\s\S]*?\.select-short-dives\s*\{[^}]*width:\s*100%/,
-  );
+  assert.match(app, /className="select-action-group"/);
+  assert.match(app, /className="select-action-group select-action-final"/);
 });
 
-test("all three locales ship short-dive selection strings", () => {
+test("all three locales ship the new filter and selection strings", () => {
   for (const [locale, source] of [
     ["en", en],
     ["ja", ja],
     ["zh-Hant", zhHant],
   ]) {
     for (const key of [
+      "noSiteNamed",
+      "gasData",
+      "shortDives",
       "maxDurationMinutes",
-      "selectShortDives",
+      "selectionTools",
+      "selectShown",
       "clearSelection",
-      "selectShortDivesHint",
+      "selectShownHint",
+      "selectedDiveActions",
     ]) {
       assert.match(source, new RegExp(`${key}:`), `${locale} is missing ${key}`);
     }
@@ -113,7 +113,8 @@ test("all three locales ship short-dive selection strings", () => {
     en,
     /maxDurationMinutes:\s*"Maximum duration \(minutes\)"/,
   );
-  assert.match(en, /selectShortDives:\s*"Select short dives"/);
+  assert.match(en, /gpsData:\s*"GPS"/);
+  assert.match(en, /selectShown:\s*"Select shown"/);
   assert.match(en, /clearSelection:\s*"Clear selection"/);
-  assert.match(en, /selectShortDivesHint:[\s\S]*Nothing is deleted/);
+  assert.match(en, /selectShownHint:[\s\S]*Nothing is deleted/);
 });
