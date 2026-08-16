@@ -1,6 +1,6 @@
 # DiveFrame F-Droid build and update guide
 
-Last verified: 2026-08-15 (Asia/Singapore)
+Last verified: 2026-08-16 (Asia/Singapore)
 
 Read this before changing the F-Droid metadata, creating a production
 release, or preparing a new F-Droid merge-request update. The canonical
@@ -18,16 +18,18 @@ F-Droid-specific build contract and the failure that occurred during MR
 - The current submission MR is
   [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472).
 - The MR is pinned to production commit
-  `169cb26a12e398e9872b1d58cd0b974077059cd3`, version `1.0.23`, version code
-  `24`, and immutable source tag `v1.0.23`.
-- Current web `main` contains documentation-only follow-ups. The stable APK
-  and recipe intentionally remain pinned to
-  `169cb26a12e398e9872b1d58cd0b974077059cd3`.
+  `fbfbc228ee050120e3840db47c45de2e01136485`, version `1.0.24`, version code
+  `25`, and immutable source tag `v1.0.24`.
+- Current web `main` may contain documentation-only follow-ups. The stable APK
+  and recipe remain pinned to
+  `fbfbc228ee050120e3840db47c45de2e01136485`.
 - Stable-only auto-update is enabled with `AutoUpdateMode: Version` and
   `UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$`. `UpdateCheckData` reads
-  the production fallback versionCode/versionName from
-  `android/app/build.gradle` because those lines also support explicit
-  Preview properties.
+  the plain production `versionCode` / `versionName` lines from
+  `android/app/build.gradle`. Preview versions are applied only on the
+  preview variant and must not be captured by that regex. Because the
+  first-inclusion MR is still open, a new stable tag still needs a recipe
+  update; after merge, matching tags can be picked up automatically.
 
 The staging recipe is:
 
@@ -45,9 +47,9 @@ These fields are coupled to the current Android project layout:
 
 ```yaml
 Builds:
-  - versionName: 1.0.23
-    versionCode: 24
-    commit: 169cb26a12e398e9872b1d58cd0b974077059cd3
+  - versionName: 1.0.24
+    versionCode: 25
+    commit: fbfbc228ee050120e3840db47c45de2e01136485
     subdir: android/app
     gradle:
       - yes
@@ -204,33 +206,34 @@ Gradle task:            assembleRelease
 ```
 
 The reference workflow is
-`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.23` values
+`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.24` values
 are hard-coded together for the stable release and were run from the exact
-`v1.0.23` source tag. Never use the mutable `preview` release as the
+`v1.0.24` source tag. Never use the mutable `preview` release as the
 reference asset.
 
 ## Verified stable release update
 
-- Stable source/tag: `169cb26a12e398e9872b1d58cd0b974077059cd3` / `v1.0.23`
-- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.23
-- Reference workflow: https://github.com/fishese/diveframe/actions/runs/31884601030
-- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.23
-- Reference asset: `diveframe-1.0.23.apk`, `15723961` bytes,
-  SHA-256 `9EC1357437488E0FEFF87F85739920E95E3744854091D8DE1F1379ECF27B9C6F`
-- APK identity: `cc.fishese.divelog`, `DiveFrame`, version `1.0.23` / code
-  `24`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
+- Stable source/tag: `fbfbc228ee050120e3840db47c45de2e01136485` / `v1.0.24`
+- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.24
+- Reference workflow: https://github.com/fishese/diveframe/actions/runs/31924987762
+- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.24
+- Reference asset: `diveframe-1.0.24.apk`, `15736249` bytes,
+  SHA-256 `B5FFB01880EB051B7704F2F852A7100D80BE190F516F80713E4BE69CC267638B`
+- APK identity: `cc.fishese.divelog`, `DiveFrame`, version `1.0.24` / code
+  `25`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
-- Recipe/MR commit: `c9b200bf5ee3d96a528f2dd43de5662f7a25b225`
+- Recipe/MR commit: `b6a3b6f8b16cffcc1142dc895e4a0dbdac22cab4`
 - MR/pipeline: [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472),
-  [pipeline 2762596244](https://gitlab.com/fishese/fdroiddata/-/pipelines/2762596244)
+  [pipeline 2763392940](https://gitlab.com/fishese/fdroiddata/-/pipelines/2763392940)
 
-Pipeline 2762596244 passed all nine jobs and validates stable-tag-only
-auto-update plus the reviewer-requested Git submodule dependency path. The
-recipe uses `submodules: true`; the source gitlink and `libdivecomputer.pin`
-both resolve to `8e564eb5cf9fb4318af3d540895abb916e1809b0`. It still uses
+Pipeline 2763392940 passed all nine jobs and validates stable-tag-only
+auto-update against the plain production Gradle version lines, plus the
+reviewer-requested Git submodule dependency path. The recipe uses
+`submodules: true`; the source gitlink and `libdivecomputer.pin` both
+resolve to `8e564eb5cf9fb4318af3d540895abb916e1809b0`. It still uses
 `subdir: android/app`, has no `output`, and retains all pinned native inputs.
 
-For the 1.0.23 update, checklist steps through reference publication, recipe
+For the 1.0.24 update, checklist steps through reference publication, recipe
 validation, and MR pipeline verification are complete. Maintainer review is
 the only pending step; do not merge the MR from the release-preparation
 workflow.
@@ -267,7 +270,7 @@ Use this sequence for a future accumulated production/F-Droid update:
     ```yaml
     AutoUpdateMode: Version
     UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
-    UpdateCheckData: android/app/build.gradle|versionCode.*:\s*(\d+)|.|versionName.*"([^"]+)"
+    UpdateCheckData: android/app/build.gradle|versionCode\s+(\d+)|.|versionName\s+"([^"]+)"
     ```
 
     The production `vMAJOR.MINOR.PATCH` tag is the update gate. Ordinary

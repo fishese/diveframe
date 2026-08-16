@@ -35,7 +35,7 @@ so PWA, production, and Preview data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-15)
+## Current status (2026-08-16)
 
 - Preview channel implementation is complete. The explicit Gradle
   `preview` build type uses `cc.fishese.divelog.preview`; default
@@ -43,37 +43,36 @@ store distribution are not started yet.
 - The signed workflow is `.github/workflows/preview-apk.yml`. It checks out
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
-- The latest shared runtime commit on `main` is
-  `5963a5ab1edc23b1163804361afb8d5c028788c2`. The current Preview release
-  targets stable source commit `169cb26a12e398e9872b1d58cd0b974077059cd3`
-  (workflow run `31884361612`). The published Preview is version
-  `preview.12.169cb26` (version code `100012`), and
-  `diveframe-preview.apk` has SHA-256
-  `26a89a1be37c3b4fb94cbf6858aa3ce71c0cd9bbe45b24cbd47bba37a67f5649`.
-  This is the intended no-drift state for the web/PWA and
-  Preview APK, subject to normal hosted-deployment propagation.
-  After the shared runtime commit, the stable source adds documentation,
-  release metadata, and the pinned libdivecomputer submodule/build contract;
-  the native dependency remains at the same commit, so there is no unrecorded
-  client-behavior difference.
-- Current `main` contains documentation-only stable-release records after the
-  APK source commit; those follow-ups are not APK sources.
-- Stable production/F-Droid release `1.0.23` uses source commit
-  `169cb26a12e398e9872b1d58cd0b974077059cd3`, version code `24`, and the
+- The current shared runtime and stable source commit is
+  `fbfbc228ee050120e3840db47c45de2e01136485`. It includes reversible
+  dive-segment review, streamlined logbook filters/Select shown, and a
+  single Clear control that also resets the short-dive threshold.
+- The current Preview release targets that same commit (workflow run
+  `31924989954`). The published Preview is version `preview.16.fbfbc22`
+  (version code `100016`), and `diveframe-preview.apk` has SHA-256
+  `C25C4403D7D150D8D303A9DBE90AD8BAAD6A1C44323F82A07ED052EAC9D58F58`.
+  This is the intended no-drift state for the web/PWA and Preview APK,
+  subject to normal hosted-deployment propagation.
+- Current `main` may contain documentation-only stable-release records after
+  the APK source commit; those follow-ups are not APK sources.
+- Stable production/F-Droid release `1.0.24` uses source commit
+  `fbfbc228ee050120e3840db47c45de2e01136485`, version code `25`, and the
   production package `cc.fishese.divelog`. Immutable source tag/release:
-  `v1.0.23`.
+  `v1.0.24`.
 - The matching signed F-Droid reference is
-  `fdroid-v1.0.23` / `diveframe-1.0.23.apk`, size `15723961` bytes, SHA-256
-  `9EC1357437488E0FEFF87F85739920E95E3744854091D8DE1F1379ECF27B9C6F`,
+  `fdroid-v1.0.24` / `diveframe-1.0.24.apk`, size `15736249` bytes, SHA-256
+  `B5FFB01880EB051B7704F2F852A7100D80BE190F516F80713E4BE69CC267638B`,
   signed by the existing `CN=Fishese` certificate and arm64-only.
-  Reference workflow: `31884601030`. F-Droid recipe commit:
-  `c9b200bf5ee3d96a528f2dd43de5662f7a25b225`.
+  Reference workflow: `31924987762`. F-Droid recipe commit:
+  `b6a3b6f8b16cffcc1142dc895e4a0dbdac22cab4`.
 - MR !45472 remains open and unmerged. Its update pipeline
-  `2762596244` passed all nine jobs and validates stable-tag-only auto-update
-  plus the reviewer-requested Git submodule dependency path.
-  The recipe remains production-only: `AutoUpdateMode: Version` follows only
-  exact immutable `vMAJOR.MINOR.PATCH` tags, and Preview changes are not
-  submitted.
+  `2763392940` passed all nine jobs, including `checkupdates` after
+  `UpdateCheckData` was adjusted for the plain production Gradle version
+  lines. The recipe remains production-only: `AutoUpdateMode: Version`
+  follows only exact immutable `vMAJOR.MINOR.PATCH` tags, and Preview
+  changes are not submitted. Because the first-inclusion MR is still open,
+  a new stable tag required a recipe/MR update; auto-update will generate
+  later build entries only after merge.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.

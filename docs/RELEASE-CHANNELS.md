@@ -1,6 +1,6 @@
 # DiveFrame release channels and web/APK parity
 
-Last verified: 2026-08-15 (Asia/Singapore)
+Last verified: 2026-08-16 (Asia/Singapore)
 
 This is the canonical release note for future sessions. Read it before
 changing a version, release tag, APK workflow, or F-Droid metadata. The
@@ -117,58 +117,57 @@ The staging recipe is
 - Automatic updates must remain restricted to exact immutable production tags:
 
   ```yaml
-  AutoUpdateMode: Version
-  UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
-  UpdateCheckData: android/app/build.gradle|versionCode.*:\s*(\d+)|.|versionName.*"([^"]+)"
+    AutoUpdateMode: Version
+    UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
+    UpdateCheckData: android/app/build.gradle|versionCode\s+(\d+)|.|versionName\s+"([^"]+)"
   ```
 
   Untagged `main` commits, `preview`, `nightly`, debug tags, and
   `fdroid-v...` reference tags do not match and cannot trigger an update.
 
 The current stable/F-Droid MR update is pinned to production commit
-`169cb26a12e398e9872b1d58cd0b974077059cd3`, version `1.0.23`, version code
-`24`, and the immutable `v1.0.23` source tag. Preview changes do not select
+`fbfbc228ee050120e3840db47c45de2e01136485`, version `1.0.24`, version code
+`25`, and the immutable `v1.0.24` source tag. Preview changes do not select
 the F-Droid source; only an intentional stable release updates the recipe.
-Current `main` contains documentation-only release records after the stable
-source; those commits are not the source of the published APK.
+Because MR !45472 is still the first inclusion and is unmerged, a new stable
+tag required a recipe/MR update. After merge, F-Droid auto-update can add
+later matching tags without a manual recipe edit.
+Current `main` may contain documentation-only release records after the
+stable source; those commits are not the source of the published APK.
 
 The current verified Preview release targets stable source commit
-`169cb26a12e398e9872b1d58cd0b974077059cd3` (workflow run `31884361612`). It
-is `preview.12.169cb26`, version code `100012`, and its APK SHA-256 is
-`26a89a1be37c3b4fb94cbf6858aa3ce71c0cd9bbe45b24cbd47bba37a67f5649`.
+`fbfbc228ee050120e3840db47c45de2e01136485` (workflow run `31924989954`). It
+is `preview.16.fbfbc22`, version code `100016`, and its APK SHA-256 is
+`C25C4403D7D150D8D303A9DBE90AD8BAAD6A1C44323F82A07ED052EAC9D58F58`.
 
 ## Current stable production/F-Droid release
 
 The stable production source is commit
-`169cb26a12e398e9872b1d58cd0b974077059cd3`, tagged immutably as `v1.0.23`.
+`fbfbc228ee050120e3840db47c45de2e01136485`, tagged immutably as `v1.0.24`.
 It uses the default `assembleRelease` path, package
-`cc.fishese.divelog`, version name `1.0.23`, and version code `24`.
+`cc.fishese.divelog`, version name `1.0.24`, and version code `25`.
 
 The matching developer-signed F-Droid reference is published at
-`fdroid-v1.0.23` as `diveframe-1.0.23.apk`:
+`fdroid-v1.0.24` as `diveframe-1.0.24.apk`:
 
-- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.23
-- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.23
-- Reference workflow: https://github.com/fishese/diveframe/actions/runs/31884601030
-- Size: `15723961` bytes; SHA-256:
-  `9EC1357437488E0FEFF87F85739920E95E3744854091D8DE1F1379ECF27B9C6F`
+- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.24
+- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.24
+- Reference workflow: https://github.com/fishese/diveframe/actions/runs/31924987762
+- Size: `15736249` bytes; SHA-256:
+  `B5FFB01880EB051B7704F2F852A7100D80BE190F516F80713E4BE69CC267638B`
 - ABI: `arm64-v8a`; signer: `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
 
 The F-Droid recipe update commit is
-`c9b200bf5ee3d96a528f2dd43de5662f7a25b225`. MR !45472 remains open and
-unmerged; pipeline `2762596244` passed all nine jobs and validates the
-stable-tag-only auto-update configuration and Git submodule dependency path.
-The F-Droid source, reference release, and recipe all resolve to the same
-stable source commit.
+`b6a3b6f8b16cffcc1142dc895e4a0dbdac22cab4`. MR !45472 remains open and
+unmerged; pipeline `2763392940` passed all nine jobs and validates the
+stable-tag-only auto-update configuration against the plain production
+Gradle version lines. The F-Droid source, reference release, and recipe all
+resolve to the same stable source commit.
 
 The current Preview and stable release use the same exact source commit, while
-their packages remain deliberately separate. The latest shared application
-runtime change is still `5963a5ab1edc23b1163804361afb8d5c028788c2`.
-Subsequent source changes are documentation/release records and the pinned
-libdivecomputer submodule/build contract; the dependency commit remains
-`8e564eb5cf9fb4318af3d540895abb916e1809b0`, so there is no unrecorded
-client-behavior difference.
+their packages remain deliberately separate. The libdivecomputer dependency
+commit remains `8e564eb5cf9fb4318af3d540895abb916e1809b0`.
 
 ## Requesting a production release
 
