@@ -35,7 +35,7 @@ so PWA, production, and Preview data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-16)
+## Current status (2026-08-17)
 
 - Preview channel implementation is complete. The explicit Gradle
   `preview` build type uses `cc.fishese.divelog.preview`; default
@@ -44,36 +44,35 @@ store distribution are not started yet.
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
 - The current shared runtime commit is
-  `05bf87cbde04315d638ac3b294038ed9b6794e9a`. It includes Shearwater BLE
-  dive-number recovery from the computer log, reversible dive-segment
-  review, streamlined logbook filters/Select shown, and a single Clear
-  control that also resets the short-dive threshold.
-- The current Preview release targets that same commit (workflow run
-  `31942332748`). The published Preview is version `preview.17.05bf87c`
-  (version code `100017`), and `diveframe-preview.apk` has SHA-256
+  `4dcdaa659af3fe6a873b13ed28a898afe2a774ca`. It includes hierarchical
+  system Back, Shearwater BLE dive-number recovery from the computer log,
+  reversible dive-segment review, streamlined logbook filters/Select shown,
+  and a single Clear control that also resets the short-dive threshold.
+- The current Preview release still targets
+  `05bf87cbde04315d638ac3b294038ed9b6794e9a` (workflow run `31942332748`).
+  The published Preview is version `preview.17.05bf87c` (version code
+  `100017`), and `diveframe-preview.apk` has SHA-256
   `718104032F56A2B9A64F997D7A56E9A53AD08D018D0ED532F875FC3C567DCD4E`.
-  This is the intended no-drift state for the web/PWA and Preview APK,
-  subject to normal hosted-deployment propagation.
+  That lag is intentional: Preview was not rebuilt for 1.0.25.
 - Current `main` may contain documentation-only records after APK source
-  `05bf87c`; those follow-ups are not APK sources.
-- Stable production/F-Droid release `1.0.24` uses source commit
-  `fbfbc228ee050120e3840db47c45de2e01136485`, version code `25`, and the
+  `4dcdaa6`; those follow-ups are not APK sources.
+- Stable production/F-Droid release `1.0.25` uses source commit
+  `4dcdaa659af3fe6a873b13ed28a898afe2a774ca`, version code `26`, and the
   production package `cc.fishese.divelog`. Immutable source tag/release:
-  `v1.0.24`.
+  `v1.0.25`.
 - The matching signed F-Droid reference is
-  `fdroid-v1.0.24` / `diveframe-1.0.24.apk`, size `15736249` bytes, SHA-256
-  `B5FFB01880EB051B7704F2F852A7100D80BE190F516F80713E4BE69CC267638B`,
+  `fdroid-v1.0.25` / `diveframe-1.0.25.apk`, size `15760919` bytes, SHA-256
+  `2B67BFFDD992BCF29C0164C9F78B39A6C483FEED417B90B6AEC55B91648F9C7E`,
   signed by the existing `CN=Fishese` certificate and arm64-only.
-  Reference workflow: `31924987762`. F-Droid recipe commit:
-  `b6a3b6f8b16cffcc1142dc895e4a0dbdac22cab4`.
+  Reference workflow: `32037346882`. F-Droid recipe commit:
+  `267a512cb00f21f5bfb1ddc97f9a54c38afe36a5`.
 - MR !45472 remains open and unmerged. Its update pipeline
-  `2763392940` passed all nine jobs, including `checkupdates` after
-  `UpdateCheckData` was adjusted for the plain production Gradle version
-  lines. The recipe remains production-only: `AutoUpdateMode: Version`
-  follows only exact immutable `vMAJOR.MINOR.PATCH` tags, and Preview
-  changes are not submitted. Because the first-inclusion MR is still open,
-  a new stable tag required a recipe/MR update; auto-update will generate
-  later build entries only after merge.
+  `2766264516` passed all nine jobs. The recipe remains
+  production-only: `AutoUpdateMode: Version` follows only exact immutable
+  `vMAJOR.MINOR.PATCH` tags, and Preview changes are not submitted. Because
+  the first-inclusion MR is still open, a new stable tag required a
+  recipe/MR update; auto-update will generate later build entries only
+  after merge.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.
