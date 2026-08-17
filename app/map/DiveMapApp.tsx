@@ -58,6 +58,7 @@ import {
 import { subscribeLocalDataChanges } from "@/lib/cross-tab-sync";
 import { projectLogbookDives } from "@/lib/dive-segment-merge";
 import { useAppI18n } from "../AppI18nProvider";
+import { useAppBackParent } from "../AppBackProvider";
 import { AppTopbar } from "../components/AppTopbar";
 import { useColorTheme } from "../ThemeProvider";
 
@@ -93,6 +94,7 @@ const BUTTON_ZOOM_LEVELS = [
 
 export function DiveMapApp() {
   const { language, t } = useAppI18n();
+  useAppBackParent("/");
   const { colorTheme } = useColorTheme();
   const [dives, setDives] = useState<LocalDive[]>([]);
   const [mergeGroups, setMergeGroups] = useState<LocalDiveMergeGroup[]>([]);

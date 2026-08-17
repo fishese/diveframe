@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppI18n } from "../AppI18nProvider";
+import { useAppBackHandler, useAppBackParent } from "../AppBackProvider";
 import { AppTopbar } from "../components/AppTopbar";
 import { MemoDiveMatchHints } from "../components/MemoDiveMatchHints";
 import {
@@ -70,6 +71,7 @@ function roundCoord(value: number) {
 
 export function MemosApp() {
   const { t } = useAppI18n();
+  useAppBackParent("/");
   const [memos, setMemos] = useState<DiveMemo[]>([]);
   const [dives, setDives] = useState<LocalDive[]>([]);
   const [supplementaryCatalog, setSupplementaryCatalog] = useState<{
@@ -88,6 +90,10 @@ export function MemosApp() {
   const photoPendingSaveRef = useRef<Promise<DiveMemo | null> | null>(null);
   const memoRefreshGenerationRef = useRef(0);
   const diveContextGenerationRef = useRef(0);
+  useAppBackHandler(() => {
+    setPhotoHelpOpen(false);
+    return true;
+  }, photoHelpOpen);
 
   const refresh = useCallback(async () => {
     const generation = ++memoRefreshGenerationRef.current;

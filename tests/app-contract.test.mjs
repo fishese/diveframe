@@ -776,6 +776,12 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(catalogBrowser, /const exportCatalog/);
   assert.match(catalogBrowser, /groupDiveSiteCatalog/);
   assert.match(catalogBrowser, /type="search"/);
+  assert.match(catalogBrowser, /source === "built-in" \? "\/" : "\/catalog"/);
+  assert.match(app, /searchParams\.set\("dive"/);
+  assert.match(app, /history\.pushState/);
+  assert.match(app, /useAppBackHandler/);
+  assert.match(composer, /useAppBackParent/);
+  assert.match(settings, /useAppBackParent/);
   assert.match(memoMatchHints, /matchesOpen/);
   assert.match(memoMatchHints, /aria-expanded=\{matchesOpen\}/);
   assert.match(memoMatchHints, /memo-match-content/);
@@ -784,6 +790,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(rootLayout, /--safe-area-inset-/);
   assert.match(rootLayout, /DIVEFRAME_NATIVE_STATIC/);
   assert.match(rootLayout, /AppRouteProvider/);
+  assert.match(rootLayout, /APP_BACK_BOOTSTRAP|__diveFrameHandleBack/);
+  assert.match(rootLayout, /AppBackProvider/);
   assert.match(settings, /catalogSharingInvitation/);
   assert.match(settings, /saveLocalSupplementaryCatalog|getLocalSupplementaryCatalog/);
   assert.doesNotMatch(settings, /saveSessionDiveSiteCatalog/);

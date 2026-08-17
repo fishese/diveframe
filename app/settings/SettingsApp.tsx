@@ -100,6 +100,7 @@ import {
   sanitizeWhatsNewHref,
   type WhatsNewDocument,
 } from "@/lib/whats-new";
+import { useAppBackParent } from "../AppBackProvider";
 import { useAppI18n } from "../AppI18nProvider";
 import { useColorTheme } from "../ThemeProvider";
 import { PwaInstallCard } from "../PwaInstall";
@@ -109,6 +110,7 @@ const BUILT_IN_CATALOG = bundledCatalog as DiveSiteCatalog;
 export function SettingsApp() {
   const appRouteHref = useAppRouteHref();
   const { language, setLanguage, t } = useAppI18n();
+  useAppBackParent("/");
   const { colorTheme, setColorTheme } = useColorTheme();
   const [contributions, setContributions] = useState<LocalSiteContribution[]>([]);
   const [supplementaryCatalog, setSupplementaryCatalog] =

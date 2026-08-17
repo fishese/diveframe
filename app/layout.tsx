@@ -5,7 +5,9 @@ import { AppI18nProvider } from "./AppI18nProvider";
 import { BetaNotice } from "./BetaNotice";
 import { PwaManager } from "./PwaInstall";
 import { ThemeProvider } from "./ThemeProvider";
+import { AppBackProvider } from "./AppBackProvider";
 import { AppRouteProvider } from "./AppRouteProvider";
+import { APP_BACK_BOOTSTRAP } from "@/lib/app-back";
 
 const THEME_BOOTSTRAP = `(function(){try{var r=document.documentElement,t=localStorage.getItem("diveframe-color-theme");if(t!=="light"&&t!=="dark")t="dark";r.setAttribute("data-theme",t);r.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="light"?"#eef6f4":"#071820");["top","right","bottom","left"].forEach(function(k){var v=localStorage.getItem("diveframe-native-safe-area-"+k);if(v)r.style.setProperty("--safe-area-inset-"+k,v);});}catch(e){}})();`;
 
@@ -78,6 +80,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#071820" />
         <meta name="mobile-web-app-capable" content="yes" />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+        <script dangerouslySetInnerHTML={{ __html: APP_BACK_BOOTSTRAP }} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -85,10 +88,12 @@ export default function RootLayout({
         <AppRouteProvider routeSuffix={routeSuffix}>
           <AppI18nProvider>
             <ThemeProvider>
-              <PwaManager />
-              <div className="app-safe-top" aria-hidden="true" />
-              <BetaNotice />
-              {children}
+              <AppBackProvider>
+                <PwaManager />
+                <div className="app-safe-top" aria-hidden="true" />
+                <BetaNotice />
+                {children}
+              </AppBackProvider>
             </ThemeProvider>
           </AppI18nProvider>
         </AppRouteProvider>

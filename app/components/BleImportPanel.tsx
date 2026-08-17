@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useAppBackHandler } from "@/app/AppBackProvider";
 import type { AppTranslate } from "@/lib/app-i18n";
 import {
   BLE_LAST_N_DEFAULT,
@@ -397,6 +398,11 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
     }
     onClose();
   }
+
+  useAppBackHandler(() => {
+    void requestClose();
+    return true;
+  }, true);
 
   function confirmStopDownload() {
     return window.confirm(t("bleImportCancelConfirm"));

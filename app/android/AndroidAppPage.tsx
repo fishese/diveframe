@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Smartphone,
 } from "lucide-react";
+import { useAppBackParent } from "../AppBackProvider";
 import { useAppI18n } from "../AppI18nProvider";
 import { AppTopbar } from "../components/AppTopbar";
 
@@ -18,6 +19,7 @@ const SOURCE_URL = "https://github.com/fishese/diveframe";
 
 export function AndroidAppPage() {
   const { t } = useAppI18n();
+  useAppBackParent("/");
 
   return (
     <main className="android-page">

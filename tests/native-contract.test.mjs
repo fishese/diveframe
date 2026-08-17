@@ -77,6 +77,7 @@ test("native shell remains isolated from the deployed web build", async () => {
 
   assert.match(capacitor, /appId:\s*"cc\.fishese\.divelog"/);
   assert.match(capacitor, /webDir:\s*"dist-native"/);
+  assert.doesNotMatch(JSON.stringify(packageJson), /@capacitor\/app/);
   assert.match(packageJson.scripts["native:sync"], /native:web/);
   assert.equal(
     major(packageJson.dependencies["@capacitor/core"]),
@@ -524,6 +525,10 @@ test("Android launcher exposes a localized Memos shortcut to /memo", async () =>
   assert.match(mainActivity, /refreshSafeAreaInsets/);
   assert.match(mainActivity, /getInsetsIgnoringVisibility/);
   assert.match(mainActivity, /diveframe-native-safe-area-top/);
+  assert.match(mainActivity, /OnBackPressedCallback/);
+  assert.match(mainActivity, /__diveFrameHandleBack/);
+  assert.match(mainActivity, /parentAppHref/);
+  assert.match(mainActivity, /handleAppBack/);
 });
 
 function major(versionRange) {

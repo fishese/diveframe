@@ -4,6 +4,7 @@ import { ChevronDown, Download, LoaderCircle, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import bundledDiveSiteCatalog from "@/data/dive-sites.json";
 import { AppTopbar } from "../components/AppTopbar";
+import { useAppBackParent } from "../AppBackProvider";
 import { useAppI18n } from "../AppI18nProvider";
 import {
   catalogSitePlace,
@@ -31,6 +32,7 @@ export type CatalogViewSource = "built-in" | "device" | "supplement";
 
 export function CatalogApp({ source = "built-in" }: { source?: CatalogViewSource }) {
   const { t } = useAppI18n();
+  useAppBackParent(source === "built-in" ? "/" : "/catalog");
   const [catalog, setCatalog] = useState<DiveSiteCatalog>(
     source === "built-in" ? BUNDLED_CATALOG : EMPTY_CATALOG,
   );
@@ -137,7 +139,10 @@ export function CatalogApp({ source = "built-in" }: { source?: CatalogViewSource
     <main className="app-shell catalog-page">
       <AppTopbar
         subtitle={copy.subtitle}
-        brand={{ mode: "link", href: "/" }}
+        brand={{
+          mode: "link",
+          href: source === "built-in" ? "/" : "/catalog",
+        }}
         showHome
       />
       <div className="catalog-shell">

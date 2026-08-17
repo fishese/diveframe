@@ -54,6 +54,7 @@ import {
   normalizeComposerSettings,
 } from "@/lib/templates";
 import { useAppI18n } from "../AppI18nProvider";
+import { useAppBackParent } from "../AppBackProvider";
 
 type PhotoChoice = {
   id: string;
@@ -123,6 +124,7 @@ export function ComposerApp() {
   const [status, setStatus] = useState(t("loadingComposer"));
   const [exporting, setExporting] = useState(false);
   const [cropMode, setCropMode] = useState(false);
+  useAppBackParent(dive ? `/?dive=${encodeURIComponent(dive.id)}` : "/");
 
   const setComposerSettings = useCallback(
     (action: SetStateAction<ComposerSettings | null>) => {

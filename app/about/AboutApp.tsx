@@ -11,6 +11,7 @@ import {
   Waves,
 } from "lucide-react";
 import { useState } from "react";
+import { useAppBackParent } from "../AppBackProvider";
 import { useAppI18n } from "../AppI18nProvider";
 import { AppTopbar } from "../components/AppTopbar";
 
@@ -21,6 +22,7 @@ function contactEmail() {
 
 export function AboutApp() {
   const { t } = useAppI18n();
+  useAppBackParent("/");
 
   return (
     <main className="about-page">

@@ -29,6 +29,7 @@ import {
   X,
 } from "lucide-react";
 import { AppTopbar } from "./components/AppTopbar";
+import { useAppBackHandler } from "./AppBackProvider";
 import {
   type ChangeEvent,
   type ReactNode,
@@ -495,6 +496,23 @@ export function DiveFrameApp() {
       });
     });
   }
+
+  useAppBackHandler(() => {
+    if (!busy) setDeleteSelectedConfirmOpen(false);
+    return true;
+  }, deleteSelectedConfirmOpen);
+  useAppBackHandler(() => {
+    if (!busy) setMergeConfirmOpen(false);
+    return true;
+  }, mergeConfirmOpen);
+  useAppBackHandler(() => {
+    setImportGuideOpen(false);
+    return true;
+  }, importGuideOpen);
+  useAppBackHandler(() => {
+    returnToDiveListAtCurrentDive();
+    return true;
+  }, mobileDetail);
 
   const presentationDives = useMemo(
     () => projectLogbookDives(dives, mergeGroups) as Dive[],
@@ -1040,6 +1058,17 @@ export function DiveFrameApp() {
     // Mobile detail replaces the list in the same window scroller; land on the
     // dive hero (not the overview "Your logs, enhanced." block above it).
     scrolledDiveDetailRef.current = id;
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("dive") !== id) {
+        url.searchParams.set("dive", id);
+        window.history.pushState(
+          { __diveframeBack: 1 },
+          "",
+          `${url.pathname}${url.search}${url.hash}`,
+        );
+      }
+    }
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         document.getElementById("dive-detail")?.scrollIntoView({
@@ -2623,6 +2652,14 @@ function DiveDetail({
   const [photoGpsStatus, setPhotoGpsStatus] = useState<string | null>(null);
   const [photoGpsBusy, setPhotoGpsBusy] = useState(false);
   const [photoLocationHelpOpen, setPhotoLocationHelpOpen] = useState(false);
+  useAppBackHandler(() => {
+    if (!busy) setDeleteDiveConfirmOpen(false);
+    return true;
+  }, deleteDiveConfirmOpen);
+  useAppBackHandler(() => {
+    setPhotoLocationHelpOpen(false);
+    return true;
+  }, photoLocationHelpOpen);
   const [addLocationPhotoToDive, setAddLocationPhotoToDive] = useState(false);
   const photoLocationInputRef = useRef<HTMLInputElement>(null);
 

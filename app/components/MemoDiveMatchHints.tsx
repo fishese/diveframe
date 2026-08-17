@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { useAppBackHandler } from "@/app/AppBackProvider";
 import { useAppI18n } from "@/app/AppI18nProvider";
 import type { AppLanguage } from "@/lib/app-i18n";
 import { formatCoordinatePair } from "@/lib/coordinate-input";
@@ -139,6 +140,13 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
   const [postApply, setPostApply] = useState<PostApplyState | null>(null);
   const [memoDeleted, setMemoDeleted] = useState(false);
   const [matchesOpen, setMatchesOpen] = useState(props.mode === "on-dive");
+  useAppBackHandler(() => {
+    if (postApply) {
+      props.onDiveChange(postApply.dive);
+      setPostApply(null);
+    }
+    return true;
+  }, Boolean(postApply));
 
   if (memoDeleted) return null;
 

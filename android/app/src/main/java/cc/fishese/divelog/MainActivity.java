@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -16,6 +17,11 @@ import java.util.Locale;
 public class MainActivity extends BridgeActivity {
     private static final int DEFAULT_TEXT_ZOOM_PERCENT = 100;
     private static final String LOCAL_ORIGIN = "https://localhost";
+    private static final String HANDLE_BACK_JS =
+        "(function(){try{"
+            + "if(typeof window.__diveFrameHandleBack!=='function')return 'pending';"
+            + "return window.__diveFrameHandleBack()?'true':'false';"
+            + "}catch(e){return 'pending';}})()";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -45,6 +51,12 @@ public class MainActivity extends BridgeActivity {
             webView.postDelayed(() -> ViewCompat.requestApplyInsets(webView), 1000);
             handleLaunchPath(getIntent());
         }
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                handleAppBack();
+            }
+        });
     }
 
     @Override
@@ -86,16 +98,112 @@ public class MainActivity extends BridgeActivity {
         setIntent(intent);
     }
 
+    private void handleAppBack() {
+        if (getBridge() == null || getBridge().getWebView() == null) {
+            finish();
+            return;
+        }
+        WebView webView = getBridge().getWebView();
+        webView.evaluateJavascript(HANDLE_BACK_JS, value -> {
+            if (jsReturnedTrue(value)) {
+                return;
+            }
+            if (navigateUpFromUrl(webView.getUrl())) {
+                return;
+            }
+            finish();
+        });
+    }
+
+    private boolean navigateUpFromUrl(String current) {
+        if (current == null || getBridge() == null || getBridge().getWebView() == null) {
+            return false;
+        }
+        Uri uri = Uri.parse(current);
+        String parent = parentAppHref(uri.getPath(), uri.getEncodedQuery());
+        if (parent == null) {
+            return false;
+        }
+        getBridge().getWebView().loadUrl(LOCAL_ORIGIN + toNativeAssetHref(parent));
+        return true;
+    }
+
+    static String parentAppHref(String path, String encodedQuery) {
+        String normalized = normalizeAppPath(path);
+        String dive = queryParam(encodedQuery, "dive");
+        if ("/compose".equals(normalized)) {
+            return dive != null && !dive.isEmpty() ? "/?dive=" + dive : "/";
+        }
+        if ("/catalog/supplement".equals(normalized)
+            || "/catalog/device-additions".equals(normalized)) {
+            return "/catalog";
+        }
+        if ("/".equals(normalized)) {
+            return dive != null && !dive.isEmpty() ? "/" : null;
+        }
+        return "/";
+    }
+
+    private static String normalizeAppPath(String path) {
+        if (path == null || path.isEmpty() || "/index.html".equals(path) || "/index".equals(path)) {
+            return "/";
+        }
+        String normalized = path.endsWith("/") && path.length() > 1
+            ? path.substring(0, path.length() - 1)
+            : path;
+        if (normalized.endsWith(".html")) {
+            normalized = normalized.substring(0, normalized.length() - 5);
+        }
+        return normalized.isEmpty() ? "/" : normalized;
+    }
+
+    private static String queryParam(String encodedQuery, String key) {
+        if (encodedQuery == null || encodedQuery.isEmpty()) {
+            return null;
+        }
+        for (String part : encodedQuery.split("&")) {
+            int split = part.indexOf('=');
+            String name = split == -1 ? part : part.substring(0, split);
+            if (key.equals(name)) {
+                return split == -1 ? "" : Uri.decode(part.substring(split + 1));
+            }
+        }
+        return null;
+    }
+
+    private static String toNativeAssetHref(String href) {
+        int queryAt = href.indexOf('?');
+        String path = queryAt == -1 ? href : href.substring(0, queryAt);
+        String query = queryAt == -1 ? "" : href.substring(queryAt);
+        return nativeStaticPath(path) + query;
+    }
+
+    private static boolean jsReturnedTrue(String value) {
+        return "true".equals(unwrapJsValue(value));
+    }
+
+    private static String unwrapJsValue(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (trimmed.length() >= 2 && trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
+            return trimmed.substring(1, trimmed.length() - 1);
+        }
+        return trimmed;
+    }
+
     private static String nativeStaticPath(String path) {
         String normalized = path.endsWith("/") && path.length() > 1
             ? path.substring(0, path.length() - 1)
             : path;
-        if ("/memo".equals(normalized) || "/memos".equals(normalized)) {
-            // The native export emits flat memo.html/memos.html files. Loading
-            // the extensionless web route makes Capacitor fall back to index.
-            return normalized + ".html";
+        if (normalized.isEmpty() || "/".equals(normalized) || "/index.html".equals(normalized)) {
+            return "/";
         }
-        return path;
+        if (normalized.endsWith(".html") || normalized.matches(".*/[^/]+\\.[^/]+$")) {
+            return normalized;
+        }
+        return normalized + ".html";
     }
 
     private final class DiveFrameJsBridge {
