@@ -76,19 +76,19 @@ jobs:
       - name: Prepare reference asset
         shell: bash
         run: |
-          cp "${{ steps.sign_apk.outputs.signedReleaseFile }}" diveframe-1.0.24.apk
-          sha256sum diveframe-1.0.24.apk
+          cp "${{ steps.sign_apk.outputs.signedReleaseFile }}" diveframe-1.0.25.apk
+          sha256sum diveframe-1.0.25.apk
 
       - name: Publish reference release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: fdroid-v1.0.24
-          name: DiveFrame v1.0.24 F-Droid reference
+          tag_name: fdroid-v1.0.25
+          name: DiveFrame v1.0.25 F-Droid reference
           target_commitish: ${{ github.sha }}
           make_latest: false
-          files: diveframe-1.0.24.apk
+          files: diveframe-1.0.25.apk
           body: |
-            Developer-signed reference APK for DiveFrame 1.0.24.
+            Developer-signed reference APK for DiveFrame 1.0.25.
 
             This APK is used by F-Droid to verify reproducible builds. The
             F-Droid-distributed APK is signed with F-Droid's separate key.
