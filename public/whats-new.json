@@ -1,7 +1,19 @@
 {
-  "version": "2026-08-16-ble-dive-number",
-  "updatedAt": "2026-08-16T10:40:00.000Z",
+  "version": "2026-08-17-back-button",
+  "updatedAt": "2026-08-17T13:51:00.000Z",
   "entries": [
+    {
+      "id": "2026-08-17-back-button",
+      "title": "Fixed the back button",
+      "body": "Fixed back button. Download the APK again if needed.",
+      "date": "2026-08-17",
+      "links": [
+        {
+          "label": "Download DiveFrame Preview APK",
+          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
+        }
+      ]
+    },
     {
       "id": "2026-08-16-ble-dive-number",
       "title": "BLE imports keep the computer dive number",
