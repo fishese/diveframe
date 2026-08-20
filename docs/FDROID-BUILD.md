@@ -1,6 +1,6 @@
 # DiveFrame F-Droid build and update guide
 
-Last verified: 2026-08-17 (Asia/Singapore)
+Last verified: 2026-08-21 (Asia/Singapore)
 
 Read this before changing the F-Droid metadata, creating a production
 release, or preparing a new F-Droid merge-request update. The canonical
@@ -17,13 +17,13 @@ F-Droid-specific build contract and the failure that occurred during MR
   must never be submitted as F-Droid source or reference APKs.
 - The current submission MR is
   [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472).
-- The MR recipe is pinned to `1.0.26` / code `27`, production source
-  `dc52cef859ede44b9b7d3a4741251cc96d9244e6`, immutable tag `v1.0.26`.
-  Recipe commit `447702352b4df383aebec50ff044addd7e5643bc` and pipeline
-  `2776547534` passed all nine jobs, including the APK comparison.
-- Current web `main` intentionally includes a web-only follow-up that hides
-  native update controls from the hosted web/PWA. It is not an Android or
-  F-Droid source; stable 1.0.26 remains pinned to `dc52cef`.
+- The MR recipe is pinned to `1.0.27` / code `28`, production source
+  `b3848c4ed1682a48f00e892536f5b938730f7e3f`, immutable tag `v1.0.27`.
+  Recipe commit `814b95ceef462f0343570dff007f5d2c4f5ecebc` and pipeline
+  `2776952636` passed all nine jobs, including the APK comparison.
+- Current web `main` intentionally includes a web/feed and documentation
+  follow-up after the release. It is not an Android or F-Droid source; stable
+  1.0.27 remains pinned to `b3848c4`.
 - Stable-only auto-update is enabled with `AutoUpdateMode: Version` and
   `UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$`. `UpdateCheckData` reads
   the plain production `versionCode` / `versionName` lines from
@@ -207,38 +207,39 @@ Gradle task:            assembleRelease
 ```
 
 The reference workflow is
-`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.26` values
+`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.27` values
 are hard-coded together for the stable release and were run from the exact
-`v1.0.26` source commit. Never use the mutable `preview` release as the
+`v1.0.27` source commit. Never use the mutable `preview` release as the
 reference asset.
 
 ## Verified stable release update
 
-- Stable source/tag: `dc52cef859ede44b9b7d3a4741251cc96d9244e6` / `v1.0.26`
-- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.26
-- Reference workflow: https://github.com/fishese/diveframe/actions/runs/32377898462
-- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.26
-- Reference asset: `diveframe-1.0.26.apk`, `15765025` bytes,
-  SHA-256 `33146E1483FFBF3BA61C34C154ACCA7CE6AB5754E6E8DBC53C18AD2AF6AE66F4`
-- APK identity: `cc.fishese.divelog`, `DiveFrame`, version `1.0.26` / code
-  `27`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
+- Stable source/tag: `b3848c4ed1682a48f00e892536f5b938730f7e3f` / `v1.0.27`
+- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.27
+- Reference workflow: https://github.com/fishese/diveframe/actions/runs/32395939701
+- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.27
+- Reference asset: `diveframe-1.0.27.apk`, `15765025` bytes,
+  SHA-256 `9F87EDC488E88C28DC1468AAAFC2A6FB5BCFBCA4C6362C2E2581BDDCEEEF283E`
+- APK identity: `cc.fishese.divelog`, `DiveFrame`, version `1.0.27` / code
+  `28`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
-- Current recipe/MR commit: `447702352b4df383aebec50ff044addd7e5643bc`
+- Current recipe/MR commit: `814b95ceef462f0343570dff007f5d2c4f5ecebc`
 - MR/pipeline: [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472),
-  [pipeline 2776547534](https://gitlab.com/fishese/fdroiddata/-/pipelines/2776547534)
+  [pipeline 2776952636](https://gitlab.com/fishese/fdroiddata/-/pipelines/2776952636)
 
-Pipeline 2776547534 passed all nine jobs and validates the 1.0.26 recipe,
+Pipeline 2776952636 passed all nine jobs and validates the 1.0.27 recipe,
 reference APK, stable-tag-only auto-update against the plain production Gradle
 version lines, and reviewer-requested Git submodule dependency path. The recipe uses
 `submodules: true`; the source gitlink and `libdivecomputer.pin` both
 resolve to `8e564eb5cf9fb4318af3d540895abb916e1809b0`. It still uses
 `subdir: android/app`, has no `output`, and retains all pinned native inputs.
 
-For 1.0.26, source publication, reference publication, signed-APK inspection,
+For 1.0.27, source publication, reference publication, signed-APK inspection,
 recipe update, and MR pipeline verification are complete. The latest review is
 **PASS WITH NOTES** and requests `distributionSha256Sum` in the Gradle wrapper.
-That application-source correction needs a separate future stable release;
-maintainer review and merge remain outside the release-preparation workflow.
+Stable 1.0.27 satisfies it with Gradle's official checksum for the configured
+8.14.2 `all.zip`; a fresh download and all local/CI validation passed.
+Maintainer review and merge remain outside the release-preparation workflow.
 
 ## Repeatable F-Droid update checklist
 

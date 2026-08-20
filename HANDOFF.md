@@ -35,7 +35,7 @@ so PWA, production, and Preview data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-20)
+## Current status (2026-08-21)
 
 - Preview channel implementation is complete. The explicit Gradle
   `preview` build type uses `cc.fishese.divelog.preview`; default
@@ -43,12 +43,13 @@ store distribution are not started yet.
 - The signed workflow is `.github/workflows/preview-apk.yml`. It checks out
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
-- The current shared Android runtime and stable source commit is
-  `dc52cef859ede44b9b7d3a4741251cc96d9244e6`. It removes the automatic
-  What's New network request, adds an explicit manual update check, keeps
-  optional startup checks disabled until informed opt-in, and routes update
-  actions according to the installed Android channel.
-- The current Preview release targets that exact runtime commit (workflow run
+- The current stable Android source is
+  `b3848c4ed1682a48f00e892536f5b938730f7e3f`. It adds Gradle's official
+  SHA-256 checksum for the existing 8.14.2 `all.zip` wrapper distribution and
+  advances production to 1.0.27/code 28 without changing application runtime
+  behavior, package identity, signing policy, or the pinned native dependency.
+- The current Preview release remains on runtime commit
+  `dc52cef859ede44b9b7d3a4741251cc96d9244e6` (workflow run
   `32377228958`). The published Preview is version `preview.24.dc52cef`
   (version code `100024`); `diveframe-preview.apk` is `15765025` bytes and has
   SHA-256
@@ -57,38 +58,39 @@ store distribution are not started yet.
   Preview**, and signed by the expected existing `CN=Fishese` certificate;
   certificate SHA-256 is
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`.
-- Current `main` intentionally contains a web-only follow-up after Android
-  source `dc52cef`: the hosted web/PWA hides native app-update controls because
-  it updates from the deployment/service worker. That follow-up does not
-  change the behavior of either Android package and is not an APK source.
-- Stable production/F-Droid release `1.0.26` uses source commit
-  `dc52cef859ede44b9b7d3a4741251cc96d9244e6`, version code `27`, and the
+- Current `main` contains a web/feed and documentation follow-up after stable
+  source `b3848c4`; that follow-up is not an APK source. The published Preview
+  intentionally remains on `dc52cef` because the stable change is wrapper
+  integrity and production version metadata, not shared runtime behavior.
+- Stable production/F-Droid release `1.0.27` uses source commit
+  `b3848c4ed1682a48f00e892536f5b938730f7e3f`, version code `28`, and the
   production package `cc.fishese.divelog`. Immutable source tag/release:
-  `v1.0.26`.
+  `v1.0.27`.
 - The matching signed F-Droid reference is
-  `fdroid-v1.0.26` / `diveframe-1.0.26.apk`, size `15765025` bytes, SHA-256
-  `33146E1483FFBF3BA61C34C154ACCA7CE6AB5754E6E8DBC53C18AD2AF6AE66F4`,
+  `fdroid-v1.0.27` / `diveframe-1.0.27.apk`, size `15765025` bytes, SHA-256
+  `9F87EDC488E88C28DC1468AAAFC2A6FB5BCFBCA4C6362C2E2581BDDCEEEF283E`,
   signed by the existing `CN=Fishese` certificate and arm64-only.
-  Reference workflow: `32377898462`.
+  Reference workflow: `32395939701`.
 - MR !45472 remains open and unmerged. Its update pipeline
-  `2776547534` passed all nine jobs at head
-  `447702352b4df383aebec50ff044addd7e5643bc`. The recipe now records 1.0.26
-  and exact immutable source `dc52cef`. No reviewer is assigned and all
+  `2776952636` passed all nine jobs at head
+  `814b95ceef462f0343570dff007f5d2c4f5ecebc`. The recipe now records 1.0.27
+  and exact immutable source `b3848c4`. No reviewer is assigned and all
   blocking discussions are resolved. The recipe remains
   production-only: `AutoUpdateMode: Version` follows only exact immutable
   `vMAJOR.MINOR.PATCH` tags, and Preview changes are not submitted. Because
   the first-inclusion MR is still open, a new stable tag required a
   recipe/MR update; auto-update will generate later build entries only
   after merge.
-- The MR description now points to pipeline `2776547534` and correctly records
-  one `arm64-v8a` APK. No comment or reply was posted. The latest reviewer note
-  is **PASS WITH NOTES** and asks for `distributionSha256Sum` in the Gradle
-  wrapper; that changes immutable application source and requires a separate
-  future stable-release decision rather than changing the 1.0.26 recipe.
+- The latest reviewer note is **PASS WITH NOTES** and asks for
+  `distributionSha256Sum` in the Gradle wrapper. Stable 1.0.27 satisfies that
+  request with the authoritative checksum for the configured 8.14.2
+  `all.zip`; the clean download, local production/Preview builds, signed
+  reference, and F-Droid reproducibility pipeline all passed. No comment or
+  reviewer reply was posted.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.
-- The F-Droid tester-review friction packet shipped in stable 1.0.26. Cold
+- The F-Droid tester-review friction packet remains included in stable 1.0.27. Cold
   start no longer fetches What's New. Native Settings provides the manual and
   opt-in checks; F-Droid production opens the F-Droid package page, while the
   separately signed Preview channel may use its stable GitHub asset URL.
