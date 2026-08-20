@@ -1,6 +1,6 @@
 # DiveFrame release channels and web/APK parity
 
-Last verified: 2026-08-17 (Asia/Singapore)
+Last verified: 2026-08-20 (Asia/Singapore)
 
 This is the canonical release note for future sessions. Read it before
 changing a version, release tag, APK workflow, or F-Droid metadata. The
@@ -136,9 +136,10 @@ Current `main` may contain documentation-only release records after the
 stable source; those commits are not the source of the published APK.
 
 The current verified Preview release targets shared runtime commit
-`05bf87cbde04315d638ac3b294038ed9b6794e9a` (workflow run `31942332748`). It
-is `preview.17.05bf87c`, version code `100017`, and its APK SHA-256 is
-`718104032F56A2B9A64F997D7A56E9A53AD08D018D0ED532F875FC3C567DCD4E`.
+`f91725cc6ea7e57cc75fd63b64f3cacba7f33cc6` (workflow run `32371431122`). It
+is `preview.23.f91725c`, version code `100023`, and its `15760919`-byte APK
+has SHA-256
+`89E2C94C882AFD3C7B163FF0C3E700C935E1168910CC11AAD8B21835895365AD`.
 
 ## Current stable production/F-Droid release
 
@@ -165,8 +166,10 @@ the stable-tag-only auto-update configuration against the plain production
 Gradle version lines. The F-Droid source, reference release, and recipe all
 resolve to the same stable source commit.
 
-The current Preview release does not yet include the 1.0.25 Back fix; their
-packages remain deliberately separate. The libdivecomputer dependency commit remains
+The current Preview includes post-stable Back reliability and layout changes.
+Stable production/F-Droid deliberately remains pinned to 1.0.25 at `4dcdaa6`;
+Preview is not a production source or reference artifact. The
+libdivecomputer dependency commit remains
 `8e564eb5cf9fb4318af3d540895abb916e1809b0`.
 
 ## Requesting a production release

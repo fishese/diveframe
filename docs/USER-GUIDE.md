@@ -43,6 +43,11 @@ deployment address. The service worker keeps the visited app shell available
 for faster launches and limited offline use; map searches and other network
 lookups still require a connection.
 
+On the installed PWA and the Android app, system Back (the Android gesture or
+button, or Back in the browser/PWA) goes up one screen the same way the
+DiveFrame mark does. An open dialog or the import/Bluetooth panel closes
+first. On the home dive list with nothing open, Back leaves the app.
+
 ## Supported imports
 
 The **Import log** button accepts one or more of:

@@ -1,15 +1,35 @@
 # Hierarchical system-back navigation
 
+Status: **shipped** in DiveFrame **1.0.25** (immutable tag `v1.0.25`, source
+commit `4dcdaa659af3fe6a873b13ed28a898afe2a774ca`). Reliability follow-up
+`f91725cc6ea7e57cc75fd63b64f3cacba7f33cc6` is deployed on the web and in
+Preview 23; stable production/F-Droid deliberately remains on 1.0.25.
+
 Date: 2026-08-17
+
+This document is the current-state contract. The sections below keep the
+original problem and design so later changes can be checked against it.
 
 ## Problem
 
-System Back (browser Back, Android gesture/button, PWA standalone Back) currently leaves DiveFrame from most screens.
+System Back (browser Back, Android gesture/button, PWA standalone Back)
+previously left DiveFrame from most screens.
 
-- Dive list and dive detail are the same `/` route. Opening a dive only sets React `mobileDetail`; it does not push history. Leaving detail uses `history.replaceState` to strip `?dive=`. The window often has a single history entry, so Back exits.
-- Settings, map, compose, and other pages are real routes. Next.js `<Link>` uses client `pushState`. Desktop Back can already return to the previous URL, but that is **history back**, not the brand-icon parent. Home → Settings → Map then Back would reopen Settings; the brand icon on Map goes home.
-- The APK has no back handler. Capacitor 8 falls through to `WebView.canGoBack()`, which often stays false for client-side Next.js routing, so hardware Back exits from every screen.
-- React has not hydrated yet on first paint, during Capacitor WebView load, and on cold starts (including the Preview memos shortcut). Any solution that only registers in `useEffect` will still exit during that gap.
+- Dive list and dive detail are the same `/` route. Opening a dive only set
+  React `mobileDetail`; it did not push history. Leaving detail used
+  `history.replaceState` to strip `?dive=`. The window often had a single
+  history entry, so Back exited.
+- Settings, map, compose, and other pages are real routes. Next.js `<Link>`
+  uses client `pushState`. Desktop Back could already return to the previous
+  URL, but that is **history back**, not the brand-icon parent. Home →
+  Settings → Map then Back would reopen Settings; the brand icon on Map goes
+  home.
+- The APK had no back handler. Capacitor 8 falls through to
+  `WebView.canGoBack()`, which often stays false for client-side Next.js
+  routing, so hardware Back exited from every screen.
+- React has not hydrated yet on first paint, during Capacitor WebView load,
+  and on cold starts (including the Preview memos shortcut). A solution that
+  only registers in `useEffect` still exits during that gap.
 
 ## Goal
 
@@ -17,7 +37,8 @@ System Back follows the same **hierarchical up** path as the brand mark, on both
 
 Dialogs close first. At the home list with nothing open, Back still leaves the app.
 
-This is shared client plus Android shell behavior. It needs a web deploy and a new APK from the same commit (`docs/WEB-APK-SYNC.md`).
+This is shared client plus Android shell behavior. 1.0.25 deployed the web
+app and the production APK from the same commit (`docs/WEB-APK-SYNC.md`).
 
 ## Non-goals
 
@@ -84,7 +105,10 @@ If Android runs Back before the document exists, `evaluateJavascript` may return
 
 After mount, React replaces `__diveFrameBack.handle` with: run the stack top-down; if a handler returns true, consume; if the stack is empty, run the URL parent map (same function as bootstrap); otherwise return false.
 
-Hydrated page-to-page up uses the Next client router plus `useAppRouteHref` (no full reload). Only the pre-hydrate bootstrap uses `location.replace`.
+Hydrated page-to-page up uses `location.replace` with `useAppRouteHref`, as
+does the pre-hydrate bootstrap. A client-router replace from the `popstate`
+handler raced the browser's completed history traversal and could leave a
+directly loaded nested page such as `/settings` trapped on that page.
 
 If the user is already on the home list and `popstate` lands on a leftover same-origin nested URL, replace back to `/` rather than showing that page. The next Back at a true single home entry leaves the app.
 
@@ -132,7 +156,7 @@ Put the parent map in one TypeScript module (e.g. `lib/app-back.ts`):
 - `native-contract`: `MainActivity` evaluates `__diveFrameHandleBack` and has a URL fallback; still no `@capacitor/app` dependency.
 - Manual: PWA and APK, including Back during first paint on settings/compose/map and the memos shortcut; dialog close then page up; compose → detail → list row; home list exits.
 
-## Files (expected)
+## Files
 
 | File | Role |
 | --- | --- |

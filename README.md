@@ -29,8 +29,9 @@ on the device; map-name and nearby-site lookups use network services.
 - **Export & backup.** Full Subsurface logbook export, plus a private on-device
   backup (optional password) for browser ↔ browser or browser ↔ Android —
   your logbook data stays on the device.
-- **Android APK.** Same app, plus classic Shearwater Bluetooth download and
-  native save/share —
+- **Android APK.** Same app, plus classic Shearwater Bluetooth download,
+  native save/share, and system Back that goes up one screen instead of
+  leaving the app —
   [download the signed GitHub Preview APK](https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk). The Preview workflow builds the exact pushed source commit with version names `preview.<run>.<short-sha>`; F-Droid releases use separate, accumulated production versions.
 
   DiveFrame Preview and production use separate Android application IDs and

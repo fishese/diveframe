@@ -35,7 +35,7 @@ so PWA, production, and Preview data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-17)
+## Current status (2026-08-20)
 
 - Preview channel implementation is complete. The explicit Gradle
   `preview` build type uses `cc.fishese.divelog.preview`; default
@@ -44,18 +44,19 @@ store distribution are not started yet.
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
 - The current shared runtime commit is
-  `4dcdaa659af3fe6a873b13ed28a898afe2a774ca`. It includes hierarchical
-  system Back, Shearwater BLE dive-number recovery from the computer log,
-  reversible dive-segment review, streamlined logbook filters/Select shown,
-  and a single Clear control that also resets the short-dive threshold.
-- The current Preview release still targets
-  `05bf87cbde04315d638ac3b294038ed9b6794e9a` (workflow run `31942332748`).
-  The published Preview is version `preview.17.05bf87c` (version code
-  `100017`), and `diveframe-preview.apk` has SHA-256
-  `718104032F56A2B9A64F997D7A56E9A53AD08D018D0ED532F875FC3C567DCD4E`.
-  That lag is intentional: Preview was not rebuilt for 1.0.25.
-- Current `main` may contain documentation-only records after APK source
-  `4dcdaa6`; those follow-ups are not APK sources.
+  `f91725cc6ea7e57cc75fd63b64f3cacba7f33cc6`. In addition to the post-stable
+  logbook selection/filter work, it fixes hierarchical Back after hydration,
+  preserves encoded dive IDs in the Android fallback, normalizes Settings
+  section spacing, and keeps the last mobile dive row above system navigation.
+- The current Preview release targets that exact runtime commit (workflow run
+  `32371431122`). The published Preview is version `preview.23.f91725c`
+  (version code `100023`); `diveframe-preview.apk` is `15760919` bytes and has
+  SHA-256
+  `89E2C94C882AFD3C7B163FF0C3E700C935E1168910CC11AAD8B21835895365AD`.
+  It is arm64-only, package `cc.fishese.divelog.preview`, label **DiveFrame
+  Preview**, and signed by the expected existing `CN=Fishese` certificate.
+- Current `main` may contain documentation-only records after Preview source
+  `f91725c`; those follow-ups are not APK sources.
 - Stable production/F-Droid release `1.0.25` uses source commit
   `4dcdaa659af3fe6a873b13ed28a898afe2a774ca`, version code `26`, and the
   production package `cc.fishese.divelog`. Immutable source tag/release:
@@ -73,6 +74,9 @@ store distribution are not started yet.
   the first-inclusion MR is still open, a new stable tag required a
   recipe/MR update; auto-update will generate later build entries only
   after merge.
+- The MR description's stale pipeline reference was refreshed to
+  `2766264516` without changing the recipe, branch, or discussion. No reviewer
+  requested a new recipe correction.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.
@@ -230,7 +234,12 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `app/DiveFrameApp.tsx` — main logbook UI, imports, maps, gallery, and entry
   point to the composer.
 - `app/components/AppTopbar.tsx` — shared top-bar chrome (brand, home, about,
-  settings, BLE/Android app, memos, import).
+  settings, BLE/Android app, memos, import). Brand href is the hierarchical
+  parent (catalog subpages → `/catalog`; other pages → `/`).
+- `lib/app-back.ts` — hierarchical Back parent map and unhydrated bootstrap
+  script (`window.__diveFrameHandleBack`).
+- `app/AppBackProvider.tsx` — hydrated LIFO Back stack; dialogs and overlays
+  close before page-up.
 - `app/compose/ComposerApp.tsx` — live preview and composer controls.
 - `app/settings/SettingsApp.tsx` — device-local settings, the source-specific
   catalog card, and the reusable background library.
@@ -268,6 +277,8 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `public/whats-new.json` — seed What's new document served by the API.
 - `android/` — Capacitor shell, JNI libdivecomputer bridge, pinned
   libdivecomputer Git submodule, BLE plugin, and file export plugin.
+  `MainActivity` intercepts system Back (JS handler, then URL fallback; no
+  `@capacitor/app`).
 - `scripts/archive/shearwater-gps-backfill/` — offline tooling to recover
   computer GPS from raw BLE bytes / backups if needed again.
 - `app/globals.css` — responsive application styling.
@@ -276,10 +287,12 @@ Deployment is managed by the repository's Cloudflare Worker integration.
 - `app/BetaNotice.tsx` — global trilingual beta / unread What's new notice.
 - `public/manifest.webmanifest`, `public/sw.js`, and `public/icons/` —
   installable-web-app metadata, cached app shell, and header-mark app icons.
-- `tests/` — product contract, deterministic identity, catalog, composer, gas,
-  Subsurface pass-through, native bridge, What's new, and optional Shearwater
-  fixture tests.
+- `tests/` — product contract, hierarchical Back, deterministic identity,
+  catalog, composer, gas, Subsurface pass-through, native bridge, What's new,
+  and optional Shearwater fixture tests.
 - `docs/USER-GUIDE.md` — supported-format and device-local workflow guide.
+- `docs/2026-08-17-app-back-navigation-design.md` — hierarchical system-Back
+  contract (shipped in 1.0.25).
 - `docs/PRODUCT-SPEC.md` — authoritative current-state product specification,
   readiness gate for store packaging / BLE hardening, planned extension
   guardrails, and reviewer questions.
