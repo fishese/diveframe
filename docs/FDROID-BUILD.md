@@ -17,13 +17,10 @@ F-Droid-specific build contract and the failure that occurred during MR
   must never be submitted as F-Droid source or reference APKs.
 - The current submission MR is
   [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472).
-- The MR recipe is still pinned to production commit
-  `4dcdaa659af3fe6a873b13ed28a898afe2a774ca`, version `1.0.25`, version code
-  `26`, and immutable source tag `v1.0.25`.
-- The published replacement stable candidate is `1.0.26` / code `27`, source
+- The MR recipe is pinned to `1.0.26` / code `27`, production source
   `dc52cef859ede44b9b7d3a4741251cc96d9244e6`, immutable tag `v1.0.26`.
-  Its developer-signed reference is complete, but the MR does not represent
-  it until the exact recipe diff is committed and a new pipeline passes.
+  Recipe commit `447702352b4df383aebec50ff044addd7e5643bc` and pipeline
+  `2776547534` passed all nine jobs, including the APK comparison.
 - Current web `main` intentionally includes a web-only follow-up that hides
   native update controls from the hosted web/PWA. It is not an Android or
   F-Droid source; stable 1.0.26 remains pinned to `dc52cef`.
@@ -226,22 +223,22 @@ reference asset.
 - APK identity: `cc.fishese.divelog`, `DiveFrame`, version `1.0.26` / code
   `27`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
-- Current recipe/MR commit (still 1.0.25):
-  `267a512cb00f21f5bfb1ddc97f9a54c38afe36a5`
+- Current recipe/MR commit: `447702352b4df383aebec50ff044addd7e5643bc`
 - MR/pipeline: [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472),
-  [pipeline 2766264516](https://gitlab.com/fishese/fdroiddata/-/pipelines/2766264516)
+  [pipeline 2776547534](https://gitlab.com/fishese/fdroiddata/-/pipelines/2776547534)
 
-Pipeline 2766264516 passed all nine jobs and validates the existing 1.0.25
-recipe, stable-tag-only auto-update against the plain production Gradle version
-lines, and the reviewer-requested Git submodule dependency path. The recipe uses
+Pipeline 2776547534 passed all nine jobs and validates the 1.0.26 recipe,
+reference APK, stable-tag-only auto-update against the plain production Gradle
+version lines, and reviewer-requested Git submodule dependency path. The recipe uses
 `submodules: true`; the source gitlink and `libdivecomputer.pin` both
 resolve to `8e564eb5cf9fb4318af3d540895abb916e1809b0`. It still uses
 `subdir: android/app`, has no `output`, and retains all pinned native inputs.
 
-For 1.0.26, source publication, reference publication, and signed-APK
-inspection are complete. The recipe update and its pipeline are still pending;
-do not claim the MR is on 1.0.26 until both finish. Maintainer review and merge
-remain outside the release-preparation workflow.
+For 1.0.26, source publication, reference publication, signed-APK inspection,
+recipe update, and MR pipeline verification are complete. The latest review is
+**PASS WITH NOTES** and requests `distributionSha256Sum` in the Gradle wrapper.
+That application-source correction needs a separate future stable release;
+maintainer review and merge remain outside the release-preparation workflow.
 
 ## Repeatable F-Droid update checklist
 

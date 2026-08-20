@@ -71,19 +71,20 @@ store distribution are not started yet.
   signed by the existing `CN=Fishese` certificate and arm64-only.
   Reference workflow: `32377898462`.
 - MR !45472 remains open and unmerged. Its update pipeline
-  `2766264516` passed all nine jobs at head
-  `267a512cb00f21f5bfb1ddc97f9a54c38afe36a5`. No reviewer is assigned and
-  all blocking discussions are resolved. The MR recipe still records 1.0.25;
-  updating it to the published immutable 1.0.26 source is the remaining
-  release-preparation step and must use a separate reviewed recipe diff. It remains
+  `2776547534` passed all nine jobs at head
+  `447702352b4df383aebec50ff044addd7e5643bc`. The recipe now records 1.0.26
+  and exact immutable source `dc52cef`. No reviewer is assigned and all
+  blocking discussions are resolved. The recipe remains
   production-only: `AutoUpdateMode: Version` follows only exact immutable
   `vMAJOR.MINOR.PATCH` tags, and Preview changes are not submitted. Because
   the first-inclusion MR is still open, a new stable tag required a
   recipe/MR update; auto-update will generate later build entries only
   after merge.
-- The MR description's stale pipeline reference was refreshed to
-  `2766264516` without changing the recipe, branch, or discussion. No reviewer
-  requested a new recipe correction.
+- The MR description now points to pipeline `2776547534` and correctly records
+  one `arm64-v8a` APK. No comment or reply was posted. The latest reviewer note
+  is **PASS WITH NOTES** and asks for `distributionSha256Sum` in the Gradle
+  wrapper; that changes immutable application source and requires a separate
+  future stable-release decision rather than changing the 1.0.26 recipe.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.

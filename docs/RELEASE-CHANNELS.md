@@ -129,11 +129,9 @@ The staging recipe is
 The newly published stable/F-Droid candidate is production commit
 `dc52cef859ede44b9b7d3a4741251cc96d9244e6`, version `1.0.26`, version code
 `27`, and immutable `v1.0.26` source tag. MR !45472 is still the first
-inclusion and remains open, so its recipe must be updated explicitly before
-it represents this release. At the time of this record the MR recipe/head
-still represents 1.0.25 at
-`267a512cb00f21f5bfb1ddc97f9a54c38afe36a5`; do not describe that recipe as
-1.0.26 until the exact recipe diff is committed and its pipeline passes.
+inclusion and remains open. Its recipe now represents this release at head
+`447702352b4df383aebec50ff044addd7e5643bc`; pipeline `2776547534` passed all
+nine jobs, including `fdroid build` and `check apk`.
 After merge, F-Droid auto-update can add later matching tags without a manual
 recipe edit.
 
@@ -166,13 +164,17 @@ The matching developer-signed F-Droid reference is published at
 - ABI: `arm64-v8a`; signer: `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
 
-The current F-Droid recipe commit is still
-`267a512cb00f21f5bfb1ddc97f9a54c38afe36a5`. MR !45472 remains open and
-unmerged; pipeline `2766264516` passed all nine jobs and validates
-the 1.0.25 recipe and stable-tag-only auto-update configuration against the
-plain production Gradle version lines. The published 1.0.26 reference and
-immutable source are ready, but the recipe does not resolve to them until the
-separate recipe update is reviewed, committed, pushed, and green.
+The current F-Droid recipe commit is
+`447702352b4df383aebec50ff044addd7e5643bc`. MR !45472 remains open and
+unmerged; pipeline `2776547534` passed all nine jobs and validates the 1.0.26
+recipe, reference APK, stable-tag-only auto-update configuration, and plain
+production Gradle version lines. The F-Droid source, reference release, and
+recipe now resolve to the same stable source commit.
+
+The latest reviewer note is **PASS WITH NOTES** and requests a Gradle-wrapper
+`distributionSha256Sum`. That is an application-source correction, not a
+recipe correction; it must use a separate future stable release and must not
+move or replace the immutable 1.0.26 tags.
 
 Preview and stable 1.0.26 share source `dc52cef`; Preview is nevertheless not
 a production source or reference artifact. The
