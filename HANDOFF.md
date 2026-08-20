@@ -43,32 +43,39 @@ store distribution are not started yet.
 - The signed workflow is `.github/workflows/preview-apk.yml`. It checks out
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
-- The current shared runtime commit is
-  `f91725cc6ea7e57cc75fd63b64f3cacba7f33cc6`. In addition to the post-stable
-  logbook selection/filter work, it fixes hierarchical Back after hydration,
-  preserves encoded dive IDs in the Android fallback, normalizes Settings
-  section spacing, and keeps the last mobile dive row above system navigation.
+- The current shared Android runtime and stable source commit is
+  `dc52cef859ede44b9b7d3a4741251cc96d9244e6`. It removes the automatic
+  What's New network request, adds an explicit manual update check, keeps
+  optional startup checks disabled until informed opt-in, and routes update
+  actions according to the installed Android channel.
 - The current Preview release targets that exact runtime commit (workflow run
-  `32371431122`). The published Preview is version `preview.23.f91725c`
-  (version code `100023`); `diveframe-preview.apk` is `15760919` bytes and has
+  `32377228958`). The published Preview is version `preview.24.dc52cef`
+  (version code `100024`); `diveframe-preview.apk` is `15765025` bytes and has
   SHA-256
-  `89E2C94C882AFD3C7B163FF0C3E700C935E1168910CC11AAD8B21835895365AD`.
+  `7E880E105C70CF32987765DAC65819B4F0274B77B5A1676BBC854A9F3D5ED21B`.
   It is arm64-only, package `cc.fishese.divelog.preview`, label **DiveFrame
-  Preview**, and signed by the expected existing `CN=Fishese` certificate.
-- Current `main` may contain documentation-only records after Preview source
-  `f91725c`; those follow-ups are not APK sources.
-- Stable production/F-Droid release `1.0.25` uses source commit
-  `4dcdaa659af3fe6a873b13ed28a898afe2a774ca`, version code `26`, and the
+  Preview**, and signed by the expected existing `CN=Fishese` certificate;
+  certificate SHA-256 is
+  `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`.
+- Current `main` intentionally contains a web-only follow-up after Android
+  source `dc52cef`: the hosted web/PWA hides native app-update controls because
+  it updates from the deployment/service worker. That follow-up does not
+  change the behavior of either Android package and is not an APK source.
+- Stable production/F-Droid release `1.0.26` uses source commit
+  `dc52cef859ede44b9b7d3a4741251cc96d9244e6`, version code `27`, and the
   production package `cc.fishese.divelog`. Immutable source tag/release:
-  `v1.0.25`.
+  `v1.0.26`.
 - The matching signed F-Droid reference is
-  `fdroid-v1.0.25` / `diveframe-1.0.25.apk`, size `15760919` bytes, SHA-256
-  `2B67BFFDD992BCF29C0164C9F78B39A6C483FEED417B90B6AEC55B91648F9C7E`,
+  `fdroid-v1.0.26` / `diveframe-1.0.26.apk`, size `15765025` bytes, SHA-256
+  `33146E1483FFBF3BA61C34C154ACCA7CE6AB5754E6E8DBC53C18AD2AF6AE66F4`,
   signed by the existing `CN=Fishese` certificate and arm64-only.
-  Reference workflow: `32037346882`. F-Droid recipe commit:
-  `267a512cb00f21f5bfb1ddc97f9a54c38afe36a5`.
+  Reference workflow: `32377898462`.
 - MR !45472 remains open and unmerged. Its update pipeline
-  `2766264516` passed all nine jobs. The recipe remains
+  `2766264516` passed all nine jobs at head
+  `267a512cb00f21f5bfb1ddc97f9a54c38afe36a5`. No reviewer is assigned and
+  all blocking discussions are resolved. The MR recipe still records 1.0.25;
+  updating it to the published immutable 1.0.26 source is the remaining
+  release-preparation step and must use a separate reviewed recipe diff. It remains
   production-only: `AutoUpdateMode: Version` follows only exact immutable
   `vMAJOR.MINOR.PATCH` tags, and Preview changes are not submitted. Because
   the first-inclusion MR is still open, a new stable tag required a
@@ -80,10 +87,10 @@ store distribution are not started yet.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.
-- Next deferred application work is F-Droid tester-review friction: move
-  What's New off the top-of-page notice into Settings, fetch only on an
-  explicit Refresh, and add a check-for-update control only where F-Droid
-  policy and signing allow it. See `docs/.local/DEFERRED-PRODUCT-PLAN.md`.
+- The F-Droid tester-review friction packet shipped in stable 1.0.26. Cold
+  start no longer fetches What's New. Native Settings provides the manual and
+  opt-in checks; F-Droid production opens the F-Droid package page, while the
+  separately signed Preview channel may use its stable GitHub asset URL.
 
 ## Historical Android debug releases (do not use for new releases)
 

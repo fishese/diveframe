@@ -999,7 +999,8 @@ export function SettingsApp() {
           <p>{t("settingsDescription")}</p>
         </section>
 
-        <section className="settings-card whats-new-settings">
+        {nativeAppInfo ? (
+          <section className="settings-card whats-new-settings">
           <div className="whats-new-heading">
             <div>
               <p className="eyebrow">{t("whatsNew")}</p>
@@ -1105,7 +1106,8 @@ export function SettingsApp() {
               </label>
             </>
           ) : null}
-        </section>
+          </section>
+        ) : null}
 
         <section className="settings-card prefs-settings">
           <div className="prefs-settings-grid">

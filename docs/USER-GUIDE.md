@@ -503,11 +503,15 @@ from the hosted web app.
 
 ### What's new
 
-The global notice is a local-only beta reminder; update checking is off by
-default. Open **Settings → What's new** to view the copy cached on this device.
-DiveFrame contacts `divelog.fishese.cc` only after you choose **Check for
-updates**, then keeps the refreshed feed available offline. A failed or offline
-check leaves the previous cached copy intact and shows a status message.
+The web/PWA always uses the latest hosted deployment when online and does not
+show an app-update checker. Its service worker refreshes the cached app shell;
+when the site is offline, an update check would not be actionable. The global
+notice remains a local-only beta reminder.
+
+Native Android installs expose **Settings → What's new**. DiveFrame contacts
+`divelog.fishese.cc` only after you choose **Check for updates**, then keeps the
+refreshed feed available offline. A failed or offline check leaves the previous
+cached copy intact and shows a status message.
 
 Native installs also show the installed app version and an optional **Check
 automatically when DiveFrame opens** setting. It is disabled by default. The

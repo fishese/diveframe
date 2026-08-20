@@ -42,7 +42,8 @@ older commit.
 
 Production tags are immutable and must never be moved or reused. The mutable
 `preview` tag is never a production or F-Droid source tag. Do not use
-`v1.0.21` or current `v1.0.25` as a Preview tag or release name; they are
+`v1.0.21`, `v1.0.25`, or current `v1.0.26` as a Preview tag or release name;
+they are
 reserved for the existing production/F-Droid history.
 
 Preview and production have separate Android application IDs, provider
@@ -125,50 +126,56 @@ The staging recipe is
   Untagged `main` commits, `preview`, `nightly`, debug tags, and
   `fdroid-v...` reference tags do not match and cannot trigger an update.
 
-The current stable/F-Droid MR update is pinned to production commit
-`4dcdaa659af3fe6a873b13ed28a898afe2a774ca`, version `1.0.25`, version code
-`26`, and the immutable `v1.0.25` source tag. Preview changes do not select
-the F-Droid source; only an intentional stable release updates the recipe.
-Because MR !45472 is still the first inclusion and is unmerged, a new stable
-tag required a recipe/MR update. After merge, F-Droid auto-update can add
-later matching tags without a manual recipe edit.
-Current `main` may contain documentation-only release records after the
-stable source; those commits are not the source of the published APK.
+The newly published stable/F-Droid candidate is production commit
+`dc52cef859ede44b9b7d3a4741251cc96d9244e6`, version `1.0.26`, version code
+`27`, and immutable `v1.0.26` source tag. MR !45472 is still the first
+inclusion and remains open, so its recipe must be updated explicitly before
+it represents this release. At the time of this record the MR recipe/head
+still represents 1.0.25 at
+`267a512cb00f21f5bfb1ddc97f9a54c38afe36a5`; do not describe that recipe as
+1.0.26 until the exact recipe diff is committed and its pipeline passes.
+After merge, F-Droid auto-update can add later matching tags without a manual
+recipe edit.
 
-The current verified Preview release targets shared runtime commit
-`f91725cc6ea7e57cc75fd63b64f3cacba7f33cc6` (workflow run `32371431122`). It
-is `preview.23.f91725c`, version code `100023`, and its `15760919`-byte APK
+Current `main` intentionally contains a web-only follow-up after stable source
+`dc52cef`: it hides native update controls from the hosted web/PWA. The hosted
+site updates through deployment/service-worker refresh, and the correction has
+no behavioral effect in either Android package. It is not an APK source.
+
+The current verified Preview release targets the same Android runtime commit
+`dc52cef859ede44b9b7d3a4741251cc96d9244e6` (workflow run `32377228958`). It
+is `preview.24.dc52cef`, version code `100024`, and its `15765025`-byte APK
 has SHA-256
-`89E2C94C882AFD3C7B163FF0C3E700C935E1168910CC11AAD8B21835895365AD`.
+`7E880E105C70CF32987765DAC65819B4F0274B77B5A1676BBC854A9F3D5ED21B`.
 
 ## Current stable production/F-Droid release
 
 The stable production source is commit
-`4dcdaa659af3fe6a873b13ed28a898afe2a774ca`, tagged immutably as `v1.0.25`.
+`dc52cef859ede44b9b7d3a4741251cc96d9244e6`, tagged immutably as `v1.0.26`.
 It uses the default `assembleRelease` path, package
-`cc.fishese.divelog`, version name `1.0.25`, and version code `26`.
+`cc.fishese.divelog`, version name `1.0.26`, and version code `27`.
 
 The matching developer-signed F-Droid reference is published at
-`fdroid-v1.0.25` as `diveframe-1.0.25.apk`:
+`fdroid-v1.0.26` as `diveframe-1.0.26.apk`:
 
-- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.25
-- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.25
-- Reference workflow: https://github.com/fishese/diveframe/actions/runs/32037346882
-- Size: `15760919` bytes; SHA-256:
-  `2B67BFFDD992BCF29C0164C9F78B39A6C483FEED417B90B6AEC55B91648F9C7E`
+- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.26
+- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.26
+- Reference workflow: https://github.com/fishese/diveframe/actions/runs/32377898462
+- Size: `15765025` bytes; SHA-256:
+  `33146E1483FFBF3BA61C34C154ACCA7CE6AB5754E6E8DBC53C18AD2AF6AE66F4`
 - ABI: `arm64-v8a`; signer: `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
 
-The F-Droid recipe update commit is
+The current F-Droid recipe commit is still
 `267a512cb00f21f5bfb1ddc97f9a54c38afe36a5`. MR !45472 remains open and
 unmerged; pipeline `2766264516` passed all nine jobs and validates
-the stable-tag-only auto-update configuration against the plain production
-Gradle version lines. The F-Droid source, reference release, and recipe all
-resolve to the same stable source commit.
+the 1.0.25 recipe and stable-tag-only auto-update configuration against the
+plain production Gradle version lines. The published 1.0.26 reference and
+immutable source are ready, but the recipe does not resolve to them until the
+separate recipe update is reviewed, committed, pushed, and green.
 
-The current Preview includes post-stable Back reliability and layout changes.
-Stable production/F-Droid deliberately remains pinned to 1.0.25 at `4dcdaa6`;
-Preview is not a production source or reference artifact. The
+Preview and stable 1.0.26 share source `dc52cef`; Preview is nevertheless not
+a production source or reference artifact. The
 libdivecomputer dependency commit remains
 `8e564eb5cf9fb4318af3d540895abb916e1809b0`.
 

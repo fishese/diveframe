@@ -1,16 +1,16 @@
 {
   "version": "2026-08-20-manual-updates",
-  "updatedAt": "2026-08-20T13:29:00.000Z",
+  "updatedAt": "2026-08-20T14:07:24.000Z",
   "channels": {
     "preview": {
-      "versionName": "preview.23.f91725c",
-      "versionCode": 100023,
-      "sourceSha": "f91725cc6ea7e57cc75fd63b64f3cacba7f33cc6"
+      "versionName": "preview.24.dc52cef",
+      "versionCode": 100024,
+      "sourceSha": "dc52cef859ede44b9b7d3a4741251cc96d9244e6"
     },
     "fdroid": {
-      "versionName": "1.0.25",
-      "versionCode": 26,
-      "sourceSha": "4dcdaa659af3fe6a873b13ed28a898afe2a774ca"
+      "versionName": "1.0.26",
+      "versionCode": 27,
+      "sourceSha": "dc52cef859ede44b9b7d3a4741251cc96d9244e6"
     }
   },
   "entries": [

@@ -882,6 +882,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(settings, /entry\.links|sanitizeWhatsNewHref/);
   assert.match(settings, /automaticUpdateChecks/);
   assert.match(settings, /updateDestinationForChannel/);
+  assert.match(
+    settings,
+    /\{nativeAppInfo \? \([\s\S]*settings-card whats-new-settings/,
+  );
   assert.match(betaNotice, /preferences\?\.automaticUpdateChecks/);
   assert.match(betaNotice, /getNativeAppInfo\(\)/);
   assert.match(storage, /automaticUpdateChecks:[\s\S]*false/);
