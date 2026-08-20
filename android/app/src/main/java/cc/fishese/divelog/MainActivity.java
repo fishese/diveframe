@@ -132,7 +132,7 @@ public class MainActivity extends BridgeActivity {
         String normalized = normalizeAppPath(path);
         String dive = queryParam(encodedQuery, "dive");
         if ("/compose".equals(normalized)) {
-            return dive != null && !dive.isEmpty() ? "/?dive=" + dive : "/";
+            return dive != null && !dive.isEmpty() ? "/?dive=" + Uri.encode(dive) : "/";
         }
         if ("/catalog/supplement".equals(normalized)
             || "/catalog/device-additions".equals(normalized)) {

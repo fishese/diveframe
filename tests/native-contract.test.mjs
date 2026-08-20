@@ -529,6 +529,7 @@ test("Android launcher exposes a localized Memos shortcut to /memo", async () =>
   assert.match(mainActivity, /__diveFrameHandleBack/);
   assert.match(mainActivity, /parentAppHref/);
   assert.match(mainActivity, /handleAppBack/);
+  assert.match(mainActivity, /"\/\?dive=" \+ Uri\.encode\(dive\)/);
 });
 
 function major(versionRange) {

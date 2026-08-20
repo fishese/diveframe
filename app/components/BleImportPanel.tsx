@@ -384,6 +384,18 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
     setStatus(null);
   }
 
+  function confirmStopDownload() {
+    return window.confirm(t("bleImportCancelConfirm"));
+  }
+
+  async function stopDownload() {
+    try {
+      await diveComputerCapability.cancel();
+    } catch {
+      /* best effort */
+    }
+  }
+
   async function cancelDownload() {
     if (!(await confirmStopDownload())) return;
     await stopDownload();
@@ -403,18 +415,6 @@ export function BleImportPanel({ t, onClose, onImported }: BleImportPanelProps) 
     void requestClose();
     return true;
   }, true);
-
-  function confirmStopDownload() {
-    return window.confirm(t("bleImportCancelConfirm"));
-  }
-
-  async function stopDownload() {
-    try {
-      await diveComputerCapability.cancel();
-    } catch {
-      /* best effort */
-    }
-  }
 
   async function resetCheckpoint() {
     const product = connectedProduct || connectedName;

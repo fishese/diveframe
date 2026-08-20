@@ -1,7 +1,19 @@
 {
-  "version": "2026-08-17-back-button",
-  "updatedAt": "2026-08-17T13:51:00.000Z",
+  "version": "2026-08-20-navigation-spacing",
+  "updatedAt": "2026-08-20T12:00:00.000Z",
   "entries": [
+    {
+      "id": "2026-08-20-navigation-spacing",
+      "title": "More reliable Back navigation",
+      "body": "Back now returns reliably from pages such as Settings instead of leaving you on the same screen. Settings sections use consistent spacing, and the mobile dive list keeps its final record above the Android navigation controls.",
+      "date": "2026-08-20",
+      "links": [
+        {
+          "label": "Download DiveFrame Preview APK",
+          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
+        }
+      ]
+    },
     {
       "id": "2026-08-17-back-button",
       "title": "Fixed the back button",

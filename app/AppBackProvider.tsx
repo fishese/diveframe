@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { appBackHrefForLocation, appBackParent } from "@/lib/app-back";
 import { useAppRouteHref } from "./AppRouteProvider";
 
@@ -97,7 +97,10 @@ export function AppBackProvider({ children }: { children: ReactNode }) {
 export function useAppBackHandler(handler: BackHandler, active = true) {
   const register = useContext(AppBackRegisterContext);
   const handlerRef = useRef(handler);
-  handlerRef.current = handler;
+
+  useEffect(() => {
+    handlerRef.current = handler;
+  }, [handler]);
 
   useEffect(() => {
     if (!active) return;
@@ -106,11 +109,14 @@ export function useAppBackHandler(handler: BackHandler, active = true) {
 }
 
 export function useAppBackParent(href: string) {
-  const router = useRouter();
   const appRouteHref = useAppRouteHref();
   const target = appRouteHref(href);
   useAppBackHandler(() => {
-    router.replace(target);
+    // A client-router replacement started from popstate can race with the
+    // router's own history listener and leave the current route in place.
+    // A document replacement is reliable in browsers, PWAs, and the native
+    // WebView, and preserves the intended no-extra-history "up" behavior.
+    window.location.replace(target);
     return true;
   }, true);
 }

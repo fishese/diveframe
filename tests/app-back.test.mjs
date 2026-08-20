@@ -5,6 +5,7 @@ import ts from "typescript";
 import vm from "node:vm";
 
 const source = await readFile("lib/app-back.ts", "utf8");
+const providerSource = await readFile("app/AppBackProvider.tsx", "utf8");
 const javascript = ts.transpileModule(source, {
   compilerOptions: {
     module: ts.ModuleKind.ESNext,
@@ -78,6 +79,11 @@ test("bootstrap handleBack replaces nested URLs and ignores home", () => {
   const compose = runBootstrap("/compose.html", "?dive=n1");
   assert.equal(compose.window.__diveFrameHandleBack(), true);
   assert.equal(compose.location.replaced, "/?dive=n1");
+});
+
+test("hydrated page-up navigation replaces the document outside router popstate", () => {
+  assert.match(providerSource, /window\.location\.replace\(target\)/);
+  assert.doesNotMatch(providerSource, /router\.replace\(target\)/);
 });
 
 function runBootstrap(pathname, search) {

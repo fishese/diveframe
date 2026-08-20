@@ -978,3 +978,17 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(sampleLog, /sample dive log to test functions/);
 
 });
+
+test("settings sections and the mobile dive list use consistent safe spacing", async () => {
+  const styles = await readFile("app/globals.css", "utf8");
+
+  assert.match(styles, /\.backup-settings\s*\{\s*margin-top:\s*14px;/s);
+  assert.match(
+    styles,
+    /\.settings-group\s*>\s*\.settings-card\s*\{\s*margin-top:\s*0;/s,
+  );
+  assert.match(
+    styles,
+    /\.dive-list\s*\{[\s\S]*?padding-bottom:\s*calc\([\s\S]*?--safe-area-inset-bottom/,
+  );
+});
