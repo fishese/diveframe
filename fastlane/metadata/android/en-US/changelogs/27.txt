@@ -1,0 +1,4 @@
+Update checks are now off by default and available from Settings. Optional
+startup checks require explicit consent and never download an APK automatically.
+F-Droid installs open F-Droid for updates; signed Preview installs use their
+separate Preview APK channel.

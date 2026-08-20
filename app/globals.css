@@ -40,8 +40,6 @@
   --beta-bg: rgba(255, 143, 118, 0.12);
   --beta-border: rgba(255, 143, 118, 0.28);
   --beta-text: #ffe4dc;
-  --whats-new-bg: rgba(141, 235, 215, 0.1);
-  --whats-new-border: rgba(141, 235, 215, 0.25);
   --danger-soft-bg: rgba(255, 143, 118, 0.08);
   --danger-btn-bg: rgba(255, 143, 118, 0.16);
   --danger-btn-border: rgba(255, 143, 118, 0.35);
@@ -104,8 +102,6 @@
   --beta-bg: rgba(201, 90, 69, 0.1);
   --beta-border: rgba(201, 90, 69, 0.28);
   --beta-text: #6b2e22;
-  --whats-new-bg: rgba(13, 143, 124, 0.1);
-  --whats-new-border: rgba(13, 143, 124, 0.28);
   --danger-soft-bg: rgba(201, 90, 69, 0.08);
   --danger-btn-bg: rgba(201, 90, 69, 0.12);
   --danger-btn-border: rgba(201, 90, 69, 0.32);
@@ -186,15 +182,6 @@ select option {
   flex: 0 0 auto;
 }
 
-.beta-notice.whats-new-notice {
-  background: var(--whats-new-bg);
-  border-bottom-color: var(--whats-new-border);
-}
-
-.beta-notice.whats-new-notice > svg {
-  color: var(--teal);
-}
-
 .beta-notice p {
   margin: 0;
 }
@@ -212,7 +199,7 @@ select option {
   text-underline-offset: 2px;
 }
 
-/* Opaque status-bar cover: stays put so What's New can scroll away while
+/* Opaque status-bar cover: stays put so the beta notice can scroll away while
    sticky top bars park just below the inset instead of under system UI. */
 .app-safe-top {
   background: var(--ink);
@@ -4301,7 +4288,8 @@ button {
   padding: 16px;
 }
 
-.backup-encryption-toggle {
+.backup-encryption-toggle,
+.automatic-update-toggle {
   align-items: flex-start;
   background: var(--fill-01);
   border: 1px solid var(--line);
@@ -4313,18 +4301,21 @@ button {
   padding: 13px;
 }
 
-.backup-encryption-toggle input {
+.backup-encryption-toggle input,
+.automatic-update-toggle input {
   accent-color: var(--teal);
   margin-top: 3px;
 }
 
 .backup-encryption-toggle span,
+.automatic-update-toggle span,
 .encrypted-backup-unlock > div {
   display: grid;
   gap: 3px;
 }
 
 .backup-encryption-toggle small,
+.automatic-update-toggle small,
 .encrypted-backup-unlock small,
 .manual-merge p {
   color: var(--muted);
@@ -4629,6 +4620,21 @@ button {
   .prefs-settings-grid {
     grid-template-columns: 1fr;
   }
+
+  .whats-new-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .whats-new-heading .button {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .update-destination {
+    justify-content: center;
+    width: 100%;
+  }
 }
 
 .background-settings > .empty-compact {
@@ -4648,8 +4654,73 @@ button {
   margin: 0;
 }
 
-.whats-new-settings {
-  order: 1;
+.whats-new-heading {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+}
+
+.whats-new-heading h2,
+.whats-new-heading p {
+  margin: 0;
+}
+
+.whats-new-heading h2 {
+  font-size: 20px;
+  letter-spacing: -0.035em;
+  margin-top: 5px;
+}
+
+.whats-new-heading .button {
+  flex-shrink: 0;
+}
+
+.whats-new-settings > .settings-note {
+  margin: 10px 0 0;
+  max-width: 760px;
+}
+
+.whats-new-settings > details,
+.whats-new-settings > .empty-compact {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  padding-top: 18px;
+}
+
+.whats-new-settings > .whats-new-status {
+  color: var(--text);
+  margin-bottom: 0;
+}
+
+.app-version-row {
+  align-items: baseline;
+  background: var(--fill-01);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 18px;
+  padding: 12px 14px;
+}
+
+.app-version-row span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.app-version-row strong {
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.update-destination {
+  margin-top: 18px;
+}
+
+.automatic-update-toggle {
+  margin-top: 12px;
 }
 
 .whats-new-summary {
@@ -4667,27 +4738,6 @@ button {
 
 .whats-new-summary .settings-note {
   margin-top: 4px;
-}
-
-.whats-new-badge {
-  background: var(--coral);
-  border-radius: 999px;
-  flex-shrink: 0;
-  height: 9px;
-  width: 9px;
-}
-
-.whats-new-summary {
-  align-items: center;
-  cursor: pointer;
-  display: flex;
-  gap: 14px;
-  justify-content: space-between;
-  list-style: none;
-}
-
-.whats-new-summary::-webkit-details-marker {
-  display: none;
 }
 
 .whats-new-summary > div {

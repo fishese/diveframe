@@ -100,6 +100,11 @@ import {
   sanitizeWhatsNewHref,
   type WhatsNewDocument,
 } from "@/lib/whats-new";
+import {
+  getNativeAppInfo,
+  updateDestinationForChannel,
+  type NativeAppInfo,
+} from "@/lib/update-channel";
 import { useAppBackParent } from "../AppBackProvider";
 import { useAppI18n } from "../AppI18nProvider";
 import { useColorTheme } from "../ThemeProvider";
@@ -150,10 +155,18 @@ export function SettingsApp() {
     ReturnType<typeof getLocalBackupSizeEstimate>
   > | null>(null);
   const [whatsNew, setWhatsNew] = useState<WhatsNewDocument | null>(null);
-  const [lastSeenWhatsNewVersion, setLastSeenWhatsNewVersion] = useState<
-    string | null
-  >(null);
+  const [whatsNewRefreshing, setWhatsNewRefreshing] = useState(false);
+  const [whatsNewStatus, setWhatsNewStatus] = useState<string | null>(null);
+  const [nativeAppInfo, setNativeAppInfo] = useState<NativeAppInfo | null>(null);
+  const [automaticUpdateChecks, setAutomaticUpdateChecks] = useState(false);
   const dataRefreshGenerationRef = useRef(0);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setNativeAppInfo(getNativeAppInfo());
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!backupPreview) return;
@@ -195,10 +208,13 @@ export function SettingsApp() {
   }, []);
 
   async function refreshWhatsNew() {
+    setWhatsNewStatus(null);
     if (!navigator.onLine) {
+      setWhatsNewStatus(t("updatesOffline"));
       return;
     }
 
+    setWhatsNewRefreshing(true);
     try {
       const document = await fetchWhatsNewDocument();
       setWhatsNew(document);
@@ -206,8 +222,24 @@ export function SettingsApp() {
         whatsNewCache: document,
         whatsNewFetchedAt: new Date().toISOString(),
       });
+      const channelRelease = nativeAppInfo
+        ? document.channels?.[nativeAppInfo.channel]
+        : null;
+      if (channelRelease && nativeAppInfo) {
+        setWhatsNewStatus(
+          channelRelease.versionCode > nativeAppInfo.versionCode
+            ? t("updateAvailableVersion", {
+                version: channelRelease.versionName,
+              })
+            : t("appUpToDate"),
+        );
+      } else {
+        setWhatsNewStatus(t("updatesRefreshed"));
+      }
     } catch {
-      // Cached What's new content remains available when the feed is offline.
+      setWhatsNewStatus(t("updatesRefreshFailed"));
+    } finally {
+      setWhatsNewRefreshing(false);
     }
   }
 
@@ -215,9 +247,6 @@ export function SettingsApp() {
     let active = true;
     const generation = ++dataRefreshGenerationRef.current;
     const migrated = takeSessionSupplementaryCatalogMigration();
-    const whatsNewFrame = window.requestAnimationFrame(() => {
-      void refreshWhatsNew();
-    });
     Promise.all([
       listLocalSiteContributions(),
       listLocalBackgrounds(),
@@ -244,8 +273,8 @@ export function SettingsApp() {
         setDismissedDuplicates(preferences?.dismissedDuplicatePairs ?? []);
         setBundledBackgroundVisible(!preferences?.bundledBackgroundHidden);
         setWhatsNew(preferences?.whatsNewCache ?? null);
-        setLastSeenWhatsNewVersion(
-          preferences?.lastSeenWhatsNewVersion ?? null,
+        setAutomaticUpdateChecks(
+          preferences?.automaticUpdateChecks ?? false,
         );
         setDuplicateCandidates(findPotentialDuplicateDives(dives));
         setDives(dives);
@@ -267,7 +296,6 @@ export function SettingsApp() {
     return () => {
       active = false;
       dataRefreshGenerationRef.current += 1;
-      window.cancelAnimationFrame(whatsNewFrame);
     };
   }, [t]);
 
@@ -306,8 +334,8 @@ export function SettingsApp() {
             setDismissedDuplicates(preferences?.dismissedDuplicatePairs ?? []);
             setBundledBackgroundVisible(!preferences?.bundledBackgroundHidden);
             setWhatsNew(preferences?.whatsNewCache ?? null);
-            setLastSeenWhatsNewVersion(
-              preferences?.lastSeenWhatsNewVersion ?? null,
+            setAutomaticUpdateChecks(
+              preferences?.automaticUpdateChecks ?? false,
             );
             setDuplicateCandidates(findPotentialDuplicateDives(nextDives));
             setDives(nextDives);
@@ -323,20 +351,16 @@ export function SettingsApp() {
     };
   }, []);
 
-  async function markWhatsNewSeen() {
-    if (!whatsNew || whatsNew.version === lastSeenWhatsNewVersion) return;
-    setLastSeenWhatsNewVersion(whatsNew.version);
-    window.dispatchEvent(
-      new CustomEvent("diveframe-whats-new-seen", {
-        detail: { version: whatsNew.version },
-      }),
-    );
+  async function chooseAutomaticUpdateChecks(enabled: boolean) {
+    setAutomaticUpdateChecks(enabled);
     try {
-      await saveLocalAppPreferences({
-        lastSeenWhatsNewVersion: whatsNew.version,
-      });
+      await saveLocalAppPreferences({ automaticUpdateChecks: enabled });
+      if (enabled) void refreshWhatsNew();
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : t("settingsSaveFailed"));
+      setAutomaticUpdateChecks(!enabled);
+      setWhatsNewStatus(
+        error instanceof Error ? error.message : t("settingsSaveFailed"),
+      );
     }
   }
 
@@ -975,20 +999,43 @@ export function SettingsApp() {
           <p>{t("settingsDescription")}</p>
         </section>
 
-        {whatsNew && whatsNew.version !== lastSeenWhatsNewVersion ? (
-          <section className="settings-card whats-new-settings">
-            <details
-              onToggle={(event) => {
-                if (event.currentTarget.open) void markWhatsNewSeen();
-              }}
+        <section className="settings-card whats-new-settings">
+          <div className="whats-new-heading">
+            <div>
+              <p className="eyebrow">{t("whatsNew")}</p>
+              <h2>{t("whatsNewTitle")}</h2>
+            </div>
+            <button
+              className="button button-secondary"
+              disabled={whatsNewRefreshing}
+              onClick={() => void refreshWhatsNew()}
+              type="button"
             >
+              <RefreshCw
+                aria-hidden="true"
+                className={whatsNewRefreshing ? "spin" : undefined}
+                size={16}
+              />
+              {whatsNewRefreshing
+                ? t("refreshingUpdates")
+                : t("refreshUpdates")}
+            </button>
+          </div>
+          <p className="settings-note">{t("updatesCachedDescription")}</p>
+          {nativeAppInfo ? (
+            <div className="app-version-row">
+              <span>{t("installedVersion")}</span>
+              <strong>{nativeAppInfo.versionName}</strong>
+            </div>
+          ) : null}
+          {whatsNew ? (
+            <details>
               <summary className="whats-new-summary">
                 <div>
-                  <p className="eyebrow">{t("whatsNew")}</p>
                   <strong>{whatsNew.entries[0]?.title ?? whatsNew.version}</strong>
                   <small>v{whatsNew.version}</small>
                 </div>
-                <span className="whats-new-badge" aria-label={t("whatsNew")} />
+                <ChevronDown aria-hidden="true" size={18} />
               </summary>
               <div className="whats-new-list">
                 {whatsNew.entries.map((entry) => (
@@ -1022,8 +1069,43 @@ export function SettingsApp() {
                 ))}
               </div>
             </details>
-          </section>
-        ) : null}
+          ) : (
+            <p className="empty-compact">{t("noCachedUpdates")}</p>
+          )}
+          {whatsNewStatus ? (
+            <p className="settings-note whats-new-status" role="status">
+              {whatsNewStatus}
+            </p>
+          ) : null}
+          {nativeAppInfo ? (
+            <>
+              <a
+                className="button button-secondary update-destination"
+                href={updateDestinationForChannel(nativeAppInfo.channel)}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <Download aria-hidden="true" size={16} />
+                {nativeAppInfo.channel === "preview"
+                  ? t("downloadLatestPreview")
+                  : t("openInFdroid")}
+              </a>
+              <label className="automatic-update-toggle">
+                <input
+                  checked={automaticUpdateChecks}
+                  onChange={(event) =>
+                    void chooseAutomaticUpdateChecks(event.target.checked)
+                  }
+                  type="checkbox"
+                />
+                <span>
+                  <strong>{t("automaticUpdateChecks")}</strong>
+                  <small>{t("automaticUpdateChecksDescription")}</small>
+                </span>
+              </label>
+            </>
+          ) : null}
+        </section>
 
         <section className="settings-card prefs-settings">
           <div className="prefs-settings-grid">

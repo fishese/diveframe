@@ -258,6 +258,7 @@ export type LocalAppPreferences = {
   whatsNewCache?: WhatsNewDocument | null;
   whatsNewFetchedAt?: string | null;
   lastSeenWhatsNewVersion?: string | null;
+  automaticUpdateChecks?: boolean;
   updatedAt: string;
 };
 
@@ -1047,6 +1048,7 @@ export async function saveLocalAppPreferences(
       | "whatsNewCache"
       | "whatsNewFetchedAt"
       | "lastSeenWhatsNewVersion"
+      | "automaticUpdateChecks"
     >
   >,
 ) {
@@ -1094,6 +1096,10 @@ export async function saveLocalAppPreferences(
       preferences.lastSeenWhatsNewVersion !== undefined
         ? preferences.lastSeenWhatsNewVersion
         : existing?.lastSeenWhatsNewVersion ?? null,
+    automaticUpdateChecks:
+      preferences.automaticUpdateChecks ??
+      existing?.automaticUpdateChecks ??
+      false,
     updatedAt: new Date().toISOString(),
   };
   store.put(saved);

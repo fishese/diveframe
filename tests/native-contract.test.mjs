@@ -188,19 +188,21 @@ test("BLE permissions, scan, cancel, and classic GATT transport are wired", asyn
 });
 
 test("Preview Android identity is isolated from production", async () => {
-  const [buildGradle, previewStrings, previewShortcuts] = await Promise.all([
+  const [buildGradle, previewStrings, previewShortcuts, mainActivity, updateChannel] = await Promise.all([
     readFile(files.buildGradle, "utf8"),
     readFile(files.previewStrings, "utf8"),
     readFile(files.previewShortcuts, "utf8"),
+    readFile(files.mainActivity, "utf8"),
+    readFile(new URL("../lib/update-channel.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(buildGradle, /applicationId "cc\.fishese\.divelog"/);
   assert.match(buildGradle, /previewVersionCode/);
   assert.match(buildGradle, /previewVersionName/);
   assert.match(buildGradle, /preview\s*\{[\s\S]*applicationIdSuffix "\.preview"/);
-  assert.match(buildGradle, /defaultConfig\s*\{[\s\S]*versionCode 26[\s\S]*versionName "1\.0\.25"/);
-  assert.match(buildGradle, /^\s*versionCode 26$/m);
-  assert.match(buildGradle, /^\s*versionName "1\.0\.25"$/m);
+  assert.match(buildGradle, /defaultConfig\s*\{[\s\S]*versionCode 27[\s\S]*versionName "1\.0\.26"/);
+  assert.match(buildGradle, /^\s*versionCode 27$/m);
+  assert.match(buildGradle, /^\s*versionName "1\.0\.26"$/m);
   assert.match(buildGradle, /withBuildType\("preview"\)/);
   assert.match(buildGradle, /output\.versionCode\.set\(configuredPreviewVersionCode\.toInteger\(\)\)/);
   assert.match(buildGradle, /output\.versionName\.set\(configuredPreviewVersionName\)/);
@@ -216,6 +218,10 @@ test("Preview Android identity is isolated from production", async () => {
     previewShortcuts,
     /android:targetClass="cc\.fishese\.divelog\.MainActivity"/,
   );
+  assert.match(mainActivity, /getAppInfo\(\)/);
+  assert.match(mainActivity, /PackageInfoCompat\.getLongVersionCode/);
+  assert.match(updateChannel, /packageName\.endsWith\("\.preview"\)/);
+  assert.match(updateChannel, /FDROID_PACKAGE_URL/);
 });
 
 test("Android native build pins the NDK version", async () => {

@@ -43,12 +43,14 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   ]);
   const appI18n = `${appI18nBarrel}\n${appI18nEn}\n${appI18nJa}`;
   const settingsPage = await readFile("app/settings/page.tsx", "utf8");
+  const betaNotice = await readFile("app/BetaNotice.tsx", "utf8");
   const importGuide = await readFile("app/components/ImportGuide.tsx", "utf8");
   const diveSiteSuggestions = await readFile(
     "app/components/DiveSiteSuggestions.tsx",
     "utf8",
   );
   const androidPage = await readFile("app/android/AndroidAppPage.tsx", "utf8");
+  const updateChannel = await readFile("lib/update-channel.ts", "utf8");
   const androidLink = await readFile("app/components/AndroidAppLink.tsx", "utf8");
   const [catalogPage, deviceCatalogPage, supplementCatalogPage, catalogBrowser, memoMatchHints, rootLayout] =
     await Promise.all([
@@ -688,7 +690,10 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(appI18n, /downloadFromComputer/);
   assert.match(androidLink, /appRouteHref\("\/android"\)/);
   assert.match(androidLink, /diveComputerCapability.isAvailable/);
-  assert.match(androidPage, /releases\/download\/preview\/diveframe-preview\.apk/);
+  assert.match(androidPage, /getNativeAppInfo/);
+  assert.match(androidPage, /FDROID_PACKAGE_URL|isFdroidApp/);
+  assert.match(updateChannel, /releases\/download\/preview\/diveframe-preview\.apk/);
+  assert.match(updateChannel, /f-droid\.org\/packages\/cc\.fishese\.divelog/);
   assert.match(androidPage, /androidAppPermissionsTitle/);
   assert.match(androidPage, /androidAppIosTitle/);
   assert.match(androidPage, /androidAppPcTitle/);
@@ -850,7 +855,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v16/);
+  assert.match(serviceWorker, /diveframe-shell-v17/);
   assert.match(serviceWorker, /"\/memo"/);
   assert.match(serviceWorker, /"\/catalog"/);
   assert.match(serviceWorker, /"\/catalog\/device-additions"/);
@@ -866,9 +871,21 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(settings, /PwaInstallCard/);
   assert.match(
     settings,
-    /fetchWhatsNewDocument|whatsNewCache|lastSeenWhatsNewVersion/,
+    /fetchWhatsNewDocument|whatsNewCache/,
+  );
+  assert.match(settings, /onClick=\{\(\) => void refreshWhatsNew\(\)\}/);
+  assert.match(settings, /t\("updatesRefreshFailed"\)/);
+  assert.doesNotMatch(
+    settings,
+    /requestAnimationFrame\([\s\S]{0,120}refreshWhatsNew/,
   );
   assert.match(settings, /entry\.links|sanitizeWhatsNewHref/);
+  assert.match(settings, /automaticUpdateChecks/);
+  assert.match(settings, /updateDestinationForChannel/);
+  assert.match(betaNotice, /preferences\?\.automaticUpdateChecks/);
+  assert.match(betaNotice, /getNativeAppInfo\(\)/);
+  assert.match(storage, /automaticUpdateChecks:[\s\S]*false/);
+  assert.match(betaNotice, /betaNoticeShort/);
 
   const globalStyles = await readFile(
     new URL("../app/globals.css", import.meta.url),

@@ -1,8 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import {
-  DIVEFRAME_HOSTED_WEB_ORIGINS,
-  DIVEFRAME_PRODUCTION_ORIGIN,
-} from "./diveframe-origins";
+import { DIVEFRAME_PRODUCTION_ORIGIN } from "./diveframe-origins";
 
 export {
   DIVEFRAME_HOSTED_WEB_ORIGINS,
@@ -40,14 +37,13 @@ export function diveFrameProductionApiUrl(path: string) {
 }
 
 /**
- * What's New should prefer the page's own `/api/whats-new` when already on a
- * hosted DiveFrame origin (avoids workers.dev → custom-domain CORS). Local
- * vinext and the APK still read the published production feed.
+ * Web/PWA, including local Vinext, uses its own same-origin route. Capacitor's
+ * static shell has no local API route, so native builds read production.
  */
 export function diveFrameWhatsNewUrl(): string {
   if (
     typeof window !== "undefined" &&
-    DIVEFRAME_HOSTED_WEB_ORIGINS.has(window.location.origin)
+    !Capacitor.isNativePlatform()
   ) {
     return "/api/whats-new";
   }

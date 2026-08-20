@@ -1,143 +1,107 @@
 {
-  "version": "2026-08-20-navigation-spacing",
-  "updatedAt": "2026-08-20T12:00:00.000Z",
+  "version": "2026-08-20-manual-updates",
+  "updatedAt": "2026-08-20T13:29:00.000Z",
+  "channels": {
+    "preview": {
+      "versionName": "preview.23.f91725c",
+      "versionCode": 100023,
+      "sourceSha": "f91725cc6ea7e57cc75fd63b64f3cacba7f33cc6"
+    },
+    "fdroid": {
+      "versionName": "1.0.25",
+      "versionCode": 26,
+      "sourceSha": "4dcdaa659af3fe6a873b13ed28a898afe2a774ca"
+    }
+  },
   "entries": [
+    {
+      "id": "2026-08-20-manual-updates",
+      "title": "Update checks stay under your control",
+      "body": "The beta reminder no longer checks for updates by default. Open What's new in Settings and choose Check for updates when you want the latest notes; native installs can optionally enable startup checks, which remain off until you opt in.",
+      "date": "2026-08-20",
+      "links": []
+    },
     {
       "id": "2026-08-20-navigation-spacing",
       "title": "More reliable Back navigation",
       "body": "Back now returns reliably from pages such as Settings instead of leaving you on the same screen. Settings sections use consistent spacing, and the mobile dive list keeps its final record above the Android navigation controls.",
       "date": "2026-08-20",
-      "links": [
-        {
-          "label": "Download DiveFrame Preview APK",
-          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
-        }
-      ]
+      "links": []
     },
     {
       "id": "2026-08-17-back-button",
       "title": "Fixed the back button",
-      "body": "Fixed back button. Download the APK again if needed.",
+      "body": "Fixed the back button so it returns reliably from pages such as Settings.",
       "date": "2026-08-17",
-      "links": [
-        {
-          "label": "Download DiveFrame Preview APK",
-          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
-        }
-      ]
+      "links": []
     },
     {
       "id": "2026-08-16-ble-dive-number",
       "title": "BLE imports keep the computer dive number",
       "body": "Downloads from a classic Shearwater now store the dive number shown on the computer. It appears in the logbook list and as shearwater-ble #N under Imported from. A factory test dive numbered 0 is kept. Dives saved from an older BLE import stay blank until you download them again.",
       "date": "2026-08-16",
-      "links": [
-        {
-          "label": "Download DiveFrame Preview APK",
-          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
-        }
-      ]
+      "links": []
     },
     {
       "id": "2026-08-16-reversible-segment-merge",
       "title": "Combine split dive segments safely",
       "body": "Combine adjacent dive-computer segments without deleting the originals, and unmerge them at any time. The logbook filters now cover named and unnamed sites, gas-pressure data, local edits, and short dives; use Select shown to review the exact filtered set before deleting it. You can also rename trips directly from their headers and choose user-entered coordinates for export. Backups that include combined dives use backup format 5 and should be restored with this or a newer DiveFrame build.",
       "date": "2026-08-16",
-      "links": [
-        {
-          "label": "Download DiveFrame Preview APK",
-          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
-        }
-      ]
+      "links": []
     },
     {
       "id": "2026-08-14-catalog-coordinate-matches",
       "title": "Apply catalog coordinates from a site name",
-      "body": "When a dive has a site name but no GPS, DiveFrame now suggests exact or close matches from the active catalog. Choose a match to apply its catalog coordinates. The Updates bar now appears only on the logbook and Settings pages.",
+      "body": "When a dive has a site name but no GPS, DiveFrame now suggests exact or close matches from the active catalog. Choose a match to apply its catalog coordinates.",
       "date": "2026-08-14",
-      "links": [
-        {
-          "label": "Download DiveFrame Preview APK",
-          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
-        }
-      ]
+      "links": []
     },
     {
       "id": "2026-08-13-dive-map-zoom",
       "title": "dive map - added zoom level",
       "body": "The Dive Map now has closer zoom levels with more detailed coastlines, plus a light map theme for brighter conditions.",
       "date": "2026-08-13",
-      "links": [
-        {
-          "label": "Download DiveFrame Preview APK",
-          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
-        }
-      ]
+      "links": []
     },
     {
       "id": "2026-08-08-compose-presets",
       "title": "New image composer presets",
-      "body": "Create share images with four refined presets: Bottom Profile, Right Information Panel, Bottom Stats Dock, and Solid Info Band. Every seeded layout can be recreated with the composer controls. The signed GitHub APK includes the same presets and updated dive-site catalog.",
+      "body": "Create share images with four refined presets: Bottom Profile, Right Information Panel, Bottom Stats Dock, and Solid Info Band. Every seeded layout can be recreated with the composer controls.",
       "date": "2026-08-08",
-      "links": [
-        {
-          "label": "Download DiveFrame Preview APK",
-          "href": "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk"
-        }
-      ]
+      "links": []
     },
     {
       "id": "2026-08-07-light-theme-memos-shortcuts",
       "title": "Light theme and Memos shortcut",
-      "body": "Choose Light or Dark in Settings (saved on this device). Long-press the app icon or use the PWA shortcut to open Dive memos. Android debug APK 1.0.20 includes the same updates.",
+      "body": "Choose Light or Dark in Settings (saved on this device). Long-press the app icon or use the PWA shortcut to open Dive memos.",
       "date": "2026-08-07",
-      "links": [
-        {
-          "label": "Download Android APK",
-          "href": "https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk"
-        }
-      ]
+      "links": []
     },
     {
       "id": "2026-08-06-beta-launch",
       "title": "Launched beta test",
-      "body": "DiveFrame beta testing is open. Import a dive log, try Dive memos, and share feedback. Android debug APK 1.0.19 includes the empty-state dive-profile refresh and related UI polish.",
+      "body": "DiveFrame beta testing is open. Import a dive log, try Dive memos, and share feedback.",
       "date": "2026-08-06",
-      "links": [
-        {
-          "label": "Download Android APK",
-          "href": "https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk"
-        }
-      ]
+      "links": []
     },
     {
       "id": "2026-08-06-memo-match-topbar",
       "title": "Memo match and top bar",
-      "body": "Dive detail and Dive memos can suggest nearby memos or dives by time. The top bar is shared across pages (Home, About, Settings, Bluetooth/Android app, memos, Import). Dive dates show HH:MM. Android debug APK 1.0.18 includes the same updates.",
+      "body": "Dive detail and Dive memos can suggest nearby memos or dives by time. The top bar is shared across pages (Home, About, Settings, Bluetooth/Android app, memos, Import). Dive dates show HH:MM.",
       "date": "2026-08-06",
-      "links": [
-        {
-          "label": "Download Android APK",
-          "href": "https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk"
-        }
-      ]
+      "links": []
     },
     {
       "id": "2026-08-05-i18n-refresh",
       "title": "UI copy refresh",
-      "body": "English, Japanese, and Traditional Chinese (HK) strings were refreshed across the app. The About page now leads with Why DiveFrame Exists (with a Read more for the rest), then the companion overview, Open source, and Advanced search. Android debug APK 1.0.17 includes the same updates.",
+      "body": "English, Japanese, and Traditional Chinese (HK) strings were refreshed across the app. The About page now leads with Why DiveFrame Exists (with a Read more for the rest), then the companion overview, Open source, and Advanced search.",
       "date": "2026-08-05",
-      "links": [
-        {
-          "label": "Download Android APK",
-          "href": "https://github.com/fishese/diveframe/releases/latest/download/diveframe-debug.apk"
-        }
-      ]
+      "links": []
     },
     {
       "id": "2026-08-05-dive-memos",
       "title": "Dive memos",
-      "body": "Jot date, time, location, buddies, and notes before a log exists. Open Dive memos from the import guide. Android debug APK 1.0.16 also fixes What's New / top bar placement under the status bar.",
+      "body": "Jot date, time, location, buddies, and notes before a log exists. Open Dive memos from the import guide.",
       "date": "2026-08-05",
       "links": []
     },

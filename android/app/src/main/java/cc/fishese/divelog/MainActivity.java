@@ -1,6 +1,7 @@
 package cc.fishese.divelog;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -8,11 +9,13 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.graphics.Insets;
+import androidx.core.content.pm.PackageInfoCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
 import java.util.Locale;
+import org.json.JSONObject;
 
 public class MainActivity extends BridgeActivity {
     private static final int DEFAULT_TEXT_ZOOM_PERCENT = 100;
@@ -29,8 +32,8 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(FileExportPlugin.class);
         registerPlugin(PhotoLocationPlugin.class);
         super.onCreate(savedInstanceState);
-        // Draw edge-to-edge; CSS owns the inset via --safe-area-inset-* so What's
-        // New can sit below the status bar without being sticky itself.
+        // Draw edge-to-edge; CSS owns the inset via --safe-area-inset-* so the
+        // beta notice can sit below the status bar without being sticky itself.
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
@@ -207,6 +210,26 @@ public class MainActivity extends BridgeActivity {
     }
 
     private final class DiveFrameJsBridge {
+        @JavascriptInterface
+        public String getAppInfo() {
+            try {
+                PackageInfo packageInfo = getPackageManager().getPackageInfo(
+                    getPackageName(),
+                    0
+                );
+                JSONObject result = new JSONObject();
+                result.put("packageName", getPackageName());
+                result.put("versionName", packageInfo.versionName);
+                result.put(
+                    "versionCode",
+                    PackageInfoCompat.getLongVersionCode(packageInfo)
+                );
+                return result.toString();
+            } catch (Exception error) {
+                return "{}";
+            }
+        }
+
         @JavascriptInterface
         public void setLightStatusBars(final boolean light) {
             runOnUiThread(() ->

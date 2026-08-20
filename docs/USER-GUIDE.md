@@ -503,13 +503,22 @@ from the hosted web app.
 
 ### What's new
 
-The global notice surfaces the latest unread update version. Open **Settings →
-What's new** to expand its one-line entry and mark it as seen. When online,
-DiveFrame fetches the latest feed from the hosted production site and caches it
-on the device so an unread entry remains available offline. Each entry can
-include structured download links, such as an **Download Android APK** button
-that opens in a new browser tab. Once marked seen, the What's new card is hidden
-until a newer version is available.
+The global notice is a local-only beta reminder; update checking is off by
+default. Open **Settings → What's new** to view the copy cached on this device.
+DiveFrame contacts `divelog.fishese.cc` only after you choose **Check for
+updates**, then keeps the refreshed feed available offline. A failed or offline
+check leaves the previous cached copy intact and shows a status message.
+
+Native installs also show the installed app version and an optional **Check
+automatically when DiveFrame opens** setting. It is disabled by default. The
+consent text explains the startup connection and that no logbook or personal
+data is sent. Automatic checking never downloads an APK; downloading remains a
+separate tap.
+
+The action is channel-aware. The separately installable GitHub Preview opens
+the stable direct URL for the latest signed Preview APK. The production package
+opens its F-Droid package page instead, because an APK signed by GitHub cannot
+update an F-Droid-signed installation.
 
 ## Cropping a share image
 

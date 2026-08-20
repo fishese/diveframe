@@ -13,10 +13,22 @@ export type WhatsNewEntry = {
   links: WhatsNewLink[];
 };
 
+export type WhatsNewChannelRelease = {
+  versionName: string;
+  versionCode: number;
+  sourceSha: string;
+};
+
+export type WhatsNewChannels = {
+  preview?: WhatsNewChannelRelease;
+  fdroid?: WhatsNewChannelRelease;
+};
+
 export type WhatsNewDocument = {
   version: string;
   updatedAt: string;
   entries: WhatsNewEntry[];
+  channels?: WhatsNewChannels;
 };
 
 export type WhatsNewBodyTextPart = {
@@ -33,11 +45,15 @@ export type WhatsNewBodyLinkPart = {
 export type WhatsNewBodyPart = WhatsNewBodyTextPart | WhatsNewBodyLinkPart;
 
 const INLINE_LINK_PATTERN = /\[([^\]]+)\]\(([^)]+)\)/g;
+const EXECUTABLE_DOWNLOAD_PATTERN = /\.(?:aab|apk|apks|xapk)$/i;
 
 export function sanitizeWhatsNewHref(href: string): string | null {
   try {
     const url = new URL(href);
-    if (url.protocol === "http:" || url.protocol === "https:") {
+    if (
+      (url.protocol === "http:" || url.protocol === "https:") &&
+      !EXECUTABLE_DOWNLOAD_PATTERN.test(url.pathname)
+    ) {
       return href;
     }
     return null;
@@ -62,10 +78,59 @@ export function validateWhatsNewDocument(value: unknown): WhatsNewDocument {
     throw new Error("Invalid what's new document.");
   }
 
-  return {
+  const document: WhatsNewDocument = {
     version: candidate.version.trim(),
     updatedAt: candidate.updatedAt.trim(),
     entries: candidate.entries.map(validateWhatsNewEntry),
+  };
+
+  if (candidate.channels !== undefined) {
+    document.channels = validateWhatsNewChannels(candidate.channels);
+  }
+
+  return document;
+}
+
+function validateWhatsNewChannels(value: unknown): WhatsNewChannels {
+  if (!value || typeof value !== "object") {
+    throw new Error("Invalid what's new channels.");
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const channels: WhatsNewChannels = {};
+  if (candidate.preview !== undefined) {
+    channels.preview = validateWhatsNewChannelRelease(candidate.preview);
+  }
+  if (candidate.fdroid !== undefined) {
+    channels.fdroid = validateWhatsNewChannelRelease(candidate.fdroid);
+  }
+  return channels;
+}
+
+function validateWhatsNewChannelRelease(
+  value: unknown,
+): WhatsNewChannelRelease {
+  if (!value || typeof value !== "object") {
+    throw new Error("Invalid what's new channel release.");
+  }
+
+  const candidate = value as Record<string, unknown>;
+  if (
+    typeof candidate.versionName !== "string" ||
+    !candidate.versionName.trim() ||
+    typeof candidate.versionCode !== "number" ||
+    !Number.isSafeInteger(candidate.versionCode) ||
+    candidate.versionCode < 1 ||
+    typeof candidate.sourceSha !== "string" ||
+    !/^[0-9a-f]{40}$/.test(candidate.sourceSha)
+  ) {
+    throw new Error("Invalid what's new channel release.");
+  }
+
+  return {
+    versionName: candidate.versionName.trim(),
+    versionCode: candidate.versionCode,
+    sourceSha: candidate.sourceSha,
   };
 }
 
@@ -165,8 +230,8 @@ export function renderWhatsNewBody(body: string): WhatsNewBodyPart[] {
 }
 
 export async function fetchWhatsNewDocument(): Promise<WhatsNewDocument> {
-  // Hosted web uses same-origin `/api/whats-new`. Local vinext and the APK
-  // read the published production feed (see diveFrameWhatsNewUrl).
+  // Web/PWA uses its same-origin route; the native shell reads production.
+  // See diveFrameWhatsNewUrl for the platform split.
   const response = await fetch(diveFrameWhatsNewUrl());
   if (!response.ok) {
     throw new Error("What's new feed is unavailable.");

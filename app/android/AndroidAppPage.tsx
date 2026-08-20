@@ -9,17 +9,37 @@ import {
   ShieldCheck,
   Smartphone,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  FDROID_PACKAGE_URL,
+  PREVIEW_APK_URL,
+  getNativeAppInfo,
+  type NativeAppInfo,
+} from "@/lib/update-channel";
 import { useAppBackParent } from "../AppBackProvider";
 import { useAppI18n } from "../AppI18nProvider";
 import { AppTopbar } from "../components/AppTopbar";
 
-const ANDROID_RELEASE_URL =
-  "https://github.com/fishese/diveframe/releases/download/preview/diveframe-preview.apk";
 const SOURCE_URL = "https://github.com/fishese/diveframe";
 
 export function AndroidAppPage() {
   const { t } = useAppI18n();
+  const [nativeAppInfo, setNativeAppInfo] = useState<
+    NativeAppInfo | null | undefined
+  >(undefined);
   useAppBackParent("/");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setNativeAppInfo(getNativeAppInfo());
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const isFdroidApp = nativeAppInfo?.channel === "fdroid";
+  const androidReleaseUrl = isFdroidApp
+    ? FDROID_PACKAGE_URL
+    : PREVIEW_APK_URL;
 
   return (
     <main className="android-page">
@@ -36,14 +56,17 @@ export function AndroidAppPage() {
           <h1>{t("androidAppTitle")}</h1>
           <p>{t("androidAppIntro")}</p>
           <div className="about-actions">
-            <a
-              className="button button-primary"
-              href={ANDROID_RELEASE_URL}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              <Download size={17} /> {t("androidAppDownload")}
-            </a>
+            {nativeAppInfo !== undefined ? (
+              <a
+                className="button button-primary"
+                href={androidReleaseUrl}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <Download size={17} />
+                {isFdroidApp ? t("openInFdroid") : t("androidAppDownload")}
+              </a>
+            ) : null}
             <a
               className="button button-secondary"
               href={SOURCE_URL}
