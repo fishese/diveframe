@@ -22,8 +22,8 @@ android {
         applicationId "cc.fishese.divelog"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 27
-        versionName "1.0.26"
+        versionCode 28
+        versionName "1.0.27"
         buildConfigField "String", "LIBDIVECOMPUTER_COMMIT", "\"${libdivecomputerCommit}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {

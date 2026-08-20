@@ -29,6 +29,10 @@ const files = {
     import.meta.url,
   ),
   buildGradle: new URL("../android/app/build.gradle", import.meta.url),
+  gradleWrapperProperties: new URL(
+    "../android/gradle/wrapper/gradle-wrapper.properties",
+    import.meta.url,
+  ),
   previewStrings: new URL(
     "../android/app/src/preview/res/values/strings.xml",
     import.meta.url,
@@ -86,6 +90,22 @@ test("native shell remains isolated from the deployed web build", async () => {
   assert.equal(
     major(packageJson.dependencies["@capacitor/core"]),
     major(packageJson.devDependencies["@capacitor/cli"]),
+  );
+});
+
+test("Gradle wrapper pins the official distribution checksum", async () => {
+  const wrapperProperties = await readFile(
+    files.gradleWrapperProperties,
+    "utf8",
+  );
+
+  assert.match(
+    wrapperProperties,
+    /^distributionUrl=https\\:\/\/services\.gradle\.org\/distributions\/gradle-8\.14\.2-all\.zip$/m,
+  );
+  assert.match(
+    wrapperProperties,
+    /^distributionSha256Sum=443c9c8ee2ac1ee0e11881a40f2376d79c66386264a44b24a9f8ca67e633375f$/m,
   );
 });
 
@@ -200,9 +220,9 @@ test("Preview Android identity is isolated from production", async () => {
   assert.match(buildGradle, /previewVersionCode/);
   assert.match(buildGradle, /previewVersionName/);
   assert.match(buildGradle, /preview\s*\{[\s\S]*applicationIdSuffix "\.preview"/);
-  assert.match(buildGradle, /defaultConfig\s*\{[\s\S]*versionCode 27[\s\S]*versionName "1\.0\.26"/);
-  assert.match(buildGradle, /^\s*versionCode 27$/m);
-  assert.match(buildGradle, /^\s*versionName "1\.0\.26"$/m);
+  assert.match(buildGradle, /defaultConfig\s*\{[\s\S]*versionCode 28[\s\S]*versionName "1\.0\.27"/);
+  assert.match(buildGradle, /^\s*versionCode 28$/m);
+  assert.match(buildGradle, /^\s*versionName "1\.0\.27"$/m);
   assert.match(buildGradle, /withBuildType\("preview"\)/);
   assert.match(buildGradle, /output\.versionCode\.set\(configuredPreviewVersionCode\.toInteger\(\)\)/);
   assert.match(buildGradle, /output\.versionName\.set\(configuredPreviewVersionName\)/);

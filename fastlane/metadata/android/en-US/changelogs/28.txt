@@ -1,0 +1,2 @@
+Pins the official SHA-256 checksum for the Gradle 8.14.2 wrapper distribution
+to strengthen build integrity and reproducibility verification.
