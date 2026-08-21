@@ -173,11 +173,11 @@ before `Categories` in canonical field order:
 ```yaml
 AntiFeatures:
   NonFreeNet:
-    en-US: Dive-site suggestions send coordinates to the DiveFrame-hosted API,
-      which connects to Nominatim and Overpass.
+    en-US: Dive-site suggestions send coordinates to the DiveFrame-hosted API, which
+      connects to Nominatim and Overpass.
   TetheredNet:
-    en-US: Production builds use a fixed DiveFrame API origin for dive-site
-      suggestions; users cannot configure an alternative service.
+    en-US: Production builds use a fixed DiveFrame API origin for dive-site suggestions;
+      users cannot configure an alternative service.
 Categories:
   - Sports & Health
 ```
