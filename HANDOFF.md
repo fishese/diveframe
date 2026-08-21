@@ -72,14 +72,15 @@ store distribution are not started yet.
   signed by the existing `CN=Fishese` certificate and arm64-only.
   Reference workflow: `32395939701`.
 - MR !45472 remains open and unmerged. The recipe head is
-  `048fba4f9b87a4d78ec4cd8408bda9fad49bf7db`; it records 1.0.27, exact
+  `0f1d8907f07481a16ec646448f61ac222696b23f`; it records 1.0.27, exact
   immutable source `b3848c4`, and canonical localized `NonFreeNet` plus
-  `TetheredNet` disclosures for the fixed hosted dive-site lookup path. The
-  preceding pipeline `2776952636` passed all nine jobs. Pipelines `2780082827`
-  and `2780108782` failed only because GitLab public git returned HTTP 403
-  before F-Droid commands. The schema job's initial metaschema check passed,
-  but metadata validation did not complete. One review thread remains
-  unresolved while CI recovery is pending. The recipe remains
+  `TetheredNet` disclosures for the fixed hosted dive-site lookup path.
+  Pipeline `2780180416` passed all nine jobs, including `fdroid build`, `check
+  apk`, lint, schema validation, and `fdroid rewritemeta`. Earlier attempts
+  `2780082827` and `2780108782` were affected by transient GitLab public-git
+  HTTP 403 failures; the latter also exposed line wrapping that was corrected
+  exactly to `rewritemeta` output. One review thread remains unresolved. The
+  recipe remains
   production-only: `AutoUpdateMode: Version` follows only exact immutable
   `vMAJOR.MINOR.PATCH` tags, and Preview changes are not submitted. Because
   the first-inclusion MR is still open, a new stable tag required a
