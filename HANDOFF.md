@@ -71,22 +71,25 @@ store distribution are not started yet.
   `9F87EDC488E88C28DC1468AAAFC2A6FB5BCFBCA4C6362C2E2581BDDCEEEF283E`,
   signed by the existing `CN=Fishese` certificate and arm64-only.
   Reference workflow: `32395939701`.
-- MR !45472 remains open and unmerged. Its update pipeline
-  `2776952636` passed all nine jobs at head
-  `814b95ceef462f0343570dff007f5d2c4f5ecebc`. The recipe now records 1.0.27
-  and exact immutable source `b3848c4`. No reviewer is assigned and all
-  blocking discussions are resolved. The recipe remains
+- MR !45472 remains open and unmerged. The recipe head is
+  `048fba4f9b87a4d78ec4cd8408bda9fad49bf7db`; it records 1.0.27, exact
+  immutable source `b3848c4`, and canonical localized `NonFreeNet` plus
+  `TetheredNet` disclosures for the fixed hosted dive-site lookup path. The
+  preceding pipeline `2776952636` passed all nine jobs. Pipelines `2780082827`
+  and `2780108782` failed only because GitLab public git returned HTTP 403
+  before F-Droid commands; schema validation itself passed. One review thread
+  remains unresolved while CI recovery is pending. The recipe remains
   production-only: `AutoUpdateMode: Version` follows only exact immutable
   `vMAJOR.MINOR.PATCH` tags, and Preview changes are not submitted. Because
   the first-inclusion MR is still open, a new stable tag required a
   recipe/MR update; auto-update will generate later build entries only
   after merge.
-- The latest reviewer note is **PASS WITH NOTES** and asks for
-  `distributionSha256Sum` in the Gradle wrapper. Stable 1.0.27 satisfies that
-  request with the authoritative checksum for the configured 8.14.2
-  `all.zip`; the clean download, local production/Preview builds, signed
-  reference, and F-Droid reproducibility pipeline all passed. No comment or
-  reviewer reply was posted.
+- Stable 1.0.27 satisfies the earlier `distributionSha256Sum` request with the
+  authoritative checksum for the configured 8.14.2 `all.zip`. The later
+  **BLOCKED** recheck requested `NonFreeNet`; the MR recipe now declares it and
+  the separately applicable `TetheredNet`. The user posted the checksum reply
+  in the reviewer thread. Do not post another reply until CI is green and the
+  exact text is approved.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.

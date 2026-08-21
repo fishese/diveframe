@@ -48,9 +48,9 @@ These fields are coupled to the current Android project layout:
 
 ```yaml
 Builds:
-  - versionName: 1.0.25
-    versionCode: 26
-    commit: 4dcdaa659af3fe6a873b13ed28a898afe2a774ca
+  - versionName: 1.0.27
+    versionCode: 28
+    commit: b3848c4ed1682a48f00e892536f5b938730f7e3f
     subdir: android/app
     gradle:
       - yes
@@ -162,6 +162,30 @@ $line = (Get-Content 'D:\Projects\Dive log\fdroid-prep\cc.fishese.divelog.yml' |
   Select-String '^Binaries:').Line
 if ($line -cne 'Binaries: ') { throw "Binaries line must retain its trailing space" }
 ```
+
+### Preserve the network anti-feature declarations
+
+Production builds use a fixed DiveFrame API origin for remote dive-site
+suggestions. Keep the localized top-level `NonFreeNet` and `TetheredNet`
+reasons while that path exists. `fdroid rewritemeta` requires `AntiFeatures`
+before `Categories` in canonical field order:
+
+```yaml
+AntiFeatures:
+  NonFreeNet:
+    en-US: Dive-site suggestions send coordinates to the DiveFrame-hosted API,
+      which connects to Nominatim and Overpass.
+  TetheredNet:
+    en-US: Production builds use a fixed DiveFrame API origin for dive-site
+      suggestions; users cannot configure an alternative service.
+Categories:
+  - Sports & Health
+```
+
+This disclosure is recipe metadata only. Adding or retaining it does not
+change the immutable application source, APK, reference checksum, or signing
+identity. Reassess the declarations if production gains a user-configurable
+API origin or removes the hosted lookup path.
 
 ## What happened in MR !45472
 
