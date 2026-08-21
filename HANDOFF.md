@@ -77,8 +77,9 @@ store distribution are not started yet.
   `TetheredNet` disclosures for the fixed hosted dive-site lookup path. The
   preceding pipeline `2776952636` passed all nine jobs. Pipelines `2780082827`
   and `2780108782` failed only because GitLab public git returned HTTP 403
-  before F-Droid commands; schema validation itself passed. One review thread
-  remains unresolved while CI recovery is pending. The recipe remains
+  before F-Droid commands. The schema job's initial metaschema check passed,
+  but metadata validation did not complete. One review thread remains
+  unresolved while CI recovery is pending. The recipe remains
   production-only: `AutoUpdateMode: Version` follows only exact immutable
   `vMAJOR.MINOR.PATCH` tags, and Preview changes are not submitted. Because
   the first-inclusion MR is still open, a new stable tag required a
