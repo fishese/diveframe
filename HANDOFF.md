@@ -89,9 +89,10 @@ store distribution are not started yet.
 - Stable 1.0.27 satisfies the earlier `distributionSha256Sum` request with the
   authoritative checksum for the configured 8.14.2 `all.zip`. The later
   **BLOCKED** recheck requested `NonFreeNet`; the MR recipe now declares it and
-  the separately applicable `TetheredNet`. The user posted the checksum reply
-  in the reviewer thread. Do not post another reply until CI is green and the
-  exact text is approved.
+  the separately applicable `TetheredNet`. After explicit approval, reply note
+  `3717125194` was posted in the existing reviewer thread confirming the
+  declarations and green pipeline. The thread remains unresolved pending
+  reviewer action.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.
