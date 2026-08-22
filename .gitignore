@@ -75,3 +75,6 @@ __pycache__/
 /docs/WEB-APK-SYNC.md
 /docs/FDROID-PATH.md
 
+
+# Private documentation repository checkout
+/.private-repo/

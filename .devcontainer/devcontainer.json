@@ -1,0 +1,18 @@
+{
+  "name": "DiveFrame Codespace",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+
+  "customizations": {
+    "codespaces": {
+      "repositories": {
+        "fishese/project-private": {
+          "permissions": {
+            "contents": "write"
+          }
+        }
+      }
+    }
+  },
+
+  "postCreateCommand": "test -d .private-repo/.git || git clone https://github.com/fishese/project-private.git .private-repo"
+}
