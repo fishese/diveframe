@@ -78,3 +78,4 @@ __pycache__/
 
 # Private documentation repository checkout
 /.private-repo/
+/docs-private
