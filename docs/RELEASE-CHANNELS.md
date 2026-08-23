@@ -140,11 +140,11 @@ after stable source `1d676d2`. It records the completed release and advances
 the hosted update feed; it has no behavioral effect in either Android package
 and is not an APK source.
 
-The current verified Preview release remains on Android runtime commit
-`dc52cef859ede44b9b7d3a4741251cc96d9244e6` (workflow run `32377228958`). It
-is `preview.24.dc52cef`, version code `100024`, and its `15765025`-byte APK
+The current verified Preview release uses Android runtime commit
+`a1ee14280824ae66904e0b99248f0c2324ac885a` (workflow run `32650696356`). It
+is `preview.28.a1ee142`, version code `100028`, and its `15765025`-byte APK
 has SHA-256
-`7E880E105C70CF32987765DAC65819B4F0274B77B5A1676BBC854A9F3D5ED21B`.
+`4A13AB126891DEE2890363F84E5041F346FD2D849F55275358E3EDC1632CD2A0`.
 
 ## Current stable production/F-Droid release
 
@@ -178,9 +178,9 @@ download, production and Preview validation builds, the signed reference, and
 the full F-Droid reproducibility pipeline all passed. The immutable 1.0.26 tags
 were not moved or replaced.
 
-Preview remains on `dc52cef`; stable 1.0.28 uses `1d676d2` for the compact
-update UI and production-version update. Preview is not a production source
-or reference artifact. The
+Preview `a1ee142` includes the compact update UI from stable source `1d676d2`
+plus the release feed and records. Preview is not a production source or
+reference artifact. The
 libdivecomputer dependency commit remains
 `8e564eb5cf9fb4318af3d540895abb916e1809b0`.
 

@@ -48,19 +48,19 @@ store distribution are not started yet.
   controls, limits visible update notes to the latest three, and links an
   available update to the correct Preview APK or F-Droid page without starting
   downloads. Production is version 1.0.28/code 29.
-- The current Preview release remains on runtime commit
-  `dc52cef859ede44b9b7d3a4741251cc96d9244e6` (workflow run
-  `32377228958`). The published Preview is version `preview.24.dc52cef`
-  (version code `100024`); `diveframe-preview.apk` is `15765025` bytes and has
+- The current Preview release uses runtime commit
+  `a1ee14280824ae66904e0b99248f0c2324ac885a` (workflow run
+  `32650696356`). The published Preview is version `preview.28.a1ee142`
+  (version code `100028`); `diveframe-preview.apk` is `15765025` bytes and has
   SHA-256
-  `7E880E105C70CF32987765DAC65819B4F0274B77B5A1676BBC854A9F3D5ED21B`.
+  `4A13AB126891DEE2890363F84E5041F346FD2D849F55275358E3EDC1632CD2A0`.
   It is arm64-only, package `cc.fishese.divelog.preview`, label **DiveFrame
   Preview**, and signed by the expected existing `CN=Fishese` certificate;
   certificate SHA-256 is
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`.
-- Current `main` contains a web/feed and documentation follow-up after stable
-  source `1d676d2`; that follow-up is not an APK source. The published Preview
-  intentionally remains on `dc52cef`; it is not a production/F-Droid source.
+- Current `main` contains this channel-feed record after Preview source
+  `a1ee142`; the record-only follow-up is not an APK source. Preview remains
+  separate from the production/F-Droid source and package identity.
 - Stable production/F-Droid release `1.0.28` uses source commit
   `1d676d2929be03d6786d777018dc77b7b757d7ef`, version code `29`, and the
   production package `cc.fishese.divelog`. Immutable source tag/release:
