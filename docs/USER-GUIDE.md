@@ -508,21 +508,16 @@ show an app-update checker. Its service worker refreshes the cached app shell;
 when the site is offline, an update check would not be actionable. The global
 notice remains a local-only beta reminder.
 
-Native Android installs expose **Settings → What's new**. DiveFrame contacts
-`divelog.fishese.cc` only after you choose **Check for updates**, then keeps the
-refreshed feed available offline. A failed or offline check leaves the previous
-cached copy intact and shows a status message.
+Native Android installs expose **Settings → What's new**. Manual and enabled
+automatic checks contact `divelog.fishese.cc`, then keep the refreshed feed
+available offline. A failed or offline check leaves the previous cached copy
+intact and shows a status message.
 
-Native installs also show the installed app version and an optional **Check
-automatically when DiveFrame opens** setting. It is disabled by default. The
-consent text explains the startup connection and that no logbook or personal
-data is sent. Automatic checking never downloads an APK; downloading remains a
-separate tap.
-
-The action is channel-aware. The separately installable GitHub Preview opens
-the stable direct URL for the latest signed Preview APK. The production package
-opens its F-Droid package page instead, because an APK signed by GitHub cannot
-update an F-Droid-signed installation.
+Both channels offer **Check for updates** and an optional **Auto-check** setting,
+which is disabled by default. Neither check starts a download. When a newer
+version is found, the linked **Update available** status opens the stable direct
+GitHub APK URL for Preview installs or the app's F-Droid page for production
+installs. No update check sends logbook or personal data.
 
 ## Cropping a share image
 

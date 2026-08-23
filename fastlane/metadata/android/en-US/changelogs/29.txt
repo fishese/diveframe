@@ -1,0 +1,3 @@
+Makes update settings more compact, keeps only the latest three notes visible,
+and links available updates to the correct Preview APK or F-Droid page. Update
+checks remain opt-in and never start downloads automatically.

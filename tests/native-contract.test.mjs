@@ -220,9 +220,9 @@ test("Preview Android identity is isolated from production", async () => {
   assert.match(buildGradle, /previewVersionCode/);
   assert.match(buildGradle, /previewVersionName/);
   assert.match(buildGradle, /preview\s*\{[\s\S]*applicationIdSuffix "\.preview"/);
-  assert.match(buildGradle, /defaultConfig\s*\{[\s\S]*versionCode 28[\s\S]*versionName "1\.0\.27"/);
-  assert.match(buildGradle, /^\s*versionCode 28$/m);
-  assert.match(buildGradle, /^\s*versionName "1\.0\.27"$/m);
+  assert.match(buildGradle, /defaultConfig\s*\{[\s\S]*versionCode 29[\s\S]*versionName "1\.0\.28"/);
+  assert.match(buildGradle, /^\s*versionCode 29$/m);
+  assert.match(buildGradle, /^\s*versionName "1\.0\.28"$/m);
   assert.match(buildGradle, /withBuildType\("preview"\)/);
   assert.match(buildGradle, /output\.versionCode\.set\(configuredPreviewVersionCode\.toInteger\(\)\)/);
   assert.match(buildGradle, /output\.versionName\.set\(configuredPreviewVersionName\)/);
@@ -240,7 +240,11 @@ test("Preview Android identity is isolated from production", async () => {
   );
   assert.match(mainActivity, /getAppInfo\(\)/);
   assert.match(mainActivity, /PackageInfoCompat\.getLongVersionCode/);
+  assert.doesNotMatch(mainActivity, /downloadPreviewUpdate\(\)/);
+  assert.doesNotMatch(mainActivity, /PREVIEW_UPDATE_URL/);
   assert.match(updateChannel, /packageName\.endsWith\("\.preview"\)/);
+  assert.doesNotMatch(updateChannel, /startPreviewUpdateDownload/);
+  assert.doesNotMatch(updateChannel, /downloadPreviewUpdate/);
   assert.match(updateChannel, /FDROID_PACKAGE_URL/);
 });
 

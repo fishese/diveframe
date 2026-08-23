@@ -4621,20 +4621,10 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .whats-new-heading {
-    align-items: stretch;
-    flex-direction: column;
+  .update-controls {
+    gap: 10px;
   }
 
-  .whats-new-heading .button {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .update-destination {
-    justify-content: center;
-    width: 100%;
-  }
 }
 
 .background-settings > .empty-compact {
@@ -4655,10 +4645,7 @@ button {
 }
 
 .whats-new-heading {
-  align-items: center;
-  display: flex;
-  gap: 18px;
-  justify-content: space-between;
+  display: block;
 }
 
 .whats-new-heading h2,
@@ -4672,37 +4659,109 @@ button {
   margin-top: 5px;
 }
 
-.whats-new-heading .button {
-  flex-shrink: 0;
+.update-controls {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  margin-top: 16px;
 }
 
-.whats-new-settings > .settings-note {
-  margin: 10px 0 0;
-  max-width: 760px;
+.update-controls > .button {
+  flex: 1 1 auto;
+  font-size: 12px;
+  gap: 6px;
+  justify-content: center;
+  min-width: 0;
+  padding-inline: 10px;
+  white-space: nowrap;
 }
 
-.whats-new-settings > details,
-.whats-new-settings > .empty-compact {
+.update-controls .automatic-update-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 7px;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.update-controls .automatic-update-toggle input {
+  height: 16px;
+  margin: 0;
+  width: 16px;
+}
+
+.update-controls .automatic-update-toggle span {
+  display: block;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.update-details {
   border-top: 1px solid var(--line);
-  margin-top: 18px;
-  padding-top: 18px;
+  margin-top: 14px;
+  padding-top: 0;
 }
 
 .whats-new-settings > .whats-new-status {
   color: var(--text);
-  margin-bottom: 0;
+  margin: 10px 0 0;
+}
+
+.whats-new-status a {
+  color: var(--teal);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.update-details-summary {
+  align-items: center;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  font-size: 12px;
+  font-weight: 650;
+  gap: 12px;
+  justify-content: space-between;
+  list-style: none;
+  padding-top: 14px;
+}
+
+.update-details-summary::-webkit-details-marker {
+  display: none;
+}
+
+.update-details-summary svg {
+  flex: 0 0 auto;
+  transition: transform 160ms ease;
+}
+
+.update-details[open] > .update-details-summary svg {
+  transform: rotate(180deg);
+}
+
+.update-details-body {
+  padding-top: 14px;
+}
+
+.update-details-body > .settings-note:first-child {
+  margin: 0;
 }
 
 .app-version-row {
   align-items: baseline;
-  background: var(--fill-01);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border-bottom: 1px solid var(--line);
   display: flex;
   gap: 10px;
   justify-content: space-between;
-  margin-top: 18px;
-  padding: 12px 14px;
+  margin-top: 14px;
+  padding: 0 0 12px;
 }
 
 .app-version-row span {
@@ -4715,56 +4774,13 @@ button {
   text-align: right;
 }
 
-.update-destination {
-  margin-top: 18px;
-}
-
-.automatic-update-toggle {
-  margin-top: 12px;
-}
-
-.whats-new-summary {
-  align-items: center;
-  cursor: pointer;
-  display: flex;
-  gap: 14px;
-  justify-content: space-between;
-  list-style: none;
-}
-
-.whats-new-summary::-webkit-details-marker {
-  display: none;
-}
-
-.whats-new-summary .settings-note {
-  margin-top: 4px;
-}
-
-.whats-new-summary > div {
-  align-items: baseline;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  min-width: 0;
-}
-
-.whats-new-summary strong {
-  font-size: 14px;
-}
-
-.whats-new-summary small {
-  color: var(--muted);
-  font-size: 10px;
-}
-
 .whats-new-list {
-  border-top: 1px solid var(--line);
-  margin-top: 18px;
+  margin-top: 2px;
 }
 
 .whats-new-entry {
   border-bottom: 1px solid var(--line);
-  padding: 18px 0;
+  padding: 14px 0;
 }
 
 .whats-new-entry:last-child {
@@ -4773,7 +4789,25 @@ button {
 }
 
 .whats-new-entry h3 {
+  font-size: 14px;
   margin: 0;
+}
+
+.whats-new-entry-heading {
+  align-items: baseline;
+  display: flex;
+  gap: 8px 12px;
+  justify-content: space-between;
+}
+
+.whats-new-entry-heading small {
+  color: var(--muted);
+  flex: 0 0 auto;
+  font-size: 10px;
+}
+
+.whats-new-entry > .settings-note {
+  margin: 6px 0 0;
 }
 
 .settings-icon {

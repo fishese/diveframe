@@ -157,6 +157,9 @@ export function SettingsApp() {
   const [whatsNew, setWhatsNew] = useState<WhatsNewDocument | null>(null);
   const [whatsNewRefreshing, setWhatsNewRefreshing] = useState(false);
   const [whatsNewStatus, setWhatsNewStatus] = useState<string | null>(null);
+  const [whatsNewStatusHref, setWhatsNewStatusHref] = useState<string | null>(
+    null,
+  );
   const [nativeAppInfo, setNativeAppInfo] = useState<NativeAppInfo | null>(null);
   const [automaticUpdateChecks, setAutomaticUpdateChecks] = useState(false);
   const dataRefreshGenerationRef = useRef(0);
@@ -209,6 +212,7 @@ export function SettingsApp() {
 
   async function refreshWhatsNew() {
     setWhatsNewStatus(null);
+    setWhatsNewStatusHref(null);
     if (!navigator.onLine) {
       setWhatsNewStatus(t("updatesOffline"));
       return;
@@ -226,8 +230,15 @@ export function SettingsApp() {
         ? document.channels?.[nativeAppInfo.channel]
         : null;
       if (channelRelease && nativeAppInfo) {
+        const updateAvailable =
+          channelRelease.versionCode > nativeAppInfo.versionCode;
+        if (updateAvailable) {
+          setWhatsNewStatusHref(
+            updateDestinationForChannel(nativeAppInfo.channel),
+          );
+        }
         setWhatsNewStatus(
-          channelRelease.versionCode > nativeAppInfo.versionCode
+          updateAvailable
             ? t("updateAvailableVersion", {
                 version: channelRelease.versionName,
               })
@@ -363,6 +374,27 @@ export function SettingsApp() {
       );
     }
   }
+
+  const cachedChannelRelease = nativeAppInfo
+    ? whatsNew?.channels?.[nativeAppInfo.channel]
+    : null;
+  const cachedUpdateAvailable = Boolean(
+    cachedChannelRelease &&
+      nativeAppInfo &&
+      cachedChannelRelease.versionCode > nativeAppInfo.versionCode,
+  );
+  const displayedWhatsNewStatus =
+    whatsNewStatus ??
+    (cachedUpdateAvailable && cachedChannelRelease
+      ? t("updateAvailableVersion", {
+          version: cachedChannelRelease.versionName,
+        })
+      : null);
+  const displayedWhatsNewStatusHref = whatsNewStatus
+    ? whatsNewStatusHref
+    : cachedUpdateAvailable && nativeAppInfo
+      ? updateDestinationForChannel(nativeAppInfo.channel)
+      : null;
 
   async function chooseDefaultCylinder(presetId: string) {
     setDefaultCylinderPresetId(presetId);
@@ -1001,97 +1033,33 @@ export function SettingsApp() {
 
         {nativeAppInfo ? (
           <section className="settings-card whats-new-settings">
-          <div className="whats-new-heading">
-            <div>
-              <p className="eyebrow">{t("whatsNew")}</p>
-              <h2>{t("whatsNewTitle")}</h2>
-            </div>
-            <button
-              className="button button-secondary"
-              disabled={whatsNewRefreshing}
-              onClick={() => void refreshWhatsNew()}
-              type="button"
-            >
-              <RefreshCw
-                aria-hidden="true"
-                className={whatsNewRefreshing ? "spin" : undefined}
-                size={16}
-              />
-              {whatsNewRefreshing
-                ? t("refreshingUpdates")
-                : t("refreshUpdates")}
-            </button>
-          </div>
-          <p className="settings-note">{t("updatesCachedDescription")}</p>
-          {nativeAppInfo ? (
-            <div className="app-version-row">
-              <span>{t("installedVersion")}</span>
-              <strong>{nativeAppInfo.versionName}</strong>
-            </div>
-          ) : null}
-          {whatsNew ? (
-            <details>
-              <summary className="whats-new-summary">
-                <div>
-                  <strong>{whatsNew.entries[0]?.title ?? whatsNew.version}</strong>
-                  <small>v{whatsNew.version}</small>
-                </div>
-                <ChevronDown aria-hidden="true" size={18} />
-              </summary>
-              <div className="whats-new-list">
-                {whatsNew.entries.map((entry) => (
-                  <article className="whats-new-entry" key={entry.id}>
-                    <h3>{entry.title}</h3>
-                    {entry.date && <p className="settings-note">{entry.date}</p>}
-                    <p className="settings-note">
-                      {renderWhatsNewBody(entry.body).map((part, index) =>
-                        part.type === "link" ? (
-                          <a href={part.href} key={`${entry.id}-body-${index}`} rel="noopener noreferrer" target="_blank">
-                            {part.label}
-                          </a>
-                        ) : (
-                          <span key={`${entry.id}-body-${index}`}>{part.text}</span>
-                        ),
-                      )}
-                    </p>
-                    {entry.links.length > 0 && (
-                      <div className="settings-actions">
-                        {entry.links.map((link) => {
-                          const href = sanitizeWhatsNewHref(link.href);
-                          return href ? (
-                            <a className="button button-secondary" href={href} key={`${entry.id}-${href}`} rel="noopener noreferrer" target="_blank">
-                              {link.label}
-                            </a>
-                          ) : null;
-                        })}
-                      </div>
-                    )}
-                  </article>
-                ))}
+            <div className="whats-new-heading">
+              <div>
+                <p className="eyebrow">{t("whatsNew")}</p>
+                <h2>{t("whatsNewTitle")}</h2>
               </div>
-            </details>
-          ) : (
-            <p className="empty-compact">{t("noCachedUpdates")}</p>
-          )}
-          {whatsNewStatus ? (
-            <p className="settings-note whats-new-status" role="status">
-              {whatsNewStatus}
-            </p>
-          ) : null}
-          {nativeAppInfo ? (
-            <>
-              <a
-                className="button button-secondary update-destination"
-                href={updateDestinationForChannel(nativeAppInfo.channel)}
-                rel="noopener noreferrer"
-                target="_blank"
+            </div>
+
+            <div className="update-controls">
+              <button
+                className="button button-secondary"
+                disabled={whatsNewRefreshing}
+                onClick={() => void refreshWhatsNew()}
+                type="button"
               >
-                <Download aria-hidden="true" size={16} />
-                {nativeAppInfo.channel === "preview"
-                  ? t("downloadLatestPreview")
-                  : t("openInFdroid")}
-              </a>
-              <label className="automatic-update-toggle">
+                <RefreshCw
+                  aria-hidden="true"
+                  className={whatsNewRefreshing ? "spin" : undefined}
+                  size={16}
+                />
+                {whatsNewRefreshing
+                  ? t("refreshingUpdates")
+                  : t("refreshUpdates")}
+              </button>
+              <label
+                className="automatic-update-toggle"
+                title={t("automaticUpdateChecks")}
+              >
                 <input
                   checked={automaticUpdateChecks}
                   onChange={(event) =>
@@ -1099,13 +1067,76 @@ export function SettingsApp() {
                   }
                   type="checkbox"
                 />
-                <span>
-                  <strong>{t("automaticUpdateChecks")}</strong>
-                  <small>{t("automaticUpdateChecksDescription")}</small>
-                </span>
+                <span>{t("automaticUpdateChecksShort")}</span>
               </label>
-            </>
-          ) : null}
+            </div>
+
+            {displayedWhatsNewStatus ? (
+              <p className="settings-note whats-new-status" role="status">
+                {displayedWhatsNewStatusHref ? (
+                  <a
+                    href={displayedWhatsNewStatusHref}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    {displayedWhatsNewStatus}
+                  </a>
+                ) : (
+                  displayedWhatsNewStatus
+                )}
+              </p>
+            ) : null}
+
+            <details className="update-details">
+              <summary className="update-details-summary">
+                <span>{t("updateDetails")}</span>
+                <ChevronDown aria-hidden="true" size={18} />
+              </summary>
+              <div className="update-details-body">
+                <p className="settings-note">{t("updatesCachedDescription")}</p>
+                <div className="app-version-row">
+                  <span>{t("installedVersion")}</span>
+                  <strong>{nativeAppInfo.versionName}</strong>
+                </div>
+                {whatsNew ? (
+                  <div className="whats-new-list">
+                    {whatsNew.entries.slice(0, 3).map((entry) => (
+                      <article className="whats-new-entry" key={entry.id}>
+                        <div className="whats-new-entry-heading">
+                          <h3>{entry.title}</h3>
+                          {entry.date ? <small>{entry.date}</small> : null}
+                        </div>
+                        <p className="settings-note">
+                          {renderWhatsNewBody(entry.body).map((part, index) =>
+                            part.type === "link" ? (
+                              <a href={part.href} key={`${entry.id}-body-${index}`} rel="noopener noreferrer" target="_blank">
+                                {part.label}
+                              </a>
+                            ) : (
+                              <span key={`${entry.id}-body-${index}`}>{part.text}</span>
+                            ),
+                          )}
+                        </p>
+                        {entry.links.length > 0 && (
+                          <div className="settings-actions">
+                            {entry.links.map((link) => {
+                              const href = sanitizeWhatsNewHref(link.href);
+                              return href ? (
+                                <a className="button button-secondary" href={href} key={`${entry.id}-${href}`} rel="noopener noreferrer" target="_blank">
+                                  {link.label}
+                                </a>
+                              ) : null;
+                            })}
+                          </div>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="empty-compact">{t("noCachedUpdates")}</p>
+                )}
+              </div>
+            </details>
           </section>
         ) : null}
 

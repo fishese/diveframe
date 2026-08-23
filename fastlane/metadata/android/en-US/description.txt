@@ -15,6 +15,6 @@ DiveFrame is a private, offline-first scuba dive logbook.
 Dive data is stored on the device. DiveFrame has no account or cloud logbook;
 network lookups for nearby sites and place names happen only when requested.
 The Updates section contacts divelog.fishese.cc when you tap Check for updates.
-An optional startup check is off by default and must be explicitly enabled;
-it sends no logbook data and never downloads an APK automatically. F-Droid
-installations are directed back to F-Droid for updates.
+An optional startup check is off by default and sends no logbook data. Checks
+never start a download; available updates link to the direct Preview APK or the
+F-Droid page, according to the installed channel.

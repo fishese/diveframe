@@ -880,15 +880,24 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
     /requestAnimationFrame\([\s\S]{0,120}refreshWhatsNew/,
   );
   assert.match(settings, /entry\.links|sanitizeWhatsNewHref/);
+  assert.match(settings, /whatsNew\.entries\.slice\(0, 3\)\.map/);
   assert.match(settings, /automaticUpdateChecks/);
+  assert.doesNotMatch(settings, /automaticUpdateDownloads/);
+  assert.doesNotMatch(settings, /startPreviewUpdateDownload/);
+  assert.match(settings, /whatsNewStatusHref/);
+  assert.match(settings, /cachedUpdateAvailable/);
+  assert.match(settings, /displayedWhatsNewStatusHref/);
   assert.match(settings, /updateDestinationForChannel/);
   assert.match(
     settings,
     /\{nativeAppInfo \? \([\s\S]*settings-card whats-new-settings/,
   );
   assert.match(betaNotice, /preferences\?\.automaticUpdateChecks/);
+  assert.doesNotMatch(betaNotice, /automaticUpdateDownloads/);
+  assert.doesNotMatch(betaNotice, /startPreviewUpdateDownload/);
   assert.match(betaNotice, /getNativeAppInfo\(\)/);
   assert.match(storage, /automaticUpdateChecks:[\s\S]*false/);
+  assert.doesNotMatch(storage, /automaticUpdateDownloads/);
   assert.match(betaNotice, /betaNoticeShort/);
 
   const globalStyles = await readFile(

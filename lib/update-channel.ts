@@ -25,6 +25,19 @@ export function nativeUpdateChannelForPackage(
 }
 
 export function getNativeAppInfo(): NativeAppInfo | null {
+  if (
+    typeof window !== "undefined" &&
+    process.env.NODE_ENV === "development" &&
+    new URLSearchParams(window.location.search).has("preview-native-updates")
+  ) {
+    return {
+      packageName: "cc.fishese.divelog.preview",
+      versionName: "preview.23.local",
+      versionCode: 100023,
+      channel: "preview",
+    };
+  }
+
   if (typeof window === "undefined" || !Capacitor.isNativePlatform()) {
     return null;
   }
