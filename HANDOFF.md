@@ -35,7 +35,7 @@ so PWA, production, and Preview data are
 separate partitions — transfer with an app-data backup. iOS packaging and
 store distribution are not started yet.
 
-## Current status (2026-08-21)
+## Current status (2026-08-23)
 
 - Preview channel implementation is complete. The explicit Gradle
   `preview` build type uses `cc.fishese.divelog.preview`; default
@@ -44,10 +44,10 @@ store distribution are not started yet.
   `${{ github.sha }}`, runs `npm run native:sync`, and publishes
   `diveframe-preview.apk` under the mutable `preview` tag.
 - The current stable Android source is
-  `b3848c4ed1682a48f00e892536f5b938730f7e3f`. It adds Gradle's official
-  SHA-256 checksum for the existing 8.14.2 `all.zip` wrapper distribution and
-  advances production to 1.0.27/code 28 without changing application runtime
-  behavior, package identity, signing policy, or the pinned native dependency.
+  `1d676d2929be03d6786d777018dc77b7b757d7ef`. It compacts native update
+  controls, limits visible update notes to the latest three, and links an
+  available update to the correct Preview APK or F-Droid page without starting
+  downloads. Production is version 1.0.28/code 29.
 - The current Preview release remains on runtime commit
   `dc52cef859ede44b9b7d3a4741251cc96d9244e6` (workflow run
   `32377228958`). The published Preview is version `preview.24.dc52cef`
@@ -59,23 +59,22 @@ store distribution are not started yet.
   certificate SHA-256 is
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`.
 - Current `main` contains a web/feed and documentation follow-up after stable
-  source `b3848c4`; that follow-up is not an APK source. The published Preview
-  intentionally remains on `dc52cef` because the stable change is wrapper
-  integrity and production version metadata, not shared runtime behavior.
-- Stable production/F-Droid release `1.0.27` uses source commit
-  `b3848c4ed1682a48f00e892536f5b938730f7e3f`, version code `28`, and the
+  source `1d676d2`; that follow-up is not an APK source. The published Preview
+  intentionally remains on `dc52cef`; it is not a production/F-Droid source.
+- Stable production/F-Droid release `1.0.28` uses source commit
+  `1d676d2929be03d6786d777018dc77b7b757d7ef`, version code `29`, and the
   production package `cc.fishese.divelog`. Immutable source tag/release:
-  `v1.0.27`.
+  `v1.0.28`.
 - The matching signed F-Droid reference is
-  `fdroid-v1.0.27` / `diveframe-1.0.27.apk`, size `15765025` bytes, SHA-256
-  `9F87EDC488E88C28DC1468AAAFC2A6FB5BCFBCA4C6362C2E2581BDDCEEEF283E`,
+  `fdroid-v1.0.28` / `diveframe-1.0.28.apk`, size `15765025` bytes, SHA-256
+  `13BE632B7EC6D5B3350A93627E04C5C2EACA5DE55F96325EF38484E7E1A80D38`,
   signed by the existing `CN=Fishese` certificate and arm64-only.
-  Reference workflow: `32395939701`.
+  Reference workflow: `32648808269`.
 - MR !45472 remains open and unmerged. The recipe head is
-  `0f1d8907f07481a16ec646448f61ac222696b23f`; it records 1.0.27, exact
-  immutable source `b3848c4`, and canonical localized `NonFreeNet` plus
+  `7882cd4beea3028ca39aaf39b2a7cb7ef64d971a`; it records 1.0.28, exact
+  immutable source `1d676d2`, and canonical localized `NonFreeNet` plus
   `TetheredNet` disclosures for the fixed hosted dive-site lookup path.
-  Pipeline `2780180416` passed all nine jobs, including `fdroid build`, `check
+  Pipeline `2783281904` passed all nine jobs, including `fdroid build`, `check
   apk`, lint, schema validation, and `fdroid rewritemeta`. Earlier attempts
   `2780082827` and `2780108782` were affected by transient GitLab public-git
   HTTP 403 failures; the latter also exposed line wrapping that was corrected
@@ -96,7 +95,7 @@ store distribution are not started yet.
 - F-Droid build layout, the `subdir: android/app` requirement, the removed
   `output` field, the `Binaries:` trailing-space requirement, and the MR
   failure analysis are documented in `docs/FDROID-BUILD.md`.
-- The F-Droid tester-review friction packet remains included in stable 1.0.27. Cold
+- The F-Droid tester-review friction packet remains included in stable 1.0.28. Cold
   start no longer fetches What's New. Native Settings provides the manual and
   opt-in checks; F-Droid production opens the F-Droid package page, while the
   separately signed Preview channel may use its stable GitHub asset URL.

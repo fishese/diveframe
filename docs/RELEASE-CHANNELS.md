@@ -1,6 +1,6 @@
 # DiveFrame release channels and web/APK parity
 
-Last verified: 2026-08-21 (Asia/Singapore)
+Last verified: 2026-08-23 (Asia/Singapore)
 
 This is the canonical release note for future sessions. Read it before
 changing a version, release tag, APK workflow, or F-Droid metadata. The
@@ -42,7 +42,7 @@ older commit.
 
 Production tags are immutable and must never be moved or reused. The mutable
 `preview` tag is never a production or F-Droid source tag. Do not use
-`v1.0.21`, `v1.0.26`, or current `v1.0.27` as a Preview tag or release name;
+`v1.0.21`, `v1.0.27`, or current `v1.0.28` as a Preview tag or release name;
 they are
 reserved for the existing production/F-Droid history.
 
@@ -127,16 +127,16 @@ The staging recipe is
   `fdroid-v...` reference tags do not match and cannot trigger an update.
 
 The newly published stable/F-Droid candidate is production commit
-`b3848c4ed1682a48f00e892536f5b938730f7e3f`, version `1.0.27`, version code
-`28`, and immutable `v1.0.27` source tag. MR !45472 is still the first
+`1d676d2929be03d6786d777018dc77b7b757d7ef`, version `1.0.28`, version code
+`29`, and immutable `v1.0.28` source tag. MR !45472 is still the first
 inclusion and remains open. Its recipe now represents this release at head
-`814b95ceef462f0343570dff007f5d2c4f5ecebc`; pipeline `2776952636` passed all
+`7882cd4beea3028ca39aaf39b2a7cb7ef64d971a`; pipeline `2783281904` passed all
 nine jobs, including `fdroid build` and `check apk`.
 After merge, F-Droid auto-update can add later matching tags without a manual
 recipe edit.
 
 Current `main` intentionally contains a web/feed and documentation follow-up
-after stable source `b3848c4`. It records the completed release and advances
+after stable source `1d676d2`. It records the completed release and advances
 the hosted update feed; it has no behavioral effect in either Android package
 and is not an APK source.
 
@@ -149,37 +149,37 @@ has SHA-256
 ## Current stable production/F-Droid release
 
 The stable production source is commit
-`b3848c4ed1682a48f00e892536f5b938730f7e3f`, tagged immutably as `v1.0.27`.
+`1d676d2929be03d6786d777018dc77b7b757d7ef`, tagged immutably as `v1.0.28`.
 It uses the default `assembleRelease` path, package
-`cc.fishese.divelog`, version name `1.0.27`, and version code `28`.
+`cc.fishese.divelog`, version name `1.0.28`, and version code `29`.
 
 The matching developer-signed F-Droid reference is published at
-`fdroid-v1.0.27` as `diveframe-1.0.27.apk`:
+`fdroid-v1.0.28` as `diveframe-1.0.28.apk`:
 
-- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.27
-- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.27
-- Reference workflow: https://github.com/fishese/diveframe/actions/runs/32395939701
+- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.28
+- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.28
+- Reference workflow: https://github.com/fishese/diveframe/actions/runs/32648808269
 - Size: `15765025` bytes; SHA-256:
-  `9F87EDC488E88C28DC1468AAAFC2A6FB5BCFBCA4C6362C2E2581BDDCEEEF283E`
+  `13BE632B7EC6D5B3350A93627E04C5C2EACA5DE55F96325EF38484E7E1A80D38`
 - ABI: `arm64-v8a`; signer: `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
 
 The current F-Droid recipe commit is
-`814b95ceef462f0343570dff007f5d2c4f5ecebc`. MR !45472 remains open and
-unmerged; pipeline `2776952636` passed all nine jobs and validates the 1.0.27
+`7882cd4beea3028ca39aaf39b2a7cb7ef64d971a`. MR !45472 remains open and
+unmerged; pipeline `2783281904` passed all nine jobs and validates the 1.0.28
 recipe, reference APK, stable-tag-only auto-update configuration, and plain
 production Gradle version lines. The F-Droid source, reference release, and
 recipe now resolve to the same stable source commit.
 
 The latest reviewer note is **PASS WITH NOTES** and requests a Gradle-wrapper
-`distributionSha256Sum`. Stable 1.0.27 addresses it with Gradle's official
+`distributionSha256Sum`. Stable 1.0.28 retains Gradle's official
 SHA-256 for the configured 8.14.2 `all.zip` distribution. A fresh isolated
 download, production and Preview validation builds, the signed reference, and
 the full F-Droid reproducibility pipeline all passed. The immutable 1.0.26 tags
 were not moved or replaced.
 
-Preview remains on `dc52cef`; stable 1.0.27 uses `b3848c4` for the wrapper
-integrity and production-version update. Preview is not a production source
+Preview remains on `dc52cef`; stable 1.0.28 uses `1d676d2` for the compact
+update UI and production-version update. Preview is not a production source
 or reference artifact. The
 libdivecomputer dependency commit remains
 `8e564eb5cf9fb4318af3d540895abb916e1809b0`.

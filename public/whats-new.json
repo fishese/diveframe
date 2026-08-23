@@ -1,6 +1,6 @@
 {
-  "version": "2026-08-20-manual-updates",
-  "updatedAt": "2026-08-20T14:07:24.000Z",
+  "version": "2026-08-23-compact-updates",
+  "updatedAt": "2026-08-23T15:43:28.307Z",
   "channels": {
     "preview": {
       "versionName": "preview.24.dc52cef",
@@ -8,12 +8,19 @@
       "sourceSha": "dc52cef859ede44b9b7d3a4741251cc96d9244e6"
     },
     "fdroid": {
-      "versionName": "1.0.27",
-      "versionCode": 28,
-      "sourceSha": "b3848c4ed1682a48f00e892536f5b938730f7e3f"
+      "versionName": "1.0.28",
+      "versionCode": 29,
+      "sourceSha": "1d676d2929be03d6786d777018dc77b7b757d7ef"
     }
   },
   "entries": [
+    {
+      "id": "2026-08-23-compact-updates",
+      "title": "Updates are easier to scan",
+      "body": "Settings now keeps update controls in one compact row and shows only the latest three notes in collapsed details. When a newer version is available, its status links to the direct Preview APK or the F-Droid page; update checks never start a download automatically.",
+      "date": "2026-08-23",
+      "links": []
+    },
     {
       "id": "2026-08-20-manual-updates",
       "title": "Update checks stay under your control",
