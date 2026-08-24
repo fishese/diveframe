@@ -394,6 +394,7 @@ export const zhHant: Record<keyof typeof en, string> = {
   settingsSaveFailed: "無法儲存此設定。",
   nameThisDive: "為潛水紀錄命名",
   nearbyDiveSites: "附近潛點",
+  siteSelection: "潛點選擇",
   selectedExpand: "已在 DiveFrame 選擇 · 展開以更改",
   showSiteAliases: "顯示別名",
   hideSiteAliases: "隱藏別名",

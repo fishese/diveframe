@@ -395,6 +395,7 @@ export const en = {
   settingsSaveFailed: "Failed to save this setting.",
   nameThisDive: "Name this dive",
   nearbyDiveSites: "Nearby dive sites",
+  siteSelection: "Site selection",
   selectedExpand: "Selected in DiveFrame · expand to change",
   showSiteAliases: "Show aliases",
   hideSiteAliases: "Hide aliases",

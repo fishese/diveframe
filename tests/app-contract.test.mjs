@@ -899,6 +899,13 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(storage, /automaticUpdateChecks:[\s\S]*false/);
   assert.doesNotMatch(storage, /automaticUpdateDownloads/);
   assert.match(betaNotice, /betaNoticeShort/);
+  assert.match(
+    memosApp,
+    /diveMemosLocation[\s\S]*memo-coords-row memo-span-2[\s\S]*memo-site-suggestions memo-span-2/,
+  );
+  assert.match(memosApp, /collapsibleLabel=\{t\("siteSelection"\)\}/);
+  assert.match(memosApp, /hideWhenEmpty/);
+  assert.match(diveSiteSuggestions, /className="site-selection-section"/);
 
   const globalStyles = await readFile(
     new URL("../app/globals.css", import.meta.url),

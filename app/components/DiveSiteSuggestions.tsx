@@ -2,6 +2,7 @@
 
 import { ChevronDown, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { useAppI18n } from "../AppI18nProvider";
 import {
   nearbySessionCatalogSites,
@@ -26,6 +27,8 @@ export function DiveSiteSuggestions({
   selectedName,
   selectedCatalogId,
   busy = false,
+  collapsibleLabel,
+  hideWhenEmpty = false,
   onSelect,
 }: {
   coordinates: { latitude: number; longitude: number } | null;
@@ -35,6 +38,8 @@ export function DiveSiteSuggestions({
   selectedName?: string | null;
   selectedCatalogId?: string | null;
   busy?: boolean;
+  collapsibleLabel?: string;
+  hideWhenEmpty?: boolean;
   onSelect: (selection: SiteSelection) => void | Promise<void>;
 }) {
   const { t } = useAppI18n();
@@ -145,16 +150,15 @@ export function DiveSiteSuggestions({
       </>
     );
   }
-  if (loading) {
-    return (
-      <div className="site-loading">
-        <LoaderCircle size={18} className="spin" /> {t("lookingForSites")}
-      </div>
-    );
-  }
-  if (!sites.length) return <p className="site-empty">{t("noNearbySites")}</p>;
+  if (!loading && !sites.length && hideWhenEmpty) return null;
 
-  return (
+  const content = loading ? (
+    <div className="site-loading">
+      <LoaderCircle size={18} className="spin" /> {t("lookingForSites")}
+    </div>
+  ) : !sites.length ? (
+    <p className="site-empty">{t("noNearbySites")}</p>
+  ) : (
     <div className="site-suggestions">
       {sites.map((site) => {
         const catalogId = nearbySiteCatalogId(site);
@@ -219,6 +223,43 @@ export function DiveSiteSuggestions({
         );
       })}
     </div>
+  );
+
+  if (!collapsibleLabel) return content;
+
+  return (
+    <SiteSelectionSection
+      key={`${coordinateKey}:${selectedName?.trim() ?? ""}`}
+      label={collapsibleLabel}
+      defaultOpen={!selectedName?.trim()}
+    >
+      {content}
+    </SiteSelectionSection>
+  );
+}
+
+function SiteSelectionSection({
+  label,
+  defaultOpen,
+  children,
+}: {
+  label: string;
+  defaultOpen: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <details
+      className="site-selection-section"
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary className="site-selection-summary">
+        <span>{label}</span>
+        <ChevronDown aria-hidden="true" size={16} />
+      </summary>
+      <div className="site-selection-content">{children}</div>
+    </details>
   );
 }
 

@@ -13111,8 +13111,8 @@
         "香蕉灣"
       ],
       "coordinates": {
-        "latitude": 21.9245,
-        "longitude": 120.835
+        "latitude": 21.923225,
+        "longitude": 120.830517
       },
       "place": {
         "countryCode": "TW",
@@ -13122,21 +13122,25 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:taiwan:2026-07-28"
+        "reference": "public-gov:Taiwan-MOTC-national-dive-site-list:2025"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-24T22:34:00+08:00"
     },
     {
       "id": "tw-kenting-chushuikou",
       "name": "Water Outlet",
       "aliases": [
         "Chushuikou",
-        "出水口"
+        "出水口",
+        "出水口右側",
+        "Right Side of the Outlet",
+        "後壁湖出水口",
+        "Houbihu Outlet"
       ],
       "coordinates": {
-        "latitude": 21.9491,
-        "longitude": 120.744
+        "latitude": 21.9312,
+        "longitude": 120.745
       },
       "place": {
         "countryCode": "TW",
@@ -13146,10 +13150,86 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "user-seed:2026-07-28"
+        "reference": "public-gov:Taiwan-MOTC-national-dive-site-list:2025; public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T00:00:00.000Z"
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-dalaogu-slope",
+      "name": "Dalaogu Slope",
+      "aliases": [
+        "大咾咕斜坡",
+        "大咾咕"
+      ],
+      "coordinates": {
+        "latitude": 21.9407511,
+        "longitude": 120.7531528
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-dingbaisha",
+      "name": "Dingbaisha",
+      "aliases": [
+        "頂白砂",
+        "Ding Baisha",
+        "Tingposha"
+      ],
+      "coordinates": {
+        "latitude": 21.9431174,
+        "longitude": 120.7098904
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-hejie-wreck",
+      "name": "Hejie Wreck",
+      "aliases": [
+        "合界沈船",
+        "合界",
+        "Hejie",
+        "Hojie Wreck",
+        "Hochieh Wreck"
+      ],
+      "coordinates": {
+        "latitude": 21.9549104,
+        "longitude": 120.7111125
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
     },
     {
       "id": "tw-kenting-hongchaikeng",
@@ -13159,8 +13239,8 @@
         "紅柴坑"
       ],
       "coordinates": {
-        "latitude": 21.956,
-        "longitude": 120.722
+        "latitude": 21.9702083,
+        "longitude": 120.7136392
       },
       "place": {
         "countryCode": "TW",
@@ -13170,20 +13250,22 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:taiwan:2026-07-28"
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-24T22:34:00+08:00"
     },
     {
       "id": "tw-kenting-houbihu",
       "name": "Houbihu",
       "aliases": [
-        "後壁湖"
+        "後壁湖",
+        "後壁湖港航道西側",
+        "後壁湖保護區"
       ],
       "coordinates": {
-        "latitude": 21.9425,
-        "longitude": 120.744
+        "latitude": 21.9351,
+        "longitude": 120.748
       },
       "place": {
         "countryCode": "TW",
@@ -13193,10 +13275,159 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:taiwan:2026-07-28"
+        "reference": "public-gov:Taiwan-MOTC-national-dive-site-list:2025; public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-houbihu-feeding-area",
+      "name": "Houbihu Feeding Area",
+      "aliases": [
+        "後壁湖餵魚區",
+        "餵魚區",
+        "Fish Feeding Area"
+      ],
+      "coordinates": {
+        "latitude": 21.9349,
+        "longitude": 120.747
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Taiwan-MOTC-national-dive-site-list:2025; public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-houbihu-soft-coral",
+      "name": "Houbihu Soft Coral Garden",
+      "aliases": [
+        "後壁湖軟珊瑚區",
+        "Soft Coral Area",
+        "Soft Coral Garden",
+        "Secret Garden"
+      ],
+      "coordinates": {
+        "latitude": 21.937132,
+        "longitude": 120.7466618
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-leidashi",
+      "name": "Leidashih",
+      "aliases": [
+        "雷打石",
+        "Leidashi"
+      ],
+      "coordinates": {
+        "latitude": 21.9276116,
+        "longitude": 120.7439464
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-nanhai-cave",
+      "name": "Nanhai Hole",
+      "aliases": [
+        "南海洞"
+      ],
+      "coordinates": {
+        "latitude": 21.9224897,
+        "longitude": 120.7409222
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-nanwan-sanjiaoding",
+      "name": "South Bay Triangle",
+      "aliases": [
+        "南灣三腳町",
+        "南灣三角町",
+        "Sanjiaoding"
+      ],
+      "coordinates": {
+        "latitude": 21.948855,
+        "longitude": 120.7699612
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-outlet-yixiantian",
+      "name": "Outlet Yixiantian",
+      "aliases": [
+        "出水口一線天",
+        "Yixiantian",
+        "Chushuikou Yihsientien",
+        "One-Line Sky"
+      ],
+      "coordinates": {
+        "latitude": 21.931179,
+        "longitude": 120.7478806
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
     },
     {
       "id": "tw-kenting-sail-rock",
@@ -13206,8 +13437,8 @@
         "船帆石"
       ],
       "coordinates": {
-        "latitude": 21.932,
-        "longitude": 120.824
+        "latitude": 21.93054,
+        "longitude": 120.8231
       },
       "place": {
         "countryCode": "TW",
@@ -13217,10 +13448,107 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "regional-curation:taiwan:2026-07-28"
+        "reference": "public-gov:Taiwan-MOTC-national-dive-site-list:2025; public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T10:44:51.989Z"
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-shanhai-chibizai-reef",
+      "name": "Shanhai",
+      "aliases": [
+        "山海赤筆仔礁",
+        "山海",
+        "Chibizai Reef"
+      ],
+      "coordinates": {
+        "latitude": 21.9836948,
+        "longitude": 120.7097761
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-solitary-reef",
+      "name": "Solitary Reef",
+      "aliases": [
+        "獨立礁",
+        "Isolated Reef"
+      ],
+      "coordinates": {
+        "latitude": 21.9425218,
+        "longitude": 120.7586594
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-tiaoshi",
+      "name": "Tiaoshi",
+      "aliases": [
+        "眺石",
+        "Taioshi"
+      ],
+      "coordinates": {
+        "latitude": 21.9538669,
+        "longitude": 120.7683163
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-twin-peaks-blue-cave",
+      "name": "Twin Peaks Blue Cave",
+      "aliases": [
+        "雙峰藍洞",
+        "ShuangFeng Blue Cave"
+      ],
+      "coordinates": {
+        "latitude": 21.9347777,
+        "longitude": 120.7543939
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
     },
     {
       "id": "tw-kenting-wanlitong",
@@ -13229,8 +13557,8 @@
         "萬里桐"
       ],
       "coordinates": {
-        "latitude": 21.93151,
-        "longitude": 120.74071
+        "latitude": 21.99520493,
+        "longitude": 120.7061691
       },
       "place": {
         "countryCode": "TW",
@@ -13240,10 +13568,36 @@
       },
       "source": {
         "kind": "manual",
-        "reference": "user-seed:2026-07-28"
+        "reference": "public-gov:Taiwan-MOTC-national-dive-site-list:2025; public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
       },
       "status": "active",
-      "updatedAt": "2026-07-28T00:00:00.000Z"
+      "updatedAt": "2026-08-24T22:34:00+08:00"
+    },
+    {
+      "id": "tw-kenting-xiaolaogu-fault",
+      "name": "Xiao Lao Gu Fault",
+      "aliases": [
+        "小咾咕斷層",
+        "小咾咕",
+        "Hsiaolaoku",
+        "Xiao Lao Gu"
+      ],
+      "coordinates": {
+        "latitude": 21.9372237,
+        "longitude": 120.7538461
+      },
+      "place": {
+        "countryCode": "TW",
+        "country": "Taiwan",
+        "region": "Pingtung County",
+        "locality": "Kenting"
+      },
+      "source": {
+        "kind": "manual",
+        "reference": "public-gov:Kenting-National-Park:boat-dive-GPS:2025-06-25; current dive-area list:2026-07-28"
+      },
+      "status": "active",
+      "updatedAt": "2026-08-24T22:34:00+08:00"
     },
     {
       "id": "tw-longdong-bay",

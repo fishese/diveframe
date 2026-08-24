@@ -395,6 +395,7 @@ export const ja: Record<keyof typeof en, string> = {
   settingsSaveFailed: "この設定を保存できませんでした。",
   nameThisDive: "このダイブに名前を付ける",
   nearbyDiveSites: "周辺のダイビングポイント",
+  siteSelection: "ダイビングポイントの選択",
   selectedExpand: "DiveFrameで選択済み · 展開して変更",
   showSiteAliases: "別名を表示",
   hideSiteAliases: "別名を非表示",

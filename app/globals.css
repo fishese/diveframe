@@ -3366,6 +3366,55 @@ button {
   gap: 6px;
 }
 
+.memo-site-suggestions:empty {
+  display: none;
+}
+
+.site-selection-section {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-width: 0;
+  padding: 0 10px 8px;
+}
+
+.site-selection-section:not([open]) {
+  padding-bottom: 0;
+}
+
+.site-selection-summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  list-style: none;
+  min-height: 32px;
+}
+
+.site-selection-summary::-webkit-details-marker {
+  display: none;
+}
+
+.site-selection-summary > span {
+  color: var(--mist);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.site-selection-summary > svg {
+  flex: 0 0 auto;
+  transition: transform 160ms ease;
+}
+
+.site-selection-section[open] > .site-selection-summary > svg {
+  transform: rotate(180deg);
+}
+
+.site-selection-content {
+  padding-top: 4px;
+}
+
 .memos-add {
   margin: 0 0 10px;
   max-width: 100%;

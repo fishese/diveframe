@@ -237,6 +237,14 @@ the computer log is imported. Headings default to **Dive 1**, **Dive 2**, and so
 on; tap a heading to rename it. Photo location only reads GPS from the selected
 image and does not keep the photo on the memo.
 
+The **Location** field and **Coordinates** controls are always visible. Enter
+coordinates manually, read the device GPS, or use a photo's GPS. When those
+coordinates have nearby catalog or map matches, **Site selection** appears
+below the coordinate controls. It starts expanded while Location is empty and
+collapses after a site is selected or a location name is entered; expand it
+again to choose a different nearby site. If no nearby site is available, the
+selector stays hidden and Location remains available for manual entry.
+
 Memos are stored in IndexedDB, included in app-data backups (backup format
 **v5**), and cleared only by **Erase all local DiveFrame data** — not by erase
 dives only. Merge groups from reversible segment merge are also in that

@@ -858,40 +858,7 @@ function MemoCard({
           </datalist>
         </label>
 
-        <div className="memo-span-2 memo-site-suggestions">
-          <DiveSiteSuggestions
-            coordinates={
-              draft.lat !== null && draft.lng !== null
-                ? { latitude: draft.lat, longitude: draft.lng }
-                : null
-            }
-            catalog={diveSiteCatalog}
-            selectedName={memoSiteName(draft)}
-            selectedCatalogId={draft.siteCatalogId}
-            busy={busy}
-            onSelect={(selection: SiteSelection) => {
-              if (saveTimerRef.current) {
-                clearTimeout(saveTimerRef.current);
-                saveTimerRef.current = null;
-              }
-              const next = {
-                ...draftRef.current,
-                siteName: selection.name,
-                siteSource: selection.source,
-                siteCatalogId: selection.catalogId ?? null,
-                location: selection.location?.trim() || null,
-              } satisfies DiveMemo;
-              revisionRef.current += 1;
-              dirtyRef.current = true;
-              draftRef.current = next;
-              setDraft(next);
-              onMemoChange(next);
-              void queueSave(next, revisionRef.current);
-            }}
-          />
-        </div>
-
-        <div className="memo-span-2 memo-coords-row">
+        <div className="memo-coords-row memo-span-2">
           <span>{t("diveMemosCoordinates")}</span>
           <div className="memo-coords-controls">
             <input
@@ -949,6 +916,41 @@ function MemoCard({
               ) : null}
             </div>
           </div>
+        </div>
+
+        <div className="memo-site-suggestions memo-span-2">
+          <DiveSiteSuggestions
+            coordinates={
+              draft.lat !== null && draft.lng !== null
+                ? { latitude: draft.lat, longitude: draft.lng }
+                : null
+            }
+            catalog={diveSiteCatalog}
+            selectedName={memoSiteName(draft)}
+            selectedCatalogId={draft.siteCatalogId}
+            busy={busy}
+            collapsibleLabel={t("siteSelection")}
+            hideWhenEmpty
+            onSelect={(selection: SiteSelection) => {
+              if (saveTimerRef.current) {
+                clearTimeout(saveTimerRef.current);
+                saveTimerRef.current = null;
+              }
+              const next = {
+                ...draftRef.current,
+                siteName: selection.name,
+                siteSource: selection.source,
+                siteCatalogId: selection.catalogId ?? null,
+                location: selection.location?.trim() || null,
+              } satisfies DiveMemo;
+              revisionRef.current += 1;
+              dirtyRef.current = true;
+              draftRef.current = next;
+              setDraft(next);
+              onMemoChange(next);
+              void queueSave(next, revisionRef.current);
+            }}
+          />
         </div>
 
         <label className="memo-span-2">
