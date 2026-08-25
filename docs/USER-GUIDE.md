@@ -529,6 +529,11 @@ automatic checks contact `divelog.fishese.cc`, then keep the refreshed feed
 available offline. A failed or offline check leaves the previous cached copy
 intact and shows a status message.
 
+After a signed Preview APK is successfully published, the Preview workflow
+updates the hosted feed with that APK's exact version name, monotonically
+increasing version code, and source commit. The feed is updated only after the
+download exists, and the stable/F-Droid channel metadata is left unchanged.
+
 Both channels offer **Check for updates** and an optional **Auto-check** setting,
 which is disabled by default. Neither check starts a download. When a newer
 version is found, the linked **Update available** status opens the stable direct

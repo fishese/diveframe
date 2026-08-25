@@ -1,6 +1,6 @@
 # DiveFrame release channels and web/APK parity
 
-Last verified: 2026-08-23 (Asia/Singapore)
+Last verified: 2026-08-25 (Asia/Singapore)
 
 This is the canonical release note for future sessions. Read it before
 changing a version, release tag, APK workflow, or F-Droid metadata. The
@@ -93,7 +93,12 @@ The signed GitHub workflow is
 `.github/workflows/preview-apk.yml`; it checks out `${{ github.sha }}`, runs
 `npm run native:sync`, and assembles `assemblePreview`. Its output is
 published as the mutable `preview` release with asset
-`diveframe-preview.apk`.
+`diveframe-preview.apk`. Only after that release succeeds, the workflow records
+the exact `preview.<run>.<short-sha>`, `100000 + run`, and source SHA in
+`public/whats-new.json`, then commits that feed-only update onto the latest
+`main`. It retries a concurrent push conflict three times. A feed-update
+failure therefore leaves the workflow visibly failed and never advertises an
+APK before its release asset exists.
 
 ## F-Droid guardrails
 
@@ -141,10 +146,12 @@ the hosted update feed; it has no behavioral effect in either Android package
 and is not an APK source.
 
 The current verified Preview release uses Android runtime commit
-`a1ee14280824ae66904e0b99248f0c2324ac885a` (workflow run `32650696356`). It
-is `preview.28.a1ee142`, version code `100028`, and its `15765025`-byte APK
+`ea99b399c0dad13aeeb081d890a0d6968d5a7618` (workflow run `32864279231`). It
+is `preview.32.ea99b39`, version code `100032`, and its `15769121`-byte APK
 has SHA-256
-`4A13AB126891DEE2890363F84E5041F346FD2D849F55275358E3EDC1632CD2A0`.
+`383A6E245BB03D8726C3BCBC75D3F9442B9A34B0D684E0FE9E98B590B4365486`.
+The update feed records this Preview identity independently of the stable
+`fdroid` channel entry.
 
 ## Current stable production/F-Droid release
 
@@ -262,6 +269,7 @@ Before calling a release complete, verify all of the following:
   refer to Preview consistently; production/F-Droid records separately use
   the immutable stable tag, production package, and stable version.
 - The latest Preview release target SHA is the intended shared runtime commit,
+  and `public/whats-new.json` advertises that same Preview name, code, and SHA;
   or any lag is explicitly recorded as intentional.
 - The F-Droid recipe still uses `subdir: android/app`, no `output`, the
   production default build, `submodules: true`, no `srclibs`, and the required

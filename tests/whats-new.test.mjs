@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import ts from "typescript";
+import {
+  previewReleaseForRun,
+  updatePreviewFeed,
+} from "../scripts/update-preview-feed.mjs";
 
 const source = (await readFile("lib/whats-new.ts", "utf8")).replace(
   /^import .*$/m,
@@ -91,6 +95,47 @@ test("validates immutable channel release identities", () => {
       entries: [],
     }),
   );
+});
+
+test("records the exact published Preview identity without changing F-Droid", () => {
+  const release = previewReleaseForRun(
+    32,
+    "ea99b399c0dad13aeeb081d890a0d6968d5a7618",
+  );
+  assert.deepEqual(release, {
+    versionName: "preview.32.ea99b39",
+    versionCode: 100032,
+    sourceSha: "ea99b399c0dad13aeeb081d890a0d6968d5a7618",
+  });
+
+  const original = {
+    version: "notes",
+    updatedAt: "before",
+    channels: {
+      preview: {
+        versionName: "preview.30.3570727",
+        versionCode: 100030,
+        sourceSha: "3570727000000000000000000000000000000000",
+      },
+      fdroid: {
+        versionName: "1.0.28",
+        versionCode: 29,
+        sourceSha: "1d676d2929be03d6786d777018dc77b7b757d7ef",
+      },
+    },
+    entries: [],
+  };
+  const updated = updatePreviewFeed(original, release, "after");
+
+  assert.deepEqual(updated.channels.preview, release);
+  assert.deepEqual(updated.channels.fdroid, original.channels.fdroid);
+  assert.equal(updated.updatedAt, "after");
+  assert.equal(original.updatedAt, "before");
+});
+
+test("rejects invalid Preview workflow release identities", () => {
+  assert.throws(() => previewReleaseForRun(0, "a".repeat(40)));
+  assert.throws(() => previewReleaseForRun(32, "ea99b39"));
 });
 
 test("rejects javascript: links", () => {

@@ -118,3 +118,54 @@ jobs:
             Preview is separately installable from production and uses
             separate app-private storage. This channel is signed separately
             from F-Droid.
+
+  update-feed:
+    name: Publish Preview update feed
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Record published Preview
+        shell: bash
+        env:
+          PREVIEW_RUN_NUMBER: ${{ github.run_number }}
+          PREVIEW_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git checkout --detach origin/main
+            node scripts/update-preview-feed.mjs \
+              "$PREVIEW_RUN_NUMBER" \
+              "$PREVIEW_SOURCE_SHA"
+            git add -- public/whats-new.json
+
+            if git diff --cached --quiet; then
+              echo "Preview update feed already records this release."
+              exit 0
+            fi
+
+            git commit -m "Publish Preview ${PREVIEW_RUN_NUMBER} update feed"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+
+            echo "Feed push conflicted on attempt ${attempt}; refreshing main."
+          done
+
+          echo "::error::Preview APK was published, but its update feed could not be pushed."
+          exit 1
