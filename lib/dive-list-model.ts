@@ -306,6 +306,14 @@ export function buildDiveListRows<T extends DiveListItem>(
   return blocks;
 }
 
+export function flattenDiveListRows<T extends DiveListItem>(
+  rows: readonly DiveListRow<T>[],
+): T[] {
+  return rows.flatMap((row) =>
+    row.kind === "solo" ? [row.dive] : row.dives,
+  );
+}
+
 function anchorDive<T extends DiveListItem>(row: DiveListRow<T>): T {
   return row.kind === "solo" ? row.dive : row.dives[0];
 }

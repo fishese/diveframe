@@ -178,6 +178,12 @@ has a **Rename trip** action; the older rename control inside a dive’s
 **Edit dive details** form is still there. Trip blocks and unassigned dives
 are ordered together using the current sort option.
 
+When a dive is open, use the compact arrows around its dive number to move to
+the previous or next dive in the currently shown list. Navigation follows the
+active search, filters, sort order, and trip grouping. The arrow at either end
+of the shown list is disabled, and each change updates the dive link in the
+address bar.
+
 Open **Edit dive details** on a dive to assign or change its trip, create a
 new trip, or delete a trip. Deleting a trip that still has dives requires
 confirmation and clears those assignments first.
@@ -259,9 +265,11 @@ then Keep or Delete the memo.
 ## Dive profiles and gas use
 
 When a source log contains samples, each dive page shows a compact depth
-profile with axis labels. Tank-pressure telemetry can be switched on for dives
-that contain it. Rendering happens only for the open dive and does not require
-a server request.
+profile with axis labels. Tank-pressure and water-temperature telemetry can be
+switched on independently when the dive contains those samples. When both are
+available, either overlay or both overlays can be shown over the depth profile;
+the legend changes with the selected series. Rendering happens only for the
+open dive and does not require a server request.
 
 Average water temperature is calculated from available temperature samples.
 DiveFrame shows a SAC estimate only when it has dive duration, average depth,

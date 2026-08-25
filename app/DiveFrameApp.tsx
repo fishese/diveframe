@@ -8,6 +8,8 @@ import {
   Camera,
   CheckSquare,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Compass,
   Database as DatabaseIcon,
@@ -95,6 +97,7 @@ import {
   compareDives,
   DEFAULT_SHORT_DIVE_MAX_MINUTES,
   diveMatchesListFilters,
+  flattenDiveListRows,
   parsePositiveWholeMinutes,
   type DiveListFilters,
   type DiveSortOption,
@@ -715,6 +718,21 @@ export function DiveFrameApp() {
     () => buildDiveListRows(visibleDives, trips, sortOption),
     [visibleDives, trips, sortOption],
   );
+
+  const orderedVisibleDives = useMemo(
+    () => flattenDiveListRows(diveListRows),
+    [diveListRows],
+  );
+
+  const selectedVisibleIndex = selectedId
+    ? orderedVisibleDives.findIndex((dive) => dive.id === selectedId)
+    : -1;
+  const previousVisibleDive =
+    selectedVisibleIndex > 0 ? orderedVisibleDives[selectedVisibleIndex - 1] : null;
+  const nextVisibleDive =
+    selectedVisibleIndex >= 0 && selectedVisibleIndex < orderedVisibleDives.length - 1
+      ? orderedVisibleDives[selectedVisibleIndex + 1]
+      : null;
 
   const visibleDiveIds = useMemo(
     () => new Set(visibleDives.map((dive) => dive.id)),
@@ -1969,6 +1987,9 @@ export function DiveFrameApp() {
                 <DiveDetail
                   key={selected.id}
                   dive={selected}
+                  previousDive={previousVisibleDive}
+                  nextDive={nextVisibleDive}
+                  onNavigateDive={chooseDive}
                   attachments={attachments}
                   busy={busy}
                   gpsNameAttempted={gpsNameAttempted.has(selected.id)}
@@ -2345,6 +2366,9 @@ function DiveRowButton({
 
 function DiveDetail({
   dive,
+  previousDive,
+  nextDive,
+  onNavigateDive,
   attachments,
   busy,
   gpsNameAttempted,
@@ -2374,6 +2398,9 @@ function DiveDetail({
   onDiveChange,
 }: {
   dive: Dive;
+  previousDive: Dive | null;
+  nextDive: Dive | null;
+  onNavigateDive: (diveId: string) => void;
   attachments: Attachment[];
   busy: boolean;
   gpsNameAttempted: boolean;
@@ -2924,13 +2951,38 @@ function DiveDetail({
 
       <div className="detail-hero" id="dive-hero">
         <div className="hero-topline">
-          <span>{t("dive")} {dive.diveNumber ?? "—"}</span>
-          {dive.memberDiveIds && dive.memberDiveIds.length > 1 ? (
-            <span className="merged-segment-badge">
-              {t("mergedSegmentsBadge", { count: dive.memberDiveIds.length })}
-              {dive.mergeStale ? ` · ${t("staleMergeBadge")}` : ""}
-            </span>
-          ) : null}
+          <div className="dive-sequence-row">
+            <nav
+              className="dive-sequence-navigation"
+              aria-label={t("diveNavigation")}
+            >
+              <button
+                type="button"
+                disabled={!previousDive}
+                onClick={() => previousDive && onNavigateDive(previousDive.id)}
+                aria-label={t("previousDive")}
+                title={t("previousDive")}
+              >
+                <ChevronLeft size={17} aria-hidden="true" />
+              </button>
+              <span>{t("dive")} {dive.diveNumber ?? "—"}</span>
+              <button
+                type="button"
+                disabled={!nextDive}
+                onClick={() => nextDive && onNavigateDive(nextDive.id)}
+                aria-label={t("nextDive")}
+                title={t("nextDive")}
+              >
+                <ChevronRight size={17} aria-hidden="true" />
+              </button>
+            </nav>
+            {dive.memberDiveIds && dive.memberDiveIds.length > 1 ? (
+              <span className="merged-segment-badge">
+                {t("mergedSegmentsBadge", { count: dive.memberDiveIds.length })}
+                {dive.mergeStale ? ` · ${t("staleMergeBadge")}` : ""}
+              </span>
+            ) : null}
+          </div>
           <span>{formatDate(dive.diveDate, language, t("dateUnknown"))}</span>
         </div>
         <div className="detail-hero-site-row">
@@ -3894,6 +3946,7 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
   const { colorTheme } = useColorTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [showPressure, setShowPressure] = useState(false);
+  const [showTemperature, setShowTemperature] = useState(false);
   const normalized = useMemo(() => toNormalizedDive(dive), [dive]);
   const availability = chartAvailability(normalized);
 
@@ -3926,8 +3979,15 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
       context.clearRect(0, 0, width, height);
       const settings = defaultComposerSettings(dive.id);
       settings.language = language;
-      settings.chartMode =
-        showPressure && availability.pressure ? "depth-pressure" : "depth";
+      const pressureVisible = showPressure && availability.pressure;
+      const temperatureVisible = showTemperature && availability.temperature;
+      settings.chartMode = pressureVisible
+        ? temperatureVisible
+          ? "depth-pressure-temperature"
+          : "depth-pressure"
+        : temperatureVisible
+          ? "depth-temperature"
+          : "depth";
       settings.lineThickness = 2;
       settings.fillOpacity = 0.18;
       settings.showAxisLabels = true;
@@ -3956,11 +4016,13 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
   }, [
     availability.depth,
     availability.pressure,
+    availability.temperature,
     colorTheme,
     dive.id,
     language,
     normalized,
     showPressure,
+    showTemperature,
   ]);
 
   return (
@@ -3970,16 +4032,28 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
           <p className="eyebrow">{t("diveProfile")}</p>
           <h3>{t("depthChart")}</h3>
         </div>
-        {availability.pressure ? (
-          <label className="pressure-toggle">
-            <input
-              type="checkbox"
-              checked={showPressure}
-              onChange={(event) => setShowPressure(event.target.checked)}
-            />
-            <span>{t("showTankPressure")}</span>
-          </label>
-        ) : null}
+        <div className="profile-toggles">
+          {availability.pressure ? (
+            <label className="profile-toggle">
+              <input
+                type="checkbox"
+                checked={showPressure}
+                onChange={(event) => setShowPressure(event.target.checked)}
+              />
+              <span>{t("showTankPressure")}</span>
+            </label>
+          ) : null}
+          {availability.temperature ? (
+            <label className="profile-toggle">
+              <input
+                type="checkbox"
+                checked={showTemperature}
+                onChange={(event) => setShowTemperature(event.target.checked)}
+              />
+              <span>{t("showTemperature")}</span>
+            </label>
+          ) : null}
+        </div>
       </div>
       {availability.depth ? (
         <>
@@ -3988,6 +4062,11 @@ function DiveProfilePanel({ dive }: { dive: Dive }) {
             <span className="profile-legend-depth">{t("depthLegend")}</span>
             {showPressure && availability.pressure ? (
               <span className="profile-legend-pressure">{t("tankPressure")}</span>
+            ) : null}
+            {showTemperature && availability.temperature ? (
+              <span className="profile-legend-temperature">
+                {t("temperatureLegend")}
+              </span>
             ) : null}
           </div>
         </>

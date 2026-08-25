@@ -16,6 +16,7 @@ const {
   DEFAULT_SHORT_DIVE_MAX_MINUTES,
   diveMatchesListFilters,
   diveWasEditedHere,
+  flattenDiveListRows,
   parsePositiveWholeMinutes,
   shortDiveCandidateIds,
 } = await import(
@@ -80,6 +81,7 @@ test("groups trip members contiguously and sorts by current option", () => {
   assert.equal(rows[1].kind, "trip");
   assert.equal(rows[1].trip.name, "Maldives 2026");
   assert.deepEqual(rows[1].dives.map((d) => d.id), ["b", "c"]);
+  assert.deepEqual(flattenDiveListRows(rows).map((d) => d.id), ["a", "b", "c"]);
 });
 
 test("dateFrom/dateTo and computerModel filter predicates", () => {

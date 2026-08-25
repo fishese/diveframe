@@ -223,6 +223,8 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /completeBuddyToken/);
   assert.match(app, /DiveProfilePanel/);
   assert.match(app, /showPressure/);
+  assert.match(app, /showTemperature/);
+  assert.match(app, /depth-pressure-temperature/);
   assert.match(app, /averageSampleTemperatureC/);
   assert.match(app, /calculateSacLitresPerMinute/);
   assert.doesNotMatch(settings, /diveframe-added-sites\.json/);

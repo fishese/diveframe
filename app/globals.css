@@ -46,6 +46,7 @@
   --danger-btn-hover: rgba(255, 143, 118, 0.24);
   --proof-muted: #71949b;
   --profile-stroke: rgba(141, 235, 215, 0.08);
+  --profile-temperature: #a9c7ff;
   --theme-color: #071820;
   --input-bg: rgba(0, 0, 0, 0.22);
   --filter-bar-bg: rgba(4, 18, 24, 0.88);
@@ -108,6 +109,7 @@
   --danger-btn-hover: rgba(201, 90, 69, 0.2);
   --proof-muted: #5a7378;
   --profile-stroke: rgba(13, 143, 124, 0.14);
+  --profile-temperature: #5268c7;
   --theme-color: #eef6f4;
   --input-bg: #ffffff;
   --filter-bar-bg: #0d8f7c;
@@ -1142,6 +1144,43 @@ button {
   padding: 30px;
 }
 
+.dive-sequence-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dive-sequence-navigation {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+}
+
+.dive-sequence-navigation button {
+  align-items: center;
+  background: var(--icon-btn-bg);
+  border: 1px solid var(--icon-btn-border);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+  width: 30px;
+}
+
+.dive-sequence-navigation button:hover:not(:disabled),
+.dive-sequence-navigation button:focus-visible {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+
+.dive-sequence-navigation button:disabled {
+  cursor: default;
+  opacity: 0.32;
+}
+
 .detail-hero {
   border-bottom: 1px solid var(--line);
   padding: 14px 8px 30px;
@@ -1275,7 +1314,19 @@ button {
   width: 100%;
 }
 
-.pressure-toggle {
+.profile-toggles {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: flex-end;
+}
+
+.profile-card .card-heading > div:first-child {
+  flex: 0 0 auto;
+}
+
+.profile-toggle {
   align-items: center;
   color: var(--muted);
   cursor: pointer;
@@ -1284,7 +1335,7 @@ button {
   gap: 8px;
 }
 
-.pressure-toggle input {
+.profile-toggle input {
   accent-color: var(--teal);
 }
 
@@ -1311,6 +1362,10 @@ button {
 
 .profile-legend-pressure::before {
   background: #ffb36b;
+}
+
+.profile-legend-temperature::before {
+  background: var(--profile-temperature);
 }
 
 .profile-empty {
@@ -5635,6 +5690,19 @@ button {
     padding: 20px 14px 45px;
   }
 
+  .dive-sequence-navigation {
+    gap: 5px;
+  }
+
+  .profile-card .card-heading {
+    gap: 12px;
+  }
+
+  .profile-card .card-heading h3,
+  .profile-card .card-heading .eyebrow {
+    white-space: nowrap;
+  }
+
   .detail-hero {
     padding: 10px 5px 25px;
   }
@@ -6969,6 +7037,18 @@ button {
 }
 
 @media (max-width: 420px) {
+  .compose-hero-button {
+    font-size: 0;
+    gap: 0;
+    padding: 9px;
+  }
+
+  .profile-toggles {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
   .topbar-actions {
     gap: 4px;
   }
