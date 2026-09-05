@@ -1,11 +1,11 @@
 {
   "version": "2026-08-23-compact-updates",
-  "updatedAt": "2026-09-04T18:54:06.628Z",
+  "updatedAt": "2026-09-05T18:00:41.144Z",
   "channels": {
     "preview": {
-      "versionName": "preview.43.0b821be",
-      "versionCode": 100043,
-      "sourceSha": "0b821be86ac3a743f0d6757226e075f3260bdfe0"
+      "versionName": "preview.44.eccf169",
+      "versionCode": 100044,
+      "sourceSha": "eccf169de8fcd9a9b7dd03dc4c04bfd2ae2153d5"
     },
     "fdroid": {
       "versionName": "1.0.28",
