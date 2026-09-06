@@ -1,6 +1,6 @@
 {
   "version": "2026-08-23-compact-updates",
-  "updatedAt": "2026-09-06T01:43:48.069Z",
+  "updatedAt": "2026-09-06T11:23:17.495Z",
   "channels": {
     "preview": {
       "versionName": "preview.45.bbc96f7",
@@ -8,9 +8,9 @@
       "sourceSha": "bbc96f747d1002ff761270daa9d150a7cf8763a3"
     },
     "fdroid": {
-      "versionName": "1.0.28",
-      "versionCode": 29,
-      "sourceSha": "1d676d2929be03d6786d777018dc77b7b757d7ef"
+      "versionName": "1.0.29",
+      "versionCode": 30,
+      "sourceSha": "a196becb4ff1c014c99b908e9611607c6757e309"
     }
   },
   "entries": [
