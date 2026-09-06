@@ -6,11 +6,11 @@ Stable `1.0.29` / code `30` and its signed reference APK are published from
 source `a196becb4ff1c014c99b908e9611607c6757e309`. Both recipe copies and MR
 branch head were advanced to that source after Preview testing.
 
-A fresh authenticated `glab` read on 2026-09-06 failed with OAuth
-`invalid_grant`. The MR branch push succeeded at
-`cd7a8a0242231c1c9c691ac2311398e5f94666df`, but its new pipeline and reviewer
-state could not be read through `glab`. No MR comment or description change was
-made. Verify live review status after restoring the CLI login.
+An authenticated `glab` read on 2026-09-06 confirmed the MR remains open,
+mergeable, and conflict-free at
+`cd7a8a0242231c1c9c691ac2311398e5f94666df`. Pipeline `2824135814` passed all
+nine jobs and blocking discussions are resolved. The existing description's
+stale pipeline URL was replaced; no MR comment was added.
 
 Read this before changing the F-Droid metadata, creating a production
 release, or preparing a new F-Droid merge-request update. The canonical
@@ -258,18 +258,18 @@ reference asset.
   `30`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
 - Current recipe/MR commit: `cd7a8a0242231c1c9c691ac2311398e5f94666df`
-- MR: [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472).
-  The new pipeline was not read because the saved `glab` OAuth grant expired.
+- MR/pipeline: [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472),
+  [pipeline 2824135814](https://gitlab.com/fishese/fdroiddata/-/pipelines/2824135814).
 
-The prior 1.0.28 recipe pipeline `2783281904` passed all nine jobs. For 1.0.29,
-local release validation and the signed reference workflow passed; the updated
-MR pipeline still needs a live GitLab status check. The recipe keeps
+Pipeline `2824135814` passed `fdroid build`, `check apk`, source and schema
+checks, script validation, metadata rewrite/lint, redirect checks, and
+`checkupdates`. The recipe keeps
 `submodules: true`; the source gitlink and `libdivecomputer.pin` both resolve
 to `8e564eb5cf9fb4318af3d540895abb916e1809b0`. It still uses
 `subdir: android/app`, has no `output`, and retains all pinned native inputs.
 
 For 1.0.29, source publication, reference publication, signed-APK inspection,
-and recipe update were completed. The earlier
+recipe update, and MR pipeline verification were completed. The earlier
 Gradle-wrapper checksum request is satisfied by the official checksum for the
 configured 8.14.2 `all.zip`; the historical fresh-download and local/CI checks
 passed. This is not a newly refreshed statement of the latest reviewer position.
