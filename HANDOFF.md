@@ -9,8 +9,9 @@ not duplicated here.
 
 - Production web is deployed from GitHub `main` by Cloudflare Workers Builds.
   `.openai/hosting.json` is retained project metadata; D1/R2 remain disabled.
-- Shared application changes ship to web and the separately installable Preview
-  APK. Stable/F-Droid stays pinned until a separate stable release is requested.
+- Stable `1.0.29` / code `30` uses source `a196bec`; the separately installable
+  Preview remains the test channel. See the dated release records for exact
+  artifact and MR evidence.
 - Preserve current IndexedDB saves (schema 12) and app-data backups (format 5).
   No pre-v8 migration support is required. Do not reset current saves as a fix.
 - Source GPS is preserved by default. A valid, explicitly enabled per-dive user

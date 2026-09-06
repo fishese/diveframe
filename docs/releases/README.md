@@ -1,5 +1,6 @@
 # Publication records
 
+- [2026-09-06: stable 1.0.29](2026-09-06-stable-1.0.29.md)
 - [2026-09-06: web/Preview review fixes](2026-09-06-review-fixes.md)
 
 Keep one dated record per deliberate release, linking its exact source,

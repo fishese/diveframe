@@ -1,15 +1,16 @@
 # DiveFrame F-Droid build and update guide
 
-Stable release snapshot verified: 2026-09-05 (Asia/Singapore).
+Stable release snapshot verified: 2026-09-06 (Asia/Singapore).
 Earlier pipeline/job details below retain their original verification dates.
-The 2026-09-06 web/Preview publication deliberately leaves this stable release
-and both recipe copies unchanged while the maintainer tests the fixes.
+Stable `1.0.29` / code `30` and its signed reference APK are published from
+source `a196becb4ff1c014c99b908e9611607c6757e309`. Both recipe copies and MR
+branch head were advanced to that source after Preview testing.
 
 A fresh authenticated `glab` read on 2026-09-06 failed with OAuth
-`invalid_grant`. The last successful MR read showed it open at recipe head
-`7882cd4beea3028ca39aaf39b2a7cb7ef64d971a`, pipeline `2783281904` successful,
-and blocking discussions resolved, while retaining `waiting-on-response`.
-These are dated observations; verify live review status before any stable work.
+`invalid_grant`. The MR branch push succeeded at
+`cd7a8a0242231c1c9c691ac2311398e5f94666df`, but its new pipeline and reviewer
+state could not be read through `glab`. No MR comment or description change was
+made. Verify live review status after restoring the CLI login.
 
 Read this before changing the F-Droid metadata, creating a production
 release, or preparing a new F-Droid merge-request update. The canonical
@@ -26,13 +27,13 @@ F-Droid-specific build contract and the failure that occurred during MR
   must never be submitted as F-Droid source or reference APKs.
 - The current submission MR is
   [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472).
-- The MR recipe is pinned to `1.0.28` / code `29`, production source
-  `1d676d2929be03d6786d777018dc77b7b757d7ef`, immutable tag `v1.0.28`.
-  Recipe commit `7882cd4beea3028ca39aaf39b2a7cb7ef64d971a` and pipeline
-  `2783281904` passed all nine jobs, including the APK comparison.
-- Web `main` and Preview have accumulated shared application changes since
-  stable 1.0.28. This is intentional release lag; they are not the submitted
-  F-Droid source. Stable 1.0.28 remains pinned to `1d676d2`.
+- The MR recipe is pinned to `1.0.29` / code `30`, production source
+  `a196becb4ff1c014c99b908e9611607c6757e309`, immutable tag `v1.0.29`.
+  Recipe commit `cd7a8a0242231c1c9c691ac2311398e5f94666df` changes only those
+  stale recipe identity fields.
+- Web `main` contains the later stable-feed commit while the immutable stable
+  source remains `a196bec`. Preview 45 supplied the tested application runtime;
+  the stable source adds documentation/feed history and production metadata.
 - Stable-only auto-update is enabled with `AutoUpdateMode: Version` and
   `UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$`. `UpdateCheckData` reads
   the plain production `versionCode` / `versionName` lines from
@@ -57,9 +58,9 @@ These fields are coupled to the current Android project layout:
 
 ```yaml
 Builds:
-  - versionName: 1.0.28
-    versionCode: 29
-    commit: 1d676d2929be03d6786d777018dc77b7b757d7ef
+  - versionName: 1.0.29
+    versionCode: 30
+    commit: a196becb4ff1c014c99b908e9611607c6757e309
     subdir: android/app
     gradle:
       - yes
@@ -240,35 +241,35 @@ Gradle task:            assembleRelease
 ```
 
 The reference workflow is
-`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.28` values
+`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.29` values
 are hard-coded together for the stable release and were run from the exact
-`v1.0.28` source commit. Never use the mutable `preview` release as the
+`v1.0.29` source commit. Never use the mutable `preview` release as the
 reference asset.
 
 ## Verified stable release update
 
-- Stable source/tag: `1d676d2929be03d6786d777018dc77b7b757d7ef` / `v1.0.28`
-- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.28
-- Reference workflow: https://github.com/fishese/diveframe/actions/runs/32648808269
-- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.28
-- Reference asset: `diveframe-1.0.28.apk`, `15765025` bytes,
-  SHA-256 `13BE632B7EC6D5B3350A93627E04C5C2EACA5DE55F96325EF38484E7E1A80D38`
-- APK identity: `cc.fishese.divelog`, `DiveFrame`, version `1.0.28` / code
-  `29`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
+- Stable source/tag: `a196becb4ff1c014c99b908e9611607c6757e309` / `v1.0.29`
+- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.29
+- Reference workflow: https://github.com/fishese/diveframe/actions/runs/34029893979
+- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.29
+- Reference asset: `diveframe-1.0.29.apk`, `15769121` bytes,
+  SHA-256 `0E5CD8A1062F1CFF98F2220A0D595B82F67F2CB24E8F024D719FA6202BFF89AD`
+- APK identity: `cc.fishese.divelog`, `DiveFrame`, version `1.0.29` / code
+  `30`, ABI `arm64-v8a`; signer `CN=Fishese`, certificate digest
   `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
-- Current recipe/MR commit: `7882cd4beea3028ca39aaf39b2a7cb7ef64d971a`
-- MR/pipeline: [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472),
-  [pipeline 2783281904](https://gitlab.com/fishese/fdroiddata/-/pipelines/2783281904)
+- Current recipe/MR commit: `cd7a8a0242231c1c9c691ac2311398e5f94666df`
+- MR: [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472).
+  The new pipeline was not read because the saved `glab` OAuth grant expired.
 
-Pipeline 2783281904 passed all nine jobs and validates the 1.0.28 recipe,
-reference APK, stable-tag-only auto-update against the plain production Gradle
-version lines, and reviewer-requested Git submodule dependency path. The recipe uses
-`submodules: true`; the source gitlink and `libdivecomputer.pin` both
-resolve to `8e564eb5cf9fb4318af3d540895abb916e1809b0`. It still uses
+The prior 1.0.28 recipe pipeline `2783281904` passed all nine jobs. For 1.0.29,
+local release validation and the signed reference workflow passed; the updated
+MR pipeline still needs a live GitLab status check. The recipe keeps
+`submodules: true`; the source gitlink and `libdivecomputer.pin` both resolve
+to `8e564eb5cf9fb4318af3d540895abb916e1809b0`. It still uses
 `subdir: android/app`, has no `output`, and retains all pinned native inputs.
 
-For 1.0.28, source publication, reference publication, signed-APK inspection,
-recipe update, and MR pipeline verification were completed. The earlier
+For 1.0.29, source publication, reference publication, signed-APK inspection,
+and recipe update were completed. The earlier
 Gradle-wrapper checksum request is satisfied by the official checksum for the
 configured 8.14.2 `all.zip`; the historical fresh-download and local/CI checks
 passed. This is not a newly refreshed statement of the latest reviewer position.
