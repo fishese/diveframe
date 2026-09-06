@@ -1,6 +1,39 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import vm from "node:vm";
+import { resolve } from "node:path";
+
+test("native assets are preserved after failed, interrupted, or unspawnable builds", async () => {
+  const source = (await readFile("scripts/build-native-web.mjs", "utf8"))
+    .replace(/^import .*;\r?\n/gm, "")
+    .replace("import.meta.dirname", '"scripts"');
+  for (const build of [{ status: 1 }, { status: null, signal: "SIGTERM" }, { status: null, error: new Error("spawn failed") }, { status: 0 }]) {
+    const writes = [];
+    let calls = 0;
+    let exitCode;
+    const context = {
+      resolve,
+      spawnSync: () => ++calls === 1 ? { status: 0 } : build,
+      existsSync: () => true,
+      readFileSync: () => "<html>DiveFrame stale assets</html>",
+      rmSync: () => writes.push("remove"),
+      mkdirSync: () => writes.push("mkdir"),
+      cpSync: () => writes.push("copy"),
+      console: { error() {}, log() {} },
+      process: { env: {}, execPath: "node", platform: "linux", exit(code) { exitCode = code; throw new Error("exited"); } },
+    };
+    try { vm.runInNewContext(source, context); } catch (error) { assert.equal(error.message, "exited"); }
+    assert.equal(calls, 2);
+    if (build.status === 0) {
+      assert.deepEqual(writes, ["remove", "mkdir", "copy"]);
+      assert.equal(exitCode, undefined);
+    } else {
+      assert.deepEqual(writes, []);
+      assert.equal(exitCode, 1);
+    }
+  }
+});
 
 const files = {
   capacitor: new URL("../capacitor.config.ts", import.meta.url),

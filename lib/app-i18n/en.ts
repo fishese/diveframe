@@ -2,6 +2,7 @@ import { translations as overlayTranslations } from "../i18n";
 
 export const en = {
   ...overlayTranslations.en,
+  diveMemoNotesPlaceholder: "Note other info such as gas mixes, weight, exposures here",
   betaNoticeLabel: "Beta",
   betaNoticeShort: "DiveFrame is in beta. Features may change.",
 

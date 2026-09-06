@@ -15,6 +15,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      apk_sha256: ${{ steps.preview_asset.outputs.sha256 }}
 
     steps:
       - name: Check out main
@@ -34,6 +36,18 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+
+      - name: Reject an obsolete Preview rerun
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIEW_RUN_NUMBER: ${{ github.run_number }}
+          PREVIEW_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/contents/public/whats-new.json?ref=main" --jq .content \
+            | base64 --decode > "$RUNNER_TEMP/current-preview-feed.json"
+          node scripts/update-preview-feed.mjs "$PREVIEW_RUN_NUMBER" "$PREVIEW_SOURCE_SHA" "$RUNNER_TEMP/current-preview-feed.json"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
@@ -61,6 +75,7 @@ jobs:
           npm run native:sync
 
       - name: Build Preview APK
+        id: preview_version
         working-directory: android
         shell: bash
         env:
@@ -70,6 +85,8 @@ jobs:
           preview_version_code=$((100000 + RUN_NUMBER))
           short_sha="${COMMIT_SHA:0:7}"
           preview_version_name="preview.${RUN_NUMBER}.${short_sha}"
+          echo "name=$preview_version_name" >> "$GITHUB_OUTPUT"
+          echo "code=$preview_version_code" >> "$GITHUB_OUTPUT"
           bash gradlew --no-daemon \
             -PpreviewVersionCode="$preview_version_code" \
             -PpreviewVersionName="$preview_version_name" \
@@ -86,10 +103,17 @@ jobs:
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
       - name: Prepare Preview asset
+        id: preview_asset
         shell: bash
+        env:
+          PREVIEW_VERSION_NAME: ${{ steps.preview_version.outputs.name }}
+          PREVIEW_VERSION_CODE: ${{ steps.preview_version.outputs.code }}
         run: |
+          set -euo pipefail
           cp "${{ steps.sign_apk.outputs.signedReleaseFile }}" diveframe-preview.apk
-          sha256sum diveframe-preview.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging diveframe-preview.apk > "$RUNNER_TEMP/preview-badging.txt"
+          grep -F "package: name='cc.fishese.divelog.preview' versionCode='$PREVIEW_VERSION_CODE' versionName='$PREVIEW_VERSION_NAME'" "$RUNNER_TEMP/preview-badging.txt"
+          echo "sha256=$(sha256sum diveframe-preview.apk | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
 
       - name: Upload signed APK artifact
         uses: actions/upload-artifact@v4
@@ -97,6 +121,16 @@ jobs:
           name: diveframe-preview-${{ github.run_number }}
           path: diveframe-preview.apk
           if-no-files-found: error
+
+      - name: Align the mutable Preview tag with the built source
+        shell: bash
+        env:
+          PREVIEW_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          previous_sha="$(git ls-remote --refs origin refs/tags/preview | cut -f 1)"
+          git push --force-with-lease="refs/tags/preview:${previous_sha}" \
+            origin "${PREVIEW_SOURCE_SHA}:refs/tags/preview"
 
       - name: Publish Preview release
         uses: softprops/action-gh-release@v2
@@ -112,8 +146,11 @@ jobs:
 
             Commit: ${{ github.sha }}
             Package: cc.fishese.divelog.preview
-            Version name: `preview.${{ github.run_number }}.<short-sha>`
-            Version code: 100000 + workflow run ${{ github.run_number }}
+            Version name: ${{ steps.preview_version.outputs.name }}
+            Version code: ${{ steps.preview_version.outputs.code }}
+            APK SHA-256: ${{ steps.preview_asset.outputs.sha256 }}
+
+            Source commit: https://github.com/${{ github.repository }}/tree/${{ github.sha }}
 
             Preview is separately installable from production and uses
             separate app-private storage. This channel is signed separately
@@ -141,6 +178,8 @@ jobs:
         env:
           PREVIEW_RUN_NUMBER: ${{ github.run_number }}
           PREVIEW_SOURCE_SHA: ${{ github.sha }}
+          PREVIEW_APK_SHA256: ${{ needs.build.outputs.apk_sha256 }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -149,6 +188,8 @@ jobs:
           for attempt in 1 2 3; do
             git fetch origin main
             git checkout --detach origin/main
+            node scripts/verify-preview-release.mjs \
+              "$PREVIEW_RUN_NUMBER" "$PREVIEW_SOURCE_SHA" "$PREVIEW_APK_SHA256"
             node scripts/update-preview-feed.mjs \
               "$PREVIEW_RUN_NUMBER" \
               "$PREVIEW_SOURCE_SHA"

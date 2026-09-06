@@ -4,6 +4,7 @@ import type { en } from "./en";
 export const zhHant: Record<keyof typeof en, string> = {
   chooseSharedBackground: "或用通用背景開始",
   ...overlayTranslations["zh-Hant"],
+  diveMemoNotesPlaceholder: "在此記下氣體配比、配重、潛水衣等其他資料",
   betaNoticeShort: "DiveFrame 目前為測試版。功能可能會有所變動。",
   shareImage: "分享圖片",
   siteAndLocation: "潛點及地點",

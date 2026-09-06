@@ -29,7 +29,7 @@ export function readSubsurfaceLog(xmlText: string): LocalImportedDive[] {
     ]),
   );
 
-  return Array.from(document.querySelectorAll("dives > dive")).map((dive) => {
+  return Array.from(document.querySelectorAll("divelog > dives dive")).map((dive) => {
     const computer = dive.querySelector("divecomputer");
     const depth = computer?.querySelector("depth");
     const temperature = computer?.querySelector("temperature");

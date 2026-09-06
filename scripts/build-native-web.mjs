@@ -33,6 +33,13 @@ const build = spawnSync(
   },
 );
 
+// A previous export is not evidence that this build succeeded. In particular,
+// reject spawn errors, signal termination, and every nonzero exit before copying.
+if (build.status !== 0) {
+  console.error("Static native build failed; existing native assets were preserved.");
+  process.exit(build.status ?? 1);
+}
+
 const built =
   existsSync(indexHtml) &&
   readFileSync(indexHtml, "utf8").includes("DiveFrame");
@@ -42,15 +49,7 @@ if (!built) {
     "Static native build did not produce a usable dist/client/index.html. " +
       "A route may still be classified as dynamic.",
   );
-  process.exit(build.status ?? 1);
-}
-
-if (build.status !== 0 && build.status !== null) {
-  // vinext can finish the export successfully on Windows and then abort during
-  // process teardown (libuv UV_HANDLE_CLOSING). Treat a usable client tree as OK.
-  console.warn(
-    `vinext exited with code ${build.status}; continuing because dist/client/index.html looks valid.`,
-  );
+  process.exit(1);
 }
 
 rmSync(outDir, { recursive: true, force: true });

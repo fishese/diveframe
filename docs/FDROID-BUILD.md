@@ -1,6 +1,15 @@
 # DiveFrame F-Droid build and update guide
 
-Last verified: 2026-08-23 (Asia/Singapore)
+Stable release snapshot verified: 2026-09-05 (Asia/Singapore).
+Earlier pipeline/job details below retain their original verification dates.
+The 2026-09-06 web/Preview publication deliberately leaves this stable release
+and both recipe copies unchanged while the maintainer tests the fixes.
+
+A fresh authenticated `glab` read on 2026-09-06 failed with OAuth
+`invalid_grant`. The last successful MR read showed it open at recipe head
+`7882cd4beea3028ca39aaf39b2a7cb7ef64d971a`, pipeline `2783281904` successful,
+and blocking discussions resolved, while retaining `waiting-on-response`.
+These are dated observations; verify live review status before any stable work.
 
 Read this before changing the F-Droid metadata, creating a production
 release, or preparing a new F-Droid merge-request update. The canonical
@@ -21,9 +30,9 @@ F-Droid-specific build contract and the failure that occurred during MR
   `1d676d2929be03d6786d777018dc77b7b757d7ef`, immutable tag `v1.0.28`.
   Recipe commit `7882cd4beea3028ca39aaf39b2a7cb7ef64d971a` and pipeline
   `2783281904` passed all nine jobs, including the APK comparison.
-- Current web `main` intentionally includes a web/feed and documentation
-  follow-up after the release. It is not an Android or F-Droid source; stable
-  1.0.28 remains pinned to `1d676d2`.
+- Web `main` and Preview have accumulated shared application changes since
+  stable 1.0.28. This is intentional release lag; they are not the submitted
+  F-Droid source. Stable 1.0.28 remains pinned to `1d676d2`.
 - Stable-only auto-update is enabled with `AutoUpdateMode: Version` and
   `UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$`. `UpdateCheckData` reads
   the plain production `versionCode` / `versionName` lines from
@@ -259,10 +268,10 @@ resolve to `8e564eb5cf9fb4318af3d540895abb916e1809b0`. It still uses
 `subdir: android/app`, has no `output`, and retains all pinned native inputs.
 
 For 1.0.28, source publication, reference publication, signed-APK inspection,
-recipe update, and MR pipeline verification are complete. The latest review is
-**PASS WITH NOTES** and requests `distributionSha256Sum` in the Gradle wrapper.
-Stable 1.0.28 retains Gradle's official checksum for the configured
-8.14.2 `all.zip`; a fresh download and all local/CI validation passed.
+recipe update, and MR pipeline verification were completed. The earlier
+Gradle-wrapper checksum request is satisfied by the official checksum for the
+configured 8.14.2 `all.zip`; the historical fresh-download and local/CI checks
+passed. This is not a newly refreshed statement of the latest reviewer position.
 Maintainer review and merge remain outside the release-preparation workflow.
 
 ## Repeatable F-Droid update checklist

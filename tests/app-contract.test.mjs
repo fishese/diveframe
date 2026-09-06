@@ -252,7 +252,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(memosApp, /MemoDiveMatchHints/);
   assert.match(memosApp, /mode="on-memo"/);
   assert.match(memosApp, /onMemoDeleted/);
-  assert.match(memosApp, /NOTES_PLACEHOLDER/);
+  assert.match(memosApp, /placeholder=\{t\("diveMemoNotesPlaceholder"\)\}/);
   assert.match(memosApp, /readPhotoExifGps/);
   assert.match(memosApp, /subscribeLocalDataChanges/);
   assert.doesNotMatch(memosApp, /saveLocalDivePhoto|addLocalDivePhoto/);

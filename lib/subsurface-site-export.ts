@@ -41,7 +41,7 @@ export async function addDiveFrameSitesToSubsurface(
   const sites = Array.from(sitesRoot.querySelectorAll(":scope > site"));
   const sitesByKey = new Map(
     sites.map((site) => [
-      siteKey(site.getAttribute("name") ?? "", site.getAttribute("gps")),
+      siteKey(site.getAttribute("name") ?? "", site.getAttribute("gps"), site),
       site,
     ]),
   );
@@ -79,17 +79,23 @@ export async function addDiveFrameSitesToSubsurface(
     const currentName = currentSite?.getAttribute("name")?.trim() || null;
     const resolvedName = targetName || currentName || targetGps;
     if (resolvedName) {
-      const key = siteKey(resolvedName, targetGps);
+      const key = siteKey(resolvedName, targetGps, currentSite);
       const currentKey = currentSite
         ? siteKey(
             currentSite.getAttribute("name") ?? "",
             currentSite.getAttribute("gps"),
+            currentSite,
           )
         : null;
       if (currentKey !== key) {
         let targetSite = sitesByKey.get(key);
         if (!targetSite) {
-          targetSite = document.createElement("site");
+          // A site can carry description, notes, taxonomy, and extension data.
+          // Clone it so renamed dives retain that data without changing other
+          // dives which still reference the original site.
+          targetSite = currentSite
+            ? currentSite.cloneNode(true) as Element
+            : document.createElement("site");
           const uuid = createSiteId(existingIds);
           targetSite.setAttribute("uuid", uuid);
           targetSite.setAttribute("name", resolvedName);
@@ -138,10 +144,18 @@ function ensureDiveSites(document: XMLDocument, divesRoot: Element) {
   return sites;
 }
 
-function siteKey(name: string, gps: string | null) {
-  return `${name.trim().toLocaleLowerCase("en").replace(/\s+/g, " ")}\u0000${
+function siteKey(name: string, gps: string | null, site?: Element) {
+  const attributes = Array.from(site?.attributes ?? [])
+    .filter((attribute) => !["uuid", "name", "gps"].includes(attribute.name))
+    .map((attribute) => [attribute.name, attribute.value])
+    .sort(([left], [right]) => left.localeCompare(right));
+  const children = Array.from(site?.childNodes ?? [])
+    .filter((child) => child.nodeType !== 3 || child.textContent?.trim())
+    .map((child) => new XMLSerializer().serializeToString(child));
+  // Exact display names matter. Metadata must also agree before reusing a site.
+  return `${name.trim()}\u0000${
     gps?.trim().replace(/\s+/g, " ") ?? ""
-  }`;
+  }\u0000${JSON.stringify([attributes, children])}`;
 }
 
 function sourceDiveGps(dive: Element) {

@@ -282,7 +282,6 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
     try {
       const updated = await updateLocalDiveDetails(dive.id, {
         buddy: memo.buddies!.trim(),
-        notes: dive.notes,
       });
       props.onDiveChange(updated);
       setStatus(t("diveDetailsSaved"));
@@ -299,7 +298,6 @@ export function MemoDiveMatchHints(props: MemoDiveMatchHintsProps) {
     setStatus(null);
     try {
       const updated = await updateLocalDiveDetails(dive.id, {
-        buddy: dive.buddy,
         notes: memo.notes!.trim(),
       });
       props.onDiveChange(updated);

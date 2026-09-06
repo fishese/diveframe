@@ -59,6 +59,34 @@ export function chartAvailability(dive: Dive) {
   };
 }
 
+/** Reduce each overlay using its own values, independently of depth extrema. */
+export function downsampleChartSeries(
+  samples: DiveSample[],
+  valueFor: (sample: DiveSample) => number | undefined,
+  maximumPoints: number,
+) {
+  const values = samples
+    .map((sample) => ({ sample, value: valueFor(sample) }))
+    .filter((item): item is { sample: DiveSample; value: number } =>
+      Number.isFinite(item.value),
+    );
+  if (values.length <= maximumPoints) return values;
+  const bucketSize = Math.ceil(values.length / Math.max(1, Math.floor(maximumPoints / 2)));
+  const selected = new Set([values[0], values[values.length - 1]]);
+  for (let index = 1; index < values.length - 1; index += bucketSize) {
+    const bucket = values.slice(index, Math.min(index + bucketSize, values.length - 1));
+    let minimum = bucket[0];
+    let maximum = bucket[0];
+    for (const point of bucket) {
+      if (point.value < minimum.value) minimum = point;
+      if (point.value > maximum.value) maximum = point;
+    }
+    selected.add(minimum);
+    selected.add(maximum);
+  }
+  return [...selected].sort((a, b) => a.sample.elapsedSeconds - b.sample.elapsedSeconds);
+}
+
 export function renderDiveChart(
   context: CanvasRenderingContext2D,
   rect: ChartRect,
@@ -146,7 +174,7 @@ export function renderDiveChart(
     for (const series of buildPressureSeries(dive, settings)) {
       renderSparseLine(
         context,
-        samples,
+        dive.samples,
         dataPlot,
         maximumTime,
         (sample) => series.valuesFor(sample) ?? undefined,
@@ -159,7 +187,7 @@ export function renderDiveChart(
   if (wantsTemperature) {
     renderSparseLine(
       context,
-      samples,
+      dive.samples,
       dataPlot,
       maximumTime,
       (sample) => sample.temperatureC,
@@ -311,12 +339,12 @@ function renderSparseLine(
   thickness: number,
   dash: number[],
 ) {
-  const values = samples
-    .map((sample) => ({ sample, value: valueFor(sample) }))
-    .filter((item): item is { sample: DiveSample; value: number } =>
-      Number.isFinite(item.value),
-    );
-  if (values.length < 2) return;
+  const values = downsampleChartSeries(
+    samples,
+    valueFor,
+    Math.max(240, Math.round(rect.width / 2)),
+  );
+  if (!values.length) return;
   const minimum = Math.min(...values.map((item) => item.value));
   const maximum = Math.max(...values.map((item) => item.value));
   const range = Math.max(maximum - minimum, 1);
@@ -330,6 +358,11 @@ function renderSparseLine(
   context.strokeStyle = color;
   context.lineWidth = thickness;
   context.setLineDash(dash);
+  if (values.length === 1) {
+    // A single reading still deserves a visible point, not an empty legend.
+    const x = rect.x + (values[0].sample.elapsedSeconds / maximumTime) * rect.width;
+    context.lineTo(x + 0.01, rect.y + rect.height);
+  }
   context.stroke();
   context.setLineDash([]);
 }

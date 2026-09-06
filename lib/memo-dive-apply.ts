@@ -113,6 +113,23 @@ export function isMemoDiveApplyPlanEmpty(plan: MemoDiveApplyPlan): boolean {
   return Object.keys(plan).length === 0;
 }
 
+/** Recheck a snapshot's fill-empty plan inside the storage transaction. */
+export function revalidateEmptyMemoPlan(
+  plan: MemoDiveApplyPlan,
+  dive: Parameters<typeof planApplyEmptyMemoFields>[1],
+): MemoDiveApplyPlan {
+  const next = { ...plan };
+  if (!isSiteEmpty(dive)) {
+    delete next.setUserSite;
+    delete next.setUserSiteCatalogId;
+  }
+  if (isNonBlank(dive.location)) delete next.setLocation;
+  if (resolveDiveMapCoordinates(dive) !== null) delete next.setUserGps;
+  if (isNonBlank(dive.buddy)) delete next.setBuddy;
+  if (isNonBlank(dive.notes)) delete next.setNotes;
+  return next;
+}
+
 /** Build the explicit "Use location" action: site + GPS, or GPS by itself. */
 export function planUseMemoLocation(
   memo: Pick<

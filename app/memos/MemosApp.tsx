@@ -59,9 +59,6 @@ import { readPhotoExifGps } from "@/lib/photo-exif-gps";
 import type { AppTranslate } from "@/lib/app-i18n";
 import { subscribeLocalDataChanges } from "@/lib/cross-tab-sync";
 
-const NOTES_PLACEHOLDER =
-  "Note other info such as gas mixes, weight, exposures here";
-
 const MINUTE_SUGGESTIONS = [0, 15, 30, 45] as const;
 const SAVE_DEBOUNCE_MS = 400;
 
@@ -972,7 +969,7 @@ function MemoCard({
             rows={3}
             value={draft.notes ?? ""}
             disabled={busy}
-            placeholder={NOTES_PLACEHOLDER}
+            placeholder={t("diveMemoNotesPlaceholder")}
             onChange={(event) =>
               updateDraft({ notes: event.target.value || null })
             }

@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import ts from "typescript";
 import { DOMParser } from "linkedom";
+import { typescriptUrl } from "./helpers/import-typescript.mjs";
 
 globalThis.DOMParser = DOMParser;
 globalThis.XMLSerializer = class {
@@ -23,16 +24,9 @@ const gpsJavascript = ts.transpileModule(
 const gpsUrl = `data:text/javascript;base64,${Buffer.from(gpsJavascript).toString("base64")}`;
 let source = await readFile("lib/subsurface-site-export.ts", "utf8");
 source = source.replace(/from "\.\/dive-gps"/, `from "${gpsUrl}"`);
-source = source.replace(
-  /import \{ subsurfaceSourceId \} from "\.\/parsers\/subsurface";/,
-  `function subsurfaceSourceId(dive) {
-    const computer = dive.querySelector("divecomputer");
-    const deviceId = computer?.getAttribute("deviceid") ?? "unknown-device";
-    const computerDiveId = computer?.getAttribute("diveid") ??
-      \`\${dive.getAttribute("date") ?? "unknown"}-\${dive.getAttribute("time") ?? "unknown"}\`;
-    return \`\${deviceId}:\${computerDiveId}\`;
-  }`,
-);
+const parserUrl = await typescriptUrl("lib/parsers/subsurface.ts");
+const { readSubsurfaceLog } = await import(parserUrl);
+source = source.replace(/from "\.\/parsers\/subsurface"/, `from "${parserUrl}"`);
 const javascript = ts.transpileModule(source, {
   compilerOptions: {
     module: ts.ModuleKind.ESNext,
@@ -42,6 +36,38 @@ const javascript = ts.transpileModule(source, {
 const { addDiveFrameSitesToSubsurface } = await import(
   `data:text/javascript;base64,${Buffer.from(javascript).toString("base64")}`
 );
+
+test("imports trip dives and preserves shared-site metadata through case-only renames", async () => {
+  const xml = `<divelog><divesites>
+    <site uuid="original" name="BLUE CORNER" gps="1 2" description="Original description" custom="keep"><notes>Site notes</notes><taxonomy><geo cat="0" value="Palau"/></taxonomy><extension value="keep"/></site>
+    <site uuid="different" name="Blue Corner" gps="1 2" description="Other metadata"/>
+    </divesites><dives>
+    <dive number="1" divesiteid="original"><divecomputer deviceid="device" diveid="1"/></dive>
+    <trip location="Palau"><dive number="2" divesiteid="original"><divecomputer deviceid="device" diveid="2"/></dive></trip>
+    </dives></divelog>`;
+  const imported = readSubsurfaceLog(xml);
+  assert.deepEqual(imported.map((dive) => dive.sourceId), ["device:1", "device:2"]);
+  assert.equal(imported[1].gpsEntryLat, 1);
+  const edited = { ...imported[1], userSite: "Blue Corner" };
+  const result = await addDiveFrameSitesToSubsurface(new File([xml], "trip.ssrf"), [edited], [{ source: "subsurface", sourceId: edited.sourceId, diveId: edited.id }]);
+  const doc = new DOMParser().parseFromString(result.xml, "application/xml");
+  const original = doc.querySelector('site[uuid="original"]');
+  const linkedId = doc.querySelector("trip > dive").getAttribute("divesiteid");
+  const linked = doc.querySelector(`site[uuid="${linkedId}"]`);
+  assert.equal(doc.querySelector("dives > dive").getAttribute("divesiteid"), "original");
+  assert.equal(original.getAttribute("name"), "BLUE CORNER");
+  assert.equal(linked.getAttribute("name"), "Blue Corner");
+  assert.equal(linked.getAttribute("gps"), "1 2");
+  assert.equal(linked.getAttribute("description"), "Original description");
+  assert.equal(linked.getAttribute("custom"), "keep");
+  assert.equal(linked.querySelector("notes").textContent, "Site notes");
+  assert.equal(linked.querySelector("geo").getAttribute("value"), "Palau");
+  assert.equal(linked.querySelector("extension").getAttribute("value"), "keep");
+  assert.equal(result.addedSites, 1);
+  const again = await addDiveFrameSitesToSubsurface(new File([result.xml], "trip.ssrf"), [edited], [{ source: "subsurface", sourceId: edited.sourceId, diveId: edited.id }]);
+  assert.equal(again.addedSites, 0);
+  assert.equal(again.updatedDives, 0);
+});
 
 test("updates editable fields without rebuilding the Subsurface dive", async () => {
   const xml = `<?xml version="1.0"?>

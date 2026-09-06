@@ -74,9 +74,9 @@ npm run dev
 npm test
 ```
 
-Product/engineering review notes live in
-[PRODUCT-SPEC.md](docs/PRODUCT-SPEC.md). Maintainer handoff is in
-[HANDOFF.md](HANDOFF.md).
+Start with the [documentation index](docs/README.md) and
+[maintainer handoff](HANDOFF.md). Local planning and session notes are not
+part of the public documentation set; archived snapshots are clearly marked.
 
 ## License
 

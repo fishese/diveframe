@@ -4,7 +4,7 @@ Status: **capture path validated on hardware** (research shell). Product
 Bluetooth import lives in the main DiveFrame Android app (`BleImportPanel`);
 this spike remains a non-persisting research shell (`npm run native:spike`).
 
-## Current status (2026-08-01)
+## Historical hardware status (2026-08-01)
 
 | Area | State |
 |---|---|
@@ -43,9 +43,15 @@ Perdix 3 remains out of scope (different GATT service).
 - `persisted` is always `false`.
 - Logging is mostly `WARNING` on-device; `logTail` is quiet unless errors occur.
 
-## Schema / erase-reimport gate
+## Historical v8 schema gate
 
-IndexedDB v8 is live: destructive recreate of all stores, backup format v3,
+At the 2026-08-01 spike checkpoint, IndexedDB v8 introduced a one-time
+recreation of pre-v8 stores and backup format v3. Current product saves use
+IndexedDB v12 and backup format v5 and must remain compatible. Do not use this
+historical section as instructions to erase current saves. See
+[the maintainer handoff](../HANDOFF.md) for current boundaries.
+
+The original checkpoint introduced the v8 schema
 and store coverage in `lib/store-manifest.ts`. The spike UI still keeps
 `persisted: false` and does not call `persistBleImport` — wire that from the
 product import flow, not this research shell. Overlay fields for user GPS,

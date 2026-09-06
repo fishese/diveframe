@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import ts from "typescript";
+import { verifyPreviewRelease } from "../scripts/verify-preview-release.mjs";
 import {
   previewReleaseForRun,
   updatePreviewFeed,
@@ -136,6 +137,32 @@ test("records the exact published Preview identity without changing F-Droid", ()
 test("rejects invalid Preview workflow release identities", () => {
   assert.throws(() => previewReleaseForRun(0, "a".repeat(40)));
   assert.throws(() => previewReleaseForRun(32, "ea99b39"));
+});
+
+test("Preview retries are idempotent and cannot downgrade or reuse a version code", () => {
+  const release = previewReleaseForRun(43, "a".repeat(40));
+  const document = { updatedAt: "original", channels: { preview: release, fdroid: { versionCode: 29 } } };
+  assert.equal(updatePreviewFeed(document, release, "later"), document);
+  assert.throws(() => updatePreviewFeed(document, previewReleaseForRun(42, "b".repeat(40)), "later"), /newer Preview/);
+  assert.throws(() => updatePreviewFeed(document, previewReleaseForRun(43, "b".repeat(40)), "later"), /different source/);
+  assert.equal(document.updatedAt, "original");
+  assert.equal(document.channels.fdroid.versionCode, 29);
+});
+
+test("feed publication requires the actual uploaded APK digest and exact release identity", () => {
+  const expected = previewReleaseForRun(43, "a".repeat(40));
+  const sha256 = "b".repeat(64);
+  const release = { tag_name: "preview", prerelease: true, draft: false, target_commitish: expected.sourceSha,
+    body: `Commit: ${expected.sourceSha}\nPackage: cc.fishese.divelog.preview\nVersion name: ${expected.versionName}\nVersion code: ${expected.versionCode}\nAPK SHA-256: ${sha256}`,
+    assets: [{ name: "diveframe-preview.apk", state: "uploaded", digest: `sha256:${sha256}` }],
+  };
+  assert.doesNotThrow(() => verifyPreviewRelease(release, expected, sha256, expected.sourceSha));
+  assert.throws(() => verifyPreviewRelease(release, expected, sha256, "c".repeat(40)), /Git tag/);
+  for (const broken of [
+    { target_commitish: "main" }, { tag_name: "v1.0.28" }, { draft: true }, { prerelease: false },
+    { body: release.body.replace(expected.versionName, "preview.43.<short-sha>") },
+    { assets: [] }, { assets: [{ ...release.assets[0], digest: `sha256:${"c".repeat(64)}` }] },
+  ]) assert.throws(() => verifyPreviewRelease({ ...release, ...broken }, expected, sha256, expected.sourceSha));
 });
 
 test("rejects javascript: links", () => {

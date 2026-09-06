@@ -38,7 +38,7 @@ System Back follows the same **hierarchical up** path as the brand mark, on both
 Dialogs close first. At the home list with nothing open, Back still leaves the app.
 
 This is shared client plus Android shell behavior. 1.0.25 deployed the web
-app and the production APK from the same commit (`docs/WEB-APK-SYNC.md`).
+app and the Preview APK from the same runtime source (`docs/RELEASE-CHANNELS.md`).
 
 ## Non-goals
 

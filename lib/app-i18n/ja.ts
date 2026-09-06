@@ -4,6 +4,7 @@ import type { en } from "./en";
 export const ja: Record<keyof typeof en, string> = {
   chooseSharedBackground: "または汎用背景を使う",
   ...overlayTranslations.ja,
+  diveMemoNotesPlaceholder: "ガス配合、ウエイト、保護スーツなどの情報をメモしてください",
   betaNoticeShort: "ベータ版です。機能は変更される場合があります。",
   shareImage: "画像を共有",
   siteAndLocation: "ポイントと位置情報",

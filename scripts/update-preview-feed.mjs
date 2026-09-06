@@ -30,6 +30,17 @@ export function updatePreviewFeed(document, release, updatedAt) {
     throw new Error("What's new feed must contain channel metadata.");
   }
 
+  const current = document.channels.preview;
+  if (current?.versionCode > release.versionCode) {
+    throw new Error("Refusing to replace a newer Preview with an older run.");
+  }
+  if (current?.versionCode === release.versionCode) {
+    if (current.versionName !== release.versionName || current.sourceSha !== release.sourceSha) {
+      throw new Error("Preview version code already belongs to a different source.");
+    }
+    return document;
+  }
+
   return {
     ...document,
     updatedAt,

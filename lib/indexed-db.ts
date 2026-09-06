@@ -29,7 +29,11 @@ import {
 } from "./cross-tab-sync";
 import { withOptimizedJpeg } from "./media-optimization";
 import type { DiveMemo } from "./dive-memos";
-import type { MemoDiveApplyPlan } from "./memo-dive-apply";
+import {
+  isMemoDiveApplyPlanEmpty,
+  revalidateEmptyMemoPlan,
+  type MemoDiveApplyPlan,
+} from "./memo-dive-apply";
 import {
   compareDiveMemos,
   createDiveMemoId,
@@ -1275,8 +1279,8 @@ export async function updateLocalDiveDetails(
   details: {
     location?: string | null;
     locationSource?: DiveLocationOverrideSource;
-    buddy: string | null;
-    notes: string | null;
+    buddy?: string | null;
+    notes?: string | null;
     cylinderPresetId?: string | null;
     cylinderVolumeL?: number | null;
     startPressureBar?: number | null;
@@ -1295,8 +1299,8 @@ export async function updateLocalDiveDetails(
         : details.location?.trim()
           ? details.locationSource ?? "manual"
           : null,
-    buddy: details.buddy?.trim() || null,
-    notes: details.notes?.trim() || null,
+    buddy: details.buddy === undefined ? dive.buddy : details.buddy?.trim() || null,
+    notes: details.notes === undefined ? dive.notes : details.notes?.trim() || null,
     cylinderPresetId: details.cylinderPresetId ?? dive.cylinderPresetId ?? null,
     cylinderVolumeL: details.cylinderVolumeL ?? dive.cylinderVolumeL ?? null,
     tankPressuresStartBar:
@@ -1392,6 +1396,11 @@ export async function applyLocalDiveMemoPlan(
   }
   const now = new Date().toISOString();
   const updated = hydrateDive(stored);
+  plan = revalidateEmptyMemoPlan(plan, updated);
+  if (isMemoDiveApplyPlanEmpty(plan)) {
+    await transactionComplete(transaction);
+    return updated;
+  }
   if (plan.setUserSite !== undefined) {
     updated.userSite = plan.setUserSite;
     updated.userSiteSource = plan.setUserSiteCatalogId ? "catalog" : "memo";

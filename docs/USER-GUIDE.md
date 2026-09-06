@@ -436,6 +436,13 @@ coordinate also turns the preference off so a stale checked state cannot
 remain without a pin. Older backups and dives that lack the field stay
 computer-first.
 
+Export GPS policy: preserve coordinates already present in the supplied source
+log by default. Use DiveFrame coordinates when the source has none. If the
+source GPS is incorrect, explicitly enable the per-dive preference above to
+export the saved user coordinate instead. DiveFrame site names can replace
+source names independently of GPS; renaming a site does not authorize replacing
+its source coordinates. The override never edits the original imported file.
+
 ### Places Dived map
 
 Open **Dive Map** from the top navigation to see every dive with structured

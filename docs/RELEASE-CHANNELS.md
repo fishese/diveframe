@@ -1,281 +1,152 @@
-# DiveFrame release channels and web/APK parity
+# Release channels and web/APK parity
 
-Last verified: 2026-08-25 (Asia/Singapore)
+This is the canonical release and parity procedure. For the pinned stable
+record, recipe invariants, and F-Droid history, use [FDROID-BUILD.md](FDROID-BUILD.md).
+For current published Preview identity, read the [production feed](https://divelog.fishese.cc/whats-new.json)
+and [GitHub release](https://github.com/fishese/diveframe/releases/tag/preview).
+Do not copy rolling Preview version numbers into multiple handoff documents.
 
-This is the canonical release note for future sessions. Read it before
-changing a version, release tag, APK workflow, or F-Droid metadata. The
-F-Droid-specific build contract is in [`FDROID-BUILD.md`](FDROID-BUILD.md).
-The ignored local `docs/WEB-APK-SYNC.md`, when present, is a companion
-checklist; it is not required to understand or follow the rules in this
-document.
+## Channels
 
-## Source-commit rule
+| Surface | Identity | Build and delivery |
+| --- | --- | --- |
+| Web/PWA | DiveFrame; no Android version code | Cloudflare Workers Builds deploys GitHub `main` to https://divelog.fishese.cc |
+| Preview APK | `cc.fishese.divelog.preview`; DiveFrame Preview | Explicit `assemblePreview`; `preview.<run>.<short-sha>`; code `100000 + run`; mutable `preview` release and `diveframe-preview.apk` |
+| Stable production/F-Droid | `cc.fishese.divelog`; DiveFrame | Default `assembleRelease`; semantic version; immutable `vMAJOR.MINOR.PATCH` source tag and matching `fdroid-v%v` reference |
 
-The hosted web app and every published APK must be traceable to an exact
-source commit. A web deployment and an APK are considered matching only when
-both were built from the same commit SHA.
+Preview and production are separately installable, use separate private data,
+and have independent signing/distribution. Transfer data with an app-data
+backup. The old nightly/debug publication paths are retired; do not create
+new nightly releases or use a `releases/latest` debug download URL.
 
-For a shared change:
+The F-Droid candidate may intentionally lag behind web and Preview while
+changes are tested. Publishing web/Preview does not authorize a stable version
+bump, stable/reference tag, F-Droid recipe edit, or MR update.
 
-1. Finish the change and run `git status --short`; do not publish from an
-   unintended dirty checkout.
-2. Run `npm test` from the repository root (`D:\Projects\Dive log\web`).
-3. Push the intended commit to `main` and record `git rev-parse HEAD`.
-4. Let the web deployment use that pushed commit.
-5. Run the Preview workflow or the production/F-Droid release process from
-   that same commit. Do not build an APK from a later or earlier checkout.
-6. Put the source commit, application ID, version name, and version code in
-   the release notes or handoff record.
+## Source and parity rules
 
-Documentation-, test-, and server-only changes may skip a new APK, but the
-release record must explicitly say that the APK intentionally remains at an
-older commit.
+Record the exact pushed source SHA before publishing. Web and APK share the
+same intended application behavior. Shared UI, parsers, exports, charting,
+translations, save/backup contracts, catalog data, and client dependencies
+require a web deployment and a new Preview APK from that source.
 
-## Channel matrix
+| Change | Web deployment | New Preview APK |
+| --- | --- | --- |
+| Shared client behavior, bundled assets/data, or dependencies | Yes | Yes |
+| Android bridge, native dependency, manifest, or Capacitor behavior | If shared code changed | Yes |
+| Hosted API/CORS only | Yes | Usually no; test the installed APK against production |
+| Browser-only PWA/service-worker behavior | Yes | No, if packaged behavior is unchanged |
+| Update-feed content, tests, or documentation only | As the hosting integration requires | No |
 
-| Surface | Application ID | Label | Build/version rule | Tag or URL |
-| --- | --- | --- | --- | --- |
-| Hosted web/PWA | N/A | DiveFrame | Deploy from `main`; no APK version code | `https://divelog.fishese.cc` |
-| Production APK | `cc.fishese.divelog` | DiveFrame | Default `assembleRelease`; stable `MAJOR.MINOR.PATCH` version | Immutable `vMAJOR.MINOR.PATCH` |
-| Preview APK | `cc.fishese.divelog.preview` | DiveFrame Preview | Explicit `assemblePreview`; `preview.<run>.<short-sha>`; code `100000 + run` | Mutable `preview` / `diveframe-preview.apk` |
-| F-Droid/reference APK | `cc.fishese.divelog` | DiveFrame | Production `assembleRelease`; recipe supplies the stable version/code | Reference tag `fdroid-v%v`; recipe-pinned stable commit |
+A later feed-only or documentation-only `main` commit may intentionally leave
+the APK at the earlier runtime SHA. Record that distinction in the release
+record; exact checkout equality and runtime parity are different checks.
 
-Production tags are immutable and must never be moved or reused. The mutable
-`preview` tag is never a production or F-Droid source tag. Do not use
-`v1.0.21`, `v1.0.27`, or current `v1.0.28` as a Preview tag or release name;
-they are
-reserved for the existing production/F-Droid history.
+Deliberate platform differences:
 
-Preview and production have separate Android application IDs, provider
-authorities, private WebView storage, and IndexedDB partitions. They can be
-installed together but do not share data. Move a logbook with the app-data
-export/import flow. The legacy nightly APK used the production ID and is
-historical; do not create new `nightly` artifacts.
+- Web uses browser file handling, a browser-origin IndexedDB partition, and a
+  service worker. Android uses bundled static assets, native Downloads/share,
+  and its own WebView storage; the web service worker is disabled there.
+- Web calls relative hosted APIs. Android uses the configured production API
+  origin and approved Capacitor CORS origins.
+- Classic Shearwater Bluetooth and original-photo-location access use Android
+  bridges. Browser photo metadata depends on what its picker supplies.
+- Both APK variants use the same shared client and native bridges. Only their
+  package identity, label, version, signing, and distribution differ.
 
-## Build commands
+Preserve current saves in both surfaces. Prefer additive schema changes with
+safe defaults and test representative current-save reads, edits, and backup
+round trips. Pre-v8 migration saves do not need support; current saves do.
 
-Run these from `D:\Projects\Dive log\web` after the source commit is fixed.
+## Authorized web and Preview publication
 
-Prepare the exact web assets that the APK will package:
+1. Inspect `git status --short --branch`, fetch remote `main`, and reconcile
+   changes without overwriting user work. Read applicable `AGENTS.md` files.
+2. Run `npm test` and `npm run lint`. For shared/native changes run
+   `npm run native:sync` and the affected Android build checks.
+3. Commit only reviewed source, tests, and public documentation. Keep personal
+   fixtures, generated APKs, local notes, and logs out of the commit.
+4. Push the intended source to `main`. Verify its **Workers Builds: diveframe**
+   check succeeds, then check the hosted app.
+5. Dispatch `.github/workflows/preview-apk.yml` on that source. It also runs
+   on a schedule. Wait for both APK publication and its dependent feed job.
+6. Inspect the actual APK package, label, version name/code, ABI, signature, and
+   SHA-256. Confirm source SHA agreement between workflow, mutable tag, release
+   notes, and feed. Confirm both hosted feed endpoints advertise the APK.
+7. Record the completed publication once under `docs/releases/`, with links
+   to CI and the release. A record-only follow-up does not need another APK.
+
+Example dispatch and inspection:
+
+```powershell
+gh workflow run preview-apk.yml --repo fishese/diveframe --ref main
+gh run list --repo fishese/diveframe --workflow preview-apk.yml --limit 3
+gh release view preview --repo fishese/diveframe
+```
+
+The workflow builds `github.sha` using explicit Preview Gradle properties,
+then signs with the existing Actions secrets. Before publication it checks the
+signed manifest and rejects obsolete reruns. Publication aligns only the
+mutable `preview` tag with that source; immutable stable/reference tags are
+never touched. Changing a release's `target_commitish` alone is insufficient
+to move an existing Git tag.
+
+Only after the release succeeds may the workflow advance
+`public/whats-new.json`. Each feed push attempt verifies the release source,
+exact version notes, uploaded APK digest, and Preview tag. A three-attempt
+retry refreshes `main` after push conflicts. Older versions and reuse of a
+version code for another source are rejected; identical reruns preserve
+`updatedAt`. The stable `channels.fdroid` entry remains independent.
+
+If publication succeeds but feed verification fails, the run must remain
+visibly failed. Inspect and repair the specific discrepancy before rerunning
+the feed job. Do not advertise a guessed version or repoint F-Droid at Preview.
+
+## Local Android validation
+
+From the repository root:
 
 ```powershell
 npm run native:sync
-```
-
-Build production. This is the default/F-Droid path and must produce only the
-production APK:
-
-```powershell
 $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 Push-Location android
-..\gradlew.bat --no-daemon assembleRelease
+.\gradlew.bat --no-daemon assembleRelease
+.\gradlew.bat --no-daemon "-PpreviewVersionCode=100001" "-PpreviewVersionName=preview.1.local" assemblePreview
 Pop-Location
 ```
 
-Build Preview only when explicitly requested. Do not pass Preview properties
-to a production release build:
+The example Preview identity is for local validation only, not publication.
+Production must build through its default path without Preview properties.
+Local unsigned outputs under `android/app/build/outputs/apk/` are not signed
+release/reference artifacts. Build failure must stop synchronization rather
+than copying a previous static export.
 
-```powershell
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
-$previewRun = 123
-$previewSha = (git rev-parse --short=7 HEAD)
-$previewCode = 100000 + $previewRun
-$previewName = "preview.$previewRun.$previewSha"
-Push-Location android
-..\gradlew.bat --no-daemon `
-  "-PpreviewVersionCode=$previewCode" `
-  "-PpreviewVersionName=$previewName" `
-  assemblePreview
-Pop-Location
+## Stable/F-Droid gate
+
+Stable updates require a separate explicit release request after testing.
+Follow [FDROID-BUILD.md](FDROID-BUILD.md) for production versioning,
+reproducibility checks, immutable source/reference tags, and the recipe.
+
+Automatic updates must remain restricted to:
+
+```yaml
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
+UpdateCheckData: android/app/build.gradle|versionCode\s+(\d+)|.|versionName\s+"([^"]+)"
 ```
 
-The signed GitHub workflow is
-`.github/workflows/preview-apk.yml`; it checks out `${{ github.sha }}`, runs
-`npm run native:sync`, and assembles `assemblePreview`. Its output is
-published as the mutable `preview` release with asset
-`diveframe-preview.apk`. Only after that release succeeds, the workflow records
-the exact `preview.<run>.<short-sha>`, `100000 + run`, and source SHA in
-`public/whats-new.json`, then commits that feed-only update onto the latest
-`main`. It retries a concurrent push conflict three times. A feed-update
-failure therefore leaves the workflow visibly failed and never advertises an
-APK before its release asset exists.
+Neither `preview`, `nightly`, untagged `main`, nor `fdroid-v...` matches
+this gate. Never use Preview as F-Droid source or reference. Do not merge or
+comment on the F-Droid MR without an explicit request.
 
-## F-Droid guardrails
+## Documentation ownership
 
-The staging recipe is
-`D:\Projects\Dive log\fdroid-prep\cc.fishese.divelog.yml`.
+- This file owns release/parity procedures and the change-to-release decision.
+- [FDROID-BUILD.md](FDROID-BUILD.md) owns stable identity and recipe details.
+- [releases/](releases/) contains dated publication evidence.
+- [../HANDOFF.md](../HANDOFF.md) is a short maintainer starting point.
+- [archive/](archive/) retains superseded public snapshots. Local-only design
+  records remain in ignored local archives and are not published.
 
-- Keep `subdir: android/app` and `gradle: yes` unless F-Droid explicitly
-  requests a recipe change.
-- Keep `submodules: true`; the stable source tag's libdivecomputer gitlink
-  must match `android/app/src/main/cpp/libdivecomputer.pin`. Do not restore a
-  separate recipe-level `srclibs` revision, which cannot follow auto-updates.
-- `gradle: yes` selects the default production `assembleRelease` path here;
-  it must not select or publish `assemblePreview`.
-- Do not add a flavor or change the default task in order to publish Preview.
-- Do not update the F-Droid recipe for mutable Preview builds.
-- For a new F-Droid release, first accumulate/test changes through Preview,
-  then create an immutable production `vMAJOR.MINOR.PATCH` tag, publish the
-  matching `fdroid-v%v` reference APK, and update the recipe to that stable
-  source/version only when requested.
-- The F-Droid reference APK and source tag must come from the same production
-  source commit. A Preview APK must never be used as the F-Droid reference.
-- Automatic updates must remain restricted to exact immutable production tags:
-
-  ```yaml
-    AutoUpdateMode: Version
-    UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
-    UpdateCheckData: android/app/build.gradle|versionCode\s+(\d+)|.|versionName\s+"([^"]+)"
-  ```
-
-  Untagged `main` commits, `preview`, `nightly`, debug tags, and
-  `fdroid-v...` reference tags do not match and cannot trigger an update.
-
-The newly published stable/F-Droid candidate is production commit
-`1d676d2929be03d6786d777018dc77b7b757d7ef`, version `1.0.28`, version code
-`29`, and immutable `v1.0.28` source tag. MR !45472 is still the first
-inclusion and remains open. Its recipe now represents this release at head
-`7882cd4beea3028ca39aaf39b2a7cb7ef64d971a`; pipeline `2783281904` passed all
-nine jobs, including `fdroid build` and `check apk`.
-After merge, F-Droid auto-update can add later matching tags without a manual
-recipe edit.
-
-Current `main` intentionally contains a web/feed and documentation follow-up
-after stable source `1d676d2`. It records the completed release and advances
-the hosted update feed; it has no behavioral effect in either Android package
-and is not an APK source.
-
-The current verified Preview release uses Android runtime commit
-`ea99b399c0dad13aeeb081d890a0d6968d5a7618` (workflow run `32864279231`). It
-is `preview.32.ea99b39`, version code `100032`, and its `15769121`-byte APK
-has SHA-256
-`383A6E245BB03D8726C3BCBC75D3F9442B9A34B0D684E0FE9E98B590B4365486`.
-The update feed records this Preview identity independently of the stable
-`fdroid` channel entry.
-
-## Current stable production/F-Droid release
-
-The stable production source is commit
-`1d676d2929be03d6786d777018dc77b7b757d7ef`, tagged immutably as `v1.0.28`.
-It uses the default `assembleRelease` path, package
-`cc.fishese.divelog`, version name `1.0.28`, and version code `29`.
-
-The matching developer-signed F-Droid reference is published at
-`fdroid-v1.0.28` as `diveframe-1.0.28.apk`:
-
-- Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.28
-- Reference release: https://github.com/fishese/diveframe/releases/tag/fdroid-v1.0.28
-- Reference workflow: https://github.com/fishese/diveframe/actions/runs/32648808269
-- Size: `15765025` bytes; SHA-256:
-  `13BE632B7EC6D5B3350A93627E04C5C2EACA5DE55F96325EF38484E7E1A80D38`
-- ABI: `arm64-v8a`; signer: `CN=Fishese`, certificate digest
-  `90311d4a659f32a767199164791dba0aa5e05ffa5ed9f73b93baffc9112bb25a`
-
-The current F-Droid recipe commit is
-`7882cd4beea3028ca39aaf39b2a7cb7ef64d971a`. MR !45472 remains open and
-unmerged; pipeline `2783281904` passed all nine jobs and validates the 1.0.28
-recipe, reference APK, stable-tag-only auto-update configuration, and plain
-production Gradle version lines. The F-Droid source, reference release, and
-recipe now resolve to the same stable source commit.
-
-The latest reviewer note is **PASS WITH NOTES** and requests a Gradle-wrapper
-`distributionSha256Sum`. Stable 1.0.28 retains Gradle's official
-SHA-256 for the configured 8.14.2 `all.zip` distribution. A fresh isolated
-download, production and Preview validation builds, the signed reference, and
-the full F-Droid reproducibility pipeline all passed. The immutable 1.0.26 tags
-were not moved or replaced.
-
-Preview `a1ee142` includes the compact update UI from stable source `1d676d2`
-plus the release feed and records. Preview is not a production source or
-reference artifact. The
-libdivecomputer dependency commit remains
-`8e564eb5cf9fb4318af3d540895abb916e1809b0`.
-
-## Requesting a production release
-
-Use this instruction when accumulated changes are ready for F-Droid
-production:
-
-```text
-Prepare the next stable DiveFrame production/F-Droid release from the latest
-intended shared-runtime source. Read docs/RELEASE-CHANNELS.md and
-docs/FDROID-BUILD.md completely before changing anything. Audit main and the
-latest Preview, choose and record the exact stable source, run the complete
-stable checks, select the next versionName/versionCode, and use the default
-assembleRelease production path. Push the release commit, create immutable
-vMAJOR.MINOR.PATCH and fdroid-vMAJOR.MINOR.PATCH tags at that same source,
-publish and inspect the signed reference APK, and update all release records.
-Treat creation of the vMAJOR.MINOR.PATCH tag as the F-Droid auto-update gate:
-do not create it for Preview, test, documentation-only, or routine minor
-changes. Never move or reuse tags, use a Preview APK as the reference, or
-merge an F-Droid MR.
-```
-
-After the app is accepted, F-Droid's updater should generate future build
-entries only from matching stable tags. Do not manually edit fdroiddata for
-ordinary Preview/main changes; intervene only for a concrete automation
-failure or maintainer request.
-
-The exact F-Droid working-directory rule, `Binaries` whitespace requirement,
-MR failure analysis, reference-APK contract, and future update checklist are
-maintained in [`FDROID-BUILD.md`](FDROID-BUILD.md). Do not duplicate those
-recipe details in a release note and risk letting the two procedures diverge.
-
-## Shared source and deliberate channel differences
-
-The web/PWA, Preview APK, and production/F-Droid APK are delivery surfaces for
-the same client. Shared paths such as `app/`, `lib/`, `data/`, client-facing
-`public/` assets, translations, IndexedDB/backup code, and shared dependencies
-must not drift between them. A shared runtime change normally requires a new
-web deployment and a new Preview APK from the same pushed commit.
-
-The differences below are intentional and should not be treated as drift:
-
-| Surface | Intentional difference | Release identity |
-| --- | --- | --- |
-| Web/PWA | Browser origin/capabilities, service worker, browser file handling, and Cloudflare delivery | Current `main` deployment; no Android version code |
-| Preview APK | Explicit `assemblePreview`, `cc.fishese.divelog.preview`, Preview label, Preview version-code range, mutable `preview` tag, GitHub signing key | Regular test builds; separately installable |
-| Production/F-Droid APK | Default `assembleRelease`, `cc.fishese.divelog`, stable version/code, immutable production and `fdroid-v...` tags, separate signing keys | Intentional accumulated release; F-Droid source build after approval |
-
-Preview is the replacement for the old nightly test channel. Production is
-not a second Preview stream: it is the stable build that F-Droid will build
-and sign in the future. F-Droid may intentionally remain on an older stable
-commit while `main`, the web deployment, and Preview continue to move forward.
-That is release-channel policy, not accidental drift.
-
-For each shared change, record three facts before publishing:
-
-1. the pushed `main` commit used by the web deployment;
-2. the commit SHA embedded in the Preview release; and
-3. the production commit/tag intended for the next F-Droid release.
-
-If the three SHAs differ, state why. A documentation-only change may leave an
-APK at the prior runtime commit; a shared client change should not.
-
-## Final drift checks
-
-Before calling a release complete, verify all of the following:
-
-- The build checkout's `git rev-parse HEAD` is the exact commit intended for
-  the APK; if `main` has later documentation-only commits, record that
-  deliberate difference and keep the APK source SHA pinned.
-- `npm test` passes.
-- `npm run native:sync` completed from that checkout.
-- Production metadata reports `cc.fishese.divelog` and one release APK.
-- Preview metadata reports `cc.fishese.divelog.preview` only when
-  `assemblePreview` was explicitly requested.
-- The APK version name/code match the release notes and workflow properties.
-- The Preview workflow URL, mutable tag, asset name, package, and version all
-  refer to Preview consistently; production/F-Droid records separately use
-  the immutable stable tag, production package, and stable version.
-- The latest Preview release target SHA is the intended shared runtime commit,
-  and `public/whats-new.json` advertises that same Preview name, code, and SHA;
-  or any lag is explicitly recorded as intentional.
-- The F-Droid recipe still uses `subdir: android/app`, no `output`, the
-  production default build, `submodules: true`, no `srclibs`, and the required
-  `Binaries:` formatting.
-- Auto-update remains `Version` with the exact stable-tag regex and
-  `UpdateCheckData`; verify that Preview, nightly, debug, and `fdroid-v...`
-  tags remain excluded.
-- F-Droid recipe, pinned commit, and stable release conventions remain
-  untouched unless the task explicitly concerns a stable F-Droid update.
+Before relying on any dated record, verify live release/workflow/feed state.
+Use `glab` directly for authenticated read-only GitLab inspection.
