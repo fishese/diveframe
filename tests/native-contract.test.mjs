@@ -253,9 +253,9 @@ test("Preview Android identity is isolated from production", async () => {
   assert.match(buildGradle, /previewVersionCode/);
   assert.match(buildGradle, /previewVersionName/);
   assert.match(buildGradle, /preview\s*\{[\s\S]*applicationIdSuffix "\.preview"/);
-  assert.match(buildGradle, /defaultConfig\s*\{[\s\S]*versionCode 29[\s\S]*versionName "1\.0\.28"/);
-  assert.match(buildGradle, /^\s*versionCode 29$/m);
-  assert.match(buildGradle, /^\s*versionName "1\.0\.28"$/m);
+  assert.match(buildGradle, /defaultConfig\s*\{[\s\S]*versionCode 30[\s\S]*versionName "1\.0\.29"/);
+  assert.match(buildGradle, /^\s*versionCode 30$/m);
+  assert.match(buildGradle, /^\s*versionName "1\.0\.29"$/m);
   assert.match(buildGradle, /withBuildType\("preview"\)/);
   assert.match(buildGradle, /output\.versionCode\.set\(configuredPreviewVersionCode\.toInteger\(\)\)/);
   assert.match(buildGradle, /output\.versionName\.set\(configuredPreviewVersionName\)/);

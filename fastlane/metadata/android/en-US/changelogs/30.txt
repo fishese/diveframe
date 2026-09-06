@@ -1,0 +1,4 @@
+Fixes Subsurface trip imports and export site/GPS handling, prevents stale or
+duplicate memo application from overwriting newer edits, and keeps sparse
+pressure and temperature chart data visible. Also improves wrapped chart
+controls and localizes the memo notes hint.
