@@ -13,7 +13,67 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  preview_source:
+    name: Check for Preview source changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.preview_source.outputs.should_build }}
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve Preview source
+        id: preview_source
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIEW_EVENT_NAME: ${{ github.event_name }}
+          PREVIEW_RUN_NUMBER: ${{ github.run_number }}
+          PREVIEW_SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/contents/public/whats-new.json?ref=main" --jq .content \
+            | base64 --decode > "$RUNNER_TEMP/current-preview-feed.json"
+
+          # Keep the existing downgrade/version-code checks before deciding
+          # whether a scheduled run has any new source to publish.
+          cp "$RUNNER_TEMP/current-preview-feed.json" "$RUNNER_TEMP/candidate-preview-feed.json"
+          node scripts/update-preview-feed.mjs \
+            "$PREVIEW_RUN_NUMBER" \
+            "$PREVIEW_SOURCE_SHA" \
+            "$RUNNER_TEMP/candidate-preview-feed.json"
+
+          if [[ "$PREVIEW_EVENT_NAME" != "schedule" ]]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          published_source_sha="$(node -e \
+            'const fs = require("node:fs"); const feed = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); process.stdout.write(feed.channels.preview.sourceSha);' \
+            "$RUNNER_TEMP/current-preview-feed.json")"
+          git cat-file -e "${published_source_sha}^{commit}"
+
+          if git diff --quiet \
+            "$published_source_sha" \
+            "$PREVIEW_SOURCE_SHA" \
+            -- . ':(exclude)public/whats-new.json'; then
+            echo "Only the Preview feed changed since the published source; skipping this scheduled build."
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: preview_source
+    if: needs.preview_source.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     outputs:
       apk_sha256: ${{ steps.preview_asset.outputs.sha256 }}
@@ -37,20 +97,10 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Reject an obsolete Preview rerun
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PREVIEW_RUN_NUMBER: ${{ github.run_number }}
-          PREVIEW_SOURCE_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          gh api "repos/${GITHUB_REPOSITORY}/contents/public/whats-new.json?ref=main" --jq .content \
-            | base64 --decode > "$RUNNER_TEMP/current-preview-feed.json"
-          node scripts/update-preview-feed.mjs "$PREVIEW_RUN_NUMBER" "$PREVIEW_SOURCE_SHA" "$RUNNER_TEMP/current-preview-feed.json"
-
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install Android build dependencies
         shell: bash
