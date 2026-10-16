@@ -83,6 +83,8 @@ const files = {
     import.meta.url,
   ),
   package: new URL("../package.json", import.meta.url),
+  layout: new URL("../app/layout.tsx", import.meta.url),
+  globals: new URL("../app/globals.css", import.meta.url),
   pin: new URL(
     "../android/app/src/main/cpp/libdivecomputer.pin",
     import.meta.url,
@@ -105,6 +107,19 @@ const files = {
     import.meta.url,
   ),
 };
+
+test("web and native builds do not fetch application fonts at build time", async () => {
+  const [layout, globals] = await Promise.all([
+    readFile(files.layout, "utf8"),
+    readFile(files.globals, "utf8"),
+  ]);
+
+  assert.doesNotMatch(layout, /next\/font\/google/);
+  assert.doesNotMatch(layout, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
+  assert.match(globals, /--font-sans:\s*Arial, Helvetica, sans-serif/);
+  assert.match(globals, /--font-mono:\s*ui-monospace/);
+  assert.doesNotMatch(globals, /--font-geist-(?:sans|mono)/);
+});
 
 test("native shell remains isolated from the deployed web build", async () => {
   const [capacitor, packageJson] = await Promise.all([

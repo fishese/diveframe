@@ -1,16 +1,17 @@
 # DiveFrame F-Droid build and update guide
 
-Stable release snapshot verified: 2026-09-06 (Asia/Singapore).
+Stable release snapshot verified: 2026-10-16 (Asia/Singapore).
 Earlier pipeline/job details below retain their original verification dates.
 Stable `1.0.29` / code `30` and its signed reference APK are published from
 source `a196becb4ff1c014c99b908e9611607c6757e309`. Both recipe copies and MR
 branch head were advanced to that source after Preview testing.
 
-An authenticated `glab` read on 2026-09-06 confirmed the MR remains open,
-mergeable, and conflict-free at
-`cd7a8a0242231c1c9c691ac2311398e5f94666df`. Pipeline `2824135814` passed all
-nine jobs and blocking discussions are resolved. The existing description's
-stale pipeline URL was replaced; no MR comment was added.
+An authenticated `glab` read on 2026-10-16 confirmed the MR remains open and
+mergeable at `e90ec9724f9e11e75dafb5feef1fbdf277c77705`. A community reviewer
+marked it ready, then a maintainer rebase triggered pipeline `2952524506`.
+Metadata, schema, source, lint, rewrite, redirect, and update checks passed,
+but the reproducible `fdroid build` comparison failed as described below. No
+MR comment or pipeline action was made during diagnosis.
 
 Read this before changing the F-Droid metadata, creating a production
 release, or preparing a new F-Droid merge-request update. The canonical
@@ -198,6 +199,32 @@ identity. Reassess the declarations if production gains a user-configurable
 API origin or removes the hosted lookup path.
 
 ## What happened in MR !45472
+
+### October 2026 rebuild mismatch
+
+Pipeline
+[2952524506](https://gitlab.com/fdroid/fdroiddata/-/pipelines/2952524506)
+rebuilt the unchanged stable `1.0.29` source after a maintainer rebase. Its
+[`fdroid build` job](https://gitlab.com/fdroid/fdroiddata/-/jobs/17213610805)
+failed the reference-APK comparison even though the recipe and all metadata
+checks passed.
+
+The stable source used `next/font/google` for Geist variables. That build-time
+integration obtained different Google Fonts CSS than the original reference
+build (including a changed Unicode range), which changed generated HTML/RSC
+assets and therefore the APK digest. Retrying cannot make an old reference APK
+reproducible against a mutable remote font response.
+
+Application-shell typography now uses deterministic system font stacks and a
+native contract test forbids reintroducing `next/font/google`. This correction
+belongs in a new immutable stable source/reference release; never move or
+replace `v1.0.29` or `fdroid-v1.0.29`.
+
+The separate `sql-wasm.wasm` inclusion-policy concern is not the cause of this
+pipeline failure. DiveFrame currently restores the precompiled binary shipped
+by the locked `sql.js` npm dependency. Resolving that concern properly requires
+a reproducible Emscripten source build or a parser/storage redesign; deleting
+only the checked-in copy would not remove the packaged prebuilt binary.
 
 The first reviewer-fix commit, `011d118ef`, removed `output` and retained
 `subdir: android`. Pipeline

@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppI18nProvider } from "./AppI18nProvider";
 import { BetaNotice } from "./BetaNotice";
@@ -12,16 +11,6 @@ import { APP_BACK_BOOTSTRAP } from "@/lib/app-back";
 const THEME_BOOTSTRAP = `(function(){try{var r=document.documentElement,t=localStorage.getItem("diveframe-color-theme");if(t!=="light"&&t!=="dark")t="dark";r.setAttribute("data-theme",t);r.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t==="light"?"#eef6f4":"#071820");["top","right","bottom","left"].forEach(function(k){var v=localStorage.getItem("diveframe-native-safe-area-"+k);if(v)r.style.setProperty("--safe-area-inset-"+k,v);});}catch(e){}})();`;
 
 const CANONICAL_ORIGIN = "https://divelog.fishese.cc";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "DiveFrame — Dive log companion",
@@ -82,9 +71,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
         <script dangerouslySetInnerHTML={{ __html: APP_BACK_BOOTSTRAP }} />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="antialiased">
         <AppRouteProvider routeSuffix={routeSuffix}>
           <AppI18nProvider>
             <ThemeProvider>
