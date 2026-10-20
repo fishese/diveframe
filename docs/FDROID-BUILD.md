@@ -1,10 +1,12 @@
 # DiveFrame F-Droid build and update guide
 
-Stable release snapshot verified: 2026-10-16 (Asia/Singapore).
-Earlier pipeline/job details below retain their original verification dates.
-Stable `1.0.29` / code `30` and its signed reference APK are published from
-source `a196becb4ff1c014c99b908e9611607c6757e309`. Both recipe copies and MR
-branch head were advanced to that source after Preview testing.
+Stable release snapshot verified: 2026-10-21 (Asia/Singapore).
+Stable `1.0.30` / code `31` and its signed reference APK are published from
+source `84ca5c436fff06a7b67c9c57c0d120ea84f63e4f`. The MR recipe builds
+sql.js 1.14.1 from verified source with Debian Emscripten 3.1.69. See the
+[release record](releases/2026-10-21-stable-1.0.30.md) and
+[source-build contract](SQLJS-BUILD.md). Earlier pipeline and job details below
+retain their original verification dates.
 
 An authenticated `glab` read on 2026-10-16 confirmed the MR remains open and
 mergeable at `e90ec9724f9e11e75dafb5feef1fbdf277c77705`. A community reviewer
@@ -28,13 +30,15 @@ F-Droid-specific build contract and the failure that occurred during MR
   must never be submitted as F-Droid source or reference APKs.
 - The current submission MR is
   [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472).
-- The MR recipe is pinned to `1.0.29` / code `30`, production source
-  `a196becb4ff1c014c99b908e9611607c6757e309`, immutable tag `v1.0.29`.
-  Recipe commit `cd7a8a0242231c1c9c691ac2311398e5f94666df` changes only those
-  stale recipe identity fields.
-- Web `main` contains the later stable-feed commit while the immutable stable
-  source remains `a196bec`. Preview 45 supplied the tested application runtime;
-  the stable source adds documentation/feed history and production metadata.
+- The MR recipe is pinned to `1.0.30` / code `31`, production source
+  `84ca5c436fff06a7b67c9c57c0d120ea84f63e4f`, immutable tag `v1.0.30`.
+  Recipe branch head `1ff0955d05eddfd42542a33d63496d896dcb2dc5` also
+  compiles sql.js from source after scanning. Its
+  [fork pipeline](https://gitlab.com/fishese/fdroiddata/-/pipelines/2968822553)
+  passed all nine jobs, including the reference-APK comparison.
+- Web `main` contains later feed/documentation commits while the immutable
+  stable source remains `84ca5c4`. Preview 91 exercised the same application
+  runtime; the stable build uses the production app ID and version.
 - Stable-only auto-update is enabled with `AutoUpdateMode: Version` and
   `UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$`. `UpdateCheckData` reads
   the plain production `versionCode` / `versionName` lines from
@@ -59,9 +63,9 @@ These fields are coupled to the current Android project layout:
 
 ```yaml
 Builds:
-  - versionName: 1.0.29
-    versionCode: 30
-    commit: a196becb4ff1c014c99b908e9611607c6757e309
+  - versionName: 1.0.30
+    versionCode: 31
+    commit: 84ca5c436fff06a7b67c9c57c0d120ea84f63e4f
     subdir: android/app
     gradle:
       - yes
@@ -106,11 +110,12 @@ prebuild:
   - cd ../..
   - sh scripts/fetch-libdivecomputer.sh
   - npm ci
-  - npm run native:sync
+  - node scripts/ensure-sql-wasm.mjs --sources-only
+  - rm -rf .sqljs-cache/downloads
 build:
   - cd ../..
   - npm ci --offline
-  - npm run native:sync
+  - DIVEFRAME_SQLJS_OFFLINE=1 npm run native:sync
 ```
 
 The build starts in `android/app`; the native preparation and Node commands
@@ -119,6 +124,8 @@ transition in place.
 
 The current recipe also deliberately pins:
 
+- Emscripten `3.1.69+dfsg-3` from Debian trixie, installed before forky npm
+  to keep its libc development dependencies consistent;
 - Node/npm installation from Debian forky because the project requires Node
   22.13+ and the native web build uses current tooling;
 - NDK `27.0.12077973`;
@@ -217,16 +224,14 @@ reproducible against a mutable remote font response.
 
 Application-shell typography now uses deterministic system font stacks and a
 native contract test forbids reintroducing `next/font/google`. This correction
-belongs in a new immutable stable source/reference release; never move or
-replace `v1.0.29` or `fdroid-v1.0.29`.
+was published in the new immutable 1.0.30 source/reference release; never move
+or replace `v1.0.29` or `fdroid-v1.0.29`.
 
-The separate sql-wasm.wasm inclusion-policy concern is not the cause of that
-pipeline failure. Main now has a source-only local sql.js package and verified
-source compilation; see [SQLJS-BUILD.md](SQLJS-BUILD.md). The device-tested
-runtime preserves the existing parser/data contract. The immutable 1.0.29
-source and current MR recipe still use the old npm prebuilt binary; their
-resolution requires a separately approved stable/reference release and recipe
-toolchain update. No tag or reference APK may be replaced.
+The separate sql-wasm.wasm inclusion-policy concern did not cause that
+pipeline failure. Stable 1.0.30 and the updated MR recipe address it through
+verified source compilation; see [SQLJS-BUILD.md](SQLJS-BUILD.md). The
+device-tested runtime preserves the existing parser/data contract. The
+immutable 1.0.29 tags and reference APK remain unchanged.
 
 The first reviewer-fix commit, `011d118ef`, removed `output` and retained
 `subdir: android`. Pipeline
@@ -270,12 +275,14 @@ Gradle task:            assembleRelease
 ```
 
 The reference workflow is
-`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.29` values
-are hard-coded together for the stable release and were run from the exact
-`v1.0.29` source commit. Never use the mutable `preview` release as the
-reference asset.
+`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.30` values
+are hard-coded together for the stable release and check out the exact
+`v1.0.30` source commit. Never use the mutable `preview` release as the
+reference asset. Run `39466873392` built and signed the reference but GitHub
+Actions could not publish the release (HTTP 403); the verified artifact was
+published with the authorized CLI account.
 
-## Verified stable release update
+## Previous verified stable release (1.0.29)
 
 - Stable source/tag: `a196becb4ff1c014c99b908e9611607c6757e309` / `v1.0.29`
 - Production release: https://github.com/fishese/diveframe/releases/tag/v1.0.29
