@@ -78,6 +78,22 @@ test("offline preparation rejects absent or corrupt source archives without down
   } finally { rmSync(temporary, { recursive: true, force: true }); }
 });
 
+test("offline preparation uses verified extracted source after archives are removed", async () => {
+  const temporary = mkdtempSync(join(tmpdir(), "diveframe-sqljs-extracted-"));
+  const source = resolve(temporary, ".sqljs-cache/source");
+  const input = Buffer.from("verified sql.js source");
+  const pin = { downloads: { "source.tgz": {
+    url: "https://example.invalid/source.tgz", sha256: "0".repeat(64),
+  } }, inputs: { "src/api.js": sha256(input) } };
+  try {
+    mkdirSync(resolve(source, "src"), { recursive: true });
+    writeFileSync(resolve(source, "src/api.js"), input);
+    assert.equal(await prepareSources(temporary, pin, true), source);
+    writeFileSync(resolve(source, "src/api.js"), "modified source");
+    await assert.rejects(prepareSources(temporary, pin, true), /Missing or invalid offline/);
+  } finally { rmSync(temporary, { recursive: true, force: true }); }
+});
+
 async function loadParser() {
   const cache = new Map();
   function moduleUrl(path) {

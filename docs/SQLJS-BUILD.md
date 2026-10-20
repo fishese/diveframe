@@ -67,33 +67,34 @@ Useful commands:
 To explicitly test the Cloudflare path, set DIVEFRAME_SQLJS_TOOLCHAIN=emsdk.
 To use CI's Debian Docker compiler, set DIVEFRAME_SQLJS_TOOLCHAIN=debian.
 
-## Future F-Droid recipe integration
+## F-Droid recipe integration
 
-Do not change the immutable 1.0.29 source/reference tags or current MR merely
-because this implementation is on main.
+Do not move or replace the immutable 1.0.29 source/reference tags.
 
-Before a later explicitly approved stable release, the recipe must provide the
-validated Debian toolchain (including its LLVM/Binaryen dependency versions),
-prepare the verified source cache during prebuild, and compile again after
-scanner cleanup. Set DIVEFRAME_SQLJS_OFFLINE=1 in the offline build stage.
+The recipe must provide the validated Debian toolchain, prepare the verified
+source cache during prebuild, and compile after scanner cleanup. Set
+DIVEFRAME_SQLJS_OFFLINE=1 in the offline build stage.
 That flag prohibits source downloads and the SDK bootstrap. Never use the SDK
 bootstrap in an F-Droid build.
 
-Keep source archives/extracted C/JS under .sqljs-cache outside node_modules.
-It is safe for the scanner to remove generated WASM, objects, node_modules,
-static exports and packaged assets: preparation rebuilds from verified source.
+Keep extracted C/JS under .sqljs-cache/source outside node_modules. Remove the
+downloaded source archives after extraction, before scanning. The offline build
+accepts only extracted files whose hashes match every pinned input. It is safe
+for the scanner to remove generated WASM, objects, node_modules, static exports
+and packaged assets: preparation rebuilds from verified source.
 Do not scanignore a generated runtime or ship npm's sql-wasm.wasm.
 
 A source preparation example (from the app repository root):
   npm ci
   node scripts/ensure-sql-wasm.mjs --sources-only
+  rm -rf .sqljs-cache/downloads
 
 After scanner cleanup (with source cache and packaged Emscripten available):
   npm ci --offline
   DIVEFRAME_SQLJS_OFFLINE=1 npm run native:sync
 
-The current F-Droid recipe still targets the old immutable release. Its actual
-upgrade and full F-Droid/reference-APK comparison remain a separate release gate.
+The recipe must pin the immutable stable source commit and matching signed
+reference APK. Its pipeline must pass the full F-Droid/reference comparison.
 
 ## Validation and device acceptance
 

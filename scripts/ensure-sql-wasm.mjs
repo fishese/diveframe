@@ -18,7 +18,7 @@ export function verifyRuntime(directory, spec, variant = "distribution") {
 }
 
 export function verifyInputs(directory, spec) {
-  return Object.entries(spec.inputs).every(([file, digest]) =>
+  return Object.entries(spec.inputs).length > 0 && Object.entries(spec.inputs).every(([file, digest]) =>
     existsSync(resolve(directory, file)) &&
     sha256(readFileSync(resolve(directory, file))) === digest);
 }
@@ -48,11 +48,12 @@ export async function prepareSources(root, spec, offline = false) {
   const downloads = resolve(cache, "downloads");
   const source = resolve(cache, "source");
   mkdirSync(downloads, { recursive: true });
-  // Keep verified compressed source inputs outside scandeleted node_modules.
+  // F-Droid removes source archives before scanning; verified extracted inputs
+  // remain sufficient for the offline compilation stage.
+  if (verifyInputs(source, spec)) return source;
   for (const [name, input] of Object.entries(spec.downloads)) {
     await download(downloads, name, input, offline);
   }
-  if (verifyInputs(source, spec)) return source;
   // This is only our generated source extraction directory, never user data.
   rmSync(source, { recursive: true, force: true });
   mkdirSync(source, { recursive: true });
