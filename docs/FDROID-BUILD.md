@@ -220,11 +220,13 @@ native contract test forbids reintroducing `next/font/google`. This correction
 belongs in a new immutable stable source/reference release; never move or
 replace `v1.0.29` or `fdroid-v1.0.29`.
 
-The separate `sql-wasm.wasm` inclusion-policy concern is not the cause of this
-pipeline failure. DiveFrame currently restores the precompiled binary shipped
-by the locked `sql.js` npm dependency. Resolving that concern properly requires
-a reproducible Emscripten source build or a parser/storage redesign; deleting
-only the checked-in copy would not remove the packaged prebuilt binary.
+The separate sql-wasm.wasm inclusion-policy concern is not the cause of that
+pipeline failure. Main now has a source-only local sql.js package and verified
+source compilation; see [SQLJS-BUILD.md](SQLJS-BUILD.md). The device-tested
+runtime preserves the existing parser/data contract. The immutable 1.0.29
+source and current MR recipe still use the old npm prebuilt binary; their
+resolution requires a separately approved stable/reference release and recipe
+toolchain update. No tag or reference APK may be replaced.
 
 The first reviewer-fix commit, `011d118ef`, removed `output` and retained
 `subdir: android`. Pipeline

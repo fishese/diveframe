@@ -1,0 +1,15 @@
+{
+  "name": "sql.js",
+  "version": "1.14.1",
+  "license": "MIT",
+  "private": true,
+  "description": "Source-built sql.js; generated dist is prepared by DiveFrame",
+  "main": "./dist/sql-wasm.js",
+  "exports": {
+    ".": {
+      "browser": "./dist/sql-wasm-browser.js",
+      "default": "./dist/sql-wasm.js"
+    },
+    "./dist/*": "./dist/*"
+  }
+}

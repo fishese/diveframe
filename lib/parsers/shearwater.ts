@@ -1,4 +1,5 @@
 import initSqlJs, { type QueryExecResult } from "sql.js";
+import sqlWasmUrl from "sql.js/dist/wasm-url.mjs";
 import type { LocalImportedDive } from "../indexed-db";
 import { gasMixLabel } from "../dive-model";
 import {
@@ -44,7 +45,7 @@ const DIVE_DETAIL_COLUMNS = [
 export async function readShearwaterDatabase(
   file: File,
 ): Promise<LocalImportedDive[]> {
-  const SQL = await initSqlJs({ locateFile: () => "/sql-wasm.wasm" });
+  const SQL = await initSqlJs({ locateFile: () => sqlWasmUrl });
   const database = new SQL.Database(new Uint8Array(await file.arrayBuffer()));
   try {
     const tables = database.exec(

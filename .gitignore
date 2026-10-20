@@ -79,3 +79,10 @@ __pycache__/
 # Private documentation repository checkout
 /.private-repo/
 /docs-private
+
+# Source-built sql.js runtime and verified source/compiler caches
+/.sqljs-cache/
+/vendor/sql.js/dist/
+/public/sql-wasm.wasm
+/public/sqljs-provenance.json
+/public/sql-wasm.*.wasm

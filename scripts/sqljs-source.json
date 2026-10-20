@@ -1,0 +1,48 @@
+{
+  "version": "1.14.1",
+  "commit": "8088a6829d929338b861c7179275b1bc222725d9",
+  "sqliteVersion": "3.49.1",
+  "emscripten": "3.1.69",
+  "emsdkCommit": "a36df02dc438e8b02f91122a4c62eeecb6784272",
+  "debianPackage": "3.1.69+dfsg-3",
+  "downloads": {
+    "sqljs.tar.gz": {
+      "url": "https://codeload.github.com/sql-js/sql.js/tar.gz/8088a6829d929338b861c7179275b1bc222725d9",
+      "sha256": "feaef59aede654622aa1f092026c12736197cc9e1b575b083c778ff8a79583e2"
+    },
+    "sqlite.zip": {
+      "url": "https://sqlite.org/2025/sqlite-amalgamation-3490100.zip",
+      "sha256": "6cebd1d8403fc58c30e93939b246f3e6e58d0765a5cd50546f16c00fd805d2c3"
+    },
+    "extension-functions.c": {
+      "url": "https://www.sqlite.org/contrib/download/extension-functions.c?get=25",
+      "sha256": "991b40fe8b2799edc215f7260b890f14a833512c9d9896aa080891330ffe4052"
+    }
+  },
+  "inputs": {
+    "Makefile": "04986389b67b8975df9584ca845cbd25e6947f560e31196c97856f26fcad36f1",
+    "src/api.js": "2dfd1ea65ea0771e22e962942842dc45d93201b7810579fa2619c4a1006f37ba",
+    "src/shell-pre.js": "9d4caad9ed88a4d73401c258f1c66d7f9f8299b8d74bea4e5736b7f0c3ad7489",
+    "src/shell-post.js": "e842d9268cb4f63a53461315f8fcb33f856d92f26e4f5d2a0095d7a45aa0cd43",
+    "src/exported_functions.json": "1f5e4217812bc7da9aab9a44bae0c1c353f5d378544f8223ca0c200b0069a697",
+    "src/exported_runtime_methods.json": "2a89b1707be7f6338930659d53de0b8d138193f9900f275f0b0da21ec1ed4145",
+    "sqlite-src/sqlite-amalgamation-3490100/sqlite3.c": "ff80c36ef1bb44eb357c7ff1d15be77540d41c28fb671088215a6cd12785c5d3",
+    "sqlite-src/sqlite-amalgamation-3490100/sqlite3.h": "88da6f1963bc192dfa18a3a48b423cf1fbbb04f903202efe9a78e3a597473e18",
+    "sqlite-src/sqlite-amalgamation-3490100/sqlite3ext.h": "b184dd1586d935133d37ad76fa353faf0a1021ff2fdedeedcc3498fff74bbb94",
+    "sqlite-src/sqlite-amalgamation-3490100/extension-functions.c": "991b40fe8b2799edc215f7260b890f14a833512c9d9896aa080891330ffe4052"
+  },
+  "outputs": {
+    "distribution": {
+      "sql-wasm.js": "0afb58f68fe732f2951d1d310a674db82df5c5fca70b3ca06ae9c7d076d9d87d",
+      "sql-wasm-browser.js": "9c1294d6ecedde07285b4473964778272747f320ab9d9912e959fcfc82517f8e",
+      "sql-wasm.wasm": "5b036bb2e33e06b811ae9b36b84a7d6222475f81a21fc1dda3f434aac1a942d4",
+      "sql-wasm-browser.wasm": "5b036bb2e33e06b811ae9b36b84a7d6222475f81a21fc1dda3f434aac1a942d4"
+    },
+    "emsdk": {
+      "sql-wasm.js": "36506149fb9ff34c877679b692a4b085e2eaaf0834921a1fc027e3074abaefb7",
+      "sql-wasm-browser.js": "d0867db733dd9f59ee0e1672bb035e864b7afd8691d21a66f2a5f32bd15c2e6e",
+      "sql-wasm.wasm": "e075bbd68bf9aebf63029c9d61b21b2286041553d468f23562842429a59f2ab2",
+      "sql-wasm-browser.wasm": "e075bbd68bf9aebf63029c9d61b21b2286041553d468f23562842429a59f2ab2"
+    }
+  }
+}

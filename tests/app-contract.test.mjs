@@ -857,7 +857,7 @@ test("ships the DiveFrame import, map, photo, and composer workflow", async () =
   assert.match(app, /const files = Array\.from\(event\.target\.files/);
   assert.match(manifest, /diveframe-maskable-512\.png/);
   assert.match(manifest, /"display": "standalone"/);
-  assert.match(serviceWorker, /diveframe-shell-v17/);
+  assert.match(serviceWorker, /diveframe-shell-v18/);
   assert.match(serviceWorker, /"\/memo"/);
   assert.match(serviceWorker, /"\/catalog"/);
   assert.match(serviceWorker, /"\/catalog\/device-additions"/);

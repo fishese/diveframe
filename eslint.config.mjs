@@ -9,6 +9,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Framework and generated build output. Linting generated Android/Vite
     // bundles hid actionable source errors behind thousands of diagnostics.
+    ".sqljs-cache/**",
+    "vendor/sql.js/dist/**",
     ".next/**",
     "out/**",
     "build/**",

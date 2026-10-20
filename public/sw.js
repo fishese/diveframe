@@ -1,6 +1,6 @@
 // Bump this when a deployed shell needs to evict stale cached module URLs.
 // IndexedDB is separate and is intentionally never touched by this cache reset.
-const CACHE_NAME = "diveframe-shell-v17";
+const CACHE_NAME = "diveframe-shell-v18";
 const APP_SHELL = [
   "/",
   "/settings",
@@ -13,6 +13,7 @@ const APP_SHELL = [
   "/catalog",
   "/catalog/device-additions",
   "/catalog/supplement",
+  "/sqljs-provenance.json",
   "/manifest.webmanifest",
   "/icons/diveframe-icon.svg",
   "/icons/diveframe-192.png",
@@ -115,6 +116,13 @@ async function cacheAppShell() {
     const response = await fetch(path, { cache: "reload" });
     if (!response.ok) throw new Error(`Unable to cache app shell: ${path}`);
     await cache.put(path, response.clone());
+    if (path === "/sqljs-provenance.json") {
+      const manifest = await response.clone().json();
+      if (!/^\/sql-wasm\.[a-f0-9]{64}\.wasm$/.test(manifest.wasmPath)) {
+        throw new Error("Invalid sql.js WASM cache path");
+      }
+      assets.add(manifest.wasmPath);
+    }
     if ((response.headers.get("content-type") || "").includes("text/html")) {
       discoverShellAssets(await response.text(), assets);
     }
