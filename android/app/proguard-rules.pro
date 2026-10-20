@@ -1,4 +1,9 @@
 # Add project specific ProGuard rules here.
+# JNI looks up these classes and members by their original names during
+# dive-computer downloads; Capacitor's consumer rules cover plugin methods.
+-keep class cc.fishese.divelog.DiveComputerNative { *; }
+-keep class cc.fishese.divelog.DiveComputerNative$* { *; }
+-keep class cc.fishese.divelog.DiveComputerDownloadCollector { *; }
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.
 #
