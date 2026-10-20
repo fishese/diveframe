@@ -88,6 +88,13 @@ jobs:
           cp "${{ steps.sign_apk.outputs.signedReleaseFile }}" diveframe-1.0.30.apk
           sha256sum diveframe-1.0.30.apk
 
+      - name: Upload signed reference artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: diveframe-1.0.30-reference
+          path: diveframe-1.0.30.apk
+          if-no-files-found: error
+
       - name: Publish reference release
         uses: softprops/action-gh-release@v2
         with:
