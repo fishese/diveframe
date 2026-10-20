@@ -15,11 +15,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out main
+      - name: Check out immutable stable source
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
+          ref: v1.0.30
+
+      - name: Verify stable source
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = 84ca5c436fff06a7b67c9c57c0d120ea84f63e4f
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -35,6 +40,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install Android build dependencies
         shell: bash
@@ -86,7 +93,7 @@ jobs:
         with:
           tag_name: fdroid-v1.0.30
           name: DiveFrame v1.0.30 F-Droid reference
-          target_commitish: ${{ github.sha }}
+          target_commitish: 84ca5c436fff06a7b67c9c57c0d120ea84f63e4f
           make_latest: false
           files: diveframe-1.0.30.apk
           body: |
