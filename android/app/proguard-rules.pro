@@ -4,6 +4,9 @@
 -keep class cc.fishese.divelog.DiveComputerNative { *; }
 -keep class cc.fishese.divelog.DiveComputerNative$* { *; }
 -keep class cc.fishese.divelog.DiveComputerDownloadCollector { *; }
+# Capacitor reads this class's plugin annotation field when requesting
+# Bluetooth permissions. R8 otherwise removes the field and scanning crashes.
+-keep class com.getcapacitor.PluginHandle { *; }
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.
 #
