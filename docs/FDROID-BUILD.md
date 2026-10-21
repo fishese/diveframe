@@ -1,10 +1,10 @@
 # DiveFrame F-Droid build and update guide
 
 Stable release snapshot verified: 2026-10-21 (Asia/Singapore).
-Stable `1.0.30` / code `31` and its signed reference APK are published from
-source `84ca5c436fff06a7b67c9c57c0d120ea84f63e4f`. The MR recipe builds
+Stable `1.0.31` / code `32` and its signed reference APK are published from
+source `645159213f05fa6e86883de3ad5e2632246dd45b`. The MR recipe builds
 sql.js 1.14.1 from verified source with Debian Emscripten 3.1.69. See the
-[release record](releases/2026-10-21-stable-1.0.30.md) and
+[release record](releases/2026-10-21-stable-1.0.31.md) and
 [source-build contract](SQLJS-BUILD.md). Earlier pipeline and job details below
 retain their original verification dates.
 
@@ -30,14 +30,14 @@ F-Droid-specific build contract and the failure that occurred during MR
   must never be submitted as F-Droid source or reference APKs.
 - The current submission MR is
   [!45472](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/45472).
-- The MR recipe is pinned to `1.0.30` / code `31`, production source
-  `84ca5c436fff06a7b67c9c57c0d120ea84f63e4f`, immutable tag `v1.0.30`.
-  Recipe branch head `1ff0955d05eddfd42542a33d63496d896dcb2dc5` also
+- The MR recipe is pinned to `1.0.31` / code `32`, production source
+  `645159213f05fa6e86883de3ad5e2632246dd45b`, immutable tag `v1.0.31`.
+  Recipe branch head `b379909bce2cf02955287e6e05c70fa19ef019ea` also
   compiles sql.js from source after scanning. Its
-  [fork pipeline](https://gitlab.com/fishese/fdroiddata/-/pipelines/2968822553)
+  [fork pipeline](https://gitlab.com/fishese/fdroiddata/-/pipelines/2971858183)
   passed all nine jobs, including the reference-APK comparison.
 - Web `main` contains later feed/documentation commits while the immutable
-  stable source remains `84ca5c4`. Preview 91 exercised the same application
+  stable source remains `6451592`. Preview 93 exercised the same R8 application
   runtime; the stable build uses the production app ID and version.
 - Stable-only auto-update is enabled with `AutoUpdateMode: Version` and
   `UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$`. `UpdateCheckData` reads
@@ -63,9 +63,9 @@ These fields are coupled to the current Android project layout:
 
 ```yaml
 Builds:
-  - versionName: 1.0.30
-    versionCode: 31
-    commit: 84ca5c436fff06a7b67c9c57c0d120ea84f63e4f
+  - versionName: 1.0.31
+    versionCode: 32
+    commit: 645159213f05fa6e86883de3ad5e2632246dd45b
     subdir: android/app
     gradle:
       - yes
@@ -275,10 +275,10 @@ Gradle task:            assembleRelease
 ```
 
 The reference workflow is
-`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.30` values
+`.github/workflows/fdroid-reference-apk.yml`. Its current `1.0.31` values
 are hard-coded together for the stable release and check out the exact
-`v1.0.30` source commit. Never use the mutable `preview` release as the
-reference asset. Run `39466873392` built and signed the reference but GitHub
+`v1.0.31` source commit. Never use the mutable `preview` release as the
+reference asset. Run `39596491219` built and signed the reference but GitHub
 Actions could not publish the release (HTTP 403); the verified artifact was
 published with the authorized CLI account.
 

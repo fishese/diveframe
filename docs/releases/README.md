@@ -1,5 +1,6 @@
 # Publication records
 
+- [2026-10-21: stable 1.0.31](2026-10-21-stable-1.0.31.md)
 - [2026-10-21: stable 1.0.30](2026-10-21-stable-1.0.30.md)
 - [2026-09-06: stable 1.0.29](2026-09-06-stable-1.0.29.md)
 - [2026-09-06: web/Preview review fixes](2026-09-06-review-fixes.md)
