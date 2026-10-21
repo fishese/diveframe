@@ -20,11 +20,11 @@ jobs:
         with:
           fetch-depth: 0
           submodules: recursive
-          ref: v1.0.30
+          ref: v1.0.31
 
       - name: Verify stable source
         shell: bash
-        run: test "$(git rev-parse HEAD)" = 84ca5c436fff06a7b67c9c57c0d120ea84f63e4f
+        run: test "$(git rev-parse HEAD)" = 645159213f05fa6e86883de3ad5e2632246dd45b
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -85,26 +85,26 @@ jobs:
       - name: Prepare reference asset
         shell: bash
         run: |
-          cp "${{ steps.sign_apk.outputs.signedReleaseFile }}" diveframe-1.0.30.apk
-          sha256sum diveframe-1.0.30.apk
+          cp "${{ steps.sign_apk.outputs.signedReleaseFile }}" diveframe-1.0.31.apk
+          sha256sum diveframe-1.0.31.apk
 
       - name: Upload signed reference artifact
         uses: actions/upload-artifact@v4
         with:
-          name: diveframe-1.0.30-reference
-          path: diveframe-1.0.30.apk
+          name: diveframe-1.0.31-reference
+          path: diveframe-1.0.31.apk
           if-no-files-found: error
 
       - name: Publish reference release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: fdroid-v1.0.30
-          name: DiveFrame v1.0.30 F-Droid reference
-          target_commitish: 84ca5c436fff06a7b67c9c57c0d120ea84f63e4f
+          tag_name: fdroid-v1.0.31
+          name: DiveFrame v1.0.31 F-Droid reference
+          target_commitish: 645159213f05fa6e86883de3ad5e2632246dd45b
           make_latest: false
-          files: diveframe-1.0.30.apk
+          files: diveframe-1.0.31.apk
           body: |
-            Developer-signed reference APK for DiveFrame 1.0.30.
+            Developer-signed reference APK for DiveFrame 1.0.31.
 
             This APK is used by F-Droid to verify reproducible builds. The
             F-Droid-distributed APK is signed with F-Droid's separate key.
