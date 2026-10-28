@@ -1,8 +1,6 @@
 name: Preview signed APK
 
 on:
-  schedule:
-    - cron: '0 16 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -173,6 +171,7 @@ jobs:
           name: diveframe-preview-${{ github.run_number }}
           path: diveframe-preview.apk
           if-no-files-found: error
+          retention-days: 7
 
       - name: Align the mutable Preview tag with the built source
         shell: bash

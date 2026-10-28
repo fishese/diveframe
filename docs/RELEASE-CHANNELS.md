@@ -68,8 +68,10 @@ round trips. Pre-v8 migration saves do not need support; current saves do.
    fixtures, generated APKs, local notes, and logs out of the commit.
 4. Push the intended source to `main`. Verify its **Workers Builds: diveframe**
    check succeeds, then check the hosted app.
-5. Dispatch `.github/workflows/preview-apk.yml` on that source. It also runs
-   on a schedule. Wait for both APK publication and its dependent feed job.
+5. Dispatch `.github/workflows/preview-apk.yml` on that source. It runs only
+   when manually dispatched. Wait for both APK publication and its dependent
+   feed job. The workflow retains its APK artifact for seven days; the mutable
+   Preview release asset remains the download for device testing.
 6. Inspect the actual APK package, label, version name/code, ABI, signature, and
    SHA-256. Confirm source SHA agreement between workflow, mutable tag, release
    notes, and feed. Confirm both hosted feed endpoints advertise the APK.
